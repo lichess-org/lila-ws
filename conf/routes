@@ -1,0 +1,5 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET     /socket/v4                           controllers.SocketController.site
