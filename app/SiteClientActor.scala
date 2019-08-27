@@ -3,7 +3,10 @@ package lichess.ws
 import akka.actor._
 import play.api.libs.json._
 
-final class SiteClientActor(out: ActorRef) extends Actor {
+final class SiteClientActor(
+    out: ActorRef,
+    user: Option[User]
+) extends Actor {
 
   def receive = {
     case Ping => send(Pong)
@@ -18,5 +21,8 @@ final class SiteClientActor(out: ActorRef) extends Actor {
 
 object SiteClientActor {
 
-  def props(out: ActorRef) = Props(new SiteClientActor(out))
+  def props(
+    out: ActorRef,
+    user: Option[User]
+  ) = Props(new SiteClientActor(out, user))
 }
