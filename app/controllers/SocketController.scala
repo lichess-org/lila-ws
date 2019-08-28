@@ -16,8 +16,8 @@ import lichess.ws._
 
 @Singleton
 class SocketController @Inject() (val controllerComponents: ControllerComponents)(implicit
-    executionContext: ExecutionContext,
-    actorSystem: ActorSystem,
+    ec: ExecutionContext,
+    system: ActorSystem,
     mat: Materializer,
     auth: Auth
 ) extends BaseController {
@@ -25,11 +25,14 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
   private type WSMessage = JsValue
   private val logger = Logger(getClass)
 
-  def site(): WebSocket =
+  private val actors = new Actors(system)
+
+  def site(sri: String): WebSocket =
     WebSocket.acceptOrResult[WSMessage, WSMessage] { req =>
       auth(req) map { user =>
-        println(user)
-        Right(ActorFlow actorRef { out => SiteClientActor.props(out, user) })
+        Right(ActorFlow actorRef { out =>
+          SiteClientActor.props(out, Sri(sri), user, actors)
+        })
       }
     }
 }
