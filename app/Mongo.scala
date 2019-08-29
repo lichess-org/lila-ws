@@ -1,29 +1,22 @@
 package lichess.ws
 
 import javax.inject._
-
+import play.api.Configuration
+import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
 import scala.concurrent.{ ExecutionContext, Future }
 
-import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
-import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.{
-  BSONDocumentWriter,
-  BSONDocumentReader,
-  Macros,
-  document
-}
-
 @Singleton
-final class Mongo @Inject() ()(implicit executionContext: ExecutionContext) {
+final class Mongo @Inject() (config: Configuration)(implicit executionContext: ExecutionContext) {
 
-  val mongoUri = "mongodb://localhost:27017/lichess"
+  private val uri = config.get[String]("mongo.uri")
 
-  val driver = MongoDriver()
-  val parsedUri = MongoConnection.parseURI(mongoUri)
-  val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
+  private val driver = MongoDriver()
+  private val parsedUri = MongoConnection.parseURI(uri)
+  private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
 
-  def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
-  def securityColl = db.map(_.collection("security"))
+  private def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
+  private def securityColl = db.map(_.collection("security"))
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
 }

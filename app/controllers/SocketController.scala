@@ -4,9 +4,7 @@ import javax.inject._
 
 import akka.actor._
 import akka.event.Logging
-import akka.stream.Materializer
 import play.api.libs.json._
-import play.api.libs.streams.ActorFlow
 import play.api.Logger
 import play.api.mvc._
 
@@ -18,21 +16,14 @@ import lichess.ws._
 class SocketController @Inject() (val controllerComponents: ControllerComponents)(implicit
     ec: ExecutionContext,
     system: ActorSystem,
-    mat: Materializer,
-    auth: Auth
+    siteServer: SiteServer
 ) extends BaseController {
 
   private type WSMessage = JsValue
   private val logger = Logger(getClass)
 
-  private val actors = new Actors(system)
-
   def site(sri: String): WebSocket =
     WebSocket.acceptOrResult[WSMessage, WSMessage] { req =>
-      auth(req) map { user =>
-        Right(ActorFlow actorRef { out =>
-          SiteClientActor.props(out, Sri(sri), user, actors)
-        })
-      }
+      siteServer.connect(req, Sri(sri)) map Right.apply
     }
 }
