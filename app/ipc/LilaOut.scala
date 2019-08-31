@@ -19,6 +19,8 @@ object LilaOut {
 
   case class TellUser(user: User.ID, json: JsObject) extends LilaOut
 
+  case class TellUsers(users: Iterable[User.ID], json: JsObject) extends LilaOut
+
   case class TellSri(sri: Sri, json: JsObject) extends LilaOut
 
   case class TellAll(json: JsObject) extends LilaOut
@@ -43,7 +45,12 @@ object LilaOut {
       }
 
       case "tell/user" => args.split(" ", 2) match {
-        case Array(user, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellFlag(user, _) }
+        case Array(user, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellUser(user, _) }
+        case _ => None
+      }
+
+      case "tell/users" => args.split(" ", 2) match {
+        case Array(users, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellUsers(users split ",", _) }
         case _ => None
       }
 

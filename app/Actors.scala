@@ -33,7 +33,10 @@ final class Actors @Inject() (
         bus.publish(ClientIn.AnyJson(json), _ flag flag)
 
       case LilaOut.TellUser(user, json) =>
-        userActor ! UserActor.Tell(user, ClientIn.AnyJson(json))
+        userActor ! UserActor.TellOne(user, ClientIn.AnyJson(json))
+
+      case LilaOut.TellUsers(users, json) =>
+        userActor ! UserActor.TellMany(users, ClientIn.AnyJson(json))
 
       case LilaOut.TellSri(sri, json) =>
         bus.publish(ClientIn.AnyJson(json), _ sri sri)
@@ -42,7 +45,7 @@ final class Actors @Inject() (
         bus.publish(ClientIn.AnyJson(json), _.all)
 
       case LilaOut.DisconnectUser(user) =>
-        userActor ! UserActor.Tell(user, PoisonPill)
+        userActor ! UserActor.TellOne(user, PoisonPill)
     }
   )), "site")
 

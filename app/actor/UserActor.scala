@@ -33,10 +33,12 @@ final class UserActor(lilaIn: LilaIn => Unit) extends Actor {
         else users.put(user.id, newClients)
     }
 
-    case Tell(userId, clientIn) => users get userId foreach {
-      _ foreach {
-        _ ! clientIn
-      }
+    case TellOne(userId, payload) => users get userId foreach {
+      _ foreach { _ ! payload }
+    }
+
+    case TellMany(userIds, payload) => userIds flatMap users.get foreach {
+      _ foreach { _ ! payload }
     }
   }
 }
@@ -45,7 +47,8 @@ object UserActor {
 
   case class Connect(user: User)
   case class Disconnect(user: User)
-  case class Tell(userId: User.ID, payload: Any)
+  case class TellOne(userId: User.ID, payload: Any)
+  case class TellMany(userIds: Iterable[User.ID], payload: Any)
 
   def props(lilaIn: LilaIn => Unit) = Props(new UserActor(lilaIn))
 }
