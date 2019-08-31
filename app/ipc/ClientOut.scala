@@ -50,6 +50,8 @@ object ClientOut {
       chapterId: Option[ChapterId]
   ) extends ClientOut
 
+  case class Forward(payload: JsValue) extends ClientOut
+
   implicit val jsonRead = Reads[ClientOut] { js =>
     (js match {
       case JsNull => Some(Ping(None))
@@ -91,6 +93,7 @@ object ClientOut {
           variant = dataVariant(d)
           chapterId = d str "ch" map ChapterId.apply
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
+        case "evalGet" | "evalPut" => Some(Forward(js))
         case _ => None
       }
       case _ => None

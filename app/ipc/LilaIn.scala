@@ -1,11 +1,17 @@
 package lila.ws
 package ipc
 
+import play.api.libs.json._
+
 sealed trait LilaIn {
   def write: String
 }
 
 object LilaIn {
+
+  case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends LilaIn {
+    def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
+  }
 
   case class Watch(id: Game.ID) extends LilaIn {
     def write = s"watch $id"

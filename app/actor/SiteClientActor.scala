@@ -79,6 +79,9 @@ final class SiteClientActor(
 
     case anaDests: ClientOut.AnaDests =>
       clientIn ! Chess(anaDests)
+
+    case ClientOut.Forward(payload) =>
+      actors.lilaSite ! LilaIn.TellSri(sri, user.map(_.id), payload)
   }
 
   val receive = clientOutReceive orElse clientInReceive
