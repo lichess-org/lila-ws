@@ -11,6 +11,7 @@ scalaVersion := "2.13.0"
 libraryDependencies += guice
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.4"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.1.8.RELEASE"
+libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 
 scalacOptions ++= Seq(
   "-feature",

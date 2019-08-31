@@ -1,0 +1,38 @@
+package lila.ws
+package ipc
+
+import java.lang.Double.parseDouble
+import java.lang.Integer.parseInt
+import play.api.libs.json._
+import scala.util.Try
+
+sealed trait LilaOut
+
+object LilaOut {
+
+  case class Move(game: Game.ID, lastUci: String, fen: String) extends LilaOut
+
+  case class Mlat(millis: Double) extends LilaOut
+
+  case class TellFlag(flag: String, json: JsObject) extends LilaOut
+
+  case class TellAll(json: JsObject) extends LilaOut
+
+  def read(str: String): Option[LilaOut] = {
+    val parts = str.split(" ", 2)
+    val args = parts.lift(1) getOrElse ""
+    parts(0) match {
+      case "move" => args.split(" ", 3) match {
+        case Array(game, lastUci, fen) => Some(Move(game, lastUci, fen))
+        case _ => None
+      }
+      case "mlat" => Try(Mlat(parseDouble(args))).toOption
+      case "tell/flag" => args.split(" ", 2) match {
+        case Array(flag, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellFlag(flag, _) }
+        case _ => None
+      }
+      case "tell/all" => Json.parse(args).asOpt[JsObject] map TellAll.apply
+      case _ => None
+    }
+  }
+}

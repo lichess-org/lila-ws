@@ -1,8 +1,10 @@
-package lichess.ws
+package lila.ws
 
 import akka.actor._
 
-final class CountActor extends Actor {
+import ipc.LilaIn
+
+final class CountActor(lilaIn: LilaIn => Unit) extends Actor {
 
   import CountActor._
 
@@ -11,7 +13,7 @@ final class CountActor extends Actor {
   def receive = {
     case Connect => count += 1
     case Disconnect => count -= 1
-    case Get => sender ! count
+    case Publish => lilaIn(LilaIn.Connections(count))
   }
 }
 
@@ -19,7 +21,5 @@ object CountActor {
 
   case object Connect
   case object Disconnect
-  case object Get
-
-  def props = Props(new CountActor)
+  case object Publish
 }

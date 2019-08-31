@@ -1,4 +1,4 @@
-package lichess.ws
+package lila.ws
 
 import javax.inject._
 
