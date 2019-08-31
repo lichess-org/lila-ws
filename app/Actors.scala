@@ -15,7 +15,6 @@ final class Actors @Inject() (
 ) {
 
   private val bus = Bus(system)
-  private val typedSystem = system.toTyped
 
   val lilaSite: akka.actor.typed.ActorRef[LilaMsg] = system.spawn(
     LilaActor.start(

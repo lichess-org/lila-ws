@@ -24,12 +24,12 @@ final class SiteServer @Inject() (
 
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
-      actorRef { out =>
+      actorFlow { out =>
         SiteClientActor.empty(SiteClientActor.Deps(out, sri, flag, user, actors, bus))
       }
     }
 
-  def actorRef(
+  private def actorFlow(
     behaviour: akka.actor.ActorRef => Behavior[ClientMsg],
     bufferSize: Int = 16,
     overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew
