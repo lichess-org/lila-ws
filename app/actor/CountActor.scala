@@ -10,7 +10,7 @@ object CountActor {
 
   def empty(lilaIn: LilaIn => Unit) = apply(0, lilaIn)
 
-  def apply(count: Int, lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+  private def apply(count: Int, lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
 
     case Connect => apply(count + 1, lilaIn)
 

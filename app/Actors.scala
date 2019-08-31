@@ -47,7 +47,7 @@ final class Actors @Inject() (
         bus.publish(ClientIn.AnyJson(json), _.all)
 
       case LilaOut.DisconnectUser(user) =>
-        userActor ! UserActor.TellOne(user, PoisonPill)
+        userActor ! UserActor.TellOne(user, ClientIn.Disconnect)
     }
   )), "site")
 

@@ -10,7 +10,7 @@ object LagActor {
 
   def empty(lilaIn: LilaIn => Unit) = apply(Map.empty, lilaIn)
 
-  def apply(lags: Map[User.ID, Int], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+  private def apply(lags: Map[User.ID, Int], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
 
     case Set(user, lag) => apply(lags + (user.id -> lag), lilaIn)
 

@@ -8,7 +8,7 @@ import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
 
-sealed trait ClientIn {
+sealed trait ClientIn extends ClientMsg {
   def write: JsValue
 }
 
@@ -41,6 +41,10 @@ object ClientIn {
       "path" -> path,
       "opening" -> opening
     ))
+  }
+
+  object Disconnect extends ClientIn {
+    val write = JsNull
   }
 
   case class Node(

@@ -5,13 +5,13 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }
 import play.api.libs.json.JsObject
 
-import ipc.{ LilaIn, ClientIn }
+import ipc._
 
 object UserActor {
 
   def empty(lilaIn: LilaIn => Unit) = apply(Map.empty, lilaIn)
 
-  def apply(users: Map[User.ID, Set[ActorRef[Any]]], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+  private def apply(users: Map[User.ID, Set[ActorRef[ClientMsg]]], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
 
     case Connect(user, client) => apply(
       users + (user.id -> (users get user.id match {
@@ -52,8 +52,8 @@ object UserActor {
   }
 
   sealed trait Input
-  case class Connect(user: User, client: ActorRef[Any]) extends Input
-  case class Disconnect(user: User, client: ActorRef[Any]) extends Input
-  case class TellOne(userId: User.ID, payload: Any) extends Input
-  case class TellMany(userIds: Iterable[User.ID], payload: Any) extends Input
+  case class Connect(user: User, client: ActorRef[ClientMsg]) extends Input
+  case class Disconnect(user: User, client: ActorRef[ClientMsg]) extends Input
+  case class TellOne(userId: User.ID, payload: ClientIn) extends Input
+  case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
 }

@@ -12,7 +12,7 @@ object FenActor {
 
   def empty(lilaIn: LilaIn => Unit) = apply(Map.empty, lilaIn)
 
-  def apply(games: Map[Game.ID, Watched], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+  private def apply(games: Map[Game.ID, Watched], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
 
     // client starts watching
     case Watch(gameIds, client) => apply(
@@ -60,10 +60,10 @@ object FenActor {
   }
 
   sealed trait Input
-  case class Watch(gameIds: Iterable[Game.ID], client: ActorRef[Any]) extends Input
-  case class Unwatch(gameIds: Iterable[Game.ID], client: ActorRef[Any]) extends Input
+  case class Watch(gameIds: Iterable[Game.ID], client: ActorRef[ClientMsg]) extends Input
+  case class Unwatch(gameIds: Iterable[Game.ID], client: ActorRef[ClientMsg]) extends Input
   case class Move(move: LilaOut.Move) extends Input
 
   case class Position(lastUci: Uci, fen: FEN)
-  case class Watched(position: Option[Position], clients: Set[ActorRef[Any]])
+  case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 }

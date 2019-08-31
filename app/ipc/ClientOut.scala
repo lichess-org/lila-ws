@@ -8,7 +8,7 @@ import play.api.libs.json._
 
 import lila.ws.util.LilaJsObject.augment
 
-sealed trait ClientOut
+sealed trait ClientOut extends ClientMsg
 
 object ClientOut {
 
