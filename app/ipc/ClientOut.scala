@@ -2,6 +2,8 @@ package lila.ws
 package ipc
 
 import play.api.libs.json._
+import chess.format.FEN
+import chess.variant.Variant
 
 sealed trait ClientOut
 
@@ -17,6 +19,8 @@ object ClientOut {
 
   case object FollowingOnline extends ClientOut
 
+  case class Opening(variant: Variant, path: String, fen: FEN) extends ClientOut
+
   implicit val jsonRead = Reads[ClientOut] { js =>
     (js match {
       case JsNull => Some(Ping(None))
@@ -26,6 +30,11 @@ object ClientOut {
         case "moveLat" => Some(MoveLat)
         case "notified" => Some(Notified)
         case "following_online" => Some(Notified)
+        case "opening" => for {
+          path <- (o \ "path").asOpt[String]
+          fen <- (o \ "fen").asOpt[String]
+          variant = Variant.orDefault((o \ "variant").asOpt[String] getOrElse "")
+        } yield Opening(variant, path, FEN(fen))
         case _ => None
       }
       case _ => None

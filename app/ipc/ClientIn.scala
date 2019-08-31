@@ -29,6 +29,16 @@ object ClientIn {
     def write = json
   }
 
+  case class Opening(path: String, opening: chess.opening.FullOpening) extends ClientIn {
+    def write = make("opening", Json.obj(
+      "path" -> path,
+      "opening" -> Json.obj(
+        "eco" -> opening.eco,
+        "name" -> opening.name
+      )
+    ))
+  }
+
   private def make[A: Writes](t: String, data: A) = Json.obj(
     "t" -> t,
     "d" -> data
