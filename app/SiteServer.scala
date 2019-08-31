@@ -46,7 +46,7 @@ final class SiteServer @Inject() (
         context.watch(flowActor)
 
         def receive = {
-          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientIn.Disconnect
+          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientFlow.Disconnect
           case Terminated(_) => context.stop(self)
           case incoming: ClientOut => flowActor ! incoming
         }

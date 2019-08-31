@@ -29,7 +29,7 @@ object SiteClientActor {
 
       msg match {
 
-        case ClientIn.Disconnect =>
+        case ClientFlow.Disconnect =>
           Behaviors.stopped
 
         case in: ClientIn =>

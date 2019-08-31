@@ -43,10 +43,6 @@ object ClientIn {
     ))
   }
 
-  object Disconnect extends ClientIn {
-    val write = JsNull
-  }
-
   case class Node(
       path: Path,
       id: UciCharPair,

@@ -49,6 +49,12 @@ object UserActor {
         _ foreach { _ ! payload }
       }
       Behavior.same
+
+    case Kick(userId) =>
+      users get userId foreach {
+        _ foreach { _ ! ClientFlow.Disconnect }
+      }
+      Behavior.same
   }
 
   sealed trait Input
@@ -56,4 +62,5 @@ object UserActor {
   case class Disconnect(user: User, client: ActorRef[ClientMsg]) extends Input
   case class TellOne(userId: User.ID, payload: ClientIn) extends Input
   case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
+  case class Kick(userId: User.ID) extends Input
 }
