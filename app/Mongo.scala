@@ -15,7 +15,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   private val parsedUri = MongoConnection.parseURI(uri)
   private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
 
-  private def db: Future[DefaultDB] = connection.flatMap(_.database("lila"))
+  private def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
   private def securityColl = db.map(_.collection("security"))
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
