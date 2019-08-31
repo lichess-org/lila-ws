@@ -14,42 +14,52 @@ object Chess {
   def apply(req: ClientOut.AnaMove): Option[ClientIn.Node] =
     chess.Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion).toOption flatMap {
       case (game, move) => game.pgnMoves.lastOption map { san =>
-        val uci = Uci(move)
-        val movable = game.situation playable false
-        val fen = chess.format.Forsyth >> game
-        ClientIn.Node(
-          path = req.path,
-          id = UciCharPair(uci),
-          ply = game.turns,
-          move = Uci.WithSan(uci, san),
-          fen = FEN(fen),
-          check = game.situation.check,
-          dests = if (movable) Some(game.situation.destinations) else None,
-          opening =
-            if (game.turns <= 30 && Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen fen
-            else None,
-          drops = if (movable) game.situation.drops else Some(Nil),
-          crazyData = game.situation.board.crazyData,
-          chapterId = req.chapterId
-        )
+        makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
       }
     }
 
-  def apply(req: ClientOut.AnaDests): ClientIn.Dests = ClientIn.Dests(
-      path = req.path,
-      dests = {
-        if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty) initialDests
-        else {
-          val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
-          if (sit.playable(false)) json.destString(sit.destinations) else ""
-        }
-      },
-      opening = {
-        if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
-        else None
-      },
-      chapterId = req.chapterId
+  def apply(req: ClientOut.AnaDrop): Option[ClientIn.Node] =
+    chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
+      case (game, drop) => game.pgnMoves.lastOption map { san =>
+        makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
+      }
+    }
+
+  private def makeNode(game: chess.Game, move: Uci.WithSan, path: Path, chapterId: Option[ChapterId]): ClientIn.Node = {
+    val movable = game.situation playable false
+    val fen = chess.format.Forsyth >> game
+    ClientIn.Node(
+      path = path,
+      id = UciCharPair(move.uci),
+      ply = game.turns,
+      move = move,
+      fen = FEN(fen),
+      check = game.situation.check,
+      dests = if (movable) Some(game.situation.destinations) else None,
+      opening =
+        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant)) FullOpeningDB findByFen fen
+        else None,
+      drops = if (movable) game.situation.drops else Some(Nil),
+      crazyData = game.situation.board.crazyData,
+      chapterId = chapterId
     )
+  }
+
+  def apply(req: ClientOut.AnaDests): ClientIn.Dests = ClientIn.Dests(
+    path = req.path,
+    dests = {
+      if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty) initialDests
+      else {
+        val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
+        if (sit.playable(false)) json.destString(sit.destinations) else ""
+      }
+    },
+    opening = {
+      if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
+      else None
+    },
+    chapterId = req.chapterId
+  )
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(req.variant))

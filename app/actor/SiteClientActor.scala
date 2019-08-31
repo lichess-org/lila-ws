@@ -74,6 +74,9 @@ final class SiteClientActor(
     case anaMove: ClientOut.AnaMove =>
       Chess(anaMove) foreach clientIn.!
 
+    case anaDrop: ClientOut.AnaDrop =>
+      Chess(anaDrop) foreach clientIn.!
+
     case anaDests: ClientOut.AnaDests =>
       clientIn ! Chess(anaDests)
   }

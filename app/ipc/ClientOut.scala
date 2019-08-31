@@ -34,6 +34,15 @@ object ClientOut {
       promotion: Option[chess.PromotableRole]
   ) extends ClientOut
 
+  case class AnaDrop(
+      role: chess.Role,
+      pos: Pos,
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId]
+  ) extends ClientOut
+
   case class AnaDests(
       fen: FEN,
       path: Path,
@@ -66,6 +75,15 @@ object ClientOut {
           chapterId = d str "ch" map ChapterId.apply
           promotion = d str "promotion" flatMap chess.Role.promotable
         } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion)
+        case "anaDrop" => for {
+          d <- o obj "d"
+          role <- d str "role" flatMap chess.Role.allByName.get
+          pos <- d str "pos" flatMap Pos.posAt
+          path <- d str "path"
+          fen <- d str "fen"
+          variant = dataVariant(d)
+          chapterId = d str "ch" map ChapterId.apply
+        } yield AnaDrop(role, pos, FEN(fen), Path(path), variant, chapterId)
         case "anaDests" => for {
           d <- o obj "d"
           path <- d str "path"
