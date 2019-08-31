@@ -22,8 +22,8 @@ object ClientIn {
 
   case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
     def write = make("fen", Json.obj(
-      "game" -> game,
-      "last_uci" -> lastUci,
+      "id" -> game,
+      "lm" -> lastUci,
       "fen" -> fen
     ))
   }
