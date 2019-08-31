@@ -9,4 +9,6 @@ package object ipc {
   object ClientFlow {
     case object Disconnect extends ClientFlow
   }
+
+  trait LilaMsg
 }

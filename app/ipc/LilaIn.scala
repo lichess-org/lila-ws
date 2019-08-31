@@ -3,7 +3,7 @@ package ipc
 
 import play.api.libs.json._
 
-sealed trait LilaIn {
+sealed trait LilaIn extends LilaMsg {
   def write: String
 }
 

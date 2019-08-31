@@ -1,49 +1,57 @@
 package lila.ws
 
-import akka.actor._
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
+import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import io.lettuce.core._
 import play.api.Logger
 
 import ipc._
 
-final class LilaActor(
+object LilaActor {
+
+  private val logger = Logger(getClass)
+
+  type Chan = String
+
+  def start(
     redisUri: RedisURI,
-    chanIn: LilaActor.Chan,
-    chanOut: LilaActor.Chan,
-    onReceive: Actor.Receive
-) extends Actor {
+    chanIn: Chan,
+    chanOut: Chan,
+    onReceive: LilaOut => Unit
+  ): Behavior[LilaMsg] = Behaviors.setup[LilaMsg] { ctx =>
 
-  import LilaActor._
+    val redis = RedisClient create redisUri
+    val connIn = redis.connectPubSub()
+    val connOut = redis.connectPubSub()
 
-  val logger = Logger(getClass)
-  val redis = RedisClient create redisUri
-  val connIn = redis.connectPubSub()
-  val connOut = redis.connectPubSub()
+    ctx.self ! LilaIn.DisconnectAll
 
-  override def preStart() = {
-    self ! LilaIn.DisconnectAll
     connOut.addListener(new pubsub.RedisPubSubAdapter[String, String] {
       override def message(channel: String, message: String): Unit =
         LilaOut read message match {
-          case Some(out) => self ! out
+          case Some(out) => ctx.self ! out
           case None => logger.warn(s"Unhandled LilaOut: $message")
         }
     })
     connOut.async.subscribe(chanOut)
+
+    Behaviors.receiveMessage[LilaMsg] {
+
+      case in: LilaIn =>
+        connIn.async.publish(chanIn, in.write)
+        Behavior.same
+
+      case out: LilaOut =>
+        onReceive(out)
+        Behavior.same
+
+    }.receiveSignal {
+      case (ctx, PostStop) =>
+        connIn.close()
+        connOut.close()
+        redis.shutdown()
+        Behavior.same
+    }
   }
-
-  val receive = onReceive orElse {
-    case lilaIn: LilaIn => connIn.async.publish(chanIn, lilaIn.write)
-  }
-
-  override def postStop() = {
-    connIn.close()
-    connOut.close()
-    redis.shutdown()
-  }
-}
-
-object LilaActor {
-
-  type Chan = String
 }

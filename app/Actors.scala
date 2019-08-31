@@ -17,39 +17,41 @@ final class Actors @Inject() (
   private val bus = Bus(system)
   private val typedSystem = system.toTyped
 
-  val lilaSite: ActorRef = system.actorOf(Props(new LilaActor(
-    redisUri = RedisURI.create(config.get[String]("redis.uri")),
-    chanIn = "site-in",
-    chanOut = "site-out",
-    onReceive = {
+  val lilaSite: akka.actor.typed.ActorRef[LilaMsg] = system.spawn(
+    LilaActor.start(
+      redisUri = RedisURI.create(config.get[String]("redis.uri")),
+      chanIn = "site-in",
+      chanOut = "site-out",
+      onReceive = {
 
-      case move: LilaOut.Move =>
-        fenActor ! FenActor.Move(move)
+        case move: LilaOut.Move =>
+          fenActor ! FenActor.Move(move)
 
-      case LilaOut.Mlat(millis) =>
-        lagActor ! LagActor.Publish
-        countActor ! CountActor.Publish
-        bus.publish(ClientIn.Mlat(millis), _.mlat)
+        case LilaOut.Mlat(millis) =>
+          lagActor ! LagActor.Publish
+          countActor ! CountActor.Publish
+          bus.publish(ClientIn.Mlat(millis), _.mlat)
 
-      case LilaOut.TellFlag(flag, json) =>
-        bus.publish(ClientIn.AnyJson(json), _ flag flag)
+        case LilaOut.TellFlag(flag, json) =>
+          bus.publish(ClientIn.AnyJson(json), _ flag flag)
 
-      case LilaOut.TellUser(user, json) =>
-        userActor ! UserActor.TellOne(user, ClientIn.AnyJson(json))
+        case LilaOut.TellUser(user, json) =>
+          userActor ! UserActor.TellOne(user, ClientIn.AnyJson(json))
 
-      case LilaOut.TellUsers(users, json) =>
-        userActor ! UserActor.TellMany(users, ClientIn.AnyJson(json))
+        case LilaOut.TellUsers(users, json) =>
+          userActor ! UserActor.TellMany(users, ClientIn.AnyJson(json))
 
-      case LilaOut.TellSri(sri, json) =>
-        bus.publish(ClientIn.AnyJson(json), _ sri sri)
+        case LilaOut.TellSri(sri, json) =>
+          bus.publish(ClientIn.AnyJson(json), _ sri sri)
 
-      case LilaOut.TellAll(json) =>
-        bus.publish(ClientIn.AnyJson(json), _.all)
+        case LilaOut.TellAll(json) =>
+          bus.publish(ClientIn.AnyJson(json), _.all)
 
-      case LilaOut.DisconnectUser(user) =>
-        userActor ! UserActor.Kick(user)
-    }
-  )), "site")
+        case LilaOut.DisconnectUser(user) =>
+          userActor ! UserActor.Kick(user)
+      }
+    ), "site"
+  )
 
   val countActor: akka.actor.typed.ActorRef[CountActor.Input] =
     system.spawn(CountActor.empty(lilaSite.!), "count")
