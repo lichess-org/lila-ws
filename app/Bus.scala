@@ -28,7 +28,6 @@ object Bus extends ExtensionId[Bus] with ExtensionIdProvider {
 
   object channel {
     def sri(sri: Sri) = s"sri/${sri.value}"
-    def user(id: User.ID) = s"user/$id"
     def flag(f: String) = s"flag/$f"
     val mlat = "mlat"
     val all = "all"

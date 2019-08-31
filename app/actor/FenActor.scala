@@ -1,7 +1,6 @@
 package lila.ws
 
 import akka.actor._
-import javax.inject._
 import scala.collection.mutable.AnyRefMap
 
 import ipc._
@@ -34,7 +33,10 @@ final class FenActor(lilaIn: LilaIn => Unit) extends Actor {
       games get id foreach {
         case Watched(position, by) =>
           val newBy = by - sender
-          if (newBy.isEmpty) games.remove(id)
+          if (newBy.isEmpty) {
+            games.remove(id)
+            lilaIn(LilaIn.Unwatch(id))
+          }
           else games.put(id, Watched(position, newBy))
       }
     }

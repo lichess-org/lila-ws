@@ -14,17 +14,18 @@ final class SiteClientActor(
 ) extends Actor {
 
   import SiteClientActor._
+  import actors._
 
   var watchedGames = Set.empty[Game.ID]
 
   val bus = Bus(context.system)
 
   override def preStart() = {
-    actors.count ! CountActor.Connect
+    countActor ! CountActor.Connect
     bus.subscribe(self, _ sri sri)
     bus.subscribe(self, _.all)
     user foreach { u =>
-      bus.subscribe(self, _ user u.id)
+      userActor ! UserActor.Connect(u)
     }
     flag foreach { f =>
       bus.subscribe(self, _ flag f.value)
@@ -32,8 +33,11 @@ final class SiteClientActor(
   }
 
   override def postStop() = {
-    actors.count ! CountActor.Disconnect
-    if (watchedGames.nonEmpty) actors.fen ! FenActor.Unwatch(watchedGames)
+    countActor ! CountActor.Disconnect
+    user foreach { u =>
+      userActor ! UserActor.Disconnect(u)
+    }
+    if (watchedGames.nonEmpty) fenActor ! FenActor.Unwatch(watchedGames)
     bus unsubscribe self
   }
 
@@ -45,14 +49,24 @@ final class SiteClientActor(
 
     case ClientOut.Ping(lag) =>
       clientIn ! ClientIn.Pong
-      for { l <- lag; u <- user } actors.lag ! LagActor.Set(u, l)
+      for { l <- lag; u <- user } lagActor ! LagActor.Set(u, l)
 
     case watch: ClientOut.Watch =>
       watchedGames = watchedGames ++ watch.ids
-      actors.fen ! watch
+      fenActor ! watch
 
     case ClientOut.MoveLat =>
       bus.subscribe(self, _.mlat)
+
+    case ClientOut.Notified =>
+      user foreach { u =>
+        actors.lilaSite ! LilaIn.Notified(u.id)
+      }
+
+    case ClientOut.FollowingOnline =>
+      user foreach { u =>
+        actors.lilaSite ! LilaIn.Friends(u.id)
+      }
   }
 
   val receive = clientOutReceive orElse clientInReceive

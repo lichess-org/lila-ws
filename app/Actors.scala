@@ -21,21 +21,36 @@ final class Actors @Inject() (
     chanOut = "site-out",
     onReceive = {
 
-      case move: LilaOut.Move => fen ! move
+      case move: LilaOut.Move =>
+        fenActor ! move
 
       case LilaOut.Mlat(millis) =>
-        lag ! LagActor.Publish
-        count ! CountActor.Publish
+        lagActor ! LagActor.Publish
+        countActor ! CountActor.Publish
         bus.publish(ClientIn.Mlat(millis), _.mlat)
 
       case LilaOut.TellFlag(flag, json) =>
         bus.publish(ClientIn.AnyJson(json), _ flag flag)
 
+      case LilaOut.TellUser(user, json) =>
+        userActor ! UserActor.Tell(user, ClientIn.AnyJson(json))
+
+      case LilaOut.TellSri(sri, json) =>
+        bus.publish(ClientIn.AnyJson(json), _ sri sri)
+
       case LilaOut.TellAll(json) =>
         bus.publish(ClientIn.AnyJson(json), _.all)
+
+      case LilaOut.DisconnectUser(user) =>
+        userActor ! UserActor.Tell(user, PoisonPill)
     }
   )), "site")
-  val count: ActorRef = system.actorOf(Props(new CountActor(lilaSite.!)), "count")
-  val lag: ActorRef = system.actorOf(LagActor.props(lilaSite.!), "lag")
-  val fen: ActorRef = system.actorOf(FenActor.props(lilaSite.!), "fen")
+
+  val countActor: ActorRef = system.actorOf(Props(new CountActor(lilaSite.!)), "count")
+
+  val lagActor: ActorRef = system.actorOf(LagActor.props(lilaSite.!), "lag")
+
+  val fenActor: ActorRef = system.actorOf(FenActor.props(lilaSite.!), "fen")
+
+  val userActor: ActorRef = system.actorOf(UserActor.props(lilaSite.!), "user")
 }

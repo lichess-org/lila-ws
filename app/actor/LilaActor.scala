@@ -21,6 +21,7 @@ final class LilaActor(
   val connOut = redis.connectPubSub()
 
   override def preStart() = {
+    self ! LilaIn.DisconnectAll
     connOut.addListener(new pubsub.RedisPubSubAdapter[String, String] {
       override def message(channel: String, message: String): Unit =
         LilaOut read message match {
