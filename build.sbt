@@ -18,6 +18,7 @@ libraryDependencies += "org.lichess" %% "scalachess" % "9.0.0"
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 scalacOptions ++= Seq(
+  "-language:implicitConversions",
   "-feature",
   "-deprecation",
   "-Xfatal-warnings"

@@ -1,7 +1,12 @@
 package lila.ws
 package ipc
 
+import chess.format.{ FEN, Uci, UciCharPair }
+import chess.opening.FullOpening
+import chess.variant.Crazyhouse
 import play.api.libs.json._
+
+import lila.ws.util.LilaJsObject.augment
 
 sealed trait ClientIn {
   def write: JsValue
@@ -9,11 +14,13 @@ sealed trait ClientIn {
 
 object ClientIn {
 
+  import Chess.json._
+
   case object Pong extends ClientIn {
     val write = JsNumber(0)
   }
 
-  case class Fen(game: Game.ID, lastUci: String, fen: String) extends ClientIn {
+  case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
     def write = make("fen", Json.obj(
       "game" -> game,
       "last_uci" -> lastUci,
@@ -29,13 +36,38 @@ object ClientIn {
     def write = json
   }
 
-  case class Opening(path: String, opening: chess.opening.FullOpening) extends ClientIn {
+  case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = make("opening", Json.obj(
       "path" -> path,
-      "opening" -> Json.obj(
-        "eco" -> opening.eco,
-        "name" -> opening.name
-      )
+      "opening" -> opening
+    ))
+  }
+
+  case class Node(
+      path: Path,
+      id: UciCharPair,
+      ply: Int,
+      move: chess.format.Uci.WithSan,
+      fen: chess.format.FEN,
+      check: Boolean,
+      dests: Option[Map[chess.Pos, List[chess.Pos]]],
+      opening: Option[chess.opening.FullOpening],
+      drops: Option[List[chess.Pos]],
+      crazyData: Option[Crazyhouse.Data]
+  ) extends ClientIn {
+    def write = make("node", Json.obj(
+      "path" -> path,
+      "node" -> Json.obj(
+        "ply" -> ply,
+        "fen" -> fen,
+        "id" -> id,
+        "uci" -> move.uci,
+        "san" -> move.san,
+        "children" -> JsArray()
+      ).add("opening" -> opening)
+        .add("check" -> check)
+        .add("dests" -> dests)
+        .add("drops", drops)
     ))
   }
 

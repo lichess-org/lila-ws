@@ -1,6 +1,7 @@
 package lila.ws
 package ipc
 
+import chess.format.{ FEN, Uci }
 import java.lang.Double.parseDouble
 import java.lang.Integer.parseInt
 import play.api.libs.json._
@@ -10,7 +11,7 @@ sealed trait LilaOut
 
 object LilaOut {
 
-  case class Move(game: Game.ID, lastUci: String, fen: String) extends LilaOut
+  case class Move(game: Game.ID, lastUci: Uci, fen: FEN) extends LilaOut
 
   case class Mlat(millis: Double) extends LilaOut
 
@@ -30,7 +31,7 @@ object LilaOut {
     parts(0) match {
 
       case "move" => args.split(" ", 3) match {
-        case Array(game, lastUci, fen) => Some(Move(game, lastUci, fen))
+        case Array(game, lastUci, fen) => Uci(lastUci) map { Move(game, _, FEN(fen)) }
         case _ => None
       }
 

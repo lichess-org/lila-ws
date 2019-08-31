@@ -19,3 +19,7 @@ object Sri {
 }
 
 case class Flag(value: String) extends AnyVal
+
+case class Path(value: String) extends AnyVal
+
+case class ChapterId(value: String) extends AnyVal

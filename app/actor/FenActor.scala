@@ -2,6 +2,7 @@ package lila.ws
 
 import akka.actor._
 import scala.collection.mutable.AnyRefMap
+import chess.format.{ FEN, Uci }
 
 import ipc._
 
@@ -56,7 +57,7 @@ object FenActor {
   case class Watch(gameIds: Iterable[Game.ID])
   case class Unwatch(gameIds: Iterable[Game.ID])
 
-  case class Position(lastUci: String, fen: String)
+  case class Position(lastUci: Uci, fen: FEN)
   case class Watched(position: Option[Position], by: Set[ActorRef])
 
   def props(lilaIn: LilaIn => Unit) = Props(new FenActor(lilaIn))

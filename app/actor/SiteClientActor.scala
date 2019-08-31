@@ -68,11 +68,11 @@ final class SiteClientActor(
         actors.lilaSite ! LilaIn.Friends(u.id)
       }
 
-    case ClientOut.Opening(variant, path, fen) =>
-      if (chess.variant.Variant.openingSensibleVariants(variant))
-        chess.opening.FullOpeningDB findByFen fen.value foreach { found =>
-          clientIn ! ClientIn.Opening(path, found)
-        }
+    case opening: ClientOut.Opening =>
+      Chess(opening) foreach clientIn.!
+
+    case anaMove: ClientOut.AnaMove =>
+      Chess(anaMove) foreach clientIn.!
   }
 
   val receive = clientOutReceive orElse clientInReceive
