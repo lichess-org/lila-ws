@@ -1,6 +1,7 @@
 package lila.ws
 
 import akka.actor._
+import akka.actor.typed.scaladsl.adapter._
 import io.lettuce.core.RedisURI
 import javax.inject._
 import play.api.Configuration
@@ -14,6 +15,7 @@ final class Actors @Inject() (
 ) {
 
   private val bus = Bus(system)
+  private val typedSystem = system.toTyped
 
   val lilaSite: ActorRef = system.actorOf(Props(new LilaActor(
     redisUri = RedisURI.create(config.get[String]("redis.uri")),
@@ -22,7 +24,7 @@ final class Actors @Inject() (
     onReceive = {
 
       case move: LilaOut.Move =>
-        fenActor ! move
+        fenActor ! FenActor.Move(move)
 
       case LilaOut.Mlat(millis) =>
         lagActor ! LagActor.Publish
@@ -49,11 +51,15 @@ final class Actors @Inject() (
     }
   )), "site")
 
-  val countActor: ActorRef = system.actorOf(Props(new CountActor(lilaSite.!)), "count")
+  val countActor: akka.actor.typed.ActorRef[CountActor.Input] =
+    system.spawn(CountActor.empty(lilaSite.!), "count")
 
-  val lagActor: ActorRef = system.actorOf(LagActor.props(lilaSite.!), "lag")
+  val lagActor: akka.actor.typed.ActorRef[LagActor.Input] =
+    system.spawn(LagActor.empty(lilaSite.!), "lag")
 
-  val fenActor: ActorRef = system.actorOf(FenActor.props(lilaSite.!), "fen")
+  val fenActor: akka.actor.typed.ActorRef[FenActor.Input] =
+    system.spawn(FenActor.empty(lilaSite.!), "fen")
 
-  val userActor: ActorRef = system.actorOf(UserActor.props(lilaSite.!), "user")
+  val userActor: akka.actor.typed.ActorRef[UserActor.Input] =
+    system.spawn(UserActor.empty(lilaSite.!), "user")
 }

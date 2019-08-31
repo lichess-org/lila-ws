@@ -1,64 +1,69 @@
 package lila.ws
 
-import akka.actor._
-import scala.collection.mutable.AnyRefMap
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ ActorRef, Behavior }
 import chess.format.{ FEN, Uci }
 
 import ipc._
 
 /* Manages subscriptions to FEN updates */
-final class FenActor(lilaIn: LilaIn => Unit) extends Actor {
-
-  import FenActor._
-
-  val games = AnyRefMap.empty[Game.ID, Watched]
-
-  def receive = {
-
-    // client starts watching
-    case ClientOut.Watch(gameIds) => gameIds foreach { gameId =>
-      games.put(gameId, games get gameId match {
-        case Some(Watched(position, by)) =>
-          position foreach {
-            case Position(lastUci, fen) => sender ! ClientIn.Fen(gameId, lastUci, fen)
-          }
-          Watched(position, by + sender)
-        case None =>
-          lilaIn(LilaIn.Watch(gameId))
-          Watched(None, Set(sender))
-      })
-    }
-
-    // when a client disconnects
-    case FenActor.Unwatch(gameIds) => gameIds foreach { id =>
-      games get id foreach {
-        case Watched(position, by) =>
-          val newBy = by - sender
-          if (newBy.isEmpty) {
-            games.remove(id)
-            lilaIn(LilaIn.Unwatch(id))
-          }
-          else games.put(id, Watched(position, newBy))
-      }
-    }
-
-    // move comes from the server
-    case LilaOut.Move(gameId, lastUci, fen) => games get gameId foreach {
-      case Watched(_, by) =>
-        val msg = ClientIn.Fen(gameId, lastUci, fen)
-        by foreach { _ ! msg }
-        games.put(gameId, Watched(Some(Position(lastUci, fen)), by))
-    }
-  }
-}
-
 object FenActor {
 
-  case class Watch(gameIds: Iterable[Game.ID])
-  case class Unwatch(gameIds: Iterable[Game.ID])
+  def empty(lilaIn: LilaIn => Unit) = apply(Map.empty, lilaIn)
+
+  def apply(games: Map[Game.ID, Watched], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+
+    // client starts watching
+    case Watch(gameIds, client) => apply(
+      gameIds.foldLeft(games) {
+        case (games, gameId) => games + (gameId -> (games get gameId match {
+          case Some(Watched(position, clients)) =>
+            position foreach {
+              case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
+            }
+            Watched(position, clients + client)
+          case None =>
+            lilaIn(LilaIn.Watch(gameId))
+            Watched(None, Set(client))
+        }))
+      },
+      lilaIn
+    )
+
+    // when a client disconnects
+    case Unwatch(gameIds, client) => apply(
+      gameIds.foldLeft(games) {
+        case (games, gameId) => games.get(gameId).fold(games) {
+          case Watched(position, clients) =>
+            val newClients = clients - client
+            if (newClients.isEmpty) {
+              lilaIn(LilaIn.Unwatch(gameId))
+              games - gameId
+            }
+            else games + (gameId -> Watched(position, newClients))
+        }
+      },
+      lilaIn
+    )
+
+    // move comes from the server
+    case Move(LilaOut.Move(gameId, lastUci, fen)) => apply(
+      games.get(gameId).fold(games) {
+        case Watched(_, clients) =>
+          val msg = ClientIn.Fen(gameId, lastUci, fen)
+          clients foreach { _ ! msg }
+          games + (gameId -> Watched(Some(Position(lastUci, fen)), clients))
+      },
+      lilaIn
+    )
+  }
+
+  sealed trait Input
+  case class Watch(gameIds: Iterable[Game.ID], client: ActorRef[Any]) extends Input
+  case class Unwatch(gameIds: Iterable[Game.ID], client: ActorRef[Any]) extends Input
+  case class Move(move: LilaOut.Move) extends Input
 
   case class Position(lastUci: Uci, fen: FEN)
-  case class Watched(position: Option[Position], by: Set[ActorRef])
-
-  def props(lilaIn: LilaIn => Unit) = Props(new FenActor(lilaIn))
+  case class Watched(position: Option[Position], clients: Set[ActorRef[Any]])
 }

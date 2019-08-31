@@ -14,6 +14,8 @@ libraryDependencies += "io.lettuce" % "lettuce-core" % "5.1.8.RELEASE"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.0"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.23"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % "2.5.23"
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 

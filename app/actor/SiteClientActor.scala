@@ -1,6 +1,7 @@
 package lila.ws
 
 import akka.actor._
+import akka.actor.typed.scaladsl.adapter._
 import play.api.libs.json._
 
 import ipc._
@@ -25,7 +26,7 @@ final class SiteClientActor(
     bus.subscribe(self, _ sri sri)
     bus.subscribe(self, _.all)
     user foreach { u =>
-      userActor ! UserActor.Connect(u)
+      userActor ! UserActor.Connect(u, self)
     }
     flag foreach { f =>
       bus.subscribe(self, _ flag f.value)
@@ -35,9 +36,9 @@ final class SiteClientActor(
   override def postStop() = {
     countActor ! CountActor.Disconnect
     user foreach { u =>
-      userActor ! UserActor.Disconnect(u)
+      userActor ! UserActor.Disconnect(u, self)
     }
-    if (watchedGames.nonEmpty) fenActor ! FenActor.Unwatch(watchedGames)
+    if (watchedGames.nonEmpty) fenActor ! FenActor.Unwatch(watchedGames, self)
     bus unsubscribe self
   }
 
@@ -51,9 +52,9 @@ final class SiteClientActor(
       clientIn ! ClientIn.Pong
       for { l <- lag; u <- user } lagActor ! LagActor.Set(u, l)
 
-    case watch: ClientOut.Watch =>
-      watchedGames = watchedGames ++ watch.ids
-      fenActor ! watch
+    case ClientOut.Watch(gameIds) =>
+      watchedGames = watchedGames ++ gameIds
+      fenActor ! FenActor.Watch(gameIds, self)
 
     case ClientOut.MoveLat =>
       bus.subscribe(self, _.mlat)

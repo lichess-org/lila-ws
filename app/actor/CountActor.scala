@@ -1,25 +1,29 @@
 package lila.ws
 
-import akka.actor._
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.Behavior
 
 import ipc.LilaIn
 
-final class CountActor(lilaIn: LilaIn => Unit) extends Actor {
-
-  import CountActor._
-
-  var count = 0
-
-  def receive = {
-    case Connect => count += 1
-    case Disconnect => count -= 1
-    case Publish => lilaIn(LilaIn.Connections(count))
-  }
-}
-
 object CountActor {
 
-  case object Connect
-  case object Disconnect
-  case object Publish
+  def empty(lilaIn: LilaIn => Unit) = apply(0, lilaIn)
+
+  def apply(count: Int, lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
+
+    case Connect => apply(count + 1, lilaIn)
+
+    case Disconnect => apply(count - 1, lilaIn)
+
+    case Publish =>
+      lilaIn(LilaIn.Connections(count))
+      Behaviors.same
+  }
+
+  sealed trait Input
+
+  case object Connect extends Input
+  case object Disconnect extends Input
+  case object Publish extends Input
 }

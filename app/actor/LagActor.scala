@@ -1,29 +1,25 @@
 package lila.ws
 
-import akka.actor._
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.Behaviors
 
 import ipc.LilaIn
 
-final class LagActor(lilaIn: LilaIn => Unit) extends Actor {
+object LagActor {
 
-  import LagActor._
+  def empty(lilaIn: LilaIn => Unit) = apply(Map.empty, lilaIn)
 
-  val lags = collection.mutable.Map[User.ID, Int]()
+  def apply(lags: Map[User.ID, Int], lilaIn: LilaIn => Unit): Behavior[Input] = Behaviors.receiveMessage {
 
-  def receive = {
-
-    case Set(user, lag) => lags += (user.id -> lag)
+    case Set(user, lag) => apply(lags + (user.id -> lag), lilaIn)
 
     case Publish =>
       lilaIn(LilaIn.Lags(lags.toMap))
-      lags.clear
+      apply(Map.empty, lilaIn)
   }
-}
 
-object LagActor {
-
-  case class Set(user: User, lag: Int)
-  case object Publish
-
-  def props(lilaIn: LilaIn => Unit) = Props(new LagActor(lilaIn))
+  sealed trait Input
+  case class Set(user: User, lag: Int) extends Input
+  case object Publish extends Input
 }
