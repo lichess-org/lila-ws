@@ -53,7 +53,8 @@ object ClientIn {
       dests: Option[Map[chess.Pos, List[chess.Pos]]],
       opening: Option[chess.opening.FullOpening],
       drops: Option[List[chess.Pos]],
-      crazyData: Option[Crazyhouse.Data]
+      crazyData: Option[Crazyhouse.Data],
+      chapterId: Option[ChapterId]
   ) extends ClientIn {
     def write = make("node", Json.obj(
       "path" -> path,
@@ -68,7 +69,21 @@ object ClientIn {
         .add("check" -> check)
         .add("dests" -> dests)
         .add("drops", drops)
+        .add("ch", chapterId)
     ))
+  }
+
+  case class Dests(
+      path: Path,
+      dests: String,
+      opening: Option[chess.opening.FullOpening],
+      chapterId: Option[ChapterId]
+  ) extends ClientIn {
+    def write = make("dests", Json.obj(
+      "dests" -> dests,
+      "path" -> path
+    ).add("opening" -> opening)
+      .add("ch", chapterId))
   }
 
   private def make[A: Writes](t: String, data: A) = Json.obj(

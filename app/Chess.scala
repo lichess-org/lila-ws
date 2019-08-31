@@ -29,10 +29,27 @@ object Chess {
             if (game.turns <= 30 && Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen fen
             else None,
           drops = if (movable) game.situation.drops else Some(Nil),
-          crazyData = game.situation.board.crazyData
+          crazyData = game.situation.board.crazyData,
+          chapterId = req.chapterId
         )
       }
     }
+
+  def apply(req: ClientOut.AnaDests): ClientIn.Dests = ClientIn.Dests(
+      path = req.path,
+      dests = {
+        if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty) initialDests
+        else {
+          val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
+          if (sit.playable(false)) json.destString(sit.destinations) else ""
+        }
+      },
+      opening = {
+        if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
+        else None
+      },
+      chapterId = req.chapterId
+    )
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(req.variant))
@@ -41,12 +58,15 @@ object Chess {
       }
     else None
 
+  private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
+
   object json {
     implicit val fenWrite = Writes[FEN] { fen => JsString(fen.value) }
     implicit val pathWrite = Writes[Path] { path => JsString(path.value) }
     implicit val uciWrite = Writes[Uci] { uci => JsString(uci.uci) }
     implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
     implicit val posWrite = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val chapterIdWrite = Writes[ChapterId] { ch => JsString(ch.value) }
     implicit val openingWrite = Writes[FullOpening] { o =>
       Json.obj(
         "eco" -> o.eco,
@@ -56,7 +76,7 @@ object Chess {
     implicit val destsJsonWriter: Writes[Map[Pos, List[Pos]]] = Writes { dests =>
       JsString(destString(dests))
     }
-    private def destString(dests: Map[Pos, List[Pos]]): String = {
+    def destString(dests: Map[Pos, List[Pos]]): String = {
       val sb = new java.lang.StringBuilder(80)
       var first = true
       dests foreach {

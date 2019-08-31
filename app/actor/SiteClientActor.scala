@@ -73,6 +73,9 @@ final class SiteClientActor(
 
     case anaMove: ClientOut.AnaMove =>
       Chess(anaMove) foreach clientIn.!
+
+    case anaDests: ClientOut.AnaDests =>
+      clientIn ! Chess(anaDests)
   }
 
   val receive = clientOutReceive orElse clientInReceive

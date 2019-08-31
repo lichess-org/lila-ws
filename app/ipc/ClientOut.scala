@@ -34,6 +34,13 @@ object ClientOut {
       promotion: Option[chess.PromotableRole]
   ) extends ClientOut
 
+  case class AnaDests(
+      fen: FEN,
+      path: Path,
+      variant: Variant,
+      chapterId: Option[ChapterId]
+  ) extends ClientOut
+
   implicit val jsonRead = Reads[ClientOut] { js =>
     (js match {
       case JsNull => Some(Ping(None))
@@ -59,6 +66,13 @@ object ClientOut {
           chapterId = d str "ch" map ChapterId.apply
           promotion = d str "promotion" flatMap chess.Role.promotable
         } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion)
+        case "anaDests" => for {
+          d <- o obj "d"
+          path <- d str "path"
+          fen <- d str "fen"
+          variant = dataVariant(d)
+          chapterId = d str "ch" map ChapterId.apply
+        } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case _ => None
       }
       case _ => None
