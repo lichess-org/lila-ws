@@ -28,12 +28,6 @@ final class SiteServer @Inject() (
 
   private val bus = Bus(system)
 
-  private val clientInLimiter = new RateLimit[String]( // IpAdress
-    credits = 40,
-    duration = 10.seconds,
-    name = "clientIn"
-  )
-
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
       actorFlow(req) { clientIn =>
@@ -43,12 +37,14 @@ final class SiteServer @Inject() (
           sri,
           flag,
           user,
-          req.headers.get("User-Agent") getOrElse "?",
+          userAgent(req),
           req.remoteAddress,
           bus
         ))
       }
     }
+
+  private def userAgent(req: RequestHeader) = req.headers.get("User-Agent") getOrElse "?"
 
   private def actorFlow(req: RequestHeader)(
     behaviour: akka.actor.ActorRef => Behavior[ClientMsg],
@@ -58,8 +54,14 @@ final class SiteServer @Inject() (
 
     import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
 
+    val limiter = new RateLimit(
+      maxCredits = 25,
+      duration = 10.seconds,
+      name = s"IP: ${req.remoteAddress} UA: ${userAgent(req)}"
+    )
+
     val (outActor, publisher) = Source.actorRef[ClientIn](bufferSize, overflowStrategy)
-      .via(RateLimit.flow(clientInLimiter, req.remoteAddress))
+      .via(RateLimit.flow(limiter))
       .toMat(Sink.asPublisher(false))(Keep.both).run()
 
     Flow.fromSinkAndSource(

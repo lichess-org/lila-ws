@@ -16,7 +16,6 @@ libraryDependencies += guice
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.4"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.1.8.RELEASE"
 libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.39.Final" classifier "linux-x86_64"
-libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
