@@ -42,26 +42,26 @@ object LilaOut {
       case "mlat" => Try(Mlat(parseDouble(args))).toOption
 
       case "tell/flag" => args.split(" ", 2) match {
-        case Array(flag, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellFlag(flag, _) }
+        case Array(flag, payload) => Some(TellFlag(flag, JsonString(payload)))
         case _ => None
       }
 
       case "tell/user" => args.split(" ", 2) match {
-        case Array(user, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellUser(user, _) }
+        case Array(user, payload) => Some(TellUser(user, JsonString(payload)))
         case _ => None
       }
 
       case "tell/users" => args.split(" ", 2) match {
-        case Array(users, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellUsers(users split ",", _) }
+        case Array(users, payload) => Some(TellUsers(users split ",", JsonString(payload)))
         case _ => None
       }
 
       case "tell/sri" => args.split(" ", 2) match {
-        case Array(sri, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellSri(Sri(sri), _) }
+        case Array(sri, payload) => Some(TellSri(Sri(sri), JsonString(payload)))
         case _ => None
       }
 
-      case "tell/all" => Json.parse(args).asOpt[JsonString] map TellAll.apply
+      case "tell/all" => Some(TellAll(JsonString(args)))
 
       case "disconnect/user" => Some(DisconnectUser(args))
 
