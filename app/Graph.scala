@@ -44,9 +44,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val UserIM: UniformFanInShape[UserSM.Input, UserSM.Input] = builder.add(Merge[UserSM.Input](2))
 
       val User: FlowShape[UserSM.Input, LilaIn] = builder.add {
-        Flow[UserSM.Input].scan(UserSM.State()) {
-          case (state, out) => UserSM(state, out)
-        }.mapConcat(_.emit.toList)
+        Flow[UserSM.Input].scan(UserSM.State())(UserSM.apply).mapConcat(_.emit.toList)
       }
 
       val LOFen: FlowShape[LilaOut, FenSM.Input] = builder.add {
@@ -104,4 +102,3 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
     ClosedShape
   })
 }
-
