@@ -11,7 +11,7 @@ final class Auth @Inject() (mongo: Mongo)(implicit executionContext: ExecutionCo
 
   private val sidRegex = """.*sessionId=(\w+).*""".r
 
-  def apply(req: RequestHeader): Future[Option[User]] = {
+  def apply(req: RequestHeader): Future[Option[User]] =
     req.cookies get "lila2" match {
       case Some(cookie) =>
         val sid = sidRegex.replaceAllIn(cookie.value, "$1")
@@ -27,5 +27,4 @@ final class Auth @Inject() (mongo: Mongo)(implicit executionContext: ExecutionCo
         }
       case None => Future.successful(None)
     }
-  }
 }

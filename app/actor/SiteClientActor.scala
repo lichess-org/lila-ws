@@ -31,16 +31,13 @@ object SiteClientActor {
 
     msg match {
 
-      case ClientFlow.Disconnect =>
-        Behaviors.stopped
-
-      case in: ClientIn =>
-        clientIn ! in
-        Behavior.same
-
       case ClientOut.Ping(lag) =>
         clientIn ! ClientIn.Pong
         for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
+        Behavior.same
+
+      case in: ClientIn =>
+        clientIn ! in
         Behavior.same
 
       case ClientOut.Watch(gameIds) =>
@@ -85,6 +82,9 @@ object SiteClientActor {
       case ClientOut.Forward(payload) =>
         queue(_.lila, LilaIn.TellSri(sri, user.map(_.id), payload))
         Behavior.same
+
+      case ClientFlow.Disconnect =>
+        Behaviors.stopped
     }
   }.receiveSignal {
     case (ctx, PostStop) =>

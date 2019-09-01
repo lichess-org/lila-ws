@@ -9,6 +9,7 @@ import javax.inject._
 import play.api.Configuration
 import play.api.mvc.RequestHeader
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
 
 import ipc._
 
@@ -26,22 +27,31 @@ final class SiteServer @Inject() (
   private val bus = Bus(system)
   private val queues = stream.start
 
+  type IpAddress = String
+
+  private val clientInLimiter = new RateLimit[IpAddress](
+    credits = 40,
+    duration = 10.seconds,
+    name = "clientIn"
+  )
+
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
-      actorFlow { out =>
+      actorFlow(req) { out =>
         SiteClientActor.empty(SiteClientActor.Deps(out, queues, sri, flag, user, bus))
       }
     }
 
-  private def actorFlow(
+  private def actorFlow(req: RequestHeader)(
     behaviour: akka.actor.ActorRef => Behavior[ClientMsg],
     bufferSize: Int = 16,
-    overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew
+    overflowStrategy: OverflowStrategy = OverflowStrategy.dropHead
   )(implicit factory: akka.actor.ActorRefFactory, mat: Materializer): Flow[ClientOut, ClientIn, _] = {
 
     import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
 
     val (outActor, publisher) = Source.actorRef[ClientIn](bufferSize, overflowStrategy)
+      .via(RateLimit.flow(clientInLimiter, req.remoteAddress))
       .toMat(Sink.asPublisher(false))(Keep.both).run()
 
     Flow.fromSinkAndSource(
