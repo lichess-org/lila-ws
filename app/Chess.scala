@@ -25,26 +25,6 @@ object Chess {
       }
     } getOrElse ClientIn.StepFailure
 
-  private def makeNode(game: chess.Game, move: Uci.WithSan, path: Path, chapterId: Option[ChapterId]): ClientIn.Node = {
-    val movable = game.situation playable false
-    val fen = chess.format.Forsyth >> game
-    ClientIn.Node(
-      path = path,
-      id = UciCharPair(move.uci),
-      ply = game.turns,
-      move = move,
-      fen = FEN(fen),
-      check = game.situation.check,
-      dests = if (movable) Some(game.situation.destinations) else None,
-      opening =
-        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant)) FullOpeningDB findByFen fen
-        else None,
-      drops = if (movable) game.situation.drops else Some(Nil),
-      crazyData = game.situation.board.crazyData,
-      chapterId = chapterId
-    )
-  }
-
   def apply(req: ClientOut.AnaDests): ClientIn.Dests = ClientIn.Dests(
     path = req.path,
     dests = {
@@ -67,6 +47,26 @@ object Chess {
         ClientIn.Opening(req.path, _)
       }
     else None
+
+  private def makeNode(game: chess.Game, move: Uci.WithSan, path: Path, chapterId: Option[ChapterId]): ClientIn.Node = {
+    val movable = game.situation playable false
+    val fen = chess.format.Forsyth >> game
+    ClientIn.Node(
+      path = path,
+      id = UciCharPair(move.uci),
+      ply = game.turns,
+      move = move,
+      fen = FEN(fen),
+      check = game.situation.check,
+      dests = if (movable) Some(game.situation.destinations) else None,
+      opening =
+        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant)) FullOpeningDB findByFen fen
+        else None,
+      drops = if (movable) game.situation.drops else Some(Nil),
+      crazyData = game.situation.board.crazyData,
+      chapterId = chapterId
+    )
+  }
 
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 

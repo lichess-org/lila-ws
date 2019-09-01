@@ -35,10 +35,7 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
       def transform(flow: Flow[ClientOut, ClientIn, _]) = {
         AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
           case TextMessage(text) => closeOnException {
-            ClientOut.jsonRead.reads(Json.parse(text)).fold(
-              errors => throw WebSocketCloseException(CloseMessage(Some(CloseCodes.Unacceptable), Json.stringify(JsError.toJson(errors)))),
-              identity
-            )
+            ClientOut.jsonRead(Json parse text)
           }
         })(flow map { out => TextMessage(out.write) })
       }

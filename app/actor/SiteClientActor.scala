@@ -1,11 +1,10 @@
 package lila.ws
 
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
+import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import akka.stream.scaladsl.SourceQueueWithComplete
 import play.api.libs.json._
-import scala.concurrent.Future
+import play.api.Logger
 
 import ipc._
 
@@ -22,11 +21,12 @@ object SiteClientActor {
     flag foreach { f =>
       bus.subscribe(ctx.self, _ flag f.value)
     }
-    apply(Set.empty, deps)
+    apply(State(), deps)
   }
 
-  private def apply(watchedGames: Set[Game.ID], deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
+  private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
 
+    import state._
     import deps._
 
     msg match {
@@ -43,7 +43,7 @@ object SiteClientActor {
       case ClientOut.Watch(gameIds) =>
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
         apply(
-          watchedGames ++ gameIds,
+          state.copy(watchedGames = state.watchedGames ++ gameIds),
           deps
         )
 
@@ -83,6 +83,13 @@ object SiteClientActor {
         queue(_.lila, LilaIn.TellSri(sri, user.map(_.id), payload))
         Behavior.same
 
+      case ClientOut.Unexpected(msg) =>
+        if (state.ignoreLog) Behavior.same
+        else {
+          Logger("SiteClient").warn(s"Unexpected $msg UA:$userAgent IP:$ipAddress")
+          apply(state.copy(ignoreLog = true), deps)
+        }
+
       case ClientCtrl.Disconnect =>
         Behaviors.stopped
     }
@@ -93,7 +100,7 @@ object SiteClientActor {
       user foreach { u =>
         queue(_.user, UserSM.Disconnect(u, ctx.self))
       }
-      if (watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(watchedGames, ctx.self))
+      if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
       bus unsubscribe ctx.self
       Behaviors.same
   }
@@ -104,6 +111,13 @@ object SiteClientActor {
       sri: Sri,
       flag: Option[Flag],
       user: Option[User],
+      userAgent: String,
+      ipAddress: String,
       bus: Bus
+  )
+
+  case class State(
+      watchedGames: Set[Game.ID] = Set.empty,
+      ignoreLog: Boolean = false
   )
 }

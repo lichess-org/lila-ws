@@ -8,8 +8,8 @@ import akka.stream.{ Materializer, OverflowStrategy }
 import javax.inject._
 import play.api.Configuration
 import play.api.mvc.RequestHeader
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
 
@@ -36,8 +36,17 @@ final class SiteServer @Inject() (
 
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
-      actorFlow(req) { out =>
-        SiteClientActor.start(SiteClientActor.Deps(out, queues, sri, flag, user, bus))
+      actorFlow(req) { clientIn =>
+        SiteClientActor.start(SiteClientActor.Deps(
+          clientIn,
+          queues,
+          sri,
+          flag,
+          user,
+          req.headers.get("User-Agent") getOrElse "?",
+          req.remoteAddress,
+          bus
+        ))
       }
     }
 
