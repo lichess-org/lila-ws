@@ -16,16 +16,20 @@ import ipc._
 final class SiteServer @Inject() (
     config: Configuration,
     auth: Auth,
-    mongo: Mongo,
-    actors: Actors,
-)(implicit ec: ExecutionContext, system: akka.actor.ActorSystem, mat: Materializer) {
+    stream: Stream
+)(implicit
+    ec: ExecutionContext,
+    system: akka.actor.ActorSystem,
+    mat: Materializer
+) {
 
   private val bus = Bus(system)
+  private val queues = stream.start
 
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
       actorFlow { out =>
-        SiteClientActor.empty(SiteClientActor.Deps(out, sri, flag, user, actors, bus))
+        SiteClientActor.empty(SiteClientActor.Deps(out, queues, sri, flag, user, bus))
       }
     }
 

@@ -1,0 +1,69 @@
+package lila.ws
+
+import akka.actor.typed.ActorRef
+import play.api.libs.json.JsObject
+
+import ipc._
+
+object UserSM {
+
+  case class State(
+      users: Map[User.ID, Set[ActorRef[ClientMsg]]] = Map.empty,
+      emit: Option[LilaIn] = None
+  )
+
+  def apply(state: State, input: Input): State = input match {
+
+    case Connect(user, client) =>
+      state.users get user.id match {
+        case None => state.copy(
+          users = state.users + (user.id -> Set(client)),
+          emit = Some(LilaIn.Connect(user))
+        )
+        case Some(clients) => state.copy(
+          users = state.users + (user.id -> (clients + client)),
+          emit = None
+        )
+      }
+
+    case Disconnect(user, client) =>
+      state.users get user.id match {
+        case None => state.copy(emit = None)
+        case Some(clients) =>
+          val newClients = clients - client
+          if (newClients.isEmpty) state.copy(
+            users = state.users - user.id,
+            emit = Some(LilaIn.Disconnect(user))
+          )
+          else state.copy(
+            users = state.users + (user.id -> newClients),
+            emit = None
+          )
+      }
+
+    case TellOne(userId, payload) =>
+      state.users get userId foreach {
+        _ foreach { _ ! payload }
+      }
+      state.copy(emit = None)
+
+    case TellMany(userIds, payload) =>
+      userIds flatMap state.users.get foreach {
+        _ foreach { _ ! payload }
+      }
+      state.copy(emit = None)
+
+    case Kick(userId) =>
+      state.users get userId foreach {
+        _ foreach { _ ! ClientFlow.Disconnect }
+      }
+      state.copy(emit = None)
+  }
+
+  sealed trait Input
+  case class Connect(user: User, client: ActorRef[ClientMsg]) extends Input
+  case class Disconnect(user: User, client: ActorRef[ClientMsg]) extends Input
+  case class TellOne(userId: User.ID, payload: ClientIn) extends Input
+  case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
+  case class Kick(userId: User.ID) extends Input
+}
