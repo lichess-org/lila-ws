@@ -18,7 +18,14 @@ object Sri {
   type Str = String
 }
 
-case class Flag(value: String) extends AnyVal
+case class Flag private (value: String) extends AnyVal
+
+object Flag {
+  def make(value: String) = value match {
+    case "simul" | "tournament" => Some(Flag(value))
+    case _ => None
+  }
+}
 
 case class Path(value: String) extends AnyVal
 

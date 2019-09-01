@@ -23,7 +23,6 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
     import play.api.http.websocket._
     import play.api.libs.streams.AkkaStreams
     import akka.stream.scaladsl._
-    import ClientOut.jsonRead
 
     def closeOnException[T](block: => T) = try {
       Left(block)
@@ -36,9 +35,10 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
       def transform(flow: Flow[ClientOut, ClientIn, _]) = {
         AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
           case TextMessage(text) => closeOnException {
-            Json.fromJson[ClientOut](Json.parse(text)).fold({ errors =>
-              throw WebSocketCloseException(CloseMessage(Some(CloseCodes.Unacceptable), Json.stringify(JsError.toJson(errors))))
-            }, identity)
+            ClientOut.jsonRead.reads(Json.parse(text)).fold(
+              errors => throw WebSocketCloseException(CloseMessage(Some(CloseCodes.Unacceptable), Json.stringify(JsError.toJson(errors)))),
+              identity
+            )
           }
         })(flow map { out => TextMessage(out.write) })
       }
@@ -47,7 +47,7 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
 
   def site(sri: String): WebSocket =
     WebSocket.acceptOrResult[ClientOut, ClientIn] { req =>
-      val flag = req.target getQueryParameter "flag" map Flag.apply
+      val flag = req.target getQueryParameter "flag" flatMap Flag.make
       siteServer.connect(req, Sri(sri), flag) map Right.apply
     }
 }

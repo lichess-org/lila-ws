@@ -11,19 +11,19 @@ import ipc._
 
 object Chess {
 
-  def apply(req: ClientOut.AnaMove): Option[ClientIn.Node] =
+  def apply(req: ClientOut.AnaMove): ClientIn =
     chess.Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion).toOption flatMap {
       case (game, move) => game.pgnMoves.lastOption map { san =>
         makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
       }
-    }
+    } getOrElse ClientIn.StepFailure
 
-  def apply(req: ClientOut.AnaDrop): Option[ClientIn.Node] =
+  def apply(req: ClientOut.AnaDrop): ClientIn =
     chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
       case (game, drop) => game.pgnMoves.lastOption map { san =>
         makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
       }
-    }
+    } getOrElse ClientIn.StepFailure
 
   private def makeNode(game: chess.Game, move: Uci.WithSan, path: Path, chapterId: Option[ChapterId]): ClientIn.Node = {
     val movable = game.situation playable false

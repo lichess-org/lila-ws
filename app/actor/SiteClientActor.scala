@@ -68,11 +68,11 @@ object SiteClientActor {
         Behavior.same
 
       case anaMove: ClientOut.AnaMove =>
-        Chess(anaMove) foreach clientIn.!
+        clientIn ! Chess(anaMove)
         Behavior.same
 
       case anaDrop: ClientOut.AnaDrop =>
-        Chess(anaDrop) foreach clientIn.!
+        clientIn ! Chess(anaDrop)
         Behavior.same
 
       case anaDests: ClientOut.AnaDests =>

@@ -43,6 +43,10 @@ object ClientIn {
     ))
   }
 
+  case object StepFailure extends ClientIn {
+    def write = make("stepFailure")
+  }
+
   case class Node(
       path: Path,
       id: UciCharPair,
@@ -89,5 +93,8 @@ object ClientIn {
   private def make[A: Writes](t: String, data: A) = Json stringify Json.obj(
     "t" -> t,
     "d" -> data
+  )
+  private def make(t: String) = Json stringify Json.obj(
+    "t" -> t
   )
 }
