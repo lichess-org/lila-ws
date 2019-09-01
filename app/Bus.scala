@@ -1,15 +1,15 @@
 package lila.ws
 
-import akka.actor.{ ActorRef => _, _ }
 import akka.actor.typed.ActorRef
+import akka.actor.{ ActorRef => _, _ }
 import akka.event._
 
 import ipc._
 
 class Bus extends Extension with EventBus with LookupClassification {
 
-  type Event = Bus.Msg
   type Classifier = String
+  type Event = Bus.Msg
   type Subscriber = ActorRef[ClientMsg]
 
   override protected val mapSize = 65535
@@ -20,12 +20,16 @@ class Bus extends Extension with EventBus with LookupClassification {
 
   def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event.payload
 
-  def publish(payload: ClientMsg, channel: Bus.channel.type => Classifier): Unit = publish(Bus.Msg(payload, channel(Bus.channel)))
+  def publish(payload: ClientMsg, channel: Bus.channel.type => Classifier): Unit =
+    publish(Bus.msg(payload, channel))
 
-  def subscribe(actor: ActorRef[ClientMsg], channel: Bus.channel.type => Classifier): Unit = subscribe(actor, channel(Bus.channel))
+  def subscribe(actor: ActorRef[ClientMsg], channel: Bus.channel.type => Classifier): Unit =
+    subscribe(actor, channel(Bus.channel))
 }
 
 object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvider {
+
+  type Classifier = String
 
   case class Msg(payload: ClientMsg, channel: String)
 
@@ -35,6 +39,9 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
     val mlat = "mlat"
     val all = "all"
   }
+
+  def msg(payload: ClientMsg, channel: Bus.channel.type => Classifier) =
+    Msg(payload, channel(Bus.channel))
 
   override def lookup = Bus
 

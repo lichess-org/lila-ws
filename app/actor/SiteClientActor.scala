@@ -13,11 +13,11 @@ object SiteClientActor {
 
   def empty(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
-    queues count CountSM.Connect
+    queue(_.count, CountSM.Connect)
     bus.subscribe(ctx.self, _ sri sri)
     bus.subscribe(ctx.self, _.all)
     user foreach { u =>
-      queues user UserSM.Connect(u, ctx.self)
+      queue(_.user, UserSM.Connect(u, ctx.self))
     }
     flag foreach { f =>
       bus.subscribe(ctx.self, _ flag f.value)
@@ -40,11 +40,11 @@ object SiteClientActor {
 
       case ClientOut.Ping(lag) =>
         clientIn ! ClientIn.Pong
-        for { l <- lag; u <- user } queues lag LagSM.Set(u, l)
+        for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
         Behavior.same
 
       case ClientOut.Watch(gameIds) =>
-        queues fen FenSM.Watch(gameIds, ctx.self)
+        queue(_.fen, FenSM.Watch(gameIds, ctx.self))
         apply(
           watchedGames ++ gameIds,
           deps
@@ -56,13 +56,13 @@ object SiteClientActor {
 
       case ClientOut.Notified =>
         user foreach { u =>
-          queues lila LilaIn.Notified(u.id)
+          queue(_.lila, LilaIn.Notified(u.id))
         }
         Behavior.same
 
       case ClientOut.FollowingOnline =>
         user foreach { u =>
-          queues lila LilaIn.Friends(u.id)
+          queue(_.lila, LilaIn.Friends(u.id))
         }
         Behavior.same
 
@@ -83,24 +83,24 @@ object SiteClientActor {
         Behavior.same
 
       case ClientOut.Forward(payload) =>
-        queues lila LilaIn.TellSri(sri, user.map(_.id), payload)
+        queue(_.lila, LilaIn.TellSri(sri, user.map(_.id), payload))
         Behavior.same
     }
   }.receiveSignal {
     case (ctx, PostStop) =>
       import deps._
-      queues count CountSM.Disconnect
+      queue(_.count, CountSM.Disconnect)
       user foreach { u =>
-        queues user UserSM.Disconnect(u, ctx.self)
+        queue(_.user, UserSM.Disconnect(u, ctx.self))
       }
-      if (watchedGames.nonEmpty) queues fen FenSM.Unwatch(watchedGames, ctx.self)
+      if (watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(watchedGames, ctx.self))
       bus unsubscribe ctx.self
       Behaviors.same
   }
 
   case class Deps(
       clientIn: ActorRef[ClientIn],
-      queues: Stream.Queues,
+      queue: Stream.Queues,
       sri: Sri,
       flag: Option[Flag],
       user: Option[User],

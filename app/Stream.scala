@@ -26,25 +26,22 @@ final class Stream @Inject() ()(implicit
 
   def start: Stream.Queues =
     graph.main(lilaSite.sink).run() match {
-      case (lilaOut, clientToLila, clientToLag, clientToFen, clientToCount, clientToUser) =>
+      case (lilaOut, toLila, toLag, toFen, toCount, toUser) =>
         lilaSite source lilaOut
-        Stream.Queues(clientToLila, clientToLag, clientToFen, clientToCount, clientToUser)
+        Stream.Queues(toLila, toLag, toFen, toCount, toUser)
     }
 }
 
 object Stream {
 
   case class Queues(
-      clientToLila: SourceQueue[LilaIn],
-      clientToLag: SourceQueue[LagSM.Input],
-      clientToFen: SourceQueue[FenSM.Input],
-      clientToCount: SourceQueue[CountSM.Input],
-      clientToUser: SourceQueue[UserSM.Input]
+      lila: SourceQueue[LilaIn],
+      lag: SourceQueue[LagSM.Input],
+      fen: SourceQueue[FenSM.Input],
+      count: SourceQueue[CountSM.Input],
+      user: SourceQueue[UserSM.Input]
   ) {
-    def lila(in: LilaIn): Unit = clientToLila offer in
-    def lag(in: LagSM.Input): Unit = clientToLag offer in
-    def fen(in: FenSM.Input): Unit = clientToFen offer in
-    def count(in: CountSM.Input): Unit = clientToCount offer in
-    def user(in: UserSM.Input): Unit = clientToUser offer in
+    def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =
+      select(this) offer msg
   }
 }

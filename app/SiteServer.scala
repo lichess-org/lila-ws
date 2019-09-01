@@ -39,7 +39,7 @@ final class SiteServer @Inject() (
     overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew
   )(implicit factory: akka.actor.ActorRefFactory, mat: Materializer): Flow[ClientOut, ClientIn, _] = {
 
-    import akka.actor.{ Status, PoisonPill, Terminated, OneForOneStrategy, SupervisorStrategy }
+    import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
 
     val (outActor, publisher) = Source.actorRef[ClientIn](bufferSize, overflowStrategy)
       .toMat(Sink.asPublisher(false))(Keep.both).run()
