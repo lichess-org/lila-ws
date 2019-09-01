@@ -25,6 +25,8 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
     Source.queue[UserSM.Input](256, overflow) // clients -> user machine
   )((_, _, _, _, _, _)) { implicit b => (LilaOutlet, ClientToLila, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
+      def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
+
       val LOBroad: UniformFanOutShape[LilaOut, LilaOut] = b.add(Broadcast[LilaOut](5))
 
       val LOBus: FlowShape[LilaOut, Bus.Msg] = b.add {
@@ -48,7 +50,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val UserMerge: UniformFanInShape[UserSM.Input, UserSM.Input] = b.add(Merge[UserSM.Input](2))
+      val UserMerge = merge[UserSM.Input](2)
 
       val User: FlowShape[UserSM.Input, LilaIn] = b.add {
         Flow[UserSM.Input].scan(UserSM.State())(UserSM.apply).mapConcat(_.emit.toList)
@@ -60,7 +62,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val FenMerge: UniformFanInShape[FenSM.Input, FenSM.Input] = b.add(Merge[FenSM.Input](2))
+      val FenMerge = merge[FenSM.Input](2)
 
       val Fen: FlowShape[FenSM.Input, LilaIn] = b.add {
         Flow[FenSM.Input].scan(FenSM.State())(FenSM.apply).mapConcat(_.emit.toList)
@@ -72,7 +74,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val LagMerge: UniformFanInShape[LagSM.Input, LagSM.Input] = b.add(Merge[LagSM.Input](2))
+      val LagMerge = merge[LagSM.Input](2)
 
       val Lag: FlowShape[LagSM.Input, LilaIn] = b.add {
         Flow[LagSM.Input].scan(LagSM.State())(LagSM.apply).mapConcat(_.emit.toList)
@@ -84,27 +86,29 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val CountMerge: UniformFanInShape[CountSM.Input, CountSM.Input] = b.add(Merge[CountSM.Input](2))
+      val CountMerge = merge[CountSM.Input](2)
 
       val Count: FlowShape[CountSM.Input, LilaIn] = b.add {
         Flow[CountSM.Input].scan(CountSM.State())(CountSM.apply).mapConcat(_.emit.toList)
       }
 
-      val LIMerge: UniformFanInShape[LilaIn, LilaIn] = b.add(Merge[LilaIn](5))
+      val LIMerge = merge[LilaIn](5)
 
       val LilaInlet: Inlet[LilaIn] = b.add(lilaIn).in
 
     // format: OFF
-    LilaOutlet ~> LOBroad ~> LOBus   ~> BusPublish
+
+    // source     broadcast  collect    merge        machine   merge      sink
+    LilaOutlet ~> LOBroad ~> LOBus                                     ~> BusPublish
                   LOBroad ~> LOFen   ~> FenMerge
                   LOBroad ~> LOLag   ~> LagMerge
                   LOBroad ~> LOUser  ~> UserMerge
                   LOBroad ~> LOCount ~> CountMerge
-                         ClientToFen ~> FenMerge   ~> Fen   ~> LIMerge
-                         ClientToLag ~> LagMerge   ~> Lag   ~> LIMerge
-                        ClientToUser ~> UserMerge  ~> User  ~> LIMerge
-                       ClientToCount ~> CountMerge ~> Count ~> LIMerge
-                                               ClientToLila ~> LIMerge ~> LilaInlet
+    ClientToFen                      ~> FenMerge   ~> Fen   ~> LIMerge
+    ClientToLag                      ~> LagMerge   ~> Lag   ~> LIMerge
+    ClientToUser                     ~> UserMerge  ~> User  ~> LIMerge
+    ClientToCount                    ~> CountMerge ~> Count ~> LIMerge
+    ClientToLila                                            ~> LIMerge ~> LilaInlet
 
     ClosedShape
   })
