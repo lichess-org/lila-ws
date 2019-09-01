@@ -24,19 +24,13 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
     import play.api.libs.streams.AkkaStreams
     import akka.stream.scaladsl._
 
-    def closeOnException[T](block: => T) = try {
-      Left(block)
-    }
-    catch {
-      case NonFatal(e) => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message"))
-    }
-
     new MessageFlowTransformer[ClientOut, ClientIn] {
       def transform(flow: Flow[ClientOut, ClientIn, _]) = {
         AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
-          case TextMessage(text) => closeOnException {
-            ClientOut.jsonRead(Json parse text)
-          }
+          case TextMessage(text) => ClientOut.parse(text).fold(
+            _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
+            Left.apply
+          )
         })(flow map { out => TextMessage(out.write) })
       }
     }
