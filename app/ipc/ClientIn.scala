@@ -9,7 +9,7 @@ import play.api.libs.json._
 import lila.ws.util.LilaJsObject.augment
 
 sealed trait ClientIn extends ClientMsg {
-  def write: JsValue
+  def write: String
 }
 
 object ClientIn {
@@ -17,7 +17,7 @@ object ClientIn {
   import Chess.json._
 
   case object Pong extends ClientIn {
-    val write = JsNumber(0)
+    val write = "0"
   }
 
   case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
@@ -32,8 +32,8 @@ object ClientIn {
     def write = make("mlat", millis)
   }
 
-  case class AnyJson(json: JsObject) extends ClientIn {
-    def write = json
+  case class AnyJson(json: JsonString) extends ClientIn {
+    def write = json.value
   }
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
@@ -86,10 +86,8 @@ object ClientIn {
       .add("ch", chapterId))
   }
 
-  private def make[A: Writes](t: String, data: A) = Json.obj(
+  private def make[A: Writes](t: String, data: A) = Json stringify Json.obj(
     "t" -> t,
     "d" -> data
   )
-
-  implicit val jsonWrite = Writes[ClientIn](_.write)
 }

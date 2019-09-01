@@ -1,9 +1,5 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.Behavior
-
 import ipc.LilaIn
 
 object CountSM {

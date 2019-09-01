@@ -7,6 +7,8 @@ import java.lang.Integer.parseInt
 import play.api.libs.json._
 import scala.util.Try
 
+import JsonString.jsonStringRead
+
 sealed trait LilaOut extends LilaMsg
 
 object LilaOut {
@@ -15,15 +17,15 @@ object LilaOut {
 
   case class Mlat(millis: Double) extends LilaOut
 
-  case class TellFlag(flag: String, json: JsObject) extends LilaOut
+  case class TellFlag(flag: String, json: JsonString) extends LilaOut
 
-  case class TellUser(user: User.ID, json: JsObject) extends LilaOut
+  case class TellUser(user: User.ID, json: JsonString) extends LilaOut
 
-  case class TellUsers(users: Iterable[User.ID], json: JsObject) extends LilaOut
+  case class TellUsers(users: Iterable[User.ID], json: JsonString) extends LilaOut
 
-  case class TellSri(sri: Sri, json: JsObject) extends LilaOut
+  case class TellSri(sri: Sri, json: JsonString) extends LilaOut
 
-  case class TellAll(json: JsObject) extends LilaOut
+  case class TellAll(json: JsonString) extends LilaOut
 
   case class DisconnectUser(user: User.ID) extends LilaOut
 
@@ -40,26 +42,26 @@ object LilaOut {
       case "mlat" => Try(Mlat(parseDouble(args))).toOption
 
       case "tell/flag" => args.split(" ", 2) match {
-        case Array(flag, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellFlag(flag, _) }
+        case Array(flag, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellFlag(flag, _) }
         case _ => None
       }
 
       case "tell/user" => args.split(" ", 2) match {
-        case Array(user, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellUser(user, _) }
+        case Array(user, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellUser(user, _) }
         case _ => None
       }
 
       case "tell/users" => args.split(" ", 2) match {
-        case Array(users, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellUsers(users split ",", _) }
+        case Array(users, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellUsers(users split ",", _) }
         case _ => None
       }
 
       case "tell/sri" => args.split(" ", 2) match {
-        case Array(sri, jsonStr) => Json.parse(jsonStr).asOpt[JsObject] map { TellSri(Sri(sri), _) }
+        case Array(sri, jsonStr) => Json.parse(jsonStr).asOpt[JsonString] map { TellSri(Sri(sri), _) }
         case _ => None
       }
 
-      case "tell/all" => Json.parse(args).asOpt[JsObject] map TellAll.apply
+      case "tell/all" => Json.parse(args).asOpt[JsonString] map TellAll.apply
 
       case "disconnect/user" => Some(DisconnectUser(args))
 
