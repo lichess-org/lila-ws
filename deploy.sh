@@ -2,15 +2,15 @@
 
 REMOTE=$1
 REMOTE_DIR="/home/lila-ws"
-TARBALL=lila-ws-1.0-SNAPSHOT.tgz
 
 echo "Deploy to server $REMOTE:$REMOTE_DIR"
+
+sbt stage
 
 if [ $? != 0 ]; then
   echo "Deploy canceled"
   exit 1
 fi
-
 
 RSYNC_OPTIONS=" \
   --archive \
