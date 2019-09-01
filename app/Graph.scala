@@ -58,9 +58,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val FenIM: UniformFanInShape[FenSM.Input, FenSM.Input] = builder.add(Merge[FenSM.Input](2))
 
       val Fen: FlowShape[FenSM.Input, LilaIn] = builder.add {
-        Flow[FenSM.Input].scan(FenSM.State()) {
-          case (state, out) => FenSM(state, out)
-        }.mapConcat(_.emit.toList)
+        Flow[FenSM.Input].scan(FenSM.State())(FenSM.apply).mapConcat(_.emit.toList)
       }
 
       val LOLag: FlowShape[LilaOut, LagSM.Input] = builder.add {
@@ -72,9 +70,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val LagIM: UniformFanInShape[LagSM.Input, LagSM.Input] = builder.add(Merge[LagSM.Input](2))
 
       val Lag: FlowShape[LagSM.Input, LilaIn] = builder.add {
-        Flow[LagSM.Input].scan(LagSM.State()) {
-          case (state, out) => LagSM(state, out)
-        }.mapConcat(_.emit.toList)
+        Flow[LagSM.Input].scan(LagSM.State())(LagSM.apply).mapConcat(_.emit.toList)
       }
 
       val LOCount: FlowShape[LilaOut, CountSM.Input] = builder.add {
@@ -86,9 +82,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val CountIM: UniformFanInShape[CountSM.Input, CountSM.Input] = builder.add(Merge[CountSM.Input](2))
 
       val Count: FlowShape[CountSM.Input, LilaIn] = builder.add {
-        Flow[CountSM.Input].scan(CountSM.State()) {
-          case (state, out) => CountSM(state, out)
-        }.mapConcat(_.emit.toList)
+        Flow[CountSM.Input].scan(CountSM.State())(CountSM.apply).mapConcat(_.emit.toList)
       }
 
       val LIM: UniformFanInShape[LilaIn, LilaIn] = builder.add(Merge[LilaIn](5))
