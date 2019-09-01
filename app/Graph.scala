@@ -98,12 +98,12 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
     LilaOutlet ~> LOBroad ~> LOBus   ~> BusPublish
                   LOBroad ~> LOFen   ~> FenMerge
                   LOBroad ~> LOLag   ~> LagMerge
-                  LOBroad ~> LOCount ~> CountMerge
                   LOBroad ~> LOUser  ~> UserMerge
+                  LOBroad ~> LOCount ~> CountMerge
                          ClientToFen ~> FenMerge   ~> Fen   ~> LIMerge
                          ClientToLag ~> LagMerge   ~> Lag   ~> LIMerge
-                       ClientToCount ~> CountMerge ~> Count ~> LIMerge
                         ClientToUser ~> UserMerge  ~> User  ~> LIMerge
+                       ClientToCount ~> CountMerge ~> Count ~> LIMerge
                                                ClientToLila ~> LIMerge ~> LilaInlet
 
     ClosedShape
