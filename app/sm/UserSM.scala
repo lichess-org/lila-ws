@@ -55,7 +55,7 @@ object UserSM {
 
     case Kick(userId) =>
       state.users get userId foreach {
-        _ foreach { _ ! ClientFlow.Disconnect }
+        _ foreach { _ ! ClientCtrl.Disconnect }
       }
       state.copy(emit = None)
   }

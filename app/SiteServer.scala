@@ -24,12 +24,11 @@ final class SiteServer @Inject() (
     mat: Materializer
 ) {
 
-  private val bus = Bus(system)
   private val queues = stream.start
 
-  type IpAddress = String
+  private val bus = Bus(system)
 
-  private val clientInLimiter = new RateLimit[IpAddress](
+  private val clientInLimiter = new RateLimit[String]( // IpAdress
     credits = 40,
     duration = 10.seconds,
     name = "clientIn"
@@ -38,7 +37,7 @@ final class SiteServer @Inject() (
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
       actorFlow(req) { out =>
-        SiteClientActor.empty(SiteClientActor.Deps(out, queues, sri, flag, user, bus))
+        SiteClientActor.start(SiteClientActor.Deps(out, queues, sri, flag, user, bus))
       }
     }
 
@@ -60,7 +59,7 @@ final class SiteServer @Inject() (
         context.watch(flowActor)
 
         def receive = {
-          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientFlow.Disconnect
+          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
           case Terminated(_) => context.stop(self)
           case incoming: ClientOut => flowActor ! incoming
         }

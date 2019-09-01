@@ -19,8 +19,6 @@ final class Lila(
 
   connOut.async.subscribe(chanOut)
 
-  // ctx.self ! LilaIn.DisconnectAll
-
   def source(queue: SourceQueueWithComplete[LilaOut]) =
     connOut.addListener(new pubsub.RedisPubSubAdapter[String, String] {
       override def message(channel: String, message: String): Unit =
@@ -30,15 +28,7 @@ final class Lila(
         }
     })
 
-  val sink: Sink[LilaIn, _] = Sink.foreach { in =>
-    connIn.async.publish(chanIn, in.write)
-  }
+  def sink: Sink[LilaIn, _] = Sink foreach send
 
-  //     }.receiveSignal {
-  //       case (ctx, PostStop) =>
-  //         connIn.close()
-  //         connOut.close()
-  //         redis.shutdown()
-  //         Behavior.same
-  //     }
+  def send(in: LilaIn): Unit = connIn.async.publish(chanIn, in.write)
 }

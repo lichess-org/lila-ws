@@ -10,12 +10,13 @@ import scala.concurrent.{ ExecutionContext, Future }
 import ipc._
 
 @Singleton
-final class Stream @Inject() ()(implicit
-    ec: ExecutionContext,
-    system: ActorSystem,
-    mat: akka.stream.Materializer,
+final class Stream @Inject() (
     config: Configuration,
     graph: Graph
+)(implicit
+    ec: ExecutionContext,
+    system: ActorSystem,
+    mat: akka.stream.Materializer
 ) {
 
   lazy val lilaSite = new Lila(
@@ -27,6 +28,7 @@ final class Stream @Inject() ()(implicit
   def start: Stream.Queues =
     graph.main(lilaSite.sink).run() match {
       case (lilaOut, toLila, toLag, toFen, toCount, toUser) =>
+        lilaSite send LilaIn.DisconnectAll
         lilaSite source lilaOut
         Stream.Queues(toLila, toLag, toFen, toCount, toUser)
     }

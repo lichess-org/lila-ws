@@ -4,10 +4,10 @@ package object ipc {
 
   trait ClientMsg
 
-  sealed trait ClientFlow extends ClientMsg
+  sealed trait ClientCtrl extends ClientMsg
 
-  object ClientFlow {
-    case object Disconnect extends ClientFlow
+  object ClientCtrl {
+    case object Disconnect extends ClientCtrl
   }
 
   trait LilaMsg

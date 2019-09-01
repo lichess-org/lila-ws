@@ -11,7 +11,7 @@ import ipc._
 
 object SiteClientActor {
 
-  def empty(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     queue(_.count, CountSM.Connect)
     bus.subscribe(ctx.self, _ sri sri)
@@ -83,7 +83,7 @@ object SiteClientActor {
         queue(_.lila, LilaIn.TellSri(sri, user.map(_.id), payload))
         Behavior.same
 
-      case ClientFlow.Disconnect =>
+      case ClientCtrl.Disconnect =>
         Behaviors.stopped
     }
   }.receiveSignal {
