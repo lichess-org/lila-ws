@@ -27,14 +27,17 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       val LOB: UniformFanOutShape[LilaOut, LilaOut] = b.add(Broadcast[LilaOut](5))
 
-      val LilaOutEffects: SinkShape[LilaOut] = b.add {
-        Sink.foreach[LilaOut] {
-          case LilaOut.Mlat(millis) => bus.publish(ClientIn.Mlat(millis), _.mlat)
-          case LilaOut.TellFlag(flag, json) => bus.publish(ClientIn.AnyJson(json), _ flag flag)
-          case LilaOut.TellSri(sri, json) => bus.publish(ClientIn.AnyJson(json), _ sri sri)
-          case LilaOut.TellAll(json) => bus.publish(ClientIn.AnyJson(json), _.all)
-          case _ =>
+      val LOBus: FlowShape[LilaOut, Bus.Msg] = b.add {
+        Flow[LilaOut].collect {
+          case LilaOut.Mlat(millis) => Bus.msg(ClientIn.Mlat(millis), _.mlat)
+          case LilaOut.TellFlag(flag, json) => Bus.msg(ClientIn.AnyJson(json), _ flag flag)
+          case LilaOut.TellSri(sri, json) => Bus.msg(ClientIn.AnyJson(json), _ sri sri)
+          case LilaOut.TellAll(json) => Bus.msg(ClientIn.AnyJson(json), _.all)
         }
+      }
+
+      val BusPublish: SinkShape[Bus.Msg] = b.add {
+        Sink.foreach[Bus.Msg](bus.publish)
       }
 
       val LOUser: FlowShape[LilaOut, UserSM.Input] = b.add {
@@ -92,16 +95,16 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val LilaInlet: Inlet[LilaIn] = b.add(lilaIn).in
 
     // format: OFF
-    LilaOutlet ~> LOB ~> LilaOutEffects
+    LilaOutlet ~> LOB ~> LOBus   ~> BusPublish
                   LOB ~> LOFen   ~> FenIM
                   LOB ~> LOLag   ~> LagIM
                   LOB ~> LOCount ~> CountIM
                   LOB ~> LOUser  ~> UserIM
-                  ClientToUser   ~> UserIM ~> User ~> LIM
-                                      ClientToLila ~> LIM
-                       ClientToLag ~> LagIM ~> Lag ~> LIM
-                 ClientToCount ~> CountIM ~> Count ~> LIM
-                       ClientToFen ~> FenIM ~> Fen ~> LIM ~> LilaInlet
+                    ClientToUser ~> UserIM  ~> User  ~> LIM
+                     ClientToLag ~> LagIM   ~> Lag   ~> LIM
+                   ClientToCount ~> CountIM ~> Count ~> LIM
+                     ClientToFen ~>   FenIM ~> Fen   ~> LIM
+                                      ClientToLila   ~> LIM ~> LilaInlet
 
     ClosedShape
   })
