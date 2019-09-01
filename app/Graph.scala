@@ -25,7 +25,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
     Source.queue[UserSM.Input](256, overflow) // clients -> user machine
   )((_, _, _, _, _, _)) { implicit b => (LilaOutlet, ClientToLila, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
-      val LOB: UniformFanOutShape[LilaOut, LilaOut] = b.add(Broadcast[LilaOut](5))
+      val LOBroad: UniformFanOutShape[LilaOut, LilaOut] = b.add(Broadcast[LilaOut](5))
 
       val LOBus: FlowShape[LilaOut, Bus.Msg] = b.add {
         Flow[LilaOut].collect {
@@ -48,7 +48,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val UserIM: UniformFanInShape[UserSM.Input, UserSM.Input] = b.add(Merge[UserSM.Input](2))
+      val UserMerge: UniformFanInShape[UserSM.Input, UserSM.Input] = b.add(Merge[UserSM.Input](2))
 
       val User: FlowShape[UserSM.Input, LilaIn] = b.add {
         Flow[UserSM.Input].scan(UserSM.State())(UserSM.apply).mapConcat(_.emit.toList)
@@ -60,7 +60,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val FenIM: UniformFanInShape[FenSM.Input, FenSM.Input] = b.add(Merge[FenSM.Input](2))
+      val FenMerge: UniformFanInShape[FenSM.Input, FenSM.Input] = b.add(Merge[FenSM.Input](2))
 
       val Fen: FlowShape[FenSM.Input, LilaIn] = b.add {
         Flow[FenSM.Input].scan(FenSM.State())(FenSM.apply).mapConcat(_.emit.toList)
@@ -72,7 +72,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val LagIM: UniformFanInShape[LagSM.Input, LagSM.Input] = b.add(Merge[LagSM.Input](2))
+      val LagMerge: UniformFanInShape[LagSM.Input, LagSM.Input] = b.add(Merge[LagSM.Input](2))
 
       val Lag: FlowShape[LagSM.Input, LilaIn] = b.add {
         Flow[LagSM.Input].scan(LagSM.State())(LagSM.apply).mapConcat(_.emit.toList)
@@ -84,27 +84,27 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val CountIM: UniformFanInShape[CountSM.Input, CountSM.Input] = b.add(Merge[CountSM.Input](2))
+      val CountMerge: UniformFanInShape[CountSM.Input, CountSM.Input] = b.add(Merge[CountSM.Input](2))
 
       val Count: FlowShape[CountSM.Input, LilaIn] = b.add {
         Flow[CountSM.Input].scan(CountSM.State())(CountSM.apply).mapConcat(_.emit.toList)
       }
 
-      val LIM: UniformFanInShape[LilaIn, LilaIn] = b.add(Merge[LilaIn](5))
+      val LIMerge: UniformFanInShape[LilaIn, LilaIn] = b.add(Merge[LilaIn](5))
 
       val LilaInlet: Inlet[LilaIn] = b.add(lilaIn).in
 
     // format: OFF
-    LilaOutlet ~> LOB ~> LOBus   ~> BusPublish
-                  LOB ~> LOFen   ~> FenIM
-                  LOB ~> LOLag   ~> LagIM
-                  LOB ~> LOCount ~> CountIM
-                  LOB ~> LOUser  ~> UserIM
-                    ClientToUser ~> UserIM  ~> User  ~> LIM
-                     ClientToLag ~> LagIM   ~> Lag   ~> LIM
-                   ClientToCount ~> CountIM ~> Count ~> LIM
-                     ClientToFen ~>   FenIM ~> Fen   ~> LIM
-                                      ClientToLila   ~> LIM ~> LilaInlet
+    LilaOutlet ~> LOBroad ~> LOBus   ~> BusPublish
+                  LOBroad ~> LOFen   ~> FenMerge
+                  LOBroad ~> LOLag   ~> LagMerge
+                  LOBroad ~> LOCount ~> CountMerge
+                  LOBroad ~> LOUser  ~> UserMerge
+                         ClientToFen ~> FenMerge   ~> Fen   ~> LIMerge
+                         ClientToLag ~> LagMerge   ~> Lag   ~> LIMerge
+                       ClientToCount ~> CountMerge ~> Count ~> LIMerge
+                        ClientToUser ~> UserMerge  ~> User  ~> LIMerge
+                                               ClientToLila ~> LIMerge ~> LilaInlet
 
     ClosedShape
   })
