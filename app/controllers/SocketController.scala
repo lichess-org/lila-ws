@@ -7,7 +7,6 @@ import play.api.mvc._
 import play.api.mvc.WebSocket.MessageFlowTransformer
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.control.NonFatal
 
 import lila.ws._
 import lila.ws.ipc.{ ClientIn, ClientOut }
@@ -24,11 +23,13 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
     import play.api.libs.streams.AkkaStreams
     import akka.stream.scaladsl._
 
+    val closeOnParseError = CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")
+
     new MessageFlowTransformer[ClientOut, ClientIn] {
       def transform(flow: Flow[ClientOut, ClientIn, _]) = {
         AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
           case TextMessage(text) => ClientOut.parse(text).fold(
-            _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
+            _ => Right(closeOnParseError),
             Left.apply
           )
         })(flow map { out => TextMessage(out.write) })

@@ -5,7 +5,6 @@ import akka.actor.typed.{ ActorRef, Behavior }
 import akka.stream.scaladsl._
 import akka.stream.{ Materializer, OverflowStrategy }
 import javax.inject._
-import play.api.Configuration
 import play.api.mvc.RequestHeader
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -14,7 +13,6 @@ import ipc._
 
 @Singleton
 final class SiteServer @Inject() (
-    config: Configuration,
     auth: Auth,
     stream: Stream
 )(implicit
@@ -30,20 +28,11 @@ final class SiteServer @Inject() (
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
       actorFlow(req) { clientIn =>
-        SiteClientActor.start(SiteClientActor.Deps(
-          clientIn,
-          queues,
-          sri,
-          flag,
-          user,
-          userAgent(req),
-          req.remoteAddress,
-          bus
-        ))
+        SiteClientActor.start {
+          SiteClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
+        }
       }
     }
-
-  private def userAgent(req: RequestHeader) = req.headers.get("User-Agent") getOrElse "?"
 
   private def actorFlow(req: RequestHeader)(
     behaviour: akka.actor.ActorRef => Behavior[ClientMsg],
@@ -80,4 +69,6 @@ final class SiteServer @Inject() (
       Source.fromPublisher(publisher)
     )
   }
+
+  private def userAgent(req: RequestHeader) = req.headers.get("User-Agent") getOrElse "?"
 }
