@@ -90,6 +90,9 @@ object SiteClientActor {
           apply(state.copy(ignoreLog = true), deps)
         }
 
+      case ClientOut.Ignore =>
+        Behavior.same
+
       case ClientCtrl.Disconnect =>
         Behaviors.stopped
     }

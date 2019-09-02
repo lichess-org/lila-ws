@@ -55,6 +55,8 @@ object ClientOut {
 
   case class Unexpected(msg: JsValue) extends ClientOut
 
+  case object Ignore extends ClientOut
+
   def parse(str: String): Try[ClientOut] =
     if (str == "null" || str == """{"t":"p"}""") emptyPing
     else Try(Json parse str) map {
@@ -97,6 +99,7 @@ object ClientOut {
           chapterId = d str "ch" map ChapterId.apply
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case "evalGet" | "evalPut" => Some(Forward(o))
+        case "ping" => Some(Ignore) // outdated clients
         case _ => None
       } getOrElse Unexpected(o)
       case js => Unexpected(js)
