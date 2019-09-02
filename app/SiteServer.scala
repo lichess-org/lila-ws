@@ -27,16 +27,16 @@ final class SiteServer @Inject() (
 
   def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]) =
     auth(req) map { user =>
-      actorFlow(req, sri) { clientIn =>
+      actorFlow(req) { clientIn =>
         SiteClientActor.start {
           SiteClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
         }
       }
     }
 
-  private def actorFlow(req: RequestHeader, sri: Sri)(
+  private def actorFlow(req: RequestHeader)(
     clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
-  )(implicit factory: akka.actor.ActorRefFactory, mat: Materializer): Flow[ClientOut, ClientIn, _] = {
+  )(implicit mat: Materializer): Flow[ClientOut, ClientIn, _] = {
 
     import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
 
@@ -45,23 +45,27 @@ final class SiteServer @Inject() (
       duration = 15.seconds,
       name = s"IP: ${req.remoteAddress} UA: ${userAgent(req)}"
     )
-    val limiterFlow = Flow[ClientOut].collect {
-      case msg: ClientOut if limiter(msg.toString) => msg
-    }
 
     val (outQueue, publisher) = Source.queue[ClientIn](
-      bufferSize = 4,
+      bufferSize = 8,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
-    val actorSink: Sink[ClientOut, _] = akka.stream.typed.scaladsl.ActorSink.actorRef(
-      system.spawn(clientActor(outQueue), s"client:${sri.value}"),
-      onCompleteMessage = ClientCtrl.Disconnect,
-      onFailureMessage = _ => ClientCtrl.Disconnect
-    )
-
     Flow.fromSinkAndSource(
-      limiterFlow to actorSink,
+      Sink.actorRef(system.actorOf(akka.actor.Props(new akka.actor.Actor {
+        val flowActor: ActorRef[ClientMsg] = context.spawn(clientActor(outQueue), "flowActor")
+        context.watch(flowActor)
+
+        def receive = {
+          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
+          case Terminated(_) => context.stop(self)
+          case msg: ClientOut if limiter(msg.toString) => flowActor ! msg
+        }
+
+        override def supervisorStrategy = OneForOneStrategy() {
+          case _ => SupervisorStrategy.Stop
+        }
+      })), Status.Success(())),
       Source.fromPublisher(publisher)
     )
   }

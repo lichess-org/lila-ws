@@ -19,7 +19,6 @@ libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.39.Fin
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
