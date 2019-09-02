@@ -73,6 +73,7 @@ object ClientIn {
         .add("check" -> check)
         .add("dests" -> dests)
         .add("drops", drops)
+        .add("crazy", crazyData)
         .add("ch", chapterId)
     ))
   }

@@ -16,7 +16,7 @@ class Bus extends Extension with EventBus with LookupClassification {
 
   protected def compareSubscribers(a: Subscriber, b: Subscriber) = a compareTo b
 
-  def classify(event: Event): String = event.channel
+  def classify(event: Event): Classifier = event.channel
 
   def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event.payload
 
