@@ -74,8 +74,8 @@ object ClientIn {
         .add("dests" -> dests)
         .add("drops", drops)
         .add("crazy", crazyData)
-        .add("ch", chapterId)
-    ))
+    )
+      .add("ch", chapterId))
   }
 
   case class Dests(
