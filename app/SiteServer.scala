@@ -1,7 +1,6 @@
 package lila.ws
 
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }
 import akka.stream.scaladsl._
 import akka.stream.{ Materializer, OverflowStrategy }
@@ -55,8 +54,8 @@ final class SiteServer @Inject() (
     import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
 
     val limiter = new RateLimit(
-      maxCredits = 25,
-      duration = 10.seconds,
+      maxCredits = 30,
+      duration = 15.seconds,
       name = s"IP: ${req.remoteAddress} UA: ${userAgent(req)}"
     )
 

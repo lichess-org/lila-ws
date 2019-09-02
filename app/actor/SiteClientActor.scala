@@ -86,7 +86,7 @@ object SiteClientActor {
       case ClientOut.Unexpected(msg) =>
         if (state.ignoreLog) Behavior.same
         else {
-          Logger("SiteClient").warn(s"Unexpected $msg UA:$userAgent IP:$ipAddress")
+          Logger("SiteClient").info(s"Unexpected $msg IP: $ipAddress UA: $userAgent")
           apply(state.copy(ignoreLog = true), deps)
         }
 
