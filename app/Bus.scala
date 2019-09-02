@@ -20,9 +20,6 @@ class Bus extends Extension with EventBus with LookupClassification {
 
   def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event.payload
 
-  def publish(payload: ClientMsg, channel: Bus.channel.type => Classifier): Unit =
-    publish(Bus.msg(payload, channel))
-
   def subscribe(actor: ActorRef[ClientMsg], channel: Bus.channel.type => Classifier): Unit =
     subscribe(actor, channel(Bus.channel))
 }
