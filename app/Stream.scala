@@ -19,19 +19,18 @@ final class Stream @Inject() (
     mat: akka.stream.Materializer
 ) {
 
-  lazy val lilaSite = new Lila(
-    redisUri = RedisURI.create(config.get[String]("redis.uri")),
-    chanIn = "site-in",
-    chanOut = "site-out"
-  )
+  val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
 
-  def start: Stream.Queues =
-    graph.main(lilaSite.sink).run() match {
-      case (lilaOut, toLila, toLag, toFen, toCount, toUser) =>
-        lilaSite send LilaIn.DisconnectAll
-        lilaSite plugSource lilaOut
-        Stream.Queues(toLila, toLag, toFen, toCount, toUser)
+  def start: Stream.Queues = {
+
+    val (init, sink) = lila.pubsub("site-in", "site-out")
+
+    graph.main(sink).run() match {
+      case (lilaOut, queues) =>
+        init(lilaOut, List(LilaIn.DisconnectAll))
+        queues
     }
+  }
 }
 
 object Stream {

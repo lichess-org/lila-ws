@@ -15,7 +15,7 @@ import ipc._
 import lila.ws.util.Util.{ userAgent, flagOf }
 
 @Singleton
-final class SiteServer @Inject() (
+final class Server @Inject() (
     auth: Auth,
     stream: Stream
 )(implicit

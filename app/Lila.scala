@@ -2,33 +2,40 @@ package lila.ws
 
 import akka.stream.scaladsl._
 import io.lettuce.core._
+import io.lettuce.core.pubsub._
 import play.api.Logger
 
 import ipc._
 
-final class Lila(
-    redisUri: RedisURI,
-    chanIn: String,
-    chanOut: String
-) {
+final class Lila(redisUri: RedisURI) {
 
   private val logger = Logger(getClass)
   private val redis = RedisClient create redisUri
-  private val connIn = redis.connectPubSub()
-  private val connOut = redis.connectPubSub()
 
-  connOut.async.subscribe(chanOut)
+  def pubsub(chanIn: String, chanOut: String) = {
 
-  def plugSource(queue: SourceQueueWithComplete[LilaOut]) =
-    connOut.addListener(new pubsub.RedisPubSubAdapter[String, String] {
-      override def message(channel: String, message: String): Unit =
-        LilaOut read message match {
-          case Some(out) => queue offer out
-          case None => logger.warn(s"Unhandled LilaOut: $message")
-        }
-    })
+    val connIn = redis.connectPubSub()
+    val connOut = redis.connectPubSub()
 
-  def sink: Sink[LilaIn, _] = Sink foreach send
+    def send(in: LilaIn): Unit = connIn.async.publish(chanIn, in.write)
 
-  def send(in: LilaIn): Unit = connIn.async.publish(chanIn, in.write)
+    val init: (SourceQueueWithComplete[LilaOut], List[LilaIn]) => Unit = (queue, initialMsgs) => {
+
+      initialMsgs foreach send
+
+      connOut.async.subscribe(chanOut)
+
+      connOut.addListener(new RedisPubSubAdapter[String, String] {
+        override def message(channel: String, message: String): Unit =
+          LilaOut read message match {
+            case Some(out) => queue offer out
+            case None => logger.warn(s"Unhandled LilaOut: $message")
+          }
+      })
+    }
+
+    val sink = Sink foreach send
+
+    (init, sink)
+  }
 }

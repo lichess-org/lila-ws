@@ -15,10 +15,14 @@ import lila.ws.util.Util.flagOf
 @Singleton
 class SocketController @Inject() (val controllerComponents: ControllerComponents)(implicit
     ec: ExecutionContext,
-    siteServer: SiteServer
+    server: Server
 ) extends BaseController {
 
   def site(sri: String): WebSocket = WebSocket { req =>
-    siteServer.connect(req, Sri(sri), flagOf(req)) map Right.apply
+    server.connect(req, Sri(sri), flagOf(req)) map Right.apply
+  }
+
+  def lobby(sri: String): WebSocket = WebSocket { req =>
+    server.connect(req, Sri(sri), flagOf(req)) map Right.apply
   }
 }
