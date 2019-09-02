@@ -35,7 +35,7 @@ final class SiteServer @Inject() (
     }
 
   private def actorFlow(req: RequestHeader, sri: Sri)(
-    behaviour: akka.actor.ActorRef => Behavior[ClientMsg]
+    clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
   )(implicit factory: akka.actor.ActorRefFactory, mat: Materializer): Flow[ClientOut, ClientIn, _] = {
 
     import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
@@ -49,13 +49,13 @@ final class SiteServer @Inject() (
       case msg: ClientOut if limiter(msg.toString) => msg
     }
 
-    val (outActor, publisher) = Source.actorRef[ClientIn](
+    val (outQueue, publisher) = Source.queue[ClientIn](
       bufferSize = 4,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
     val actorSink: Sink[ClientOut, _] = akka.stream.typed.scaladsl.ActorSink.actorRef(
-      system.spawn(behaviour(outActor), s"client:${sri.value}"),
+      system.spawn(clientActor(outQueue), s"client:${sri.value}"),
       onCompleteMessage = ClientCtrl.Disconnect,
       onFailureMessage = _ => ClientCtrl.Disconnect
     )

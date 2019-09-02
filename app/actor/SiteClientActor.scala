@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
+import akka.stream.scaladsl._
 import play.api.libs.json._
 import play.api.Logger
 
@@ -32,12 +33,12 @@ object SiteClientActor {
     msg match {
 
       case ClientOut.Ping(lag) =>
-        clientIn ! ClientIn.Pong
+        clientIn(ClientIn.Pong)
         for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
         Behavior.same
 
       case in: ClientIn =>
-        clientIn ! in
+        clientIn(in)
         Behavior.same
 
       case ClientOut.Watch(gameIds) =>
@@ -64,19 +65,19 @@ object SiteClientActor {
         Behavior.same
 
       case opening: ClientOut.Opening =>
-        Chess(opening) foreach clientIn.!
+        Chess(opening) foreach clientIn
         Behavior.same
 
       case anaMove: ClientOut.AnaMove =>
-        clientIn ! Chess(anaMove)
+        clientIn(Chess(anaMove))
         Behavior.same
 
       case anaDrop: ClientOut.AnaDrop =>
-        clientIn ! Chess(anaDrop)
+        clientIn(Chess(anaDrop))
         Behavior.same
 
       case anaDests: ClientOut.AnaDests =>
-        clientIn ! Chess(anaDests)
+        clientIn(Chess(anaDests))
         Behavior.same
 
       case ClientOut.Forward(payload) =>
@@ -109,7 +110,7 @@ object SiteClientActor {
   }
 
   case class Deps(
-      clientIn: ActorRef[ClientIn],
+      client: SourceQueue[ClientIn],
       queue: Stream.Queues,
       sri: Sri,
       flag: Option[Flag],
@@ -117,7 +118,9 @@ object SiteClientActor {
       userAgent: String,
       ipAddress: String,
       bus: Bus
-  )
+  ) {
+    def clientIn(msg: ClientIn): Unit = client offer msg
+  }
 
   case class State(
       watchedGames: Set[Game.ID] = Set.empty,
