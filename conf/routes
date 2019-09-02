@@ -4,3 +4,4 @@
 
 GET     /socket/v4                          controllers.SocketController.site(sri: String)
 GET     /analysis/socket/v4                 controllers.SocketController.site(sri: String)
+GET     /lobby/socket/v4                    controllers.SocketController.lobby(sri: String)
