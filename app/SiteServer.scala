@@ -61,7 +61,6 @@ final class SiteServer @Inject() (
     )
 
     val (outActor, publisher) = Source.actorRef[ClientIn](bufferSize, overflowStrategy)
-      .via(RateLimit.flow(limiter))
       .toMat(Sink.asPublisher(false))(Keep.both).run()
 
     Flow.fromSinkAndSource(
@@ -72,7 +71,7 @@ final class SiteServer @Inject() (
         def receive = {
           case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
           case Terminated(_) => context.stop(self)
-          case incoming: ClientOut => flowActor ! incoming
+          case msg: ClientOut if limiter(msg.toString) => flowActor ! msg
         }
 
         override def supervisorStrategy = OneForOneStrategy() {

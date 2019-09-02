@@ -41,12 +41,4 @@ object RateLimit {
   private type ClearAt = Long
 
   private def nowMillis = System.currentTimeMillis()
-
-  import akka.stream._
-  import akka.stream.scaladsl._
-
-  def flow[A](limiter: RateLimit): Flow[A, A, _] =
-    Flow[A].collect {
-      case a if limiter(a.toString) => a
-    }
 }
