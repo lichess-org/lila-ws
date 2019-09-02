@@ -58,7 +58,7 @@ object Chess {
       move = move,
       fen = FEN(fen),
       check = game.situation.check,
-      dests = if (movable) Some(game.situation.destinations) else None,
+      dests = if (movable) game.situation.destinations else Map.empty,
       opening =
         if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant)) FullOpeningDB findByFen fen
         else None,

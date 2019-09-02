@@ -54,7 +54,7 @@ object ClientIn {
       move: chess.format.Uci.WithSan,
       fen: chess.format.FEN,
       check: Boolean,
-      dests: Option[Map[chess.Pos, List[chess.Pos]]],
+      dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[chess.opening.FullOpening],
       drops: Option[List[chess.Pos]],
       crazyData: Option[Crazyhouse.Data],
@@ -68,10 +68,10 @@ object ClientIn {
         "id" -> id,
         "uci" -> move.uci,
         "san" -> move.san,
+        "dests" -> dests,
         "children" -> JsArray()
       ).add("opening" -> opening)
         .add("check" -> check)
-        .add("dests" -> dests)
         .add("drops", drops.map { drops =>
           JsString(drops.map(_.key).mkString)
         })
