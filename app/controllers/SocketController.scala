@@ -1,15 +1,16 @@
 package controllers
 
+import akka.stream.scaladsl._
 import javax.inject._
-
+import play.api.http.websocket._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.mvc.WebSocket.MessageFlowTransformer
-
 import scala.concurrent.{ ExecutionContext, Future }
 
 import lila.ws._
 import lila.ws.ipc.{ ClientIn, ClientOut }
+import lila.ws.util.Util.flagOf
 
 @Singleton
 class SocketController @Inject() (val controllerComponents: ControllerComponents)(implicit
@@ -17,29 +18,7 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
     siteServer: SiteServer
 ) extends BaseController {
 
-  private implicit val ClientFlowTransformer: MessageFlowTransformer[ClientOut, ClientIn] = {
-
-    import play.api.http.websocket._
-    import play.api.libs.streams.AkkaStreams
-    import akka.stream.scaladsl._
-
-    val closeOnParseError = CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")
-
-    new MessageFlowTransformer[ClientOut, ClientIn] {
-      def transform(flow: Flow[ClientOut, ClientIn, _]) = {
-        AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
-          case TextMessage(text) => ClientOut.parse(text).fold(
-            _ => Right(closeOnParseError),
-            Left.apply
-          )
-        })(flow map { out => TextMessage(out.write) })
-      }
-    }
+  def site(sri: String): WebSocket = WebSocket { req =>
+    siteServer.connect(req, Sri(sri), flagOf(req)) map Right.apply
   }
-
-  def site(sri: String): WebSocket =
-    WebSocket.acceptOrResult[ClientOut, ClientIn] { req =>
-      val flag = req.target getQueryParameter "flag" flatMap Flag.make
-      siteServer.connect(req, Sri(sri), flag) map Right.apply
-    }
 }
