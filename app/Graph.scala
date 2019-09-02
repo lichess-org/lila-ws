@@ -44,7 +44,6 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       val LOUser: FlowShape[LilaOut, UserSM.Input] = b.add {
         Flow[LilaOut].collect {
-          case LilaOut.TellUser(user, json) => UserSM.TellOne(user, ClientIn.AnyJson(json))
           case LilaOut.TellUsers(users, json) => UserSM.TellMany(users, ClientIn.AnyJson(json))
           case LilaOut.DisconnectUser(user) => UserSM.Kick(user)
         }

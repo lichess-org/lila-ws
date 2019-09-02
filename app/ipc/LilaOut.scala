@@ -17,8 +17,6 @@ object LilaOut {
 
   case class TellFlag(flag: String, json: JsonString) extends LilaOut
 
-  case class TellUser(user: User.ID, json: JsonString) extends LilaOut
-
   case class TellUsers(users: Iterable[User.ID], json: JsonString) extends LilaOut
 
   case class TellSri(sri: Sri, json: JsonString) extends LilaOut
@@ -41,11 +39,6 @@ object LilaOut {
 
       case "tell/flag" => args.split(" ", 2) match {
         case Array(flag, payload) => Some(TellFlag(flag, JsonString(payload)))
-        case _ => None
-      }
-
-      case "tell/user" => args.split(" ", 2) match {
-        case Array(user, payload) => Some(TellUser(user, JsonString(payload)))
         case _ => None
       }
 
