@@ -29,7 +29,7 @@ final class Stream @Inject() (
     graph.main(lilaSite.sink).run() match {
       case (lilaOut, toLila, toLag, toFen, toCount, toUser) =>
         lilaSite send LilaIn.DisconnectAll
-        lilaSite source lilaOut
+        lilaSite plugSource lilaOut
         Stream.Queues(toLila, toLag, toFen, toCount, toUser)
     }
 }

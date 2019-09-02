@@ -23,7 +23,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
     Source.queue[FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[UserSM.Input](256, overflow) // clients -> user machine
-  )((_, _, _, _, _, _)) { implicit b => (LilaOutlet, ClientToLila, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+  )(Tuple6.apply) { implicit b => (LilaOutlet, ClientToLila, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 

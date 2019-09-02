@@ -32,8 +32,3 @@ case class Path(value: String) extends AnyVal
 case class ChapterId(value: String) extends AnyVal
 
 case class JsonString(value: String) extends AnyVal
-
-object JsonString {
-  import play.api.libs.json.Reads
-  implicit val jsonStringRead: Reads[JsonString] = Reads.of[String] map JsonString.apply
-}

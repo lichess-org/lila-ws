@@ -21,7 +21,7 @@ object ClientIn {
   }
 
   case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
-    def write = make("fen", Json.obj(
+    def write = clientMsg("fen", Json.obj(
       "id" -> game,
       "lm" -> lastUci,
       "fen" -> fen
@@ -29,7 +29,7 @@ object ClientIn {
   }
 
   case class Mlat(millis: Double) extends ClientIn {
-    def write = make("mlat", millis)
+    def write = clientMsg("mlat", millis)
   }
 
   case class AnyJson(json: JsonString) extends ClientIn {
@@ -37,14 +37,14 @@ object ClientIn {
   }
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
-    def write = make("opening", Json.obj(
+    def write = clientMsg("opening", Json.obj(
       "path" -> path,
       "opening" -> opening
     ))
   }
 
   case object StepFailure extends ClientIn {
-    def write = make("stepFailure")
+    def write = clientMsg("stepFailure")
   }
 
   case class Node(
@@ -60,7 +60,7 @@ object ClientIn {
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = make("node", Json.obj(
+    def write = clientMsg("node", Json.obj(
       "path" -> path,
       "node" -> Json.obj(
         "ply" -> ply,
@@ -83,18 +83,18 @@ object ClientIn {
       opening: Option[chess.opening.FullOpening],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = make("dests", Json.obj(
+    def write = clientMsg("dests", Json.obj(
       "dests" -> dests,
       "path" -> path
     ).add("opening" -> opening)
       .add("ch", chapterId))
   }
 
-  private def make[A: Writes](t: String, data: A) = Json stringify Json.obj(
+  private def clientMsg[A: Writes](t: String, data: A) = Json stringify Json.obj(
     "t" -> t,
     "d" -> data
   )
-  private def make(t: String) = Json stringify Json.obj(
+  private def clientMsg(t: String) = Json stringify Json.obj(
     "t" -> t
   )
 }

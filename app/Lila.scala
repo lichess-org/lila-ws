@@ -19,7 +19,7 @@ final class Lila(
 
   connOut.async.subscribe(chanOut)
 
-  def source(queue: SourceQueueWithComplete[LilaOut]) =
+  def plugSource(queue: SourceQueueWithComplete[LilaOut]) =
     connOut.addListener(new pubsub.RedisPubSubAdapter[String, String] {
       override def message(channel: String, message: String): Unit =
         LilaOut read message match {

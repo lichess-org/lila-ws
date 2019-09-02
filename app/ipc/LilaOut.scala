@@ -7,8 +7,6 @@ import java.lang.Integer.parseInt
 import play.api.libs.json._
 import scala.util.Try
 
-import JsonString.jsonStringRead
-
 sealed trait LilaOut extends LilaMsg
 
 object LilaOut {
