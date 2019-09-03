@@ -10,11 +10,13 @@ import ipc._
 object LobbyClientActor {
 
   import ClientActor._
-  import SiteClientActor.State
 
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
+    deps.user foreach { u =>
+      deps.queue(_.user, UserSM.ConnectSilently(u, ctx.self))
+    }
     queue(_.lobby, LilaIn.ConnectSri(sri, user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)
     apply(State(), deps)
@@ -36,8 +38,13 @@ object LobbyClientActor {
       case ClientOut.Ping(lag) =>
         clientIn(LobbyPongStore.get)
         for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
-          Behavior.same
+        Behavior.same
 
+      case ClientOut.Forward(payload) =>
+        queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
+        Behavior.same
+
+      // default receive (site)
       case msg: ClientOut =>
         val newState = receive(state, deps, ctx, msg)
         if (newState == state) Behavior.same
@@ -47,7 +54,7 @@ object LobbyClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       import deps._
-      SiteClientActor.onStop(state, deps, ctx)
+      onStop(state, deps, ctx)
       queue(_.lobby, LilaIn.DisconnectSri(sri))
       Behaviors.same
   }

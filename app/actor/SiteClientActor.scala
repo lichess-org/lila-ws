@@ -13,6 +13,9 @@ object SiteClientActor {
 
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     onStart(deps, ctx)
+    deps.user foreach { u =>
+      deps.queue(_.user, UserSM.Connect(u, ctx.self))
+    }
     apply(State(), deps)
   }
 
@@ -102,19 +105,4 @@ object SiteClientActor {
         state
     }
   }
-
-  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    import deps._
-    queue(_.count, CountSM.Disconnect)
-    user foreach { u =>
-      queue(_.user, UserSM.Disconnect(u, ctx.self))
-    }
-    if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
-    bus unsubscribe ctx.self
-  }
-
-  case class State(
-      watchedGames: Set[Game.ID] = Set.empty,
-      ignoreLog: Boolean = false
-  )
 }

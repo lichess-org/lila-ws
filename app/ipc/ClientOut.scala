@@ -99,6 +99,10 @@ object ClientOut {
           chapterId = d str "ch" map ChapterId.apply
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case "evalGet" | "evalPut" => Some(Forward(o))
+        // lobby
+        case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
+          Some(Forward(o))
+        // meh
         case "ping" => Some(Ignore) // outdated clients
         case _ => None
       } getOrElse Unexpected(o)

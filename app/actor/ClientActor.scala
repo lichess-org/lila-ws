@@ -13,13 +13,25 @@ object ClientActor {
     queue(_.count, CountSM.Connect)
     bus.subscribe(ctx.self, _ sri sri)
     bus.subscribe(ctx.self, _.all)
-    user foreach { u =>
-      queue(_.user, UserSM.Connect(u, ctx.self))
-    }
     flag foreach { f =>
       bus.subscribe(ctx.self, _ flag f.value)
     }
   }
+
+  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
+    import deps._
+    queue(_.count, CountSM.Disconnect)
+    user foreach { u =>
+      queue(_.user, UserSM.Disconnect(u, ctx.self))
+    }
+    if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
+    bus unsubscribe ctx.self
+  }
+
+  case class State(
+      watchedGames: Set[Game.ID] = Set.empty,
+      ignoreLog: Boolean = false
+  )
 
   case class Deps(
       client: SourceQueue[ClientIn],

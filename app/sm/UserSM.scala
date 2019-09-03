@@ -25,6 +25,8 @@ object UserSM {
           emit = None
         )
       }
+    case ConnectSilently(user, client) =>
+      apply(state, Connect(user, client)).copy(emit = None)
 
     case Disconnect(user, client) =>
       state.users get user.id match {
@@ -62,6 +64,7 @@ object UserSM {
 
   sealed trait Input
   case class Connect(user: User, client: ActorRef[ClientMsg]) extends Input
+  case class ConnectSilently(user: User, client: ActorRef[ClientMsg]) extends Input
   case class Disconnect(user: User, client: ActorRef[ClientMsg]) extends Input
   case class TellOne(userId: User.ID, payload: ClientIn) extends Input
   case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
