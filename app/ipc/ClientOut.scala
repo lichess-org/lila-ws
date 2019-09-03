@@ -11,19 +11,22 @@ import lila.ws.util.LilaJsObject.augment
 
 sealed trait ClientOut extends ClientMsg
 
+sealed trait ClientOutSite extends ClientOut
+sealed trait ClientOutLobby extends ClientOut
+
 object ClientOut {
 
-  case class Ping(lag: Option[Int]) extends ClientOut
+  case class Ping(lag: Option[Int]) extends ClientOutSite
 
-  case class Watch(ids: Set[Game.ID]) extends ClientOut
+  case class Watch(ids: Set[Game.ID]) extends ClientOutSite
 
-  case object MoveLat extends ClientOut
+  case object MoveLat extends ClientOutSite
 
-  case object Notified extends ClientOut
+  case object Notified extends ClientOutSite
 
-  case object FollowingOnline extends ClientOut
+  case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: Path, fen: FEN) extends ClientOut
+  case class Opening(variant: Variant, path: Path, fen: FEN) extends ClientOutSite
 
   case class AnaMove(
       orig: Pos,
@@ -33,7 +36,7 @@ object ClientOut {
       variant: Variant,
       chapterId: Option[ChapterId],
       promotion: Option[chess.PromotableRole]
-  ) extends ClientOut
+  ) extends ClientOutSite
 
   case class AnaDrop(
       role: chess.Role,
@@ -42,20 +45,28 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId]
-  ) extends ClientOut
+  ) extends ClientOutSite
 
   case class AnaDests(
       fen: FEN,
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId]
-  ) extends ClientOut
+  ) extends ClientOutSite
 
-  case class Forward(payload: JsValue) extends ClientOut
+  case class Forward(payload: JsValue) extends ClientOutSite
 
-  case class Unexpected(msg: JsValue) extends ClientOut
+  case class Unexpected(msg: JsValue) extends ClientOutSite
 
-  case object Ignore extends ClientOut
+  case object Ignore extends ClientOutSite
+
+  // lobby
+
+  case class HookIn(forward: Forward) extends ClientOutLobby
+
+  case class HookOut(forward: Forward) extends ClientOutLobby
+
+  // impl
 
   def parse(str: String): Try[ClientOut] =
     if (str == "null" || str == """{"t":"p"}""") emptyPing
@@ -100,7 +111,9 @@ object ClientOut {
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case "evalGet" | "evalPut" => Some(Forward(o))
         // lobby
-        case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
+        case "hookIn" => Some(HookIn(Forward(o)))
+        case "hookOut" => Some(HookOut(Forward(o)))
+        case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" =>
           Some(Forward(o))
         // meh
         case "ping" => Some(Ignore) // outdated clients
