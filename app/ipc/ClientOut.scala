@@ -60,12 +60,6 @@ object ClientOut {
 
   case object Ignore extends ClientOutSite
 
-  // lobby
-
-  case class HookIn(forward: Forward) extends ClientOutLobby
-
-  case class HookOut(forward: Forward) extends ClientOutLobby
-
   // impl
 
   def parse(str: String): Try[ClientOut] =
@@ -111,9 +105,7 @@ object ClientOut {
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case "evalGet" | "evalPut" => Some(Forward(o))
         // lobby
-        case "hookIn" => Some(HookIn(Forward(o)))
-        case "hookOut" => Some(HookOut(Forward(o)))
-        case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" =>
+        case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
           Some(Forward(o))
         // meh
         case "ping" => Some(Ignore) // outdated clients

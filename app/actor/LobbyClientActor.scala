@@ -49,14 +49,6 @@ object LobbyClientActor {
         queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
         Behavior.same
 
-      case ClientOut.HookIn(forward) =>
-        ctx.self ! forward
-        apply(state.copy(hooks = true), deps)
-
-      case ClientOut.HookOut(forward) =>
-        ctx.self ! forward
-        apply(state.copy(hooks = false), deps)
-
       // default receive (site)
       case msg: ClientOutSite =>
         val newState = state.copy(site = globalReceive(state.site, deps, ctx, msg))
