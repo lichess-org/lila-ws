@@ -12,14 +12,14 @@ final class Lila(redisUri: RedisURI) {
   private val logger = Logger(getClass)
   private val redis = RedisClient create redisUri
 
-  def pubsub(chanIn: String, chanOut: String) = {
+  def pubsub[Out](chanIn: String, chanOut: String)(collect: PartialFunction[LilaOut, Out]) = {
 
     val connIn = redis.connectPubSub()
     val connOut = redis.connectPubSub()
 
     def send(in: LilaIn): Unit = connIn.async.publish(chanIn, in.write)
 
-    val init: (SourceQueueWithComplete[LilaOut], List[LilaIn]) => Unit = (queue, initialMsgs) => {
+    val init: (SourceQueueWithComplete[Out], List[LilaIn]) => Unit = (queue, initialMsgs) => {
 
       initialMsgs foreach send
 
@@ -28,7 +28,7 @@ final class Lila(redisUri: RedisURI) {
       connOut.addListener(new RedisPubSubAdapter[String, String] {
         override def message(channel: String, message: String): Unit =
           LilaOut read message match {
-            case Some(out) => queue offer out
+            case Some(out) => collect lift out foreach queue.offer
             case None => logger.warn(s"Unhandled LilaOut: $message")
           }
       })

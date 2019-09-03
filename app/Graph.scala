@@ -1,5 +1,6 @@
 package lila.ws
 
+import akka.NotUsed
 import akka.stream._
 import akka.stream.scaladsl._
 import GraphDSL.Implicits._
@@ -16,38 +17,46 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
   // drops the oldest element from the buffer to make space for the new element.
   private val overflow = OverflowStrategy.dropHead
 
-  def main(lilaIn: Sink[LilaIn, _]) = RunnableGraph.fromGraph(GraphDSL.create(
-    Source.queue[LilaOut](8192, overflow), // from lila redis
-    Source.queue[LilaIn](8192, overflow), // clients -> lila (forward, notified)
+  def main(lilaInSite: Sink[LilaIn, _], lilaInLobby: Sink[LilaIn, _]) = RunnableGraph.fromGraph(GraphDSL.create(
+    Source.queue[SiteOut](8192, overflow), // from site chan
+    Source.queue[LobbyOut](8192, overflow), // from lobby chan
+    Source.queue[LilaIn](8192, overflow), // clients -> lila:site (forward, notified)
+    Source.queue[LilaIn](8192, overflow), // clients -> lila:lobby
     Source.queue[LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[UserSM.Input](256, overflow) // clients -> user machine
   ) {
-      case (lilaOut, lilaIn, lag, fen, count, user) =>
-        (lilaOut, Stream.Queues(lilaIn, lag, fen, count, user))
-    } { implicit b => (LilaOutlet, ClientToLila, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+      case (siteOut, lobbyOut, lilaInSite, lilaInLobby, lag, fen, count, user) =>
+        (siteOut, lobbyOut, Stream.Queues(lilaInSite, lilaInLobby, lag, fen, count, user))
+    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToLilaSite, ClientToLilaLobby, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
-      val LOBroad: UniformFanOutShape[LilaOut, LilaOut] = b.add(Broadcast[LilaOut](5))
+      // site
 
-      val LOBus: FlowShape[LilaOut, Bus.Msg] = b.add {
-        Flow[LilaOut].collect {
+      val SiteMerge = merge[SiteOut](2)
+
+      val SOBroad: UniformFanOutShape[SiteOut, SiteOut] = b.add(Broadcast[SiteOut](5))
+
+      val SOBus: FlowShape[SiteOut, Bus.Msg] = b.add {
+        Flow[SiteOut].collect {
           case LilaOut.Mlat(millis) => Bus.msg(ClientIn.Mlat(millis), _.mlat)
-          case LilaOut.TellFlag(flag, json) => Bus.msg(ClientIn.AnyJson(json), _ flag flag)
-          case LilaOut.TellSri(sri, json) => Bus.msg(ClientIn.AnyJson(json), _ sri sri)
-          case LilaOut.TellAll(json) => Bus.msg(ClientIn.AnyJson(json), _.all)
+          case LilaOut.TellFlag(flag, payload) => Bus.msg(ClientIn.Payload(payload), _ flag flag)
+          case LilaOut.TellSri(sri, payload) => Bus.msg(ClientIn.Payload(payload), _ sri sri)
+          case LilaOut.TellAll(payload) => Bus.msg(ClientIn.Payload(payload), _.all)
         }
       }
+
+      val BusMerge = merge[Bus.Msg](2)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
         Sink.foreach[Bus.Msg](bus.publish)
       }
 
-      val LOUser: FlowShape[LilaOut, UserSM.Input] = b.add {
+      val SOUser: FlowShape[LilaOut, UserSM.Input] = b.add {
         Flow[LilaOut].collect {
-          case LilaOut.TellUsers(users, json) => UserSM.TellMany(users, ClientIn.AnyJson(json))
+          case LilaOut.TellUsers(users, json) => UserSM.TellMany(users, ClientIn.Payload(json))
           case LilaOut.DisconnectUser(user) => UserSM.Kick(user)
         }
       }
@@ -58,7 +67,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         Flow[UserSM.Input].scan(UserSM.State())(UserSM.apply).mapConcat(_.emit.toList)
       }
 
-      val LOFen: FlowShape[LilaOut, FenSM.Input] = b.add {
+      val SOFen: FlowShape[LilaOut, FenSM.Input] = b.add {
         Flow[LilaOut].collect {
           case move: LilaOut.Move => FenSM.Move(move)
         }
@@ -70,7 +79,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         Flow[FenSM.Input].scan(FenSM.State())(FenSM.apply).mapConcat(_.emit.toList)
       }
 
-      val LOLag: FlowShape[LilaOut, LagSM.Input] = b.add {
+      val SOLag: FlowShape[LilaOut, LagSM.Input] = b.add {
         Flow[LilaOut].collect {
           case LilaOut.Mlat(millis) => LagSM.Publish
         }
@@ -82,7 +91,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         Flow[LagSM.Input].scan(LagSM.State())(LagSM.apply).mapConcat(_.emit.toList)
       }
 
-      val LOCount: FlowShape[LilaOut, CountSM.Input] = b.add {
+      val SOCount: FlowShape[LilaOut, CountSM.Input] = b.add {
         Flow[LilaOut].collect {
           case LilaOut.Mlat(millis) => CountSM.Publish
         }
@@ -96,21 +105,55 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       val LIMerge = merge[LilaIn](5)
 
-      val LilaInlet: Inlet[LilaIn] = b.add(lilaIn).in
+      val SiteInlet: Inlet[LilaIn] = b.add(lilaInSite).in
+
+      // lobby
+
+      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](3))
+
+      // forward site messages coming from lobby chan
+      val LOSite: FlowShape[LobbyOut, SiteOut] = b.add {
+        Flow[LobbyOut].collect {
+          case siteOut: SiteOut => siteOut
+        }
+      }
+
+      val LOBus: FlowShape[LobbyOut, Bus.Msg] = b.add {
+        Flow[LobbyOut].collect {
+          case LilaOut.TellLobby(payload) => Bus.msg(ClientIn.Payload(payload), _.lobby)
+        }
+      }
+
+      val LobbyPong: SinkShape[LobbyOut] = b.add {
+        Sink.foreach[LobbyOut] {
+          case LilaOut.NbMembers(nb) => LobbyPongStore.update(_.copy(members = nb))
+          case LilaOut.NbRounds(nb) => LobbyPongStore.update(_.copy(rounds = nb))
+          case _ =>
+        }
+      }
+
+      val LobbyInlet: Inlet[LilaIn] = b.add(lilaInLobby).in
 
     // format: OFF
 
-    // source     broadcast  collect    merge        machine   merge      sink
-    LilaOutlet ~> LOBroad ~> LOBus                                     ~> BusPublish
-                  LOBroad ~> LOFen   ~> FenMerge
-                  LOBroad ~> LOLag   ~> LagMerge
-                  LOBroad ~> LOUser  ~> UserMerge
-                  LOBroad ~> LOCount ~> CountMerge
-    ClientToFen                      ~> FenMerge   ~> Fen   ~> LIMerge
-    ClientToLag                      ~> LagMerge   ~> Lag   ~> LIMerge
-    ClientToUser                     ~> UserMerge  ~> User  ~> LIMerge
-    ClientToCount                    ~> CountMerge ~> Count ~> LIMerge
-    ClientToLila                                            ~> LIMerge ~> LilaInlet
+    // source      broadcast  collect    merge        machine   merge      sink
+    SiteMerge   ~> SOBroad ~> SOBus                          ~> BusMerge ~> BusPublish
+                   SOBroad ~> SOFen   ~> FenMerge
+                   SOBroad ~> SOLag   ~> LagMerge
+                   SOBroad ~> SOUser  ~> UserMerge
+                   SOBroad ~> SOCount ~> CountMerge
+    ClientToFen                       ~> FenMerge   ~> Fen   ~> LIMerge
+    ClientToLag                       ~> LagMerge   ~> Lag   ~> LIMerge
+    ClientToUser                      ~> UserMerge  ~> User  ~> LIMerge
+    ClientToCount                     ~> CountMerge ~> Count ~> LIMerge
+    ClientToLilaSite                                         ~> LIMerge  ~> SiteInlet
+
+    SiteOutlet  ~> SiteMerge
+
+    LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteMerge // merge site messages coming from lobby input into site input
+                   LOBroad ~> LOBus                          ~> BusMerge
+                   LOBroad                                               ~> LobbyPong
+    ClientToLilaLobby                                                    ~> LobbyInlet
 
     ClosedShape
   })

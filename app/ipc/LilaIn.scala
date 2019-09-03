@@ -37,15 +37,25 @@ object LilaIn {
     def write = s"connections $count"
   }
 
-  case class Connect(user: User) extends LilaIn {
-    def write = s"connect ${user.id}"
+  case class ConnectUser(user: User) extends LilaIn {
+    def write = s"connect/user ${user.id}"
   }
 
-  case class Disconnect(user: User) extends LilaIn {
-    def write = s"disconnect ${user.id}"
+  case class DisconnectUser(user: User) extends LilaIn {
+    def write = s"disconnect/user ${user.id}"
   }
 
   case object DisconnectAll extends LilaIn {
     def write = "disconnect/all"
+  }
+
+  sealed trait LobbyIn
+
+  case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends LilaIn with LobbyIn {
+    def write = s"connect/sri $sri${userId.fold("")(" " + _)}"
+  }
+
+  case class DisconnectSri(sri: Sri) extends LilaIn with LobbyIn {
+    def write = s"disconnect/sri $sri"
   }
 }

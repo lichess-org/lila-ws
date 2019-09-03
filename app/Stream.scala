@@ -23,11 +23,17 @@ final class Stream @Inject() (
 
   def start: Stream.Queues = {
 
-    val (init, sink) = lila.pubsub("site-in", "site-out")
+    val (siteInit, siteSink) = lila.pubsub("site-in", "site-out") {
+      case out: SiteOut => out
+    }
+    val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") {
+      case out: LobbyOut => out
+    }
 
-    graph.main(sink).run() match {
-      case (lilaOut, queues) =>
-        init(lilaOut, List(LilaIn.DisconnectAll))
+    graph.main(siteSink, lobbySink).run() match {
+      case (siteOut, lobbyOut, queues) =>
+        siteInit(siteOut, List(LilaIn.DisconnectAll))
+        lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
         queues
     }
   }
@@ -36,7 +42,8 @@ final class Stream @Inject() (
 object Stream {
 
   case class Queues(
-      lila: SourceQueue[LilaIn],
+      site: SourceQueue[LilaIn],
+      lobby: SourceQueue[LilaIn],
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],

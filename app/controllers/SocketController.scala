@@ -19,10 +19,10 @@ class SocketController @Inject() (val controllerComponents: ControllerComponents
 ) extends BaseController {
 
   def site(sri: String): WebSocket = WebSocket { req =>
-    server.connect(req, Sri(sri), flagOf(req)) map Right.apply
+    server.connectToSite(req, Sri(sri), flagOf(req)) map Right.apply
   }
 
   def lobby(sri: String): WebSocket = WebSocket { req =>
-    server.connect(req, Sri(sri), flagOf(req)) map Right.apply
+    server.connectToLobby(req, Sri(sri), flagOf(req)) map Right.apply
   }
 }

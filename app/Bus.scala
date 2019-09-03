@@ -35,6 +35,7 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
     def flag(f: String) = s"flag/$f"
     val mlat = "mlat"
     val all = "all"
+    val lobby = "lobby"
   }
 
   def msg(payload: ClientMsg, channel: Bus.channel.type => Classifier) =

@@ -30,11 +30,19 @@ final class Server @Inject() (
 
   private val bus = Bus(system)
 
-  def connect(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
+  def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
+    connect(req, sri, flag)(SiteClientActor.start)
+
+  def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
+    connect(req, sri, flag)(LobbyClientActor.start)
+
+  private def connect(req: RequestHeader, sri: Sri, flag: Option[Flag])(
+    actor: ClientActor.Deps => Behavior[ClientMsg]
+  ): Future[WebsocketFlow] =
     auth(req) map { user =>
       actorFlow(req) { clientIn =>
-        SiteClientActor.start {
-          SiteClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
+        actor {
+          ClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
         }
       }
     } map limitAndTransform(new RateLimit(

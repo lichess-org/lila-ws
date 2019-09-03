@@ -20,6 +20,14 @@ object ClientIn {
     val write = "0"
   }
 
+  case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
+    val write = Json stringify Json.obj(
+      "t" -> "n",
+      "d" -> members,
+      "r" -> rounds
+    )
+  }
+
   case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
     def write = clientMsg("fen", Json.obj(
       "id" -> game,
@@ -32,7 +40,15 @@ object ClientIn {
     def write = clientMsg("mlat", millis)
   }
 
-  case class AnyJson(json: JsonString) extends ClientIn {
+  case class NbMembers(value: Int) extends ClientIn {
+    def write = clientMsg("member/nb", value)
+  }
+
+  case class NbRounds(value: Int) extends ClientIn {
+    def write = clientMsg("round/nb", value)
+  }
+
+  case class Payload(json: JsonString) extends ClientIn {
     def write = json.value
   }
 

@@ -1,9 +1,7 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import akka.stream.scaladsl._
 import play.api.libs.json._
 import play.api.Logger
 
@@ -11,21 +9,37 @@ import ipc._
 
 object SiteClientActor {
 
+  import ClientActor._
+
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    import deps._
-    queue(_.count, CountSM.Connect)
-    bus.subscribe(ctx.self, _ sri sri)
-    bus.subscribe(ctx.self, _.all)
-    user foreach { u =>
-      queue(_.user, UserSM.Connect(u, ctx.self))
-    }
-    flag foreach { f =>
-      bus.subscribe(ctx.self, _ flag f.value)
-    }
+    onStart(deps, ctx)
     apply(State(), deps)
   }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
+
+    msg match {
+
+      case in: ClientIn =>
+        deps.clientIn(in)
+        Behavior.same
+
+      case ClientCtrl.Disconnect =>
+        Behaviors.stopped
+
+      case msg: ClientOut =>
+        val newState = receive(state, deps, ctx, msg)
+        if (newState == state) Behavior.same
+        else apply(newState, deps)
+    }
+
+  }.receiveSignal {
+    case (ctx, PostStop) =>
+      onStop(state, deps, ctx)
+      Behaviors.same
+  }
+
+  def receive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOut): State = {
 
     import state._
     import deps._
@@ -35,91 +49,68 @@ object SiteClientActor {
       case ClientOut.Ping(lag) =>
         clientIn(ClientIn.Pong)
         for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
-        Behavior.same
-
-      case in: ClientIn =>
-        clientIn(in)
-        Behavior.same
+        state
 
       case ClientOut.Watch(gameIds) =>
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
-        apply(
-          state.copy(watchedGames = state.watchedGames ++ gameIds),
-          deps
-        )
+        state.copy(watchedGames = state.watchedGames ++ gameIds)
 
       case ClientOut.MoveLat =>
         bus.subscribe(ctx.self, _.mlat)
-        Behavior.same
+        state
 
       case ClientOut.Notified =>
         user foreach { u =>
-          queue(_.lila, LilaIn.Notified(u.id))
+          queue(_.site, LilaIn.Notified(u.id))
         }
-        Behavior.same
+        state
 
       case ClientOut.FollowingOnline =>
         user foreach { u =>
-          queue(_.lila, LilaIn.Friends(u.id))
+          queue(_.site, LilaIn.Friends(u.id))
         }
-        Behavior.same
+        state
 
       case opening: ClientOut.Opening =>
         Chess(opening) foreach clientIn
-        Behavior.same
+        state
 
       case anaMove: ClientOut.AnaMove =>
         clientIn(Chess(anaMove))
-        Behavior.same
+        state
 
       case anaDrop: ClientOut.AnaDrop =>
         clientIn(Chess(anaDrop))
-        Behavior.same
+        state
 
       case anaDests: ClientOut.AnaDests =>
         clientIn(Chess(anaDests))
-        Behavior.same
+        state
 
       case ClientOut.Forward(payload) =>
-        queue(_.lila, LilaIn.TellSri(sri, user.map(_.id), payload))
-        Behavior.same
+        queue(_.site, LilaIn.TellSri(sri, user.map(_.id), payload))
+        state
 
       case ClientOut.Unexpected(msg) =>
-        if (state.ignoreLog) Behavior.same
+        if (state.ignoreLog) state
         else {
           Logger("SiteClient").info(s"Unexpected $msg IP: $ipAddress UA: $userAgent")
-          apply(state.copy(ignoreLog = true), deps)
+          state.copy(ignoreLog = true)
         }
 
       case ClientOut.Ignore =>
-        Behavior.same
-
-      case ClientCtrl.Disconnect =>
-        Behaviors.stopped
+        state
     }
-  }.receiveSignal {
-    case (ctx, PostStop) =>
-      import deps._
-      queue(_.count, CountSM.Disconnect)
-      user foreach { u =>
-        queue(_.user, UserSM.Disconnect(u, ctx.self))
-      }
-      if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
-      bus unsubscribe ctx.self
-      Behaviors.same
   }
 
-  case class Deps(
-      client: SourceQueue[ClientIn],
-      queue: Stream.Queues,
-      sri: Sri,
-      flag: Option[Flag],
-      user: Option[User],
-      userAgent: String,
-      ipAddress: String,
-      bus: Bus
-  ) {
-    def clientIn(msg: ClientIn): Unit = client offer msg
+  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
+    import deps._
+    queue(_.count, CountSM.Disconnect)
+    user foreach { u =>
+      queue(_.user, UserSM.Disconnect(u, ctx.self))
+    }
+    if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
+    bus unsubscribe ctx.self
   }
 
   case class State(

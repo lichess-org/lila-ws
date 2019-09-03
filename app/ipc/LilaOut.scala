@@ -9,21 +9,39 @@ import scala.util.Try
 
 sealed trait LilaOut extends LilaMsg
 
+sealed trait LobbyOut extends LilaOut
+
+sealed trait SiteOut extends LilaOut
+
 object LilaOut {
 
-  case class Move(game: Game.ID, lastUci: Uci, fen: FEN) extends LilaOut
+  // site
 
-  case class Mlat(millis: Double) extends LilaOut
+  case class Move(game: Game.ID, lastUci: Uci, fen: FEN) extends SiteOut
 
-  case class TellFlag(flag: String, json: JsonString) extends LilaOut
+  case class Mlat(millis: Double) extends SiteOut
 
-  case class TellUsers(users: Iterable[User.ID], json: JsonString) extends LilaOut
+  case class TellFlag(flag: String, json: JsonString) extends SiteOut
 
-  case class TellSri(sri: Sri, json: JsonString) extends LilaOut
+  case class TellUsers(users: Iterable[User.ID], json: JsonString) extends SiteOut
 
-  case class TellAll(json: JsonString) extends LilaOut
+  case class TellAll(json: JsonString) extends SiteOut
 
-  case class DisconnectUser(user: User.ID) extends LilaOut
+  case class DisconnectUser(user: User.ID) extends SiteOut
+
+  // site, lobby
+
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut
+
+  // lobby
+
+  case class TellLobby(json: JsonString) extends LobbyOut
+
+  case class NbMembers(value: Int) extends LobbyOut
+
+  case class NbRounds(value: Int) extends LobbyOut
+
+  // impl
 
   def read(str: String): Option[LilaOut] = {
     val parts = str.split(" ", 2)
@@ -55,6 +73,12 @@ object LilaOut {
       case "tell/all" => Some(TellAll(JsonString(args)))
 
       case "disconnect/user" => Some(DisconnectUser(args))
+
+      case "tell/lobby" => Some(TellLobby(JsonString(args)))
+
+      case "member/nb" => Try(NbMembers(parseInt(args))).toOption
+
+      case "round/nb" => Try(NbRounds(parseInt(args))).toOption
 
       case _ => None
     }

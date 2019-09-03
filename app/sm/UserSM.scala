@@ -18,7 +18,7 @@ object UserSM {
       state.users get user.id match {
         case None => state.copy(
           users = state.users + (user.id -> Set(client)),
-          emit = Some(LilaIn.Connect(user))
+          emit = Some(LilaIn.ConnectUser(user))
         )
         case Some(clients) => state.copy(
           users = state.users + (user.id -> (clients + client)),
@@ -33,7 +33,7 @@ object UserSM {
           val newClients = clients - client
           if (newClients.isEmpty) state.copy(
             users = state.users - user.id,
-            emit = Some(LilaIn.Disconnect(user))
+            emit = Some(LilaIn.DisconnectUser(user))
           )
           else state.copy(
             users = state.users + (user.id -> newClients),
