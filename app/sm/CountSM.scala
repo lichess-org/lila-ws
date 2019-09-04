@@ -7,7 +7,7 @@ object CountSM {
 
   case class State(
       count: Int = 0,
-      emit: Option[LilaIn] = None
+      emit: Option[LilaIn.Site] = None
   )
 
   def zero = State()
@@ -26,5 +26,5 @@ object CountSM {
   case object Disconnect extends Input
   case object Publish extends Input
 
-  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
+  def machine = StateMachine[State, Input, LilaIn.Site](State(), apply _, _.emit.toList)
 }

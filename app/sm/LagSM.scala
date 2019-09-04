@@ -7,7 +7,7 @@ object LagSM {
 
   case class State(
       lags: Map[User.ID, Int] = Map.empty,
-      emit: Option[LilaIn] = None
+      emit: Option[LilaIn.Site] = None
   )
 
   def apply(state: State, input: Input): State = input match {
@@ -27,5 +27,5 @@ object LagSM {
   case class Set(user: User, lag: Int) extends Input
   case object Publish extends Input
 
-  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
+  def machine = StateMachine[State, Input, LilaIn.Site](State(), apply _, _.emit.toList)
 }

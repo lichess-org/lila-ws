@@ -11,7 +11,7 @@ object FenSM {
 
   case class State(
       games: Map[Game.ID, Watched] = Map.empty,
-      emit: List[LilaIn] = Nil
+      emit: List[LilaIn.Site] = Nil
   )
 
   def apply(state: State, input: Input): State = input match {
@@ -71,5 +71,5 @@ object FenSM {
   case class Position(lastUci: Uci, fen: FEN)
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 
-  def machine = StateMachine[State, Input](State(), apply _, _.emit)
+  def machine = StateMachine[State, Input, LilaIn.Site](State(), apply _, _.emit)
 }

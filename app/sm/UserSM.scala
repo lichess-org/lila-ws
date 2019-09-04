@@ -11,7 +11,7 @@ object UserSM {
   case class State(
       users: Map[User.ID, Set[ActorRef[ClientMsg]]] = Map.empty,
       disconnects: Set[User.ID] = Set.empty,
-      emit: Option[LilaIn] = None
+      emit: Option[LilaIn.Site] = None
   )
 
   def apply(state: State, input: Input): State = input match {
@@ -89,5 +89,5 @@ object UserSM {
   case class Kick(userId: User.ID) extends Input
   case object PublishDisconnects extends Input
 
-  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
+  def machine = StateMachine[State, Input, LilaIn.Site](State(), apply _, _.emit.toList)
 }

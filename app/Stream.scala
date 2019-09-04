@@ -20,7 +20,7 @@ final class Stream @Inject() (
     mat: akka.stream.Materializer
 ) {
 
-  val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
+  private val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
 
   def start: Stream.Queues = {
 
@@ -31,7 +31,7 @@ final class Stream @Inject() (
       case out: LobbyOut => out
     }
 
-    graph.main(siteSink, lobbySink).run() match {
+    graph(siteSink, lobbySink).run() match {
       case (siteOut, lobbyOut, queues) =>
         siteInit(siteOut, List(LilaIn.DisconnectAll))
         lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
@@ -45,8 +45,8 @@ object Stream {
   case class Queues(
       notified: SourceQueue[LilaIn.Notified],
       friends: SourceQueue[LilaIn.Friends],
-      site: SourceQueue[LilaIn],
-      lobby: SourceQueue[LilaIn],
+      site: SourceQueue[LilaIn.Site],
+      lobby: SourceQueue[LilaIn.Lobby],
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
