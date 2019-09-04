@@ -53,11 +53,11 @@ object FenSM {
     // move comes from the server
     case Move(LilaOut.Move(gameId, lastUci, fen)) =>
       state.games.get(gameId).fold(state.copy(emit = Nil)) {
-        case Watched(_, clients) =>
+        case w @ Watched(_, clients) =>
           val msg = ClientIn.Fen(gameId, lastUci, fen)
           clients foreach { _ ! msg }
           state.copy(
-            games = state.games + (gameId -> Watched(Some(Position(lastUci, fen)), clients)),
+            games = state.games + (gameId -> w.copy(position = Some(Position(lastUci, fen)))),
             emit = Nil
           )
       }
