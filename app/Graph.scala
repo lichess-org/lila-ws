@@ -5,6 +5,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import GraphDSL.Implicits._
 import javax.inject._
+import scala.concurrent.duration._
 
 import ipc._
 
@@ -61,7 +62,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
         }
       }
 
-      val UserMerge = merge[UserSM.Input](2)
+      val UserMerge = merge[UserSM.Input](3)
 
       val User: FlowShape[UserSM.Input, LilaIn] = b.add {
         Flow[UserSM.Input].scan(UserSM.State())(UserSM.apply).mapConcat(_.emit.toList)
@@ -139,6 +140,10 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       val LobbyInlet: Inlet[LilaIn] = b.add(lilaInLobby).in
 
+      val UserTicker: SourceShape[UserSM.Input] = b.add {
+        Source.tick(7.seconds, 5.seconds, UserSM.PublishDisconnects)
+      }
+
     // format: OFF
 
     // source      broadcast  collect    merge        machine   merge      sink
@@ -159,6 +164,8 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
                    LOBroad ~> LOBus                          ~> BusMerge
                    LOBroad                                               ~> LobbyPong
     ClientToLilaLobby                                                    ~> LobbyInlet
+
+    UserTicker                        ~> UserMerge
 
     ClosedShape
   })

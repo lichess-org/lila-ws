@@ -9,12 +9,13 @@ object UserSM {
 
   case class State(
       users: Map[User.ID, Set[ActorRef[ClientMsg]]] = Map.empty,
+      disconnects: Set[User.ID] = Set.empty,
       emit: Option[LilaIn] = None
   )
 
   def apply(state: State, input: Input): State = input match {
 
-    case Connect(user, client) =>
+    case Connect(user, client) => {
       state.users get user.id match {
         case None => state.copy(
           users = state.users + (user.id -> Set(client)),
@@ -25,6 +26,16 @@ object UserSM {
           emit = None
         )
       }
+    } match {
+      // if a disconnect for that user was buffered,
+      // remove it from the buffer and skip the ConnectUser event
+      case s @ State(_, discs, Some(LilaIn.ConnectUser(user))) if discs(user.id) => s.copy(
+        disconnects = discs - user.id,
+        emit = None
+      )
+      case state => state
+    }
+
     case ConnectSilently(user, client) =>
       apply(state, Connect(user, client)).copy(emit = None)
 
@@ -35,13 +46,19 @@ object UserSM {
           val newClients = clients - client
           if (newClients.isEmpty) state.copy(
             users = state.users - user.id,
-            emit = Some(LilaIn.DisconnectUser(user))
+            disconnects = state.disconnects + user.id,
+            emit = None
           )
           else state.copy(
             users = state.users + (user.id -> newClients),
             emit = None
           )
       }
+
+    case PublishDisconnects => state.copy(
+      disconnects = Set.empty,
+      emit = Some(LilaIn.DisconnectUsers(state.disconnects))
+    )
 
     case TellOne(userId, payload) =>
       state.users get userId foreach {
@@ -69,4 +86,5 @@ object UserSM {
   case class TellOne(userId: User.ID, payload: ClientIn) extends Input
   case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
   case class Kick(userId: User.ID) extends Input
+  case object PublishDisconnects extends Input
 }

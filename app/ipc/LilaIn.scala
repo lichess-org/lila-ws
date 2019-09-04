@@ -41,8 +41,8 @@ object LilaIn {
     def write = s"connect/user ${user.id}"
   }
 
-  case class DisconnectUser(user: User) extends LilaIn {
-    def write = s"disconnect/user ${user.id}"
+  case class DisconnectUsers(userIds: Set[User.ID]) extends LilaIn {
+    def write = s"disconnect/users ${userIds mkString ","}"
   }
 
   case object DisconnectAll extends LilaIn {
