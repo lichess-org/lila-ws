@@ -31,14 +31,14 @@ final class Server @Inject() (
   private val bus = Bus(system)
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(SiteClientActor.start) map limitAndTransform(new RateLimit(
+    connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 15.seconds,
       name = reqName(req)
     ))
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(LobbyClientActor.start) map limitAndTransform(new RateLimit(
+    connectTo(req, sri, flag)(LobbyClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
       name = reqName(req)
@@ -46,7 +46,7 @@ final class Server @Inject() (
 
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
-  ): Future[WebsocketFlow] =
+  ): Future[Flow[ClientOut, ClientIn, _]] =
     auth(req) map { user =>
       actorFlow(req) { clientIn =>
         actor {
@@ -55,7 +55,7 @@ final class Server @Inject() (
       }
     }
 
-  private def limitAndTransform(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
+  private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
     AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
       case TextMessage(text) if limiter(text) => ClientOut.parse(text).fold(
         _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
