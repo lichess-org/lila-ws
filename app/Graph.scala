@@ -1,24 +1,20 @@
 package lila.ws
 
-import akka.NotUsed
 import akka.stream._
 import akka.stream.scaladsl._
 import GraphDSL.Implicits._
-import javax.inject._
 import scala.concurrent.duration._
 
 import ipc._
 
-@Singleton
-final class Graph @Inject() (system: akka.actor.ActorSystem) {
+object Graph {
 
-  private val bus = Bus(system)
+  type GraphType = RunnableGraph[(SourceQueueWithComplete[SiteOut], SourceQueueWithComplete[LobbyOut], Stream.Queues)]
 
-  // If the buffer is full when a new element arrives,
-  // drops the oldest element from the buffer to make space for the new element.
-  private val overflow = OverflowStrategy.dropHead
-
-  def apply(lilaInSite: Sink[LilaIn.Site, _], lilaInLobby: Sink[LilaIn.Lobby, _]) = RunnableGraph.fromGraph(GraphDSL.create(
+  def apply(
+    lilaInSite: Sink[LilaIn.Site, _],
+    lilaInLobby: Sink[LilaIn.Lobby, _]
+  )(implicit system: akka.actor.ActorSystem): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
     Source.queue[LilaIn.Notified](128, overflow), // clients -> lila:site notified
@@ -60,6 +56,7 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       val ClientBus = merge[Bus.Msg](2)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
+        val bus = Bus(system)
         Sink.foreach[Bus.Msg](bus.publish)
       }
 
@@ -185,4 +182,8 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       ClosedShape
     })
+
+  // If the buffer is full when a new element arrives,
+  // drops the oldest element from the buffer to make space for the new element.
+  private val overflow = OverflowStrategy.dropHead
 }

@@ -34,14 +34,14 @@ final class Server @Inject() (
     connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 15.seconds,
-      name = reqName(req)
+      name = s"site ${reqName(req)}"
     ))
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     connectTo(req, sri, flag)(LobbyClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
-      name = reqName(req)
+      name = s"lobby ${reqName(req)}"
     ))
 
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(

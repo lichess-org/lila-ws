@@ -28,7 +28,10 @@ final class Lila(redisUri: RedisURI) {
       connOut.addListener(new RedisPubSubAdapter[String, String] {
         override def message(channel: String, msg: String): Unit =
           LilaOut read msg match {
-            case Some(out) => collect lift out foreach queue.offer
+            case Some(out) => collect lift out match {
+              case Some(typed) => queue offer typed
+              case None => logger.warn(s"Received $out on wrong channel: $chanOut")
+            }
             case None => logger.warn(s"Unhandled LilaOut: $msg")
           }
       })

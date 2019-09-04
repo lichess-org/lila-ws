@@ -11,10 +11,7 @@ import ipc._
 import sm._
 
 @Singleton
-final class Stream @Inject() (
-    config: Configuration,
-    graph: Graph
-)(implicit
+final class Stream @Inject() (config: Configuration)(implicit
     ec: ExecutionContext,
     system: ActorSystem,
     mat: akka.stream.Materializer
@@ -31,12 +28,12 @@ final class Stream @Inject() (
       case out: LobbyOut => out
     }
 
-    graph(siteSink, lobbySink).run() match {
-      case (siteOut, lobbyOut, queues) =>
-        siteInit(siteOut, List(LilaIn.DisconnectAll))
-        lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
-        queues
-    }
+    val (siteOut, lobbyOut, queues) = Graph(siteSink, lobbySink).run()
+
+    siteInit(siteOut, List(LilaIn.DisconnectAll))
+    lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
+
+    queues
   }
 }
 
