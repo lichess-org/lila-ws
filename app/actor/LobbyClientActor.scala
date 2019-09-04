@@ -11,11 +11,6 @@ object LobbyClientActor {
 
   import ClientActor._
 
-  case class State(
-    site: ClientActor.State,
-    hooks: Boolean
-  )
-
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
@@ -24,7 +19,7 @@ object LobbyClientActor {
     }
     queue(_.lobby, LilaIn.ConnectSri(sri, user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)
-    apply(State(ClientActor.State(), false), deps)
+    apply(State(), deps)
   }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
@@ -51,7 +46,7 @@ object LobbyClientActor {
 
       // default receive (site)
       case msg: ClientOutSite =>
-        val newState = state.copy(site = globalReceive(state.site, deps, ctx, msg))
+        val newState = globalReceive(state, deps, ctx, msg)
         if (newState == state) Behavior.same
         else apply(newState, deps)
     }
@@ -59,7 +54,7 @@ object LobbyClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       import deps._
-      onStop(state.site, deps, ctx)
+      onStop(state, deps, ctx)
       queue(_.lobby, LilaIn.DisconnectSri(sri))
       Behaviors.same
   }
