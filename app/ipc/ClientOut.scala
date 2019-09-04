@@ -70,7 +70,7 @@ object ClientOut {
         case "startWatching" => o.str("d").map(_ split " " toSet) map Watch.apply
         case "moveLat" => Some(MoveLat)
         case "notified" => Some(Notified)
-        case "following_onlines" => Some(Notified)
+        case "following_onlines" => Some(FollowingOnline)
         case "opening" => for {
           d <- o obj "d"
           path <- d str "path"
