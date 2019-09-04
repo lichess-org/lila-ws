@@ -33,7 +33,7 @@ object UserSM {
         disconnects = discs - user.id,
         emit = None
       )
-      case state => state
+      case s => s
     }
 
     case ConnectSilently(user, client) =>
