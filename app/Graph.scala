@@ -119,8 +119,13 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
       }
 
       val LOBus: FlowShape[LobbyOut, Bus.Msg] = b.add {
-        Flow[LobbyOut].collect {
-          case LilaOut.TellLobby(payload) => Bus.msg(ClientIn.Payload(payload), _.lobby)
+        Flow[LobbyOut].mapConcat {
+          case LilaOut.TellLobby(payload) => List(Bus.msg(ClientIn.Payload(payload), _.lobby))
+          case LilaOut.DisconnectSri(sri) => List(Bus.msg(ClientCtrl.Disconnect, _ sri sri))
+          case LilaOut.TellSris(sris, payload) => sris map { sri =>
+            Bus.msg(ClientIn.Payload(payload), _ sri sri)
+          }
+          case _ => Nil
         }
       }
 

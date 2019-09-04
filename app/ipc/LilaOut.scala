@@ -41,6 +41,10 @@ object LilaOut {
 
   case class NbRounds(value: Int) extends LobbyOut
 
+  case class DisconnectSri(sri: Sri) extends LobbyOut
+
+  case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
+
   // impl
 
   def read(str: String): Option[LilaOut] = {
@@ -74,11 +78,21 @@ object LilaOut {
 
       case "disconnect/user" => Some(DisconnectUser(args))
 
+      case "disconnect/sri" => Some(DisconnectSri(Sri(args)))
+
       case "tell/lobby" => Some(TellLobby(JsonString(args)))
 
       case "member/nb" => Try(NbMembers(parseInt(args))).toOption
 
       case "round/nb" => Try(NbRounds(parseInt(args))).toOption
+
+      case "tell/sris" => args.split(" ", 2) match {
+        case Array(sris, payload) => Some(TellSris(
+          sris.split(",").toSeq map Sri.apply,
+          JsonString(payload)
+        ))
+        case _ => None
+      }
 
       case _ => None
     }
