@@ -1,4 +1,5 @@
 package lila.ws
+package sm
 
 import ipc.LilaIn
 
@@ -8,6 +9,8 @@ object CountSM {
       count: Int = 0,
       emit: Option[LilaIn] = None
   )
+
+  def zero = State()
 
   def apply(state: State, input: Input): State = input match {
 
@@ -22,4 +25,6 @@ object CountSM {
   case object Connect extends Input
   case object Disconnect extends Input
   case object Publish extends Input
+
+  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
 }

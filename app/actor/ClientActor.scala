@@ -6,6 +6,7 @@ import akka.stream.scaladsl._
 import play.api.Logger
 
 import ipc._
+import sm._
 
 object ClientActor {
 

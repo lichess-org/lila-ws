@@ -1,4 +1,5 @@
 package lila.ws
+package sm
 
 import akka.actor.typed.ActorRef
 import chess.format.{ FEN, Uci }
@@ -69,4 +70,6 @@ object FenSM {
 
   case class Position(lastUci: Uci, fen: FEN)
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
+
+  def machine = StateMachine[State, Input](State(), apply _, _.emit)
 }

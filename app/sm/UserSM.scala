@@ -1,4 +1,5 @@
 package lila.ws
+package sm
 
 import akka.actor.typed.ActorRef
 import play.api.libs.json.JsObject
@@ -87,4 +88,6 @@ object UserSM {
   case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
   case class Kick(userId: User.ID) extends Input
   case object PublishDisconnects extends Input
+
+  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
 }

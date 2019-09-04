@@ -1,4 +1,5 @@
 package lila.ws
+package sm
 
 import ipc.LilaIn
 
@@ -25,4 +26,6 @@ object LagSM {
   sealed trait Input
   case class Set(user: User, lag: Int) extends Input
   case object Publish extends Input
+
+  def machine = StateMachine[State, Input](State(), apply _, _.emit.toList)
 }

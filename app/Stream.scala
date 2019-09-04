@@ -8,6 +8,7 @@ import play.api.Configuration
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
+import sm._
 
 @Singleton
 final class Stream @Inject() (

@@ -6,6 +6,7 @@ import play.api.libs.json._
 import play.api.Logger
 
 import ipc._
+import sm._
 
 object LobbyClientActor {
 
