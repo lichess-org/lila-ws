@@ -21,16 +21,18 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
   def main(lilaInSite: Sink[LilaIn, _], lilaInLobby: Sink[LilaIn, _]) = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
-    Source.queue[LilaIn](8192, overflow), // clients -> lila:site (forward, notified)
+    Source.queue[LilaIn.Notified](128, overflow), // clients -> lila:site notified
+    Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
+    Source.queue[LilaIn](8192, overflow), // clients -> lila:site (forward)
     Source.queue[LilaIn](8192, overflow), // clients -> lila:lobby
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
   ) {
-      case (siteOut, lobbyOut, lilaInSite, lilaInLobby, lag, fen, count, user) =>
-        (siteOut, lobbyOut, Stream.Queues(lilaInSite, lilaInLobby, lag, fen, count, user))
-    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToLilaSite, ClientToLilaLobby, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+      case (siteOut, lobbyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lag, fen, count, user) =>
+        (siteOut, lobbyOut, Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lag, fen, count, user))
+    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -100,7 +102,19 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
       val CountSM: FlowShape[sm.CountSM.Input, LilaIn] = machine(sm.CountSM.machine)
 
-      val SiteIn = merge[LilaIn](5)
+      val Notified: FlowShape[LilaIn.Notified, LilaIn.NotifiedBatch] = b.add {
+        Flow[LilaIn.Notified].groupedWithin(40, 1001.millis) map { notifs =>
+          LilaIn.NotifiedBatch(notifs.map(_.userId))
+        }
+      }
+
+      val Friends: FlowShape[LilaIn.Friends, LilaIn.FriendsBatch] = b.add {
+        Flow[LilaIn.Friends].groupedWithin(10, 503.millis) map { friends =>
+          LilaIn.FriendsBatch(friends.map(_.userId))
+        }
+      }
+
+      val SiteIn = merge[LilaIn](7)
 
       val SiteInlet: Inlet[LilaIn] = b.add(lilaInSite).in
 
@@ -144,25 +158,27 @@ final class Graph @Inject() (system: akka.actor.ActorSystem) {
 
     //                                            state
     // source      broadcast  collect    merge    machine    merge        sink
-    SiteOut     ~> SOBroad ~> SOBus                       ~> ClientBus ~> BusPublish
+    SiteOut     ~> SOBroad ~> SOBus                        ~> ClientBus ~> BusPublish
                    SOBroad ~> SOFen   ~> Fen
                    SOBroad ~> SOLag   ~> Lag
                    SOBroad ~> SOUser  ~> User
                    SOBroad ~> SOCount ~> Count
-    ClientToFen                       ~> Fen   ~> FenSM   ~> SiteIn
-    ClientToLag                       ~> Lag   ~> LagSM   ~> SiteIn
-    ClientToUser                      ~> User  ~> UserSM  ~> SiteIn
-    ClientToCount                     ~> Count ~> CountSM ~> SiteIn
-    ClientToLilaSite                                      ~> SiteIn    ~> SiteInlet
+    ClientToFen                       ~> Fen   ~> FenSM    ~> SiteIn
+    ClientToLag                       ~> Lag   ~> LagSM    ~> SiteIn
+    ClientToUser                      ~> User  ~> UserSM   ~> SiteIn
+    ClientToCount                     ~> Count ~> CountSM  ~> SiteIn
+    ClientToFriends                            ~> Friends  ~> SiteIn
+    ClientToNotified                           ~> Notified ~> SiteIn
+    ClientToSite                                           ~> SiteIn    ~> SiteInlet
 
     SiteOutlet  ~> SiteOut
 
     LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteOut // merge site messages coming from lobby input into site input
                    LOBroad ~> LOBus                       ~> ClientBus
-                   LOBroad                                             ~> LobbyPong
-    ClientToLilaLobby                                                  ~> LobbyInlet
+                   LOBroad                                              ~> LobbyPong
+    ClientToLobby                                                       ~> LobbyInlet
 
-    UserTicker                                 ~> UserSM
+    UserTicker                        ~> User
 
     ClosedShape
   })

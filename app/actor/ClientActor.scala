@@ -52,13 +52,13 @@ object ClientActor {
 
       case ClientOut.Notified =>
         user foreach { u =>
-          queue(_.site, LilaIn.Notified(u.id))
+          queue(_.notified, LilaIn.Notified(u.id))
         }
         state
 
       case ClientOut.FollowingOnline =>
         user foreach { u =>
-          queue(_.site, LilaIn.Friends(u.id))
+          queue(_.friends, LilaIn.Friends(u.id))
         }
         state
 

@@ -24,9 +24,15 @@ object LilaIn {
   case class Notified(userId: User.ID) extends LilaIn {
     def write = s"notified $userId"
   }
+  case class NotifiedBatch(userIds: Iterable[User.ID]) extends LilaIn {
+    def write = s"notified/batch ${userIds mkString ","}"
+  }
 
   case class Friends(userId: User.ID) extends LilaIn {
     def write = s"friends $userId"
+  }
+  case class FriendsBatch(userIds: Iterable[User.ID]) extends LilaIn {
+    def write = s"friends/batch ${userIds mkString ","}"
   }
 
   case class Lags(value: Map[User.ID, Int]) extends LilaIn {

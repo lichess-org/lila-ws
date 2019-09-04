@@ -43,6 +43,8 @@ final class Stream @Inject() (
 object Stream {
 
   case class Queues(
+      notified: SourceQueue[LilaIn.Notified],
+      friends: SourceQueue[LilaIn.Friends],
       site: SourceQueue[LilaIn],
       lobby: SourceQueue[LilaIn],
       lag: SourceQueue[LagSM.Input],

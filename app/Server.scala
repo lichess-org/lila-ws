@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
-import lila.ws.util.Util.{ userAgent, flagOf }
+import lila.ws.util.Util.{ reqName, userAgent, flagOf }
 
 @Singleton
 final class Server @Inject() (
@@ -31,12 +31,20 @@ final class Server @Inject() (
   private val bus = Bus(system)
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connect(req, sri, flag)(SiteClientActor.start)
+    connectTo(req, sri, flag)(SiteClientActor.start) map limitAndTransform(new RateLimit(
+      maxCredits = 30,
+      duration = 15.seconds,
+      name = reqName(req)
+    ))
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connect(req, sri, flag)(LobbyClientActor.start)
+    connectTo(req, sri, flag)(LobbyClientActor.start) map limitAndTransform(new RateLimit(
+      maxCredits = 30,
+      duration = 30.seconds,
+      name = reqName(req)
+    ))
 
-  private def connect(req: RequestHeader, sri: Sri, flag: Option[Flag])(
+  private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[WebsocketFlow] =
     auth(req) map { user =>
@@ -45,11 +53,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
         }
       }
-    } map limitAndTransform(new RateLimit(
-      maxCredits = 30,
-      duration = 15.seconds,
-      name = s"IP: ${req.remoteAddress} UA: ${userAgent(req)}"
-    ))
+    }
 
   private def limitAndTransform(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
     AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
