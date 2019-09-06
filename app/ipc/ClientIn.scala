@@ -52,6 +52,10 @@ object ClientIn {
     def write = json.value
   }
 
+  case class NonIdle(payload: Payload) extends ClientIn {
+    def write = payload.write
+  }
+
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = clientMsg("opening", Json.obj(
       "path" -> path,

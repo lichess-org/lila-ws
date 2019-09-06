@@ -12,6 +12,11 @@ object LobbyClientActor {
 
   import ClientActor._
 
+  case class State(
+      idle: Boolean = false,
+      site: ClientActor.State = ClientActor.State()
+  )
+
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
@@ -27,7 +32,13 @@ object LobbyClientActor {
 
     import deps._
 
+    def forward(payload: JsValue): Unit = queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
+
     msg match {
+
+      case in: ClientIn.NonIdle =>
+        if (!state.idle) clientIn(in)
+        Behavior.same
 
       case in: ClientIn =>
         clientIn(in)
@@ -42,20 +53,24 @@ object LobbyClientActor {
         Behavior.same
 
       case ClientOut.Forward(payload) =>
-        queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
+        forward(payload)
         Behavior.same
+
+      case ClientOut.Idle(value, payload) =>
+        forward(payload)
+        apply(state.copy(idle = value), deps)
 
       // default receive (site)
       case msg: ClientOutSite =>
-        val newState = globalReceive(state, deps, ctx, msg)
-        if (newState == state) Behavior.same
-        else apply(newState, deps)
+        val siteState = globalReceive(state.site, deps, ctx, msg)
+        if (siteState == state.site) Behavior.same
+        else apply(state.copy(site = siteState), deps)
     }
 
   }.receiveSignal {
     case (ctx, PostStop) =>
       import deps._
-      onStop(state, deps, ctx)
+      onStop(state.site, deps, ctx)
       queue(_.lobby, LilaIn.DisconnectSri(sri))
       Behaviors.same
   }

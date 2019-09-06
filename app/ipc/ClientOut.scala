@@ -60,6 +60,10 @@ object ClientOut {
 
   case object Ignore extends ClientOutSite
 
+  // lobby
+
+  case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
+
   // impl
 
   def parse(str: String): Try[ClientOut] =
@@ -105,6 +109,7 @@ object ClientOut {
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
         case "evalGet" | "evalPut" => Some(Forward(o))
         // lobby
+        case "idle" => o boolean "d" map { Idle(_, o) }
         case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
           Some(Forward(o))
         // meh
