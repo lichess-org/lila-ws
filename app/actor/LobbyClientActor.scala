@@ -49,10 +49,9 @@ object LobbyClientActor {
       case ClientCtrl.Disconnect =>
         Behavior.stopped
 
-      case ClientOut.Ping(lag) =>
+      case msg: ClientOut.Ping =>
         clientIn(LobbyPongStore.get)
-        for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
-        Behavior.same
+        apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
       case ClientOut.Forward(payload) =>
         forward(payload)

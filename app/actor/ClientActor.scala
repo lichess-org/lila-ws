@@ -41,6 +41,11 @@ object ClientActor {
       Behaviors.stopped
   }
 
+  def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
+    for { l <- msg.lag; u <- deps.user } deps.queue(_.lag, LagSM.Set(u, l))
+    state.copy(lastPing = nowSeconds)
+  }
+
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
 
     import state._
@@ -48,10 +53,9 @@ object ClientActor {
 
     msg match {
 
-      case ClientOut.Ping(lag) =>
+      case msg: ClientOut.Ping =>
         clientIn(ClientIn.Pong)
-        for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
-        state.copy(lastPing = nowSeconds)
+        sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))

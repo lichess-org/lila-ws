@@ -30,8 +30,8 @@ final class Server @Inject() (
 
   private val bus = Bus(system)
 
-  system.scheduler.schedule(20.seconds, 1249.millis) {
-    bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 15), _.all)
+  system.scheduler.schedule(30.seconds, 7211.millis) {
+    bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
