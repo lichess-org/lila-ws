@@ -24,12 +24,11 @@ object SiteClientActor {
 
     msg match {
 
+      case ctrl: ClientCtrl => ClientActor.socketControl(state, ctrl)
+
       case in: ClientIn =>
         deps.clientIn(in)
         Behavior.same
-
-      case ClientCtrl.Disconnect =>
-        Behaviors.stopped
 
       case msg: ClientOutSite =>
         val newState = globalReceive(state, deps, ctx, msg)

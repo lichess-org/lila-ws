@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
-import lila.ws.util.Util.{ reqName, userAgent, flagOf }
+import lila.ws.util.Util.{ reqName, userAgent, flagOf, nowSeconds }
 
 @Singleton
 final class Server @Inject() (
@@ -29,6 +29,10 @@ final class Server @Inject() (
   private val queues = stream.start
 
   private val bus = Bus(system)
+
+  system.scheduler.schedule(20.seconds, 1249.millis) {
+    bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 15), _.all)
+  }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(

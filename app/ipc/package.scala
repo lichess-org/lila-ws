@@ -8,6 +8,7 @@ package object ipc {
 
   object ClientCtrl {
     case object Disconnect extends ClientCtrl
+    case class Broom(oldSeconds: Int) extends ClientCtrl
   }
 
   trait LilaMsg

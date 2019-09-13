@@ -7,6 +7,7 @@ import play.api.Logger
 
 import ipc._
 import sm._
+import util.Util.nowSeconds
 
 object ClientActor {
 
@@ -30,6 +31,16 @@ object ClientActor {
     bus unsubscribe ctx.self
   }
 
+  def socketControl(state: State, msg: ClientCtrl): Behavior[ClientMsg] = msg match {
+
+    case ClientCtrl.Broom(oldSeconds) =>
+      if (state.lastPing < oldSeconds) Behaviors.stopped
+      else Behaviors.same
+
+    case ClientCtrl.Disconnect =>
+      Behaviors.stopped
+  }
+
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
 
     import state._
@@ -40,7 +51,7 @@ object ClientActor {
       case ClientOut.Ping(lag) =>
         clientIn(ClientIn.Pong)
         for { l <- lag; u <- user } queue(_.lag, LagSM.Set(u, l))
-        state
+        state.copy(lastPing = nowSeconds)
 
       case ClientOut.Watch(gameIds) =>
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
@@ -96,6 +107,7 @@ object ClientActor {
 
   case class State(
       watchedGames: Set[Game.ID] = Set.empty,
+      lastPing: Int = nowSeconds,
       ignoreLog: Boolean = false
   )
 
