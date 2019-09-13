@@ -32,8 +32,8 @@ final class Server @Inject() (
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
-      maxCredits = 30,
-      duration = 15.seconds,
+      maxCredits = 50,
+      duration = 20.seconds,
       name = s"site ${reqName(req)}"
     ))
 
