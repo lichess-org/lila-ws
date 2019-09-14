@@ -2,6 +2,6 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET     /socket/v4                          controllers.SocketController.site(sri: String)
-GET     /analysis/socket/v4                 controllers.SocketController.site(sri: String)
-GET     /lobby/socket/v4                    controllers.SocketController.lobby(sri: String)
+GET     /socket/v:apiVersion                controllers.SocketController.site(sri: String, apiVersion: Int)
+GET     /analysis/socket/v:apiVersion       controllers.SocketController.site(sri: String, apiVersion: Int)
+GET     /lobby/socket/v:apiVersion          controllers.SocketController.lobby(sri: String, apiVersion: Int)
