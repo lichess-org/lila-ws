@@ -44,6 +44,7 @@ object Stream {
       friends: SourceQueue[LilaIn.Friends],
       site: SourceQueue[LilaIn.Site],
       lobby: SourceQueue[LilaIn.Lobby],
+      connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],

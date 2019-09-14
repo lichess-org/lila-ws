@@ -21,17 +21,18 @@ object Graph {
     Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
     Source.queue[LilaIn.Site](8192, overflow), // clients -> lila:site (forward)
     Source.queue[LilaIn.Lobby](8192, overflow), // clients -> lila:lobby
+    Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
   ) {
-      case (siteOut, lobbyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInDisconnect, lag, fen, count, user) => (
+      case (siteOut, lobbyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
         siteOut, lobbyOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInDisconnect, lag, fen, count, user)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -114,9 +115,15 @@ object Graph {
         }
       }
 
+      val Connects: FlowShape[LilaIn.ConnectSri, LilaIn.ConnectSris] = b.add {
+        Flow[LilaIn.ConnectSri].groupedWithin(10, 479.millis) map { con =>
+          LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
+        }
+      }
+
       val Disconnects: FlowShape[LilaIn.DisconnectSri, LilaIn.DisconnectSris] = b.add {
-        Flow[LilaIn.DisconnectSri].groupedWithin(30, 487.millis) map { dis =>
-          LilaIn.DisconnectSris(dis.map(_.sri).distinct)
+        Flow[LilaIn.DisconnectSri].groupedWithin(50, 487.millis) map { dis =>
+          LilaIn.DisconnectSris(dis.map(_.sri))
         }
       }
 
@@ -154,7 +161,7 @@ object Graph {
         }
       }
 
-      val LobbyIn = merge[LilaIn.Lobby](2)
+      val LobbyIn = merge[LilaIn.Lobby](3)
 
       val LobbyInlet: Inlet[LilaIn.Lobby] = b.add(lilaInLobby).in
 
@@ -184,6 +191,7 @@ object Graph {
                      LOBroad ~> LOBus                        ~> ClientBus
                      LOBroad                                              ~> LobbyPong
       ClientToLobby                                          ~> LobbyIn
+      ClientConnect                     ~> Connects          ~> LobbyIn
       ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
 
       UserTicker                        ~> User

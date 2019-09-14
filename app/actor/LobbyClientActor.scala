@@ -23,7 +23,7 @@ object LobbyClientActor {
     deps.user foreach { u =>
       deps.queue(_.user, UserSM.ConnectSilently(u, ctx.self))
     }
-    queue(_.lobby, LilaIn.ConnectSri(sri, user.map(_.id)))
+    queue(_.connect, LilaIn.ConnectSri(sri, user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)
     apply(State(), deps)
   }

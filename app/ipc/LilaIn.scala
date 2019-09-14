@@ -59,10 +59,17 @@ object LilaIn {
 
   sealed trait Lobby extends LilaIn
 
+  // deprecated #TODO remove me
   case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {
     def write = s"connect/sri $sri${userId.fold("")(" " + _)}"
   }
+  type SriUserId = (Sri, Option[User.ID])
+  case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
+    private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
+    def write = s"connect/sris ${sris map render mkString ","}"
+  }
 
+  // deprecated #TODO remove me
   case class DisconnectSri(sri: Sri) extends Lobby {
     def write = s"disconnect/sri $sri"
   }
