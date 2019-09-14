@@ -20,13 +20,11 @@ final class RateLimit(
     if (credits > 0) {
       credits -= 1
       true
-    }
-    else if (clearAt < nowMillis) {
+    } else if (clearAt < nowMillis) {
       credits = maxCredits
       clearAt = makeClearAt
       true
-    }
-    else {
+    } else {
       if (!logged) {
         logged = true
         logger.info(s"$name MSG: $msg")

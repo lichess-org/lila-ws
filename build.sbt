@@ -1,3 +1,5 @@
+import scalariform.formatter.preferences._
+
 name := "lila-ws"
 
 version := "1.0"
@@ -40,3 +42,7 @@ sources in (Compile, doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
 
 enablePlugins(JavaAppPackaging)
+
+scalariformPreferences := scalariformPreferences.value
+  .setPreference(DanglingCloseParenthesis, Force)
+  .setPreference(DoubleIndentConstructorArguments, true)
