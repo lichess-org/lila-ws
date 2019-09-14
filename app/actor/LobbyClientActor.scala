@@ -72,7 +72,7 @@ object LobbyClientActor {
     case (ctx, PostStop) =>
       import deps._
       onStop(state.site, deps, ctx)
-      queue(_.lobby, LilaIn.DisconnectSri(sri))
+      queue(_.disconnect, LilaIn.DisconnectSri(sri))
       Behaviors.same
   }
 }
