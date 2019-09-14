@@ -1,6 +1,5 @@
 package lila.ws
 
-import play.api.Logger
 import scala.concurrent.duration.Duration
 
 final class RateLimit(
@@ -20,17 +19,21 @@ final class RateLimit(
     if (credits > 0) {
       credits -= 1
       true
-    } else if (clearAt < nowMillis) {
+    }
+    else if (clearAt < nowMillis) {
       credits = maxCredits
       clearAt = makeClearAt
       true
-    } else {
+    }
+    else {
       if (!logged) {
         logged = true
-        Logger("RateLimit").info(s"$name MSG: $msg")
+        logger.info(s"$name MSG: $msg")
       }
       false
     }
+
+  private val logger = new Logger("RateLimit")
 }
 
 object RateLimit {

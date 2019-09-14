@@ -2,20 +2,17 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ ActorRef, Behavior }
+import akka.http.scaladsl.model.ws.{ Message, TextMessage, WebSocketRequest }
+import akka.http.scaladsl.model.headers.HttpCookiePair
 import akka.stream.scaladsl._
 import akka.stream.{ Materializer, OverflowStrategy }
-import javax.inject._
-import play.api.http.websocket._
-import play.api.libs.streams.AkkaStreams
-import play.api.mvc.RequestHeader
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
-import lila.ws.util.Util.{ reqName, userAgent, flagOf, nowSeconds }
+import lila.ws.util.Util._
 
-@Singleton
-final class Server @Inject() (
+final class Server(
     auth: Auth,
     stream: Stream
 )(implicit
@@ -24,7 +21,7 @@ final class Server @Inject() (
     mat: Materializer
 ) {
 
-  type WebsocketFlow = Flow[Message, Message, _]
+  import Server._
 
   private val queues = stream.start
 
@@ -34,40 +31,40 @@ final class Server @Inject() (
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
 
-  def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
+  def connectToSite(req: Request): Future[WebsocketFlow] =
+    connectTo(req)(SiteClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
-      name = s"site ${reqName(req)}"
+      name = s"site ${req.name}"
     ))
 
-  def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(LobbyClientActor.start) map asWebsocket(new RateLimit(
+  def connectToLobby(req: Request): Future[WebsocketFlow] =
+    connectTo(req)(LobbyClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
-      name = s"lobby ${reqName(req)}"
+      name = s"lobby ${req.name}"
     ))
 
-  private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
+  private def connectTo(req: Request)(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =
-    auth(req) map { user =>
-      actorFlow(req) { clientIn =>
+    auth(req.authCookie) map { user =>
+      actorFlow { clientIn =>
         actor {
-          ClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
+          ClientActor.Deps(clientIn, queues, req, user, bus)
         }
       }
     }
 
   private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
-    AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
-      case TextMessage(text) if limiter(text) => ClientOut.parse(text).fold(
-        _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
-        Left.apply
-      )
-    })(flow map { out => TextMessage(out.write) })
+    Flow[Message] mapConcat {
+      case TextMessage.Strict(text) if limiter(text) => ClientOut.parse(text).fold(_ => Nil, _ :: Nil)
+      case _ => Nil
+    } via flow via Flow[ClientIn].map { out =>
+      TextMessage(out.write)
+    }
 
-  private def actorFlow(req: RequestHeader)(
+  private def actorFlow(
     clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
   ): Flow[ClientOut, ClientIn, _] = {
 
@@ -96,4 +93,11 @@ final class Server @Inject() (
       Source.fromPublisher(publisher)
     )
   }
+}
+
+object Server {
+
+  type WebsocketFlow = Flow[Message, Message, _]
+
+  case class Request(name: String, sri: Sri, flag: Option[Flag], authCookie: Option[HttpCookiePair])
 }

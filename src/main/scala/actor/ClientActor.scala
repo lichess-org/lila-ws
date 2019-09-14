@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import akka.stream.scaladsl._
-import play.api.Logger
 
 import ipc._
 import sm._
@@ -11,12 +10,14 @@ import util.Util.nowSeconds
 
 object ClientActor {
 
+  private val logger = new Logger("ClientActor")
+
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     queue(_.count, CountSM.Connect)
-    bus.subscribe(ctx.self, _ sri sri)
+    bus.subscribe(ctx.self, _ sri req.sri)
     bus.subscribe(ctx.self, _.all)
-    flag foreach { f =>
+    req.flag foreach { f =>
       bus.subscribe(ctx.self, _ flag f.value)
     }
   }
@@ -94,13 +95,13 @@ object ClientActor {
         state
 
       case ClientOut.Forward(payload) =>
-        queue(_.site, LilaIn.TellSri(sri, user.map(_.id), payload))
+        queue(_.site, LilaIn.TellSri(req.sri, user.map(_.id), payload))
         state
 
       case ClientOut.Unexpected(msg) =>
         if (state.ignoreLog) state
         else {
-          Logger("SiteClient").info(s"Unexpected $msg IP: $ipAddress UA: $userAgent")
+          logger.info(s"Unexpected $msg ${req.name}")
           state.copy(ignoreLog = true)
         }
 
@@ -118,11 +119,8 @@ object ClientActor {
   case class Deps(
       client: SourceQueue[ClientIn],
       queue: Stream.Queues,
-      sri: Sri,
-      flag: Option[Flag],
+      req: Server.Request,
       user: Option[User],
-      userAgent: String,
-      ipAddress: String,
       bus: Bus
   ) {
     def clientIn(msg: ClientIn): Unit = client offer msg

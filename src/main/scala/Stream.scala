@@ -3,21 +3,18 @@ package lila.ws
 import akka.actor.ActorSystem
 import akka.stream.scaladsl._
 import io.lettuce.core.RedisURI
-import javax.inject._
-import play.api.Configuration
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
 import sm._
 
-@Singleton
-final class Stream @Inject() (config: Configuration)(implicit
+final class Stream()(implicit
     ec: ExecutionContext,
     system: ActorSystem,
     mat: akka.stream.Materializer
 ) {
 
-  private val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
+  private val lila = new Lila(redisUri = RedisURI.create(Configuration.redisUri))
 
   def start: Stream.Queues = {
 

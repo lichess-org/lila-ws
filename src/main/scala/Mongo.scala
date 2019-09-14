@@ -1,17 +1,14 @@
 package lila.ws
 
-import javax.inject._
 import org.joda.time.DateTime
-import play.api.Configuration
 import reactivemongo.bson._
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
 import scala.concurrent.{ ExecutionContext, Future }
 
-@Singleton
-final class Mongo @Inject() (config: Configuration)(implicit executionContext: ExecutionContext) {
+final class Mongo(implicit executionContext: ExecutionContext) {
 
-  private val uri = config.get[String]("mongo.uri")
+  private val uri = Configuration.mongoUri
 
   private val driver = MongoDriver()
   private val parsedUri = MongoConnection.parseURI(uri)
