@@ -28,43 +28,28 @@ object LilaWs extends App {
       case Failure(err) => complete(err.toString)
     }
 
-  val routes =
-    parameters(
-      "sri".as(Unmarshaller strict Sri.apply),
-      "flag".as(Unmarshaller strict Flag.make).?
-    ) { (sri, flagOpt) =>
-        val flag = flagOpt.flatten
-        optionalCookie("lila2") { authCookie =>
-          extractRequest { req =>
-            concat(
-              path("socket" / "v" ~ IntNumber) { version =>
-                connectWebsocket(server.connectToSite(Server.Request(
-                  name = reqName(req),
-                  sri = sri,
-                  flag = flag,
-                  authCookie = authCookie
-                )))
-              },
-              path("analysis" / "socket" / "v" ~ IntNumber) { version =>
-                connectWebsocket(server.connectToSite(Server.Request(
-                  name = reqName(req),
-                  sri = sri,
-                  flag = flag,
-                  authCookie = authCookie
-                )))
-              },
-              path("lobby" / "socket" / "v" ~ IntNumber) { version =>
-                connectWebsocket(server.connectToLobby(Server.Request(
-                  name = reqName(req),
-                  sri = sri,
-                  flag = flag,
-                  authCookie = authCookie
-                )))
-              }
-            )
-          }
+  val routes = parameters(
+    "sri".as(Unmarshaller strict Sri.apply),
+    "flag".as(Unmarshaller strict Flag.make).?
+  ) { (sri, flagOpt) =>
+      val flag = flagOpt.flatten
+      optionalCookie("lila2") { authCookie =>
+        extractRequest { req =>
+          val serverReq = Server.Request(reqName(req), sri, flag, authCookie)
+          concat(
+            path("socket" / "v" ~ IntNumber) { version =>
+              connectWebsocket(server.connectToSite(serverReq))
+            },
+            path("analysis" / "socket" / "v" ~ IntNumber) { version =>
+              connectWebsocket(server.connectToSite(serverReq))
+            },
+            path("lobby" / "socket" / "v" ~ IntNumber) { version =>
+              connectWebsocket(server.connectToLobby(serverReq))
+            }
+          )
         }
       }
+    }
 
   implicit def rejectionHandler = RejectionHandler.newBuilder()
     .handleNotFound {
