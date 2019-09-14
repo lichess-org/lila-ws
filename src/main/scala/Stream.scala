@@ -14,14 +14,14 @@ final class Stream()(implicit
     mat: akka.stream.Materializer
 ) {
 
-  private val lila = new Lila(redisUri = RedisURI.create(Configuration.redisUri))
+  private val redis = new Redis(redisUri = RedisURI.create(Configuration.redisUri))
 
   def start: Stream.Queues = {
 
-    val (siteInit, siteSink) = lila.pubsub("site-in", "site-out") {
+    val (siteInit, siteSink) = redis.pubsub("site-in", "site-out") {
       case out: SiteOut => out
     }
-    val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") {
+    val (lobbyInit, lobbySink) = redis.pubsub("lobby-in", "lobby-out") {
       case out: LobbyOut => out
     }
 

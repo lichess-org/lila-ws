@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 
 import ipc._
 
-final class Lila(redisUri: RedisURI) {
+final class Redis(redisUri: RedisURI) {
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val redis = RedisClient create redisUri
