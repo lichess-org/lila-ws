@@ -3,12 +3,13 @@ package lila.ws
 import akka.stream.scaladsl._
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
+import org.slf4j.LoggerFactory
 
 import ipc._
 
 final class Lila(redisUri: RedisURI) {
 
-  private val logger = new Logger("lila")
+  private val logger = LoggerFactory.getLogger(getClass)
   private val redis = RedisClient create redisUri
 
   def pubsub[Out](chanIn: String, chanOut: String)(collect: PartialFunction[LilaOut, Out]) = {

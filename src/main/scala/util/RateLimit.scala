@@ -1,6 +1,7 @@
 package lila.ws
 
 import scala.concurrent.duration.Duration
+import org.slf4j.LoggerFactory
 
 final class RateLimit(
     maxCredits: Int,
@@ -33,7 +34,7 @@ final class RateLimit(
       false
     }
 
-  private val logger = new Logger("RateLimit")
+  private val logger = LoggerFactory.getLogger(getClass)
 }
 
 object RateLimit {

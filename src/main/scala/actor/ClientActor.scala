@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import akka.stream.scaladsl._
+import org.slf4j.LoggerFactory
 
 import ipc._
 import sm._
@@ -10,7 +11,7 @@ import util.Util.nowSeconds
 
 object ClientActor {
 
-  private val logger = new Logger("ClientActor")
+  private val logger = LoggerFactory.getLogger(getClass)
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
