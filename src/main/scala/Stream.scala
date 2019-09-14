@@ -2,19 +2,16 @@ package lila.ws
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl._
-import io.lettuce.core.RedisURI
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
 import sm._
 
-final class Stream()(implicit
+final class Stream(redis: Redis)(implicit
     ec: ExecutionContext,
     system: ActorSystem,
     mat: akka.stream.Materializer
 ) {
-
-  private val redis = new Redis(redisUri = RedisURI.create(Configuration.redisUri))
 
   def start: Stream.Queues = {
 

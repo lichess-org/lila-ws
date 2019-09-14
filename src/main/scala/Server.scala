@@ -12,10 +12,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import ipc._
 import lila.ws.util.Util._
 
-final class Server(
-    auth: Auth,
-    stream: Stream
-)(implicit
+final class Server(auth: Auth, stream: Stream)(implicit
     ec: ExecutionContext,
     system: akka.actor.ActorSystem,
     mat: Materializer
@@ -100,5 +97,5 @@ object Server {
 
   type WebsocketFlow = Flow[Message, Message, _]
 
-  case class Request(name: String, sri: Sri, flag: Option[Flag], authCookie: Option[HttpCookiePair])
+  case class Request(name: String, sri: Sri, authCookie: Option[HttpCookiePair], flag: Option[Flag] = None)
 }

@@ -7,8 +7,6 @@ object Util {
 
   def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
 
-  // def flagOf(req: HttpRequest): Option[Flag] = req.target getQueryParameter "flag" flatMap Flag.make
-
   def reqName(req: HttpRequest): String = s"IP: ${remoteAddress(req)} UA: ${userAgent(req)}"
 
   private def header(req: HttpRequest, name: String): Option[String] = req.headers collectFirst {

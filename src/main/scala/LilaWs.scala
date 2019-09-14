@@ -2,8 +2,6 @@ package lila.ws
 
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
@@ -12,7 +10,7 @@ import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
 import lila.ws._
-import lila.ws.util.Util._
+import lila.ws.util.Util.reqName
 
 object LilaWs extends App {
 
@@ -20,7 +18,7 @@ object LilaWs extends App {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
-  val server = new Server(new Auth(new Mongo), new Stream)
+  val server = new Server(new Auth(new Mongo), new Stream(new Redis))
 
   def connectWebsocket(wsFlow: Future[Server.WebsocketFlow]) =
     onComplete(wsFlow) {
@@ -28,45 +26,34 @@ object LilaWs extends App {
       case Failure(err) => complete(err.toString)
     }
 
-  val routes = parameters(
-    "sri".as(Unmarshaller strict Sri.apply),
-    "flag".as(Unmarshaller strict Flag.make).?
-  ) { (sri, flagOpt) =>
-      val flag = flagOpt.flatten
-      optionalCookie("lila2") { authCookie =>
-        extractRequest { req =>
-          val serverReq = Server.Request(reqName(req), sri, flag, authCookie)
-          concat(
-            path("socket" / "v" ~ IntNumber) { version =>
-              connectWebsocket(server.connectToSite(serverReq))
-            },
-            path("analysis" / "socket" / "v" ~ IntNumber) { version =>
-              connectWebsocket(server.connectToSite(serverReq))
-            },
-            path("lobby" / "socket" / "v" ~ IntNumber) { version =>
-              connectWebsocket(server.connectToLobby(serverReq))
-            }
-          )
-        }
-      }
-    }
-
-  implicit def rejectionHandler = RejectionHandler.newBuilder()
-    .handleNotFound {
+  val routes = parameter("sri".as(Unmarshaller strict Sri.apply)) { sri =>
+    optionalCookie("lila2") { authCookie =>
       extractRequest { req =>
-        println(s"404 ${req}")
-        complete((NotFound, "Not here!"))
+        val serverReq = Server.Request(reqName(req), sri, authCookie)
+        concat(
+          path("socket" / "v" ~ IntNumber) { version =>
+            parameter("flag".as(Unmarshaller strict Flag.make).?) { flag =>
+              connectWebsocket(server.connectToSite(serverReq.copy(flag = flag.flatten)))
+            }
+          },
+          path("analysis" / "socket" / "v" ~ IntNumber) { version =>
+            connectWebsocket(server.connectToSite(serverReq))
+          },
+          path("lobby" / "socket" / "v" ~ IntNumber) { version =>
+            connectWebsocket(server.connectToLobby(serverReq))
+          }
+        )
       }
     }
-    .result()
+  }
 
   Http()
     .bindAndHandle(routes, Configuration.bindHost, Configuration.bindPort)
     .onComplete {
       case Success(bound) =>
-        println(s"Server online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/")
+        println(s"lila-ws online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/")
       case Failure(e) =>
-        Console.err.println(s"Server could not start!")
+        Console.err.println(s"lila-ws could not start!")
         e.printStackTrace()
         system.terminate()
     }
