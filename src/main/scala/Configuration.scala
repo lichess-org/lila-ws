@@ -6,7 +6,8 @@ object Configuration {
 
   private val conf: Config = ConfigFactory.load()
 
-  val port: Int = conf.getInt("port")
+  val bindHost: String = conf.getString("bind.host")
+  val bindPort: Int = conf.getInt("bind.port")
   val mongoUri: String = conf.getString("mongo.uri")
   val redisUri: String = conf.getString("redis.uri")
 }

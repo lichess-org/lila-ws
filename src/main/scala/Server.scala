@@ -38,12 +38,13 @@ final class Server(
       name = s"site ${req.name}"
     ))
 
-  def connectToLobby(req: Request): Future[WebsocketFlow] =
+  def connectToLobby(req: Request): Future[WebsocketFlow] = {
     connectTo(req)(LobbyClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
       name = s"lobby ${req.name}"
     ))
+  }
 
   private def connectTo(req: Request)(
     actor: ClientActor.Deps => Behavior[ClientMsg]
