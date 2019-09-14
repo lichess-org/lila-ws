@@ -103,13 +103,13 @@ object Graph {
 
       val Notified: FlowShape[LilaIn.Notified, LilaIn.NotifiedBatch] = b.add {
         Flow[LilaIn.Notified].groupedWithin(40, 1001.millis) map { notifs =>
-          LilaIn.NotifiedBatch(notifs.map(_.userId))
+          LilaIn.NotifiedBatch(notifs.map(_.userId).distinct)
         }
       }
 
       val Friends: FlowShape[LilaIn.Friends, LilaIn.FriendsBatch] = b.add {
         Flow[LilaIn.Friends].groupedWithin(10, 503.millis) map { friends =>
-          LilaIn.FriendsBatch(friends.map(_.userId))
+          LilaIn.FriendsBatch(friends.map(_.userId).distinct)
         }
       }
 
@@ -155,7 +155,7 @@ object Graph {
 
       // format: OFF
 
-      // source      broadcast  collect    merge    machine     merge       sink
+      // source      broadcast  collect    merge    machine     merge        sink
       SiteOut     ~> SOBroad ~> SOBus                        ~> ClientBus ~> BusPublish
                      SOBroad ~> SOFen   ~> Fen
                      SOBroad ~> SOLag   ~> Lag
