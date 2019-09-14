@@ -4,7 +4,6 @@ package ipc
 import chess.format.{ FEN, Uci }
 import java.lang.Double.parseDouble
 import java.lang.Integer.parseInt
-import play.api.libs.json._
 import scala.util.Try
 
 sealed trait LilaOut extends LilaMsg

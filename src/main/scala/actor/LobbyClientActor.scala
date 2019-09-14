@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import play.api.libs.json._
+import play.api.libs.json.JsValue
 
 import ipc._
 import sm._

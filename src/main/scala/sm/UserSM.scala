@@ -2,7 +2,6 @@ package lila.ws
 package sm
 
 import akka.actor.typed.ActorRef
-import play.api.libs.json.JsObject
 
 import ipc._
 
