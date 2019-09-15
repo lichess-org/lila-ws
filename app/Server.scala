@@ -61,7 +61,7 @@ final class Server @Inject() (
 
   private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
     AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
-      case TextMessage(text) if limiter(text) => ClientOut.parse(text).fold(
+      case TextMessage(text) if limiter(text) && text.size < 2000 => ClientOut.parse(text).fold(
         _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
         Left.apply
       )

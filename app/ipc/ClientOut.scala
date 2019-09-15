@@ -71,7 +71,9 @@ object ClientOut {
     else Try(Json parse str) map {
       case o: JsObject => o str "t" flatMap {
         case "p" => Some(Ping(o int "l"))
-        case "startWatching" => o.str("d").map(_ split " " toSet) map Watch.apply
+        case "startWatching" => o str "d" map { d =>
+          Watch(d.split(" ").take(16).toSet)
+        }
         case "moveLat" => Some(MoveLat)
         case "notified" => Some(Notified)
         case "following_onlines" => Some(FollowingOnline)
