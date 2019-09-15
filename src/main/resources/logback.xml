@@ -5,8 +5,6 @@
     </encoder>
   </appender>
 
-  <logger name="example" level="INFO"/>
-
   <logger name="akka" level="INFO"/>
 
   <root level="INFO">
