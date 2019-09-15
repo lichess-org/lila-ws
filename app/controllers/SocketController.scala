@@ -3,6 +3,7 @@ package controllers
 import javax.inject._
 import play.api.Configuration
 import play.api.http.HeaderNames
+import play.api.http.websocket.Message
 import play.api.mvc._
 import scala.concurrent.{ Future, ExecutionContext }
 
@@ -16,15 +17,19 @@ class SocketController @Inject() (
     val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext) extends BaseController {
 
-  def site(sri: String, apiVersion: Int): WebSocket = WebSocket { req =>
+  def site(sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
     CsrfCheck(req) {
-      server.connectToSite(req, Sri(sri), flagOf(req)) map Right.apply
+      ValidSri(sriStr) { sri =>
+        server.connectToSite(req, sri, flagOf(req)) map Right.apply
+      }
     }
   }
 
-  def lobby(sri: String, apiVersion: Int): WebSocket = WebSocket { req =>
+  def lobby(sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
     CsrfCheck(req) {
-      server.connectToLobby(req, Sri(sri), flagOf(req)) map Right.apply
+      ValidSri(sriStr) { sri =>
+        server.connectToLobby(req, sri, flagOf(req)) map Right.apply
+      }
     }
   }
 
@@ -32,11 +37,19 @@ class SocketController @Inject() (
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }
 
+  private type Response = Future[Either[Result, akka.stream.scaladsl.Flow[Message, Message, _]]]
+
   private val csrfDomain = config.get[String]("csrf.origin")
 
-  private def CsrfCheck[R](req: RequestHeader)(f: => Future[Either[Result, R]]): Future[Either[Result, R]] =
+  private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
       case Some(origin) if origin == csrfDomain || origin == "file://" => f
       case _ => Future successful Left(Forbidden("Cross origin request forbidden"))
+    }
+
+  private def ValidSri(str: String)(f: Sri => Response): Response =
+    Sri from str match {
+      case None => Future successful Left(BadRequest("Invalid sri"))
+      case Some(validSri) => f(validSri)
     }
 }
