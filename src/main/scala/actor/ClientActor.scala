@@ -33,10 +33,10 @@ object ClientActor {
     bus unsubscribe ctx.self
   }
 
-  def socketControl(state: State, msg: ClientCtrl): Behavior[ClientMsg] = msg match {
+  def socketControl(state: State, flag: Option[Flag], msg: ClientCtrl): Behavior[ClientMsg] = msg match {
 
     case ClientCtrl.Broom(oldSeconds) =>
-      if (state.lastPing < oldSeconds) Behaviors.stopped
+      if (state.lastPing < oldSeconds && !flag.contains(Flag.api)) Behaviors.stopped
       else Behaviors.same
 
     case ClientCtrl.Disconnect =>

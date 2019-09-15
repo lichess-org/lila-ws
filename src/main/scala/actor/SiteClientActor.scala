@@ -22,7 +22,7 @@ object SiteClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.flag, ctrl)
 
       case in: ClientIn =>
         deps.clientIn(in)
