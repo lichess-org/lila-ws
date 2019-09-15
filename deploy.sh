@@ -25,7 +25,7 @@ RSYNC_OPTIONS=" \
   --exclude '.git/'"
 
 stage="target/universal/stage"
-include="$stage/lib"
+include="$stage/lib $stage/bin"
 rsync_command="rsync $RSYNC_OPTIONS $include $REMOTE:$REMOTE_DIR"
 echo "$rsync_command"
 $rsync_command
