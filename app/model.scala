@@ -21,6 +21,7 @@ case class Sri(value: String) extends AnyVal with StringValue
 
 object Sri {
   type Str = String
+  def random = Sri(util.Util.random string 12)
 }
 
 case class Flag private (value: String) extends AnyVal with StringValue

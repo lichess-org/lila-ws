@@ -61,6 +61,13 @@ object ClientActor {
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
+      case msg: ClientOut if deps.flag.contains(Flag.api) =>
+        if (state.ignoreLog) state
+        else {
+          Logger("SiteClient").info(s"API socket doesn't support $msg IP: $ipAddress UA: $userAgent")
+          state.copy(ignoreLog = true)
+        }
+
       case ClientOut.MoveLat =>
         bus.subscribe(ctx.self, _.mlat)
         state
