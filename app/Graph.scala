@@ -116,7 +116,7 @@ object Graph {
       }
 
       val Connects: FlowShape[LilaIn.ConnectSri, LilaIn.ConnectSris] = b.add {
-        Flow[LilaIn.ConnectSri].groupedWithin(10, 479.millis) map { con =>
+        Flow[LilaIn.ConnectSri].groupedWithin(5, 479.millis) map { con =>
           LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
         }
       }
