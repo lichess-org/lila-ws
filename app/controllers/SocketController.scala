@@ -17,7 +17,6 @@ class SocketController @Inject() (
 )(implicit ec: ExecutionContext) extends BaseController {
 
   def site(sri: String, apiVersion: Int): WebSocket = WebSocket { req =>
-    println(req.headers get HeaderNames.ORIGIN)
     CsrfCheck(req) {
       server.connectToSite(req, Sri(sri), flagOf(req)) map Right.apply
     }
