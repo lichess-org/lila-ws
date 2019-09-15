@@ -51,7 +51,7 @@ final class Server @Inject() (
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =
-    auth(req) map { user =>
+    auth(req, flag) map { user =>
       actorFlow(req) { clientIn =>
         actor {
           ClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
