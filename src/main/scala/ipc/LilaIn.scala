@@ -74,6 +74,6 @@ object LilaIn {
     def write = s"disconnect/sri $sri"
   }
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
-    def write = s"disconnect/sris $sris"
+    def write = s"disconnect/sris ${sris mkString ","}"
   }
 }
