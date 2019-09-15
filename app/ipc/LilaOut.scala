@@ -42,8 +42,6 @@ object LilaOut {
 
   case class NbRounds(value: Int) extends LobbyOut
 
-  case class DisconnectSri(sri: Sri) extends LobbyOut
-
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
 
   // impl
@@ -78,8 +76,6 @@ object LilaOut {
       case "tell/all" => Some(TellAll(JsonString(args)))
 
       case "disconnect/user" => Some(DisconnectUser(args))
-
-      case "disconnect/sri" => Some(DisconnectSri(Sri(args)))
 
       case "tell/lobby" => Some(TellLobby(JsonString(args)))
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))

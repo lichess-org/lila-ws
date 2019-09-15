@@ -146,7 +146,6 @@ object Graph {
         Flow[LobbyOut].mapConcat {
           case LilaOut.TellLobby(payload) => List(Bus.msg(ClientIn.Payload(payload), _.lobby))
           case LilaOut.TellLobbyActive(payload) => List(Bus.msg(ClientIn.NonIdle(ClientIn.Payload(payload)), _.lobby))
-          case LilaOut.DisconnectSri(sri) => List(Bus.msg(ClientCtrl.Disconnect, _ sri sri))
           case LilaOut.TellSris(sris, payload) => sris map { sri =>
             Bus.msg(ClientIn.Payload(payload), _ sri sri)
           }
