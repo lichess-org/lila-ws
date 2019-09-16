@@ -13,7 +13,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 final class SeenAtUpdate @Inject() (mongo: Mongo)( implicit
   context: ExecutionContext,
   system: akka.actor.ActorSystem
-  ) {
+) {
 
   import Mongo._
 
