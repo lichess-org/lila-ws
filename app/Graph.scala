@@ -157,6 +157,7 @@ object Graph {
         Flow[LilaOut].collect {
           // FIXME this should only send to lobby client actor
           case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.Payload(json))
+          case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.Payload(json))
         }
       }
 
