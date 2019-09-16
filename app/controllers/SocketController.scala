@@ -46,7 +46,7 @@ class SocketController @Inject() (
     req.headers get HeaderNames.ORIGIN match {
       case Some(origin) if origin == csrfDomain || origin == "file://" => f
       case origin =>
-        logger.info(s"CSRF ${reqName(req)}")
+        logger.info(s"""CSRF origin: "${origin getOrElse ""}" ${reqName(req)}""")
         Future successful Left(Forbidden("Cross origin request forbidden"))
     }
 
