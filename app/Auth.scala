@@ -3,6 +3,8 @@ package lila.ws
 import javax.inject._
 import org.joda.time.DateTime
 import play.api.mvc.RequestHeader
+import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.WriteConcern
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -34,10 +36,41 @@ final class Auth @Inject() (mongo: Mongo)(implicit executionContext: ExecutionCo
       case None => Future successful None
     }
 
-  private def updateSeenAt(user: User) = mongo.user {
-    _.update(ordered = false).one(
-      BSONDocument("_id" -> user.id, "enabled" -> true, "seenAt" -> BSONDocument("$lt" -> DateTime.now.minusMinutes(2))),
-      BSONDocument("$set" -> BSONDocument("seenAt" -> DateTime.now))
+  private def updateSeenAt(user: User): Future[Unit] = for {
+    userColl <- mongo.userColl
+    now = DateTime.now
+    userDoc <- findAndModify(
+      coll = userColl,
+      selector = BSONDocument(
+        "_id" -> user.id,
+        "enabled" -> true,
+        "seenAt" -> BSONDocument("$lt" -> now.minusMinutes(2))
+      ),
+      modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
+      fields = BSONDocument("roles" -> true, "_id" -> false),
     )
-  }
+    isCoach = userDoc.exists(_.getAs[List[String]]("roles").exists(_ contains "ROLE_COACH"))
+    _ <- if (isCoach) mongo.coach(_.update(ordered = false).one(
+      BSONDocument("_id" -> user.id),
+      BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
+    )) else Future successful (())
+  } yield ()
+
+  private def findAndModify(
+    coll: BSONCollection,
+    selector: BSONDocument,
+    modifier: BSONDocument,
+    fields: BSONDocument
+  ): Future[Option[BSONDocument]] =
+    coll.findAndModify(
+      selector = selector,
+      modifier = coll.updateModifier(modifier),
+      sort = None,
+      fields = Some(fields),
+      bypassDocumentValidation = false,
+      writeConcern = WriteConcern.Default,
+      maxTime = None,
+      collation = None,
+      arrayFilters = Seq.empty
+    ) map (_.result[BSONDocument])
 }
