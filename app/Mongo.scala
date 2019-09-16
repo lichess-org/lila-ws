@@ -3,9 +3,9 @@ package lila.ws
 import javax.inject._
 import org.joda.time.DateTime
 import play.api.Configuration
-import reactivemongo.bson._
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
+import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
@@ -21,9 +21,11 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def securityColl = db.map(_.collection("security"))
   def userColl = db.map(_.collection("user4"))
   def coachColl = db.map(_.collection("coach"))
+  def streamerColl = db.map(_.collection("streamer"))
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
+  def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
 }
 
 object Mongo {
