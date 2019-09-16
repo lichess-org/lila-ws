@@ -69,7 +69,7 @@ object Graph {
         }
       }
 
-      val User = merge[sm.UserSM.Input](3)
+      val User = merge[sm.UserSM.Input](4)
 
       val UserSM: FlowShape[sm.UserSM.Input, LilaIn.Site] = machine(sm.UserSM.machine)
 
@@ -133,7 +133,7 @@ object Graph {
 
       // lobby
 
-      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](3))
+      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](4))
 
       // forward site messages coming from lobby chan
       val LOSite: FlowShape[LobbyOut, SiteOut] = b.add {
@@ -150,6 +150,13 @@ object Graph {
             Bus.msg(ClientIn.Payload(payload), _ sri sri)
           }
           case _ => Nil
+        }
+      }
+
+      val LOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
+        Flow[LilaOut].collect {
+          // FIXME this should only send to lobby client actor
+          case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.Payload(json))
         }
       }
 
@@ -188,6 +195,7 @@ object Graph {
       SiteOutlet  ~> SiteOut
 
       LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteOut // merge site messages coming from lobby input into site input
+                     LOBroad ~> LOUser  ~> User
                      LOBroad ~> LOBus                        ~> ClientBus
                      LOBroad                                              ~> LobbyPong
       ClientToLobby                                          ~> LobbyIn
