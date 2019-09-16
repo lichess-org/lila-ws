@@ -1,5 +1,6 @@
 GET     /socket                             controllers.SocketController.site(sri: String, apiVersion: Int = 3)
 GET     /socket/v:apiVersion                controllers.SocketController.site(sri: String, apiVersion: Int)
 GET     /api/socket                         controllers.SocketController.api
+GET     /analysis/socket                    controllers.SocketController.site(sri: String, apiVersion: Int = 3)
 GET     /analysis/socket/v:apiVersion       controllers.SocketController.site(sri: String, apiVersion: Int)
 GET     /lobby/socket/v:apiVersion          controllers.SocketController.lobby(sri: String, apiVersion: Int)
