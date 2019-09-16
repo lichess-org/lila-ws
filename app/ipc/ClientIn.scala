@@ -52,9 +52,19 @@ object ClientIn {
     def write = json.value
   }
 
-  case class NonIdle(payload: Payload) extends ClientIn {
+  case class LobbyNonIdle(payload: Payload) extends ClientIn {
     def write = payload.write
   }
+
+  case class OnlyFor(endpoint: OnlyFor.Endpoint, payload: Payload) extends ClientIn {
+    def write = payload.write
+  }
+  object OnlyFor {
+    sealed trait Endpoint
+    case object Site extends Endpoint
+    case object Lobby extends Endpoint
+  }
+  def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = clientMsg("opening", Json.obj(

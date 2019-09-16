@@ -145,7 +145,7 @@ object Graph {
       val LOBus: FlowShape[LobbyOut, Bus.Msg] = b.add {
         Flow[LobbyOut].mapConcat {
           case LilaOut.TellLobby(payload) => List(Bus.msg(ClientIn.Payload(payload), _.lobby))
-          case LilaOut.TellLobbyActive(payload) => List(Bus.msg(ClientIn.NonIdle(ClientIn.Payload(payload)), _.lobby))
+          case LilaOut.TellLobbyActive(payload) => List(Bus.msg(ClientIn.LobbyNonIdle(ClientIn.Payload(payload)), _.lobby))
           case LilaOut.TellSris(sris, payload) => sris map { sri =>
             Bus.msg(ClientIn.Payload(payload), _ sri sri)
           }
@@ -156,8 +156,8 @@ object Graph {
       val LOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
         Flow[LilaOut].collect {
           // FIXME this should only send to lobby client actor
-          case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.Payload(json))
-          case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.Payload(json))
+          case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
+          case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
         }
       }
 
