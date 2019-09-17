@@ -41,12 +41,14 @@ class SocketController @Inject() (
   private type Response = Future[Either[Result, akka.stream.scaladsl.Flow[Message, Message, _]]]
 
   private val csrfDomain = config.get[String]("csrf.origin")
+  private val mobileOrigin = "file://"
 
   private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
-      case Some(origin) if origin == csrfDomain || origin == "file://" => f
-      case origin =>
-        logger.info(s"""CSRF origin: "${origin getOrElse ""}" ${reqName(req)}""")
+      case None => f // for exotic clients and maybe acid ape chess?
+      case Some(origin) if origin == csrfDomain || origin == mobileOrigin => f
+      case Some(origin) =>
+        logger.info(s"""CSRF origin: "$origin" ${reqName(req)}""")
         Future successful Left(Forbidden("Cross origin request forbidden"))
     }
 
