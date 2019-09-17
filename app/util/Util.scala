@@ -10,7 +10,7 @@ object Util {
 
   def flagOf(req: RequestHeader): Option[Flag] = req.target getQueryParameter "flag" flatMap Flag.make
 
-  def reqName(req: RequestHeader): String = s"IP: ${req.remoteAddress} UA: ${userAgent(req)}"
+  def reqName(req: RequestHeader): String = s"${req.uri} IP: ${req.remoteAddress} UA: ${userAgent(req)}"
 
   def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
 
