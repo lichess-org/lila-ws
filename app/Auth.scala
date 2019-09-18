@@ -1,6 +1,7 @@
 package lila.ws
 
 import javax.inject._
+import play.api.Logger
 import play.api.mvc.RequestHeader
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -23,13 +24,16 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
             Some(BSONDocument("_id" -> false, "user" -> true))
           ).one[BSONDocument]
         } map {
-          _.flatMap {
-            _.getAs[String]("user") map User.apply
-          }
+          case None =>
+            logger.info(s"no user for sid: $sid ${util.Util.reqName(req)}")
+            None
+          case Some(doc) => doc.getAs[String]("user") map User.apply
         } map { user =>
           user foreach seenAt.apply
           user
         }
       case None => Future successful None
     }
+
+  private val logger = Logger("Auth")
 }
