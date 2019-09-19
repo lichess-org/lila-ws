@@ -11,29 +11,36 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
 
   import Mongo._
 
-  private val sidRegex = """.*sessionId=(\w+).*""".r
-
   def apply(req: RequestHeader, flag: Option[Flag]): Future[Option[User]] =
     if (flag contains Flag.api) Future successful None
-    else req.cookies get "lila2" match {
-      case Some(cookie) =>
-        val sid = sidRegex.replaceAllIn(cookie.value, "$1")
+    else sessionIdFromReq(req) match {
+      case Some(sid) =>
         mongo.security {
           _.find(
             BSONDocument("_id" -> sid, "up" -> true),
             Some(BSONDocument("_id" -> false, "user" -> true))
           ).one[BSONDocument]
         } map {
-          case None =>
-            logger.info(s"no user for sid: $sid ${util.Util.reqName(req)}")
-            None
-          case Some(doc) => doc.getAs[String]("user") map User.apply
+          _ flatMap {
+            _.getAs[String]("user") map User.apply
+          }
         } map { user =>
           user foreach seenAt.apply
           user
         }
       case None => Future successful None
     }
+
+  private val cookieName = "lila2"
+  private val sessionIdKey = "sessionId"
+  private val sidRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+
+  private def sessionIdFromReq(req: RequestHeader): Option[String] =
+    req.cookies.get(cookieName).map(_.value).flatMap {
+      case sidRegex(id) => Some(id)
+      case _ => None
+    } orElse
+      req.target.getQueryParameter(sessionIdKey)
 
   private val logger = Logger("Auth")
 }
