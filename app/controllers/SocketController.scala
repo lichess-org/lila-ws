@@ -42,11 +42,12 @@ class SocketController @Inject() (
 
   private val csrfDomain = config.get[String]("csrf.origin")
   private val mobileOrigin = "file://"
+  private val localAppOrigin = "http://localhost:8080"
 
   private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
       case None => f // for exotic clients and maybe acid ape chess?
-      case Some(origin) if origin == csrfDomain || origin == mobileOrigin => f
+      case Some(origin) if origin == csrfDomain || origin == mobileOrigin || origin == localAppOrigin => f
       case Some(origin) =>
         logger.info(s"""CSRF origin: "$origin" ${reqName(req)}""")
         Future successful Left(Forbidden("Cross origin request forbidden"))
