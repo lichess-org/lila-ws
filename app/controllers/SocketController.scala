@@ -43,7 +43,7 @@ class SocketController @Inject() (
   private val csrfDomain = config.get[String]("csrf.origin")
   private val mobileOrigin = "file://"
   private val localAppOrigin = "http://localhost:8080"
-  private val ionicAppOrigin = "http://localhost:8080"
+  private val ionicAppOrigin = "ionic://localhost"
 
   private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
