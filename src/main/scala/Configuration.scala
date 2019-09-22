@@ -10,4 +10,5 @@ object Configuration {
   val bindPort: Int = conf.getInt("bind.port")
   val mongoUri: String = conf.getString("mongo.uri")
   val redisUri: String = conf.getString("redis.uri")
+  val csrfOrigin: String = conf.getString("csrf.origin")
 }

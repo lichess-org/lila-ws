@@ -69,7 +69,7 @@ object Graph {
         }
       }
 
-      val User = merge[sm.UserSM.Input](3)
+      val User = merge[sm.UserSM.Input](4)
 
       val UserSM: FlowShape[sm.UserSM.Input, LilaIn.Site] = machine(sm.UserSM.machine)
 
@@ -116,7 +116,7 @@ object Graph {
       }
 
       val Connects: FlowShape[LilaIn.ConnectSri, LilaIn.ConnectSris] = b.add {
-        Flow[LilaIn.ConnectSri].groupedWithin(10, 479.millis) map { con =>
+        Flow[LilaIn.ConnectSri].groupedWithin(5, 479.millis) map { con =>
           LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
         }
       }
@@ -133,7 +133,7 @@ object Graph {
 
       // lobby
 
-      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](3))
+      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](4))
 
       // forward site messages coming from lobby chan
       val LOSite: FlowShape[LobbyOut, SiteOut] = b.add {
@@ -145,11 +145,19 @@ object Graph {
       val LOBus: FlowShape[LobbyOut, Bus.Msg] = b.add {
         Flow[LobbyOut].mapConcat {
           case LilaOut.TellLobby(payload) => List(Bus.msg(ClientIn.Payload(payload), _.lobby))
-          case LilaOut.TellLobbyActive(payload) => List(Bus.msg(ClientIn.NonIdle(ClientIn.Payload(payload)), _.lobby))
+          case LilaOut.TellLobbyActive(payload) => List(Bus.msg(ClientIn.LobbyNonIdle(ClientIn.Payload(payload)), _.lobby))
           case LilaOut.TellSris(sris, payload) => sris map { sri =>
             Bus.msg(ClientIn.Payload(payload), _ sri sri)
           }
           case _ => Nil
+        }
+      }
+
+      val LOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
+        Flow[LilaOut].collect {
+          // FIXME this should only send to lobby client actor
+          case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
+          case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
         }
       }
 
@@ -188,6 +196,7 @@ object Graph {
       SiteOutlet  ~> SiteOut
 
       LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteOut // merge site messages coming from lobby input into site input
+                     LOBroad ~> LOUser  ~> User
                      LOBroad ~> LOBus                        ~> ClientBus
                      LOBroad                                              ~> LobbyPong
       ClientToLobby                                          ~> LobbyIn

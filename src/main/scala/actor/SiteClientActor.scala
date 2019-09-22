@@ -22,7 +22,11 @@ object SiteClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.req.flag, ctrl)
+
+      case ClientIn.OnlyFor(endpoint, payload) =>
+        if (endpoint == ClientIn.OnlyFor.Site) deps.clientIn(payload)
+        Behavior.same
 
       case in: ClientIn =>
         deps.clientIn(in)

@@ -2,8 +2,8 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ ActorRef, Behavior }
-import akka.http.scaladsl.model.ws.{ Message, TextMessage, WebSocketRequest }
 import akka.http.scaladsl.model.headers.HttpCookiePair
+import akka.http.scaladsl.model.ws.{ Message, TextMessage, WebSocketRequest }
 import akka.stream.scaladsl._
 import akka.stream.{ Materializer, OverflowStrategy }
 import scala.concurrent.duration._
@@ -46,7 +46,7 @@ final class Server(auth: Auth, stream: Stream)(implicit
   private def connectTo(req: Request)(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =
-    auth(req.authCookie) map { user =>
+    req.sessionId.fold(Future.successful(Option.empty[User]))(auth.apply) map { user =>
       actorFlow { clientIn =>
         actor {
           ClientActor.Deps(clientIn, queues, req, user, bus)
@@ -56,7 +56,7 @@ final class Server(auth: Auth, stream: Stream)(implicit
 
   private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
     Flow[Message] mapConcat {
-      case TextMessage.Strict(text) if limiter(text) => ClientOut.parse(text).fold(_ => Nil, _ :: Nil)
+      case TextMessage.Strict(text) if limiter(text) && text.size < 2000 => ClientOut.parse(text).fold(_ => Nil, _ :: Nil)
       case _ => Nil
     } via flow via Flow[ClientIn].map { out =>
       TextMessage(out.write)
@@ -97,5 +97,10 @@ object Server {
 
   type WebsocketFlow = Flow[Message, Message, _]
 
-  case class Request(name: String, sri: Sri, authCookie: Option[HttpCookiePair], flag: Option[Flag] = None)
+  case class Request(
+      name: String,
+      sri: Sri,
+      sessionId: Option[String],
+      flag: Option[Flag] = None
+  )
 }

@@ -35,10 +35,14 @@ object LobbyClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
-      case in: ClientIn.NonIdle =>
-        if (!state.idle) clientIn(in)
+      case ClientIn.LobbyNonIdle(payload) =>
+        if (!state.idle) clientIn(payload)
+        Behavior.same
+
+      case ClientIn.OnlyFor(endpoint, payload) =>
+        if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
         Behavior.same
 
       case in: ClientIn =>

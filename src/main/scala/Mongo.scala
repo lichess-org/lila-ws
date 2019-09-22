@@ -4,6 +4,7 @@ import org.joda.time.DateTime
 import reactivemongo.bson._
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
+import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
 final class Mongo(implicit executionContext: ExecutionContext) {
@@ -15,11 +16,14 @@ final class Mongo(implicit executionContext: ExecutionContext) {
   private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
 
   private def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
-  private def securityColl = db.map(_.collection("security"))
-  private def userColl = db.map(_.collection("user4"))
+  def securityColl = db.map(_.collection("security"))
+  def userColl = db.map(_.collection("user4"))
+  def coachColl = db.map(_.collection("coach"))
+  def streamerColl = db.map(_.collection("streamer"))
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
-  def user[A](f: BSONCollection => Future[A]): Future[A] = userColl flatMap f
+  def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
+  def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
 }
 
 object Mongo {

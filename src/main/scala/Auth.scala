@@ -6,34 +6,38 @@ import org.joda.time.DateTime
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
-final class Auth(mongo: Mongo)(implicit executionContext: ExecutionContext) {
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
   import Mongo._
 
-  private val sidRegex = """.*sessionId=(\w+).*""".r
-
-  def apply(cookieOpt: Option[HttpCookiePair]): Future[Option[User]] =
-    cookieOpt.fold(Future successful Option.empty[User]) { cookie =>
-      val sid = sidRegex.replaceAllIn(cookie.value, "$1")
-      mongo.security {
-        _.find(
-          BSONDocument("_id" -> sid, "up" -> true),
-          Some(BSONDocument("_id" -> false, "user" -> true))
-        ).one[BSONDocument]
-      } map {
-        _.flatMap {
-          _.getAs[String]("user") map User.apply
-        }
-      } map { user =>
-        user foreach updateSeenAt
-        user
+  def apply(sessionId: String): Future[Option[User]] =
+    mongo.security {
+      _.find(
+        BSONDocument("_id" -> sessionId, "up" -> true),
+        Some(BSONDocument("_id" -> false, "user" -> true))
+      ).one[BSONDocument]
+    } map {
+      _ flatMap {
+        _.getAs[String]("user") map User.apply
       }
+    } map { user =>
+      user foreach seenAt.apply
+      user
     }
+}
 
-  private def updateSeenAt(user: User) = mongo.user {
-    _.update(ordered = false).one(
-      BSONDocument("_id" -> user.id, "enabled" -> true, "seenAt" -> BSONDocument("$lt" -> DateTime.now.minusMinutes(2))),
-      BSONDocument("$set" -> BSONDocument("seenAt" -> DateTime.now))
-    )
-  }
+object Auth {
+
+  private val cookieName = "lila2"
+  private val sessionIdKey = "sessionId"
+  private val sidRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+
+  def sessionIdFromReq(req: HttpRequest): Option[String] =
+    req.cookies.collectFirst {
+      case c if c.name == cookieName => c.value
+    } flatMap {
+      case sidRegex(id) => Some(id)
+      case _ => None
+    } orElse
+      req.uri.query().toMap.get(sessionIdKey)
 }

@@ -11,8 +11,6 @@ import util.Util.nowSeconds
 
 object ClientActor {
 
-  private val logger = LoggerFactory.getLogger(getClass)
-
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     queue(_.count, CountSM.Connect)
@@ -63,6 +61,13 @@ object ClientActor {
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
+      case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
+        if (state.ignoreLog) state
+        else {
+          logger.info(s"API socket doesn't support $msg on ${req.name}")
+          state.copy(ignoreLog = true)
+        }
+
       case ClientOut.MoveLat =>
         bus.subscribe(ctx.self, _.mlat)
         state
@@ -102,7 +107,7 @@ object ClientActor {
       case ClientOut.Unexpected(msg) =>
         if (state.ignoreLog) state
         else {
-          logger.info(s"Unexpected $msg ${req.name}")
+          logger.info(s"Unexpected $msg on ${req.name}")
           state.copy(ignoreLog = true)
         }
 
@@ -110,6 +115,8 @@ object ClientActor {
         state
     }
   }
+
+  private val logger = LoggerFactory.getLogger(getClass)
 
   case class State(
       watchedGames: Set[Game.ID] = Set.empty,
