@@ -47,7 +47,7 @@ class SocketController @Inject() (
 
   private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
-      case None => f // for exotic clients and maybe acid ape chess?
+      case None => f // for exotic clients acid ape chess
       case Some(origin) if origin == csrfDomain || origin == mobileOrigin || origin == localAppOrigin || origin == ionicAppOrigin => f
       case Some(origin) =>
         logger.info(s"""CSRF origin: "$origin" ${reqName(req)}""")
