@@ -34,6 +34,8 @@ final class Server @Inject() (
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
 
+  // kamon.Kamon.init()
+
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
       maxCredits = 50,

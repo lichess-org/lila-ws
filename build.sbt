@@ -11,6 +11,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala).disablePlugins(P
 scalaVersion := "2.13.0"
 
 val akkaVersion = "2.5.23"
+val kamonVersion = "2.0.0"
 
 libraryDependencies += guice
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.4"
@@ -20,6 +21,8 @@ libraryDependencies += "org.lichess" %% "scalachess" % "9.0.25"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
 libraryDependencies += "joda-time" % "joda-time" % "2.10.3"
+libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion
+libraryDependencies += "io.kamon" %% "kamon-influxdb" % kamonVersion
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
