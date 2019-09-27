@@ -43,8 +43,9 @@ class SocketController @Inject() (
   private val csrfDomain = config.get[String]("csrf.origin")
   private val appOrigins = Set(
     "ionic://localhost", // ios
+    "capacitor://localhost", // capacitor (ios next)
     "http://localhost", // android
-    "http://localhost:8080",
+    "http://localhost:8080", // local dev
     "file://"
   )
 
