@@ -41,14 +41,17 @@ class SocketController @Inject() (
   private type Response = Future[Either[Result, akka.stream.scaladsl.Flow[Message, Message, _]]]
 
   private val csrfDomain = config.get[String]("csrf.origin")
-  private val mobileOrigin = "file://"
-  private val localAppOrigin = "http://localhost:8080"
-  private val ionicAppOrigin = "ionic://localhost"
+  private val appOrigins = Set(
+    "ionic://localhost", // ios
+    "http://localhost", // android
+    "http://localhost:8080",
+    "file://"
+  )
 
   private def CsrfCheck(req: RequestHeader)(f: => Response): Response =
     req.headers get HeaderNames.ORIGIN match {
-      case None => f // for exotic clients acid ape chess
-      case Some(origin) if origin == csrfDomain || origin == mobileOrigin || origin == localAppOrigin || origin == ionicAppOrigin => f
+      case None => f // for exotic clients and acid ape chess
+      case Some(origin) if origin == csrfDomain || appOrigins(origin) => f
       case Some(origin) =>
         logger.info(s"""CSRF origin: "$origin" ${reqName(req)}""")
         Future successful Left(Forbidden("Cross origin request forbidden"))
