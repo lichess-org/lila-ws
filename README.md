@@ -26,6 +26,7 @@ bind.host = "localhost"
 bind.port = 9664
 mongo.uri = "mongodb://localhost:27017/lichess"
 redis.uri = "redis://127.0.0.1"
+csrf.origin = "http://localhost"
 ```
 
 systemd service file example:
