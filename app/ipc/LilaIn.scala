@@ -76,4 +76,10 @@ object LilaIn {
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
     def write = s"disconnect/sris ${sris mkString ","}"
   }
+
+  sealed trait Simul extends LilaIn
+
+  case class ChatSay(simulId: Simul.ID, userId: User.ID, msg: String) extends Simul {
+    def write = s"chat/say $simulId $userId $msg"
+  }
 }

@@ -17,6 +17,18 @@ object Game {
   type ID = String
 }
 
+object Simul {
+  type ID = String
+}
+
+case class Simul(id: Simul.ID) extends AnyVal
+
+object Chat {
+  type ID = String
+}
+
+case class Chat(id: Chat.ID) extends AnyVal
+
 case class Sri(value: String) extends AnyVal with StringValue
 
 object Sri {

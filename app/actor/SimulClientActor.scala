@@ -8,24 +8,23 @@ import play.api.Logger
 import ipc._
 import sm._
 
-object LobbyClientActor {
+object SimulClientActor {
 
   import ClientActor._
 
   case class State(
-      idle: Boolean = false,
+      simul: Simul,
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(simul: Simul)(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
     deps.user foreach { u =>
-      deps.queue(_.user, UserSM.ConnectSilently(u, ctx.self))
+      deps.queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    queue(_.connect, LilaIn.ConnectSri(sri, user.map(_.id)))
-    bus.subscribe(ctx.self, _.lobby)
-    apply(State(), deps)
+    bus.subscribe(ctx.self, _ chat simul.id)
+    apply(State(simul), deps)
   }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
@@ -38,29 +37,19 @@ object LobbyClientActor {
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
 
-      case ClientIn.LobbyNonIdle(payload) =>
-        if (!state.idle) clientIn(payload)
-        Behavior.same
-
-      case ClientIn.OnlyFor(endpoint, payload) =>
-        if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
-        Behavior.same
+      //       case ClientIn.OnlyFor(endpoint, payload) =>
+      //         if (endpoint == ClientIn.OnlyFor.Simul) clientIn(payload)
+      //         Behavior.same
 
       case in: ClientIn =>
         clientIn(in)
         Behavior.same
 
-      case msg: ClientOut.Ping =>
-        clientIn(LobbyPongStore.get)
-        apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
-
-      case ClientOut.Forward(payload) =>
-        forward(payload)
+      case ClientOut.ChatSay(msg) =>
+        user foreach { u =>
+          queue(_.simul, LilaIn.ChatSay(state.simul.id, u.id, msg))
+        }
         Behavior.same
-
-      case ClientOut.Idle(value, payload) =>
-        forward(payload)
-        apply(state.copy(idle = value), deps)
 
       // default receive (site)
       case msg: ClientOutSite =>
@@ -71,9 +60,7 @@ object LobbyClientActor {
 
   }.receiveSignal {
     case (ctx, PostStop) =>
-      import deps._
       onStop(state.site, deps, ctx)
-      queue(_.disconnect, LilaIn.DisconnectSri(sri))
       Behaviors.same
   }
 }

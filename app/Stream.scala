@@ -27,11 +27,15 @@ final class Stream @Inject() (config: Configuration)(implicit
     val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") {
       case out: LobbyOut => out
     }
+    val (simulInit, simulSink) = lila.pubsub("simul-in", "simul-out") {
+      case out: SimulOut => out
+    }
 
-    val (siteOut, lobbyOut, queues) = Graph(siteSink, lobbySink).run()
+    val (siteOut, lobbyOut, simulOut, queues) = Graph(siteSink, lobbySink, simulSink).run()
 
     siteInit(siteOut, List(LilaIn.DisconnectAll))
     lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
+    simulInit(simulOut, List(LilaIn.DisconnectAll))
 
     queues
   }
@@ -44,6 +48,7 @@ object Stream {
       friends: SourceQueue[LilaIn.Friends],
       site: SourceQueue[LilaIn.Site],
       lobby: SourceQueue[LilaIn.Lobby],
+      simul: SourceQueue[LilaIn.Simul],
       connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[LagSM.Input],

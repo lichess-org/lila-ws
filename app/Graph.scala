@@ -9,18 +9,21 @@ import ipc._
 
 object Graph {
 
-  type GraphType = RunnableGraph[(SourceQueueWithComplete[SiteOut], SourceQueueWithComplete[LobbyOut], Stream.Queues)]
+  type GraphType = RunnableGraph[(SourceQueueWithComplete[SiteOut], SourceQueueWithComplete[LobbyOut], SourceQueueWithComplete[SimulOut], Stream.Queues)]
 
   def apply(
     lilaInSite: Sink[LilaIn.Site, _],
-    lilaInLobby: Sink[LilaIn.Lobby, _]
+    lilaInLobby: Sink[LilaIn.Lobby, _],
+    lilaInSimul: Sink[LilaIn.Simul, _]
   )(implicit system: akka.actor.ActorSystem): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
+    Source.queue[SimulOut](8192, overflow), // from simul chan
     Source.queue[LilaIn.Notified](128, overflow), // clients -> lila:site notified
     Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
     Source.queue[LilaIn.Site](8192, overflow), // clients -> lila:site (forward)
     Source.queue[LilaIn.Lobby](8192, overflow), // clients -> lila:lobby
+    Source.queue[LilaIn.Simul](8192, overflow), // clients -> lila:simul
     Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
@@ -28,11 +31,11 @@ object Graph {
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
   ) {
-      case (siteOut, lobbyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
-        siteOut, lobbyOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
+      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
+        siteOut, lobbyOut, simulOut,
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -42,7 +45,7 @@ object Graph {
 
       // site
 
-      val SiteOut = merge[SiteOut](2)
+      val SiteOut = merge[SiteOut](3)
 
       val SOBroad: UniformFanOutShape[SiteOut, SiteOut] = b.add(Broadcast[SiteOut](5))
 
@@ -55,7 +58,7 @@ object Graph {
         }
       }
 
-      val ClientBus = merge[Bus.Msg](2)
+      val ClientBus = merge[Bus.Msg](3)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
         val bus = Bus(system)
@@ -173,6 +176,30 @@ object Graph {
 
       val LobbyInlet: Inlet[LilaIn.Lobby] = b.add(lilaInLobby).in
 
+      // simul
+
+      val SMBroad: UniformFanOutShape[SimulOut, SimulOut] = b.add(Broadcast[SimulOut](2))
+
+      // forward site messages coming from lobby chan
+      val SOSite: FlowShape[SimulOut, SiteOut] = b.add {
+        Flow[SimulOut].collect {
+          case siteOut: SiteOut => siteOut
+        }
+      }
+
+      val SimOBus: FlowShape[SimulOut, Bus.Msg] = b.add {
+        Flow[SimulOut].mapConcat {
+          case LilaOut.ChatLine(chatId, payload) => List(Bus.msg(ClientIn.ChatLine(payload), _ chat chatId))
+          case _ => Nil
+        }
+      }
+
+      // val SimulIn = merge[LilaIn.Simul](1)
+
+      val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
+
+      // tickers
+
       val UserTicker: SourceShape[sm.UserSM.Input] = b.add {
         Source.tick(7.seconds, 5.seconds, sm.UserSM.PublishDisconnects)
       }
@@ -202,6 +229,11 @@ object Graph {
       ClientToLobby                                          ~> LobbyIn
       ClientConnect                     ~> Connects          ~> LobbyIn
       ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
+
+      SimulOutlet ~> SMBroad ~> SOSite  ~> SiteOut
+                     SMBroad ~> SimOBus                      ~> ClientBus
+      ClientToSimul                                                       ~> SimulInlet
+      // ClientToSimul                                          ~> SimulIn   ~> SimulInlet
 
       UserTicker                        ~> User
 

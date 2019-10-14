@@ -48,6 +48,13 @@ final class Server @Inject() (
       name = s"lobby ${reqName(req)}"
     ))
 
+  def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
+    connectTo(req, sri, flag)(SimulClientActor.start(simul)) map asWebsocket(new RateLimit(
+      maxCredits = 30,
+      duration = 20.seconds,
+      name = s"simul ${reqName(req)}"
+    ))
+
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =

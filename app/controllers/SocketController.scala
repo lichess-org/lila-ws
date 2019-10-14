@@ -34,6 +34,14 @@ class SocketController @Inject() (
     }
   }
 
+  def simul(id: Simul.ID, sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
+    CsrfCheck(req) {
+      ValidSri(sriStr, req) { sri =>
+        server.connectToSimul(req, Simul(id), sri, flagOf(req)) map Right.apply
+      }
+    }
+  }
+
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }

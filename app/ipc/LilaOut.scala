@@ -11,6 +11,8 @@ sealed trait LilaOut extends LilaMsg
 
 sealed trait LobbyOut extends LilaOut
 
+sealed trait SimulOut extends LilaOut
+
 sealed trait SiteOut extends LilaOut
 
 object LilaOut {
@@ -29,9 +31,9 @@ object LilaOut {
 
   case class DisconnectUser(user: User.ID) extends SiteOut
 
-  // site, lobby
+  // site, lobby, simul
 
-  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with SimulOut
 
   // lobby
 
@@ -45,6 +47,10 @@ object LilaOut {
   case class NbRounds(value: Int) extends LobbyOut
 
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
+
+  // simul
+
+  case class ChatLine(simul: Simul.ID, json: JsonString) extends SimulOut
 
   // impl
 
@@ -100,6 +106,11 @@ object LilaOut {
           sris.split(",").toSeq map Sri.apply,
           JsonString(payload)
         ))
+        case _ => None
+      }
+
+      case "chat/line" => args.split(" ", 2) match {
+        case Array(chatId, payload) => Some(ChatLine(chatId, JsonString(payload)))
         case _ => None
       }
 

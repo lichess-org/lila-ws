@@ -13,6 +13,7 @@ sealed trait ClientOut extends ClientMsg
 
 sealed trait ClientOutSite extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
+sealed trait ClientOutChat extends ClientOut
 
 object ClientOut {
 
@@ -64,6 +65,10 @@ object ClientOut {
 
   case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
 
+  // chat
+
+  case class ChatSay(msg: String) extends ClientOutChat
+
   // impl
 
   def parse(str: String): Try[ClientOut] =
@@ -114,6 +119,8 @@ object ClientOut {
         case "idle" => o boolean "d" map { Idle(_, o) }
         case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
           Some(Forward(o))
+        // chat
+        case "talk" => o str "d" map { ChatSay.apply }
         // meh
         case "ping" => Some(Ignore) // outdated clients
         case _ => None
