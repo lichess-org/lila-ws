@@ -29,13 +29,14 @@ object Graph {
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
-    Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
+    Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine
+    Source.queue[sm.SimulSM.Input](256, overflow) // clients -> simul machine
   ) {
-      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
+      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, simulState) => (
         siteOut, lobbyOut, simulOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, simulState)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser, ClientToSimulState) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -194,6 +195,8 @@ object Graph {
         }
       }
 
+      val SimulSM: FlowShape[sm.SimulSM.Input, ClientIn] = machine(sm.SimulSM.machine)
+
       // val SimulIn = merge[LilaIn.Simul](1)
 
       val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
@@ -231,9 +234,10 @@ object Graph {
       ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
 
       SimulOutlet ~> SMBroad ~> SOSite  ~> SiteOut
-                     SMBroad ~> SimOBus                      ~> ClientBus
+                     // SMBroad ~> SimOBus                      ~> ClientBus
+                     SMBroad
       ClientToSimul                                                       ~> SimulInlet
-      // ClientToSimul                                          ~> SimulIn   ~> SimulInlet
+      ClientToSimulState                ~> SimulSM ~> SimOBus         ~> ClientBus
 
       UserTicker                        ~> User
 

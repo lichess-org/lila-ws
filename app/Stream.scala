@@ -54,7 +54,8 @@ object Stream {
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
-      user: SourceQueue[UserSM.Input]
+      user: SourceQueue[UserSM.Input],
+      simulState: SourceQueue[SimulSM.Input]
   ) {
     def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =
       select(this) offer msg

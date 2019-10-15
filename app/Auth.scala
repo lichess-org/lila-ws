@@ -22,7 +22,7 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
           ).one[BSONDocument]
         } map {
           _ flatMap {
-            _.getAs[String]("user") map User.apply
+            _.getAs[User.ID]("user") map User.apply
           }
         } map { user =>
           user foreach seenAt.apply

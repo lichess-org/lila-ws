@@ -23,6 +23,9 @@ object SimulClientActor {
     deps.user foreach { u =>
       deps.queue(_.user, UserSM.Connect(u, ctx.self))
     }
+    deps.user foreach { u =>
+      deps.queue(_.simulState, SimulSM.Connect(simul, u))
+    }
     bus.subscribe(ctx.self, _ chat simul.id)
     apply(State(simul), deps)
   }
@@ -61,6 +64,9 @@ object SimulClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
+      deps.user foreach { u =>
+        deps.queue(_.simulState, SimulSM.Disconnect(simul, u))
+      }
       Behaviors.same
   }
 }

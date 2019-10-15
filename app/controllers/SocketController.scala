@@ -18,28 +18,16 @@ class SocketController @Inject() (
     val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext) extends BaseController {
 
-  def site(sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
-    CsrfCheck(req) {
-      ValidSri(sriStr, req) { sri =>
-        server.connectToSite(req, sri, flagOf(req)) map Right.apply
-      }
-    }
+  def site(sriStr: String, apiVersion: Int) = LichessWebSocket(sriStr) { (sri, req) =>
+    server.connectToSite(req, sri, flagOf(req)) map Right.apply
   }
 
-  def lobby(sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
-    CsrfCheck(req) {
-      ValidSri(sriStr, req) { sri =>
-        server.connectToLobby(req, sri, flagOf(req)) map Right.apply
-      }
-    }
+  def lobby(sriStr: String, apiVersion: Int) = LichessWebSocket(sriStr) { (sri, req) =>
+    server.connectToLobby(req, sri, flagOf(req)) map Right.apply
   }
 
-  def simul(id: Simul.ID, sriStr: String, apiVersion: Int): WebSocket = WebSocket { req =>
-    CsrfCheck(req) {
-      ValidSri(sriStr, req) { sri =>
-        server.connectToSimul(req, Simul(id), sri, flagOf(req)) map Right.apply
-      }
-    }
+  def simul(id: Simul.ID, sriStr: String, apiVersion: Int) = LichessWebSocket(sriStr) { (sri, req) =>
+    server.connectToSimul(req, Simul(id), sri, flagOf(req)) map Right.apply
   }
 
   def api: WebSocket = WebSocket { req =>
@@ -72,6 +60,15 @@ class SocketController @Inject() (
       case None =>
         logger.info(s"""Invalid sri: "$str" ${reqName(req)}""")
         Future successful Left(BadRequest("Invalid sri"))
+    }
+
+  private def LichessWebSocket(sriStr: String)(f: (Sri, RequestHeader) => Response): WebSocket =
+    WebSocket { req =>
+      CsrfCheck(req) {
+        ValidSri(sriStr, req) { sri =>
+          f(sri, req)
+        }
+      }
     }
 
   private val logger = Logger("Controller")
