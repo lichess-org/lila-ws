@@ -9,12 +9,13 @@ import play.api.mvc._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import lila.ws._
-import lila.ws.util.Util.{ reqName, flagOf }
+import lila.ws.util.Util.{ reqName, flagOf, parseIntOption }
 
 @Singleton
 class SocketController @Inject() (
     server: Server,
     config: Configuration,
+    mongo: Mongo,
     val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext) extends BaseController {
 
@@ -26,9 +27,13 @@ class SocketController @Inject() (
     server.connectToLobby(req, sri, flagOf(req)) map Right.apply
   }
 
-  def simul(id: Simul.ID, sriStr: String, apiVersion: Int) = LichessWebSocket(sriStr) { (sri, req) =>
-    server.connectToSimul(req, Simul(id), sri, flagOf(req)) map Right.apply
-  }
+  def simul(id: Simul.ID, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      mongo simulExists id flatMap {
+        case false => Future successful Left(NotFound)
+        case true => server.connectToSimul(req, Simul(id), sri, getSocketVersion(req)) map Right.apply
+      }
+    }
 
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
@@ -70,6 +75,9 @@ class SocketController @Inject() (
         }
       }
     }
+
+  protected def getSocketVersion(req: RequestHeader): Option[SocketVersion] =
+    req.queryString get "v" flatMap (_.headOption) flatMap parseIntOption map SocketVersion.apply
 
   private val logger = Logger("Controller")
 }

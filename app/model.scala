@@ -4,6 +4,10 @@ trait StringValue extends Any {
   def value: String
   override def toString = value
 }
+trait IntValue extends Any {
+  def value: Int
+  override def toString = value.toString
+}
 
 case class User(id: User.ID) extends AnyVal
 
@@ -54,3 +58,11 @@ case class Path(value: String) extends AnyVal with StringValue
 case class ChapterId(value: String) extends AnyVal with StringValue
 
 case class JsonString(value: String) extends AnyVal with StringValue
+
+case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[SocketVersion] {
+  def compare(other: SocketVersion) = Integer.compare(value, other.value)
+}
+
+case class IsTroll(value: Boolean) extends AnyVal
+
+case class RoomId(value: String) extends AnyVal with StringValue

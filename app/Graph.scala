@@ -29,14 +29,13 @@ object Graph {
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
-    Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine
-    Source.queue[sm.SimulSM.Input](256, overflow) // clients -> simul machine
+    Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
   ) {
-      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, simulState) => (
+      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
         siteOut, lobbyOut, simulOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, simulState)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser, ClientToSimulState) =>
+    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -179,7 +178,7 @@ object Graph {
 
       // simul
 
-      val SMBroad: UniformFanOutShape[SimulOut, SimulOut] = b.add(Broadcast[SimulOut](2))
+      val SMBroad: UniformFanOutShape[SimulOut, SimulOut] = b.add(Broadcast[SimulOut](3))
 
       // forward site messages coming from lobby chan
       val SOSite: FlowShape[SimulOut, SiteOut] = b.add {
@@ -188,14 +187,22 @@ object Graph {
         }
       }
 
-      val SimOBus: FlowShape[SimulOut, Bus.Msg] = b.add {
-        Flow[SimulOut].mapConcat {
-          case LilaOut.ChatLine(chatId, payload) => List(Bus.msg(ClientIn.ChatLine(payload), _ chat chatId))
-          case _ => Nil
+      val EventStore: SinkShape[SimulOut] = b.add {
+        Sink.foreach[SimulOut] {
+          case LilaOut.TellVersion(roomId, version, troll, json) =>
+            RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
+          case _ =>
         }
       }
 
-      val SimulSM: FlowShape[sm.SimulSM.Input, ClientIn] = machine(sm.SimulSM.machine)
+      val SimOBus: FlowShape[SimulOut, Bus.Msg] = b.add {
+        Flow[SimulOut].mapConcat {
+          case LilaOut.TellVersion(roomId, version, troll, payload) => List(
+            Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
+          )
+          case _ => Nil
+        }
+      }
 
       // val SimulIn = merge[LilaIn.Simul](1)
 
@@ -234,10 +241,9 @@ object Graph {
       ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
 
       SimulOutlet ~> SMBroad ~> SOSite  ~> SiteOut
-                     // SMBroad ~> SimOBus                      ~> ClientBus
-                     SMBroad
+                     SMBroad ~> SimOBus                      ~> ClientBus
+                     SMBroad                                              ~> EventStore
       ClientToSimul                                                       ~> SimulInlet
-      ClientToSimulState                ~> SimulSM ~> SimOBus         ~> ClientBus
 
       UserTicker                        ~> User
 

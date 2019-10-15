@@ -32,7 +32,7 @@ final class Lila(redisUri: RedisURI) {
               case Some(typed) => queue offer typed
               case None => logger.warn(s"Received $out on wrong channel: $chanOut")
             }
-            case None => logger.warn(s"Unhandled LilaOut: $msg")
+            case None => logger.warn(s"Unhandled $channel LilaOut: $msg")
           }
       })
     }

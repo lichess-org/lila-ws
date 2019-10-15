@@ -20,6 +20,10 @@ object ClientIn {
     val write = "0"
   }
 
+  case object Resync extends ClientIn {
+    val write = Json stringify Json.obj("t" -> "resync")
+  }
+
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
     val write = Json stringify Json.obj(
       "t" -> "n",
@@ -48,8 +52,9 @@ object ClientIn {
     def write = clientMsg("round/nb", value)
   }
 
-  case class ChatLine(json: JsonString) extends ClientIn {
-    def write = clientMsg("message", json)
+  case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends ClientMsg {
+    lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
+    lazy val empty = Payload(JsonString(s"""{"v":$version}"""))
   }
 
   case class Payload(json: JsonString) extends ClientIn {

@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import play.api.libs.json._
-import play.api.Logger
 
 import ipc._
 import sm._
@@ -20,8 +19,8 @@ object LobbyClientActor {
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
-    deps.user foreach { u =>
-      deps.queue(_.user, UserSM.ConnectSilently(u, ctx.self))
+    user foreach { u =>
+      queue(_.user, UserSM.ConnectSilently(u, ctx.self))
     }
     queue(_.connect, LilaIn.ConnectSri(sri, user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)

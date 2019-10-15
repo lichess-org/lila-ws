@@ -4,7 +4,7 @@ import javax.inject._
 import org.joda.time.DateTime
 import play.api.Configuration
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver }
+import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -18,14 +18,25 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
 
   private def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
-  def securityColl = db.map(_.collection("security"))
-  def userColl = db.map(_.collection("user4"))
-  def coachColl = db.map(_.collection("coach"))
-  def streamerColl = db.map(_.collection("streamer"))
+  private def collNamed(name: String) = db.map(_.collection(name))
+  def securityColl = collNamed("security")
+  def userColl = collNamed("user4")
+  def coachColl = collNamed("coach")
+  def streamerColl = collNamed("streamer")
+  def simulColl = collNamed("simul")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
   def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
+  def simul[A](f: BSONCollection => Future[A]): Future[A] = simulColl flatMap f
+
+  def simulExists(id: String): Future[Boolean] = simul(_.count(
+    selector = Some(BSONDocument("_id" -> id)),
+    limit = None,
+    skip = 0,
+    hint = None,
+    readConcern = ReadConcern.Local
+  ).map(0 < _))
 }
 
 object Mongo {

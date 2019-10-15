@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import play.api.libs.json._
-import play.api.Logger
 
 import ipc._
 import sm._
@@ -17,16 +16,20 @@ object SimulClientActor {
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(simul: Simul)(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(simul: Simul, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
+    val roomId = RoomId(simul.id)
     onStart(deps, ctx)
-    deps.user foreach { u =>
-      deps.queue(_.user, UserSM.Connect(u, ctx.self))
+    user foreach { u =>
+      queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    deps.user foreach { u =>
-      deps.queue(_.simulState, SimulSM.Connect(simul, u))
+    bus.subscribe(ctx.self, _ room roomId)
+    RoomEvents.getFrom(roomId, fromVersion) match {
+      case None => clientIn(ClientIn.Resync)
+      case Some(events) => events foreach { ev =>
+        clientIn(ev.full) // TODO skip troll
+      }
     }
-    bus.subscribe(ctx.self, _ chat simul.id)
     apply(State(simul), deps)
   }
 
@@ -40,9 +43,9 @@ object SimulClientActor {
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
 
-      //       case ClientIn.OnlyFor(endpoint, payload) =>
-      //         if (endpoint == ClientIn.OnlyFor.Simul) clientIn(payload)
-      //         Behavior.same
+      case versioned: ClientIn.Versioned =>
+        clientIn(versioned.full) // TODO skip troll
+        Behavior.same
 
       case in: ClientIn =>
         clientIn(in)
@@ -64,9 +67,6 @@ object SimulClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      deps.user foreach { u =>
-        deps.queue(_.simulState, SimulSM.Disconnect(simul, u))
-      }
       Behaviors.same
   }
 }

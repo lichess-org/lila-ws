@@ -2,10 +2,10 @@ package lila.ws
 package ipc
 
 import chess.format.{ FEN, Uci }
-import java.lang.Double.parseDouble
-import java.lang.Integer.parseInt
 import play.api.libs.json._
 import scala.util.Try
+
+import lila.ws.util.Util._
 
 sealed trait LilaOut extends LilaMsg
 
@@ -50,7 +50,7 @@ object LilaOut {
 
   // simul
 
-  case class ChatLine(simul: Simul.ID, json: JsonString) extends SimulOut
+  case class TellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut
 
   // impl
 
@@ -64,7 +64,7 @@ object LilaOut {
         case _ => None
       }
 
-      case "mlat" => Try(Mlat(parseDouble(args))).toOption
+      case "mlat" => parseDoubleOption(args) map Mlat.apply
 
       case "tell/flag" => args.split(" ", 2) match {
         case Array(flag, payload) => Some(TellFlag(flag, JsonString(payload)))
@@ -97,9 +97,9 @@ object LilaOut {
         case _ => None
       }
 
-      case "member/nb" => Try(NbMembers(parseInt(args))).toOption
+      case "member/nb" => parseIntOption(args) map NbMembers.apply
 
-      case "round/nb" => Try(NbRounds(parseInt(args))).toOption
+      case "round/nb" => parseIntOption(args) map NbRounds.apply
 
       case "tell/sris" => args.split(" ", 2) match {
         case Array(sris, payload) => Some(TellSris(
@@ -109,8 +109,10 @@ object LilaOut {
         case _ => None
       }
 
-      case "chat/line" => args.split(" ", 2) match {
-        case Array(chatId, payload) => Some(ChatLine(chatId, JsonString(payload)))
+      case "tell/version" => args.split(" ", 4) match {
+        case Array(roomId, version, troll, payload) => parseIntOption(version) map { sv =>
+          TellVersion(RoomId(roomId), SocketVersion(sv), IsTroll(troll == "true"), JsonString(payload))
+        }
         case _ => None
       }
 
