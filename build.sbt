@@ -20,6 +20,7 @@ libraryDependencies += "org.lichess" %% "scalachess" % "9.0.25"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
 libraryDependencies += "joda-time" % "joda-time" % "2.10.3"
+libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 

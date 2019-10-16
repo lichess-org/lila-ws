@@ -191,6 +191,8 @@ object Graph {
         Sink.foreach[SimulOut] {
           case LilaOut.TellVersion(roomId, version, troll, json) =>
             RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
+          case LilaOut.RoomStop(roomId) =>
+            RoomEvents.stop(roomId)
           case _ =>
         }
       }

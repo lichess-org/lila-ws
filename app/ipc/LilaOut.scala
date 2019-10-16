@@ -52,6 +52,8 @@ object LilaOut {
 
   case class TellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut
 
+  case class RoomStop(roomId: RoomId) extends SimulOut
+
   // impl
 
   def read(str: String): Option[LilaOut] = {
@@ -115,6 +117,8 @@ object LilaOut {
         }
         case _ => None
       }
+
+        case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case _ => None
     }

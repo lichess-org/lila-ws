@@ -28,15 +28,21 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
   def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
-  def simul[A](f: BSONCollection => Future[A]): Future[A] = simulColl flatMap f
 
-  def simulExists(id: String): Future[Boolean] = simul(_.count(
-    selector = Some(BSONDocument("_id" -> id)),
-    limit = None,
-    skip = 0,
-    hint = None,
-    readConcern = ReadConcern.Local
-  ).map(0 < _))
+  def simulExists(id: Simul.ID): Future[Boolean] =
+    simulColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+
+  def isTroll(user: User): Future[IsTroll] =
+    userColl flatMap { exists(_, BSONDocument("_id" -> user.id, "troll" -> true)) } map IsTroll.apply
+
+  private def exists(coll: BSONCollection, selector: BSONDocument): Future[Boolean] =
+    coll.count(
+      selector = Some(selector),
+      limit = None,
+      skip = 0,
+      hint = None,
+      readConcern = ReadConcern.Local
+    ).map(0 < _)
 }
 
 object Mongo {

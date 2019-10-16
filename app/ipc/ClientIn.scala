@@ -54,7 +54,7 @@ object ClientIn {
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends ClientMsg {
     lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
-    lazy val empty = Payload(JsonString(s"""{"v":$version}"""))
+    lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
   }
 
   case class Payload(json: JsonString) extends ClientIn {

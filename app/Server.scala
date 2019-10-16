@@ -17,6 +17,7 @@ import lila.ws.util.Util.{ reqName, userAgent, flagOf, nowSeconds }
 @Singleton
 final class Server @Inject() (
     auth: Auth,
+    mongo: Mongo,
     stream: Stream
 )(implicit
     ec: ExecutionContext,
@@ -49,7 +50,15 @@ final class Server @Inject() (
     ))
 
   def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
-    connectTo(req, sri, None)(SimulClientActor.start(simul, fromVersion)) map asWebsocket(new RateLimit(
+    auth(req, None) flatMap { user =>
+      user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
+        actorFlow(req) { clientIn =>
+          SimulClientActor.start(simul, isTroll, fromVersion) {
+            ClientActor.Deps(clientIn, queues, sri, None, user, userAgent(req), req.remoteAddress, bus)
+          }
+        }
+      }
+    } map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 20.seconds,
       name = s"simul ${reqName(req)}"

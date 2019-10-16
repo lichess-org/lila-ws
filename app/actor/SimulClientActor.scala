@@ -13,10 +13,11 @@ object SimulClientActor {
 
   case class State(
       simul: Simul,
+      isTroll: IsTroll,
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(simul: Simul, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(simul: Simul, isTroll: IsTroll, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     val roomId = RoomId(simul.id)
     onStart(deps, ctx)
@@ -26,12 +27,14 @@ object SimulClientActor {
     bus.subscribe(ctx.self, _ room roomId)
     RoomEvents.getFrom(roomId, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
-      case Some(events) => events foreach { ev =>
-        clientIn(ev.full) // TODO skip troll
-      }
+      case Some(events) => events map { versionFor(isTroll, _) } foreach clientIn
     }
-    apply(State(simul), deps)
+    apply(State(simul, isTroll), deps)
   }
+
+  private def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
+    if (!msg.troll.value || isTroll.value) msg.full
+    else msg.skip
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
 
@@ -44,7 +47,7 @@ object SimulClientActor {
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
 
       case versioned: ClientIn.Versioned =>
-        clientIn(versioned.full) // TODO skip troll
+        clientIn(versionFor(state.isTroll, versioned))
         Behavior.same
 
       case in: ClientIn =>

@@ -1,27 +1,28 @@
 package lila.ws
 
-import java.util.concurrent.atomic.AtomicReference
+import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import scala.concurrent.duration._
 
 import ipc.ClientIn.Versioned
 
 object RoomEvents {
 
-  type Rooms = Map[RoomId, List[Versioned]]
-
   private val historySize = 30
 
-  private var state: AtomicReference[Rooms] = new AtomicReference(Map.empty)
+  private val cache: Cache[String, List[Versioned]] =
+    Scaffeine()
+      .expireAfterWrite(10.minutes)
+      .build[String, List[Versioned]]()
 
-  def add(roomId: RoomId, event: Versioned): Unit =
-    state.getAndUpdate { rooms =>
-      rooms.updated(
-        roomId,
-        event :: rooms.getOrElse(roomId, Nil).take(historySize)
-      )
-    }
+  def add(roomId: RoomId, event: Versioned): Unit = synchronized {
+    cache.put(
+      roomId.value,
+      event :: cache.getIfPresent(roomId.value).fold(List.empty[Versioned])(_ take historySize)
+    )
+  }
 
   def getFrom(roomId: RoomId, versionOpt: Option[SocketVersion]): Option[List[Versioned]] = {
-    val roomEvents = state.get().getOrElse(roomId, Nil)
+    val roomEvents = cache.getIfPresent(roomId.value).getOrElse(Nil)
     val lastEventVersion = roomEvents.headOption.map(_.version)
     versionOpt
       .fold(Option(roomEvents.take(5))) { since =>
@@ -34,4 +35,6 @@ object RoomEvents {
       }
       .map(_.reverse)
   }
+
+  def stop(roomId: RoomId) = cache.invalidate(roomId.value)
 }
