@@ -61,6 +61,10 @@ object ClientIn {
     def write = json.value
   }
 
+  case class Crowd(doc: JsObject) extends ClientIn {
+    def write = clientMsg("crowd", doc)
+  }
+
   case class LobbyNonIdle(payload: Payload) extends ClientIn {
     def write = payload.write
   }
@@ -72,6 +76,7 @@ object ClientIn {
     sealed trait Endpoint
     case object Site extends Endpoint
     case object Lobby extends Endpoint
+    case class Room(id: String) extends Endpoint
   }
   def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
 

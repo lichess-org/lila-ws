@@ -11,7 +11,7 @@ import ipc._
 import sm._
 
 @Singleton
-final class Stream @Inject() (config: Configuration)(implicit
+final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(implicit
     ec: ExecutionContext,
     system: ActorSystem,
     mat: akka.stream.Materializer
@@ -31,7 +31,7 @@ final class Stream @Inject() (config: Configuration)(implicit
       case out: SimulOut => out
     }
 
-    val (siteOut, lobbyOut, simulOut, queues) = Graph(siteSink, lobbySink, simulSink).run()
+    val (siteOut, lobbyOut, simulOut, queues) = Graph(siteSink, lobbySink, simulSink, crowdJson).run()
 
     siteInit(siteOut, List(LilaIn.DisconnectAll))
     lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
@@ -54,7 +54,8 @@ object Stream {
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
-      user: SourceQueue[UserSM.Input]
+      user: SourceQueue[UserSM.Input],
+      crowd: SourceQueue[CrowdSM.Input]
   ) {
     def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =
       select(this) offer msg

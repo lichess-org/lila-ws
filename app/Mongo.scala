@@ -28,6 +28,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
   def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
+  def user[A](f: BSONCollection => Future[A]): Future[A] = userColl flatMap f
 
   def simulExists(id: Simul.ID): Future[Boolean] =
     simulColl flatMap { exists(_, BSONDocument("_id" -> id)) }

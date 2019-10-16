@@ -15,21 +15,24 @@ object SimulClientActor {
       simul: Simul,
       isTroll: IsTroll,
       site: ClientActor.State = ClientActor.State()
-  )
+  ) {
+    def roomId = RoomId(simul.id)
+  }
 
   def start(simul: Simul, isTroll: IsTroll, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
-    val roomId = RoomId(simul.id)
+    val state = State(simul, isTroll)
     onStart(deps, ctx)
     user foreach { u =>
       queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    bus.subscribe(ctx.self, _ room roomId)
-    RoomEvents.getFrom(roomId, fromVersion) match {
+    queue(_.crowd, CrowdSM.Connect(state.roomId, user))
+    bus.subscribe(ctx.self, _ room state.roomId)
+    RoomEvents.getFrom(state.roomId, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(isTroll, _) } foreach clientIn
     }
-    apply(State(simul, isTroll), deps)
+    apply(state, deps)
   }
 
   private def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
@@ -40,14 +43,16 @@ object SimulClientActor {
 
     import deps._
 
-    def forward(payload: JsValue): Unit = queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
-
     msg match {
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
 
       case versioned: ClientIn.Versioned =>
         clientIn(versionFor(state.isTroll, versioned))
+        Behavior.same
+
+      case ClientIn.OnlyFor(endpoint, payload) =>
+        if (endpoint == ClientIn.OnlyFor.Room(state.simul.id)) clientIn(payload)
         Behavior.same
 
       case in: ClientIn =>
@@ -70,6 +75,7 @@ object SimulClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
+      deps.queue(_.crowd, CrowdSM.Disconnect(state.roomId, deps.user))
       Behaviors.same
   }
 }

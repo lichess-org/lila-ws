@@ -14,7 +14,8 @@ object Graph {
   def apply(
     lilaInSite: Sink[LilaIn.Site, _],
     lilaInLobby: Sink[LilaIn.Lobby, _],
-    lilaInSimul: Sink[LilaIn.Simul, _]
+    lilaInSimul: Sink[LilaIn.Simul, _],
+    crowdJson: CrowdJson
   )(implicit system: akka.actor.ActorSystem): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
@@ -29,13 +30,14 @@ object Graph {
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
-    Source.queue[sm.UserSM.Input](256, overflow) // clients -> user machine
+    Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine,
+    Source.queue[sm.CrowdSM.Input](256, overflow) // clients -> crowd machine
   ) {
-      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user) => (
+      case (siteOut, lobbyOut, simulOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd) => (
         siteOut, lobbyOut, simulOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser) =>
+    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby, ClientToSimul, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser, ClientToCrowd) =>
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -58,7 +60,7 @@ object Graph {
         }
       }
 
-      val ClientBus = merge[Bus.Msg](3)
+      val ClientBus = merge[Bus.Msg](4)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
         val bus = Bus(system)
@@ -69,6 +71,8 @@ object Graph {
         Flow[LilaOut].collect {
           case LilaOut.TellUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.Payload(json))
           case LilaOut.DisconnectUser(user) => sm.UserSM.Kick(user)
+          case LilaOut.TellRoomUser(roomId, user, json) =>
+            sm.UserSM.TellOne(user, ClientIn.onlyFor(_ Room roomId.value, ClientIn.Payload(json)))
         }
       }
 
@@ -159,7 +163,6 @@ object Graph {
       val LOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
         Flow[LilaOut].collect {
           // FIXME this should only send to lobby client actor
-          case LilaOut.TellLobbyUser(user, json) => sm.UserSM.TellOne(user, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
           case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
         }
       }
@@ -206,6 +209,14 @@ object Graph {
         }
       }
 
+      val Crowd = merge[sm.CrowdSM.Input](2)
+
+      val CrowdSM: FlowShape[sm.CrowdSM.Input, sm.CrowdSM.RoomCrowd] = machine(sm.CrowdSM.machine)
+
+      val CrowdJson: FlowShape[sm.CrowdSM.RoomCrowd, Bus.Msg] = b.add {
+        Flow[sm.CrowdSM.RoomCrowd].mapAsyncUnordered(16)(crowdJson.apply)
+      }
+
       // val SimulIn = merge[LilaIn.Simul](1)
 
       val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
@@ -214,6 +225,9 @@ object Graph {
 
       val UserTicker: SourceShape[sm.UserSM.Input] = b.add {
         Source.tick(7.seconds, 5.seconds, sm.UserSM.PublishDisconnects)
+      }
+      val CrowdTicker: SourceShape[sm.CrowdSM.Input] = b.add {
+        Source.tick(5.seconds, 1327.millis, sm.CrowdSM.Publish)
       }
 
       // format: OFF
@@ -246,8 +260,10 @@ object Graph {
                      SMBroad ~> SimOBus                      ~> ClientBus
                      SMBroad                                              ~> EventStore
       ClientToSimul                                                       ~> SimulInlet
+      ClientToCrowd                     ~> Crowd ~> CrowdSM  ~> CrowdJson ~> ClientBus
 
       UserTicker                        ~> User
+      CrowdTicker                       ~> Crowd
 
       // format: ON
 

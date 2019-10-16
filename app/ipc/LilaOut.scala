@@ -33,13 +33,14 @@ object LilaOut {
 
   // site, lobby, simul
 
-  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with SimulOut
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut
+
+  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut
 
   // lobby
 
   case class TellLobby(json: JsonString) extends LobbyOut
   case class TellLobbyActive(json: JsonString) extends LobbyOut
-  case class TellLobbyUser(user: User.ID, json: JsonString) extends LobbyOut // deprecated TODO remove
   case class TellLobbyUsers(users: Iterable[User.ID], json: JsonString) extends LobbyOut
 
   case class NbMembers(value: Int) extends LobbyOut
@@ -90,10 +91,6 @@ object LilaOut {
       case "tell/lobby" => Some(TellLobby(JsonString(args)))
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))
 
-      case "tell/lobby/user" => args.split(" ", 2) match {
-        case Array(user, payload) => Some(TellLobbyUser(user, JsonString(payload)))
-        case _ => None
-      }
       case "tell/lobby/users" => args.split(" ", 2) match {
         case Array(users, payload) => Some(TellLobbyUsers(users split ',', JsonString(payload)))
         case _ => None
@@ -118,7 +115,12 @@ object LilaOut {
         case _ => None
       }
 
-        case "room/stop" => Some(RoomStop(RoomId(args)))
+      case "tell/room/user" => args.split(" ", 3) match {
+        case Array(roomId, userId, payload) => Some(TellRoomUser(RoomId(roomId), userId, JsonString(payload)))
+        case _ => None
+      }
+
+      case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case _ => None
     }
