@@ -51,10 +51,10 @@ object CrowdSM {
       emit = state.rooms.flatMap {
         case (roomId, room) => (room.nbMembers match {
           case 0 => None
-          case n if n > 15 => Some(RoomCrowd(roomId, n, Nil, 0))
-          case n => Some(RoomCrowd(
+          case members if members > 15 => Some(RoomCrowd(roomId, members, Nil, 0))
+          case members => Some(RoomCrowd(
             roomId = roomId,
-            members = n,
+            members = members,
             users = room.users.keys,
             anons = room.anons
           ))
