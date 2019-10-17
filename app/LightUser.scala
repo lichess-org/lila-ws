@@ -17,21 +17,6 @@ case class LightUser(
   def titleName = title.fold(name)(_ + " " + name)
 }
 
-object LightUser {
-
-  // implicit val lightUserWrites = OWrites[LightUser] { u =>
-  //   Json.obj(
-  //     "id" -> u.id,
-  //     "name" -> u.name
-  //   ).add("title" -> u.title)
-  // }
-
-  def fallback(userId: String) = LightUser(
-    name = userId,
-    title = None
-  )
-}
-
 @Singleton
 final class LightUserApi @Inject() (mongo: Mongo)(implicit executionContext: ExecutionContext) {
 
