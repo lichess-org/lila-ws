@@ -53,6 +53,7 @@ object LilaOut {
 
   case class TellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut
 
+  case class RoomStart(roomId: RoomId) extends SimulOut
   case class RoomStop(roomId: RoomId) extends SimulOut
 
   // impl
@@ -120,6 +121,7 @@ object LilaOut {
         case _ => None
       }
 
+      case "room/start" => Some(RoomStart(RoomId(args)))
       case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case _ => None

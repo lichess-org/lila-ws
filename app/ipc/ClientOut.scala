@@ -68,6 +68,7 @@ object ClientOut {
   // chat
 
   case class ChatSay(msg: String) extends ClientOutChat
+  case class ChatTimeout(suspect: String, reason: String) extends ClientOutChat
 
   // impl
 
@@ -121,6 +122,11 @@ object ClientOut {
           Some(Forward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }
+        case "timeout" => for {
+          data <- o obj "d"
+          userId <- data str "userId"
+          reason <- data str "reason"
+        } yield ChatTimeout(userId, reason)
         // meh
         case "ping" => Some(Ignore) // outdated clients
         case _ => None

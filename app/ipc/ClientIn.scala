@@ -41,15 +41,15 @@ object ClientIn {
   }
 
   case class Mlat(millis: Double) extends ClientIn {
-    def write = clientMsg("mlat", millis)
+    lazy val write = clientMsg("mlat", millis)
   }
 
   case class NbMembers(value: Int) extends ClientIn {
-    def write = clientMsg("member/nb", value)
+    lazy val write = clientMsg("member/nb", value)
   }
 
   case class NbRounds(value: Int) extends ClientIn {
-    def write = clientMsg("round/nb", value)
+    lazy val write = clientMsg("round/nb", value)
   }
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends ClientMsg {
@@ -62,8 +62,9 @@ object ClientIn {
   }
 
   case class Crowd(doc: JsObject) extends ClientIn {
-    def write = clientMsg("crowd", doc)
+    lazy val write = clientMsg("crowd", doc)
   }
+  val emptyCrowd = Crowd(Json.obj())
 
   case class LobbyNonIdle(payload: Payload) extends ClientIn {
     def write = payload.write

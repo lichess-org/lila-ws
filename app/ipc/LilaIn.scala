@@ -82,4 +82,7 @@ object LilaIn {
   case class ChatSay(simulId: Simul.ID, userId: User.ID, msg: String) extends Simul {
     def write = s"chat/say $simulId $userId $msg"
   }
+  case class ChatTimeout(simulId: Simul.ID, userId: User.ID, suspectId: User.ID, reason: String) extends Simul {
+    def write = s"chat/timeout $simulId $userId $suspectId $reason"
+  }
 }

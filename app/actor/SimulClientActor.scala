@@ -14,6 +14,7 @@ object SimulClientActor {
   case class State(
       simul: Simul,
       isTroll: IsTroll,
+      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd,
       site: ClientActor.State = ClientActor.State()
   ) {
     def roomId = RoomId(simul.id)
@@ -55,6 +56,13 @@ object SimulClientActor {
         if (endpoint == ClientIn.OnlyFor.Room(state.simul.id)) clientIn(payload)
         Behavior.same
 
+      case crowd: ClientIn.Crowd =>
+        if (crowd == state.lastCrowd) Behavior.same
+        else {
+          clientIn(crowd)
+          apply(state.copy(lastCrowd = crowd), deps)
+        }
+
       case in: ClientIn =>
         clientIn(in)
         Behavior.same
@@ -62,6 +70,12 @@ object SimulClientActor {
       case ClientOut.ChatSay(msg) =>
         user foreach { u =>
           queue(_.simul, LilaIn.ChatSay(state.simul.id, u.id, msg))
+        }
+        Behavior.same
+
+      case ClientOut.ChatTimeout(suspect, reason) =>
+        user foreach { u =>
+          queue(_.simul, LilaIn.ChatTimeout(state.simul.id, u.id, suspect, reason))
         }
         Behavior.same
 
