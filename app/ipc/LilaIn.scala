@@ -59,7 +59,6 @@ object LilaIn {
 
   sealed trait Lobby extends LilaIn
 
-  // deprecated #TODO remove me
   case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {
     def write = s"connect/sri $sri${userId.fold("")(" " + _)}"
   }
@@ -69,7 +68,6 @@ object LilaIn {
     def write = s"connect/sris ${sris map render mkString ","}"
   }
 
-  // deprecated #TODO remove me
   case class DisconnectSri(sri: Sri) extends Lobby {
     def write = s"disconnect/sri $sri"
   }

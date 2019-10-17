@@ -7,24 +7,31 @@ object CrowdSM {
 
   case class State(
       rooms: Map[RoomId, RoomState] = Map.empty,
-      emit: List[RoomCrowd] = Nil
+      emit: Option[RoomCrowd] = None
   ) {
-    def update(roomId: RoomId)(f: RoomState => RoomState) = copy(
-      rooms = rooms.updatedWith(roomId) { cur =>
-        val newRoom = f(cur getOrElse RoomState())
-        if (newRoom.isEmpty) None else Some(newRoom)
-      },
-      emit = Nil
-    )
+    def update(roomId: RoomId)(f: RoomState => RoomState) = {
+      val room = Some(f(rooms.getOrElse(roomId, RoomState()))).filterNot(_.isEmpty)
+      copy(
+        rooms = room.fold(rooms - roomId) { rooms.updated(roomId, _) },
+        emit = room map { r =>
+          RoomCrowd(
+            roomId = roomId,
+            members = r.nbMembers,
+            users = if (r.nbUsers > 15) Nil else r.users.keys,
+            anons = r.anons
+          )
+        }
+      )
+    }
   }
 
   case class RoomState(
       anons: Int = 0,
       users: Map[User.ID, Int] = Map.empty
   ) {
-    def nbUsers = users.size
+    lazy val nbUsers = users.size
     def nbMembers = anons + nbUsers
-    def isEmpty = anons == 0 && users.isEmpty
+    def isEmpty = nbMembers < 1
   }
 
   def apply(state: State, input: Input): State = input match {
@@ -46,29 +53,13 @@ object CrowdSM {
         }
       )
     }
-
-    case Publish => state.copy(
-      emit = state.rooms.flatMap {
-        case (roomId, room) => (room.nbMembers match {
-          case 0 => None
-          case members if members > 15 => Some(RoomCrowd(roomId, members, Nil, 0))
-          case members => Some(RoomCrowd(
-            roomId = roomId,
-            members = members,
-            users = room.users.keys,
-            anons = room.anons
-          ))
-        })
-      }.toList
-    )
   }
 
   sealed trait Input
   case class Connect(roomId: RoomId, user: Option[User]) extends Input
   case class Disconnect(roomId: RoomId, user: Option[User]) extends Input
-  case object Publish extends Input
 
   case class RoomCrowd(roomId: RoomId, members: Int, users: Iterable[User.ID], anons: Int)
 
-  def machine = StateMachine[State, Input, RoomCrowd](State(), apply, _.emit)
+  def machine = StateMachine[State, Input, RoomCrowd](State(), apply, _.emit.toList)
 }

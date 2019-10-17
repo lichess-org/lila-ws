@@ -209,12 +209,17 @@ object Graph {
         }
       }
 
-      val Crowd = merge[sm.CrowdSM.Input](2)
-
       val CrowdSM: FlowShape[sm.CrowdSM.Input, sm.CrowdSM.RoomCrowd] = machine(sm.CrowdSM.machine)
 
       val CrowdJson: FlowShape[sm.CrowdSM.RoomCrowd, Bus.Msg] = b.add {
-        Flow[sm.CrowdSM.RoomCrowd].mapAsyncUnordered(16)(crowdJson.apply)
+        Flow[sm.CrowdSM.RoomCrowd]
+          .groupedWithin(1024, 1.second)
+          .mapConcat { all =>
+            all.foldLeft(Map.empty[RoomId, sm.CrowdSM.RoomCrowd]) {
+              case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
+            }.values.toList
+          }
+          .mapAsyncUnordered(8)(crowdJson.apply)
       }
 
       // val SimulIn = merge[LilaIn.Simul](1)
@@ -225,9 +230,6 @@ object Graph {
 
       val UserTicker: SourceShape[sm.UserSM.Input] = b.add {
         Source.tick(7.seconds, 5.seconds, sm.UserSM.PublishDisconnects)
-      }
-      val CrowdTicker: SourceShape[sm.CrowdSM.Input] = b.add {
-        Source.tick(5.seconds, 1327.millis, sm.CrowdSM.Publish)
       }
 
       // format: OFF
@@ -260,10 +262,9 @@ object Graph {
                      SMBroad ~> SimOBus                      ~> ClientBus
                      SMBroad                                              ~> EventStore
       ClientToSimul                                                       ~> SimulInlet
-      ClientToCrowd                     ~> Crowd ~> CrowdSM  ~> CrowdJson ~> ClientBus
+      ClientToCrowd                              ~> CrowdSM  ~> CrowdJson ~> ClientBus
 
       UserTicker                        ~> User
-      CrowdTicker                       ~> Crowd
 
       // format: ON
 

@@ -12,10 +12,8 @@ object StateMachine {
 
   def debug[State, Input](apply: (State, Input) => State): (State, Input) => State =
     (state, input) => {
-      println(state)
-      println(input)
-      val s = apply(state, input)
-      println(s)
-      s
+      val newState = apply(state, input)
+      println(s"$state => $input => $newState")
+      newState
     }
 }
