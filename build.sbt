@@ -12,15 +12,18 @@ lazy val root = (project in file("."))
 
 scalaVersion := "2.13.1"
 
-val akkaVersion = "2.5.23"
+val akkaVersion = "2.5.25"
 
 libraryDependencies += guice
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.7"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.2.0.RELEASE"
-libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.39.Final" classifier "linux-x86_64"
+libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.42.Final" classifier "linux-x86_64"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.25"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
 libraryDependencies += "joda-time" % "joda-time" % "2.10.4"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 
