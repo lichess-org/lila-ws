@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 import ipc._
-import lila.ws.util.Util.{ reqName, userAgent, flagOf, nowSeconds }
+import lila.ws.util.Util.{ reqName, flagOf, nowSeconds }
 
 @Singleton
 final class Server @Inject() (
@@ -54,7 +54,7 @@ final class Server @Inject() (
       user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
         actorFlow(req) { clientIn =>
           SimulClientActor.start(simul, isTroll, fromVersion) {
-            ClientActor.Deps(clientIn, queues, sri, None, user, userAgent(req), req.remoteAddress, bus)
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
           }
         }
       }
@@ -70,7 +70,7 @@ final class Server @Inject() (
     auth(req, flag) map { user =>
       actorFlow(req) { clientIn =>
         actor {
-          ClientActor.Deps(clientIn, queues, sri, flag, user, userAgent(req), req.remoteAddress, bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, flag, user), bus)
         }
       }
     }

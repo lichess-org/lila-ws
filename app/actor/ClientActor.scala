@@ -14,9 +14,9 @@ object ClientActor {
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     queue(_.count, CountSM.Connect)
-    bus.subscribe(ctx.self, _ sri sri)
+    bus.subscribe(ctx.self, _ sri req.sri)
     bus.subscribe(ctx.self, _.all)
-    flag foreach { f =>
+    req.flag foreach { f =>
       bus.subscribe(ctx.self, _ flag f.value)
     }
   }
@@ -24,7 +24,7 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     queue(_.count, CountSM.Disconnect)
-    user foreach { u =>
+    req.user foreach { u =>
       queue(_.user, UserSM.Disconnect(u, ctx.self))
     }
     if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
@@ -42,7 +42,7 @@ object ClientActor {
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
-    for { l <- msg.lag; u <- deps.user } deps.queue(_.lag, LagSM.Set(u, l))
+    for { l <- msg.lag; u <- deps.req.user } deps.queue(_.lag, LagSM.Set(u, l))
     state.copy(lastPing = nowSeconds)
   }
 
@@ -61,10 +61,10 @@ object ClientActor {
         queue(_.fen, FenSM.Watch(gameIds, ctx.self))
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
-      case msg: ClientOut if deps.flag.contains(Flag.api) =>
+      case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
         if (state.ignoreLog) state
         else {
-          Logger("SiteClient").info(s"API socket doesn't support $msg IP: $ipAddress UA: $userAgent")
+          Logger("SiteClient").info(s"API socket doesn't support $msg $req")
           state.copy(ignoreLog = true)
         }
 
@@ -73,13 +73,13 @@ object ClientActor {
         state
 
       case ClientOut.Notified =>
-        user foreach { u =>
+        req.user foreach { u =>
           queue(_.notified, LilaIn.Notified(u.id))
         }
         state
 
       case ClientOut.FollowingOnline =>
-        user foreach { u =>
+        req.user foreach { u =>
           queue(_.friends, LilaIn.Friends(u.id))
         }
         state
@@ -101,13 +101,13 @@ object ClientActor {
         state
 
       case ClientOut.Forward(payload) =>
-        queue(_.site, LilaIn.TellSri(sri, user.map(_.id), payload))
+        queue(_.site, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 
       case ClientOut.Unexpected(msg) =>
         if (state.ignoreLog) state
         else {
-          Logger("SiteClient").info(s"Unexpected $msg IP: $ipAddress UA: $userAgent")
+          Logger("SiteClient").info(s"Unexpected $msg $req")
           state.copy(ignoreLog = true)
         }
 
@@ -122,14 +122,17 @@ object ClientActor {
       ignoreLog: Boolean = false
   )
 
+  case class Req(
+      name: String,
+      sri: Sri,
+      flag: Option[Flag],
+      user: Option[User]
+  )
+
   case class Deps(
       client: SourceQueue[ClientIn],
       queue: Stream.Queues,
-      sri: Sri,
-      flag: Option[Flag],
-      user: Option[User],
-      userAgent: String,
-      ipAddress: String,
+      req: Req,
       bus: Bus
   ) {
     def clientIn(msg: ClientIn): Unit = client offer msg

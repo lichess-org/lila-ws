@@ -162,7 +162,6 @@ object Graph {
 
       val LOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
         Flow[LilaOut].collect {
-          // FIXME this should only send to lobby client actor
           case LilaOut.TellLobbyUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
         }
       }

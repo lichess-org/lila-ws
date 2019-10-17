@@ -19,10 +19,10 @@ object LobbyClientActor {
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
-    user foreach { u =>
+    req.user foreach { u =>
       queue(_.user, UserSM.ConnectSilently(u, ctx.self))
     }
-    queue(_.connect, LilaIn.ConnectSri(sri, user.map(_.id)))
+    queue(_.connect, LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)
     apply(State(), deps)
   }
@@ -31,11 +31,11 @@ object LobbyClientActor {
 
     import deps._
 
-    def forward(payload: JsValue): Unit = queue(_.lobby, LilaIn.TellSri(sri, user.map(_.id), payload))
+    def forward(payload: JsValue): Unit = queue(_.lobby, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case ClientIn.LobbyNonIdle(payload) =>
         if (!state.idle) clientIn(payload)
@@ -72,7 +72,7 @@ object LobbyClientActor {
     case (ctx, PostStop) =>
       import deps._
       onStop(state.site, deps, ctx)
-      queue(_.disconnect, LilaIn.DisconnectSri(sri))
+      queue(_.disconnect, LilaIn.DisconnectSri(req.sri))
       Behaviors.same
   }
 }

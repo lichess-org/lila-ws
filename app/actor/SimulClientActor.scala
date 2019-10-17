@@ -24,10 +24,10 @@ object SimulClientActor {
     import deps._
     val state = State(simul, isTroll)
     onStart(deps, ctx)
-    user foreach { u =>
+    req.user foreach { u =>
       queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    queue(_.crowd, CrowdSM.Connect(state.roomId, user))
+    queue(_.crowd, CrowdSM.Connect(state.roomId, req.user))
     bus.subscribe(ctx.self, _ room state.roomId)
     RoomEvents.getFrom(state.roomId, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
@@ -46,7 +46,7 @@ object SimulClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case versioned: ClientIn.Versioned =>
         clientIn(versionFor(state.isTroll, versioned))
@@ -68,13 +68,13 @@ object SimulClientActor {
         Behavior.same
 
       case ClientOut.ChatSay(msg) =>
-        user foreach { u =>
+        req.user foreach { u =>
           queue(_.simul, LilaIn.ChatSay(state.simul.id, u.id, msg))
         }
         Behavior.same
 
       case ClientOut.ChatTimeout(suspect, reason) =>
-        user foreach { u =>
+        req.user foreach { u =>
           queue(_.simul, LilaIn.ChatTimeout(state.simul.id, u.id, suspect, reason))
         }
         Behavior.same
@@ -89,7 +89,7 @@ object SimulClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      deps.queue(_.crowd, CrowdSM.Disconnect(state.roomId, deps.user))
+      deps.queue(_.crowd, CrowdSM.Disconnect(state.roomId, deps.req.user))
       Behaviors.same
   }
 }

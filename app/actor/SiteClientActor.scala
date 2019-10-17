@@ -14,7 +14,7 @@ object SiteClientActor {
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
-    user foreach { u =>
+    req.user foreach { u =>
       queue(_.user, UserSM.Connect(u, ctx.self))
     }
     apply(State(), deps)
@@ -24,7 +24,7 @@ object SiteClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.req.flag, ctrl)
 
       case ClientIn.OnlyFor(endpoint, payload) =>
         if (endpoint == ClientIn.OnlyFor.Site) deps.clientIn(payload)
