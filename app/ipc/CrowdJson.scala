@@ -11,7 +11,7 @@ import LightUser._
 final class CrowdJson @Inject() (lightUserApi: LightUserApi)(implicit ec: ExecutionContext) {
 
   def apply(crowd: sm.CrowdSM.RoomCrowd): Future[Bus.Msg] = {
-    if (crowd.users.isEmpty) Future successful Json.obj("n" -> crowd.members)
+    if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
     else Future sequence {
       crowd.users map lightUserApi.get
     } map { users =>
