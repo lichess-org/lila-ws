@@ -27,6 +27,12 @@ object Simul {
 
 case class Simul(id: Simul.ID) extends AnyVal
 
+object Tour {
+  type ID = String
+}
+
+case class Tour(id: Tour.ID) extends AnyVal
+
 object Chat {
   type ID = String
 }

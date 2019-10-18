@@ -75,12 +75,17 @@ object LilaIn {
     def write = s"disconnect/sris ${sris mkString ","}"
   }
 
-  sealed trait Simul extends LilaIn
+  sealed trait Room extends LilaIn
+  sealed trait Simul extends Room
+  sealed trait Tour extends Room
 
-  case class ChatSay(simulId: Simul.ID, userId: User.ID, msg: String) extends Simul {
-    def write = s"chat/say $simulId $userId $msg"
+  case class KeepAlive(roomId: RoomId) extends Simul with Tour {
+    def write = s"room/alive ${roomId.value}"
   }
-  case class ChatTimeout(simulId: Simul.ID, userId: User.ID, suspectId: User.ID, reason: String) extends Simul {
-    def write = s"chat/timeout $simulId $userId $suspectId $reason"
+  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Simul with Tour {
+    def write = s"chat/say ${roomId.value} $userId $msg"
+  }
+  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Simul with Tour {
+    def write = s"chat/timeout ${roomId.value} $userId $suspectId $reason"
   }
 }

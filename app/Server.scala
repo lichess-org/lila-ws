@@ -64,6 +64,21 @@ final class Server @Inject() (
       name = s"simul ${reqName(req)}"
     ))
 
+  def connectToTour(req: RequestHeader, tour: Tour, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+    auth(req, None) flatMap { user =>
+      user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
+        actorFlow(req) { clientIn =>
+          TourClientActor.start(tour, isTroll, fromVersion) {
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+          }
+        }
+      }
+    } map asWebsocket(new RateLimit(
+      maxCredits = 30,
+      duration = 20.seconds,
+      name = s"simul ${reqName(req)}"
+    ))
+
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =

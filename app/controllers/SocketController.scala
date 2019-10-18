@@ -35,6 +35,14 @@ class SocketController @Inject() (
       }
     }
 
+  def tournament(id: Simul.ID, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      mongo tourExists id flatMap {
+        case false => Future successful Left(NotFound)
+        case true => server.connectToTour(req, Tour(id), sri, getSocketVersion(req)) map Right.apply
+      }
+    }
+
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }

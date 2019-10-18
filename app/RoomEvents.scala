@@ -37,4 +37,6 @@ object RoomEvents {
   }
 
   def reset(roomId: RoomId) = cache.invalidate(roomId.value)
+
+  def aliveIds = cache.asMap.keySet map RoomId.apply
 }
