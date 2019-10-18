@@ -36,5 +36,6 @@ object RoomEvents {
       .map(_.reverse)
   }
 
-  def reset(roomId: RoomId) = cache.invalidate(roomId.value)
+  def reset(roomId: RoomId) = cache.put(roomId.value, Nil)
+  def stop(roomId: RoomId) = cache.invalidate(roomId.value)
 }

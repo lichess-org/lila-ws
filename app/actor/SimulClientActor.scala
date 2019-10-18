@@ -46,6 +46,13 @@ object SimulClientActor {
 
     msg match {
 
+      case ClientCtrl.Broom(oldSeconds) =>
+        if (state.site.lastPing < oldSeconds) Behaviors.stopped
+        else {
+          queue(_.simul, LilaIn.KeepAlive(state.roomId))
+          Behaviors.same
+        }
+
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case versioned: ClientIn.Versioned =>
@@ -69,13 +76,13 @@ object SimulClientActor {
 
       case ClientOut.ChatSay(msg) =>
         req.user foreach { u =>
-          queue(_.simul, LilaIn.ChatSay(state.simul.id, u.id, msg))
+          queue(_.simul, LilaIn.ChatSay(state.roomId, u.id, msg))
         }
         Behavior.same
 
       case ClientOut.ChatTimeout(suspect, reason) =>
         req.user foreach { u =>
-          queue(_.simul, LilaIn.ChatTimeout(state.simul.id, u.id, suspect, reason))
+          queue(_.simul, LilaIn.ChatTimeout(state.roomId, u.id, suspect, reason))
         }
         Behavior.same
 

@@ -193,7 +193,7 @@ object Graph {
         Sink.foreach[SimulOut] {
           case LilaOut.TellVersion(roomId, version, troll, json) =>
             RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
-          case LilaOut.RoomStop(roomId) => RoomEvents.reset(roomId)
+          case LilaOut.RoomStop(roomId) => RoomEvents.stop(roomId)
           case LilaOut.RoomStart(roomId) => RoomEvents.reset(roomId)
           case _ =>
         }
@@ -221,7 +221,25 @@ object Graph {
           .mapAsyncUnordered(8)(crowdJson.apply)
       }
 
-      // val SimulIn = merge[LilaIn.Simul](1)
+      // extract KeepAlive events from the stream,
+      // and send the room ids to another sink every 15 seconds
+      val AndKeepAlive = Flow[LilaIn.Simul].divertTo(
+        that = Flow[LilaIn.Simul]
+          .conflateWithSeed[Set[RoomId]]({
+            case LilaIn.KeepAlive(roomId) => Set(roomId)
+            case _ => Set.empty
+          }) {
+            case (rooms, LilaIn.KeepAlive(roomId)) => rooms + roomId
+            case (rooms, _) => rooms
+          }
+          .throttle(1, per = 15.second)
+          .map(LilaIn.KeepAlives.apply)
+          .to(lilaInSimul),
+        when = {
+          case ka: LilaIn.KeepAlive => true
+          case _ => false
+        }
+      )
 
       val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
 
@@ -260,7 +278,7 @@ object Graph {
       SimulOutlet ~> SMBroad ~> SOSite  ~> SiteOut
                      SMBroad ~> SimOBus                      ~> ClientBus
                      SMBroad                                              ~> EventStore
-      ClientToSimul                                                       ~> SimulInlet
+      ClientToSimul          ~> AndKeepAlive                              ~> SimulInlet
       ClientToCrowd                              ~> CrowdSM  ~> CrowdJson ~> ClientBus
 
       UserTicker                        ~> User
