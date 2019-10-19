@@ -46,6 +46,13 @@ object SimulClientActor {
 
     msg match {
 
+      case ClientCtrl.Broom(oldSeconds) =>
+        if (state.site.lastPing < oldSeconds) Behaviors.stopped
+        else {
+          queue(_.simul, LilaIn.KeepAlive(state.roomId))
+          Behaviors.same
+        }
+
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case versioned: ClientIn.Versioned =>

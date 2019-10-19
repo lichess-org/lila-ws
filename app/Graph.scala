@@ -188,7 +188,7 @@ object Graph {
         Sink.foreach[RoomOut] {
           case LilaOut.TellVersion(roomId, version, troll, json) =>
             RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
-          case LilaOut.RoomStop(roomId) => RoomEvents.reset(roomId)
+          case LilaOut.RoomStop(roomId) => RoomEvents.stop(roomId)
           case LilaOut.RoomStart(roomId) => RoomEvents.reset(roomId)
           case _ =>
         }
@@ -224,6 +224,26 @@ object Graph {
           }
           .mapAsyncUnordered(8)(crowdJson.apply)
       }
+
+      // extract KeepAlive events from the stream,
+      // and send the room ids to another sink every 15 seconds
+      val AndKeepAlive = Flow[LilaIn.Simul].divertTo(
+        that = Flow[LilaIn.Simul]
+          .conflateWithSeed[Set[RoomId]]({
+            case LilaIn.KeepAlive(roomId) => Set(roomId)
+            case _ => Set.empty
+          }) {
+            case (rooms, LilaIn.KeepAlive(roomId)) => rooms + roomId
+            case (rooms, _) => rooms
+          }
+          .throttle(1, per = 15.second)
+          .map(LilaIn.KeepAlives.apply)
+          .to(lilaInSimul),
+        when = {
+          case ka: LilaIn.KeepAlive => true
+          case _ => false
+        }
+      )
 
       val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
 
@@ -264,27 +284,27 @@ object Graph {
 
       SiteOutlet  ~> SiteOut
 
-      LobbyOutlet ~> LOBroad  ~> LOSite   ~> SiteOut // merge site messages coming from lobby input into site input
-                     LOBroad  ~> LOUser   ~> User
-                     LOBroad  ~> LOBus                         ~> ClientBus
-                     LOBroad                                                ~> LobbyPong
-      ClientToLobby                                            ~> LobbyIn
-      ClientConnect                       ~> Connects          ~> LobbyIn
-      ClientDisconnect                    ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
+      LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteOut // merge site messages coming from lobby input into site input
+                     LOBroad ~> LOUser  ~> User
+                     LOBroad ~> LOBus                        ~> ClientBus
+                     LOBroad                                              ~> LobbyPong
+      ClientToLobby                                          ~> LobbyIn
+      ClientConnect                     ~> Connects          ~> LobbyIn
+      ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
 
-      SimulOutlet ~> SimBroad ~> SimOSite ~> SiteOut
-                     SimBroad ~> RoomBus                       ~> ClientBus
-                     SimBroad                                               ~> EventStore
-      ClientToSimul                                                         ~> SimulInlet
+      SimulOutlet ~> SimBroad ~> SimOSite  ~> SiteOut
+                     SimBroad ~> SimOBus                      ~> ClientBus
+                     SimBroad                                              ~> EventStore
+      ClientToSimul          ~> AndKeepAlive                              ~> SimulInlet
 
       TourOutlet ~>  TouBroad ~> TouOSite ~> SiteOut
                      TouBroad ~> RoomBus                       ~> ClientBus
                      TouBroad                                               ~> EventStore
       ClientToTour                                                          ~> TourInlet
 
-      ClientToCrowd                                ~> CrowdSM  ~> CrowdJson ~> ClientBus
+      ClientToCrowd                              ~> CrowdSM  ~> CrowdJson ~> ClientBus
 
-      UserTicker                          ~> User
+      UserTicker                        ~> User
 
       // format: ON
 
