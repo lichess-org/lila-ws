@@ -76,18 +76,22 @@ object LilaIn {
   }
 
   sealed trait Room extends LilaIn
-  sealed trait Simul extends Room
 
-  case class KeepAlive(roomId: RoomId) extends Simul with Tour {
+  case class KeepAlive(roomId: RoomId) extends Room {
     def write = s"room/alive ${roomId.value}"
   }
-  case class KeepAlives(roomIds: Iterable[RoomId]) extends Simul with Tour {
+  case class KeepAlives(roomIds: Iterable[RoomId]) extends Room {
     def write = s"room/alives ${roomIds.map(_.value) mkString ","}"
   }
-  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Simul with Tour {
+  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Room {
     def write = s"chat/say ${roomId.value} $userId $msg"
   }
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Simul with Tour {
+  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Room {
     def write = s"chat/timeout ${roomId.value} $userId $suspectId $reason"
   }
+  case class RoomUsers(roomId: RoomId, users: Iterable[User.ID]) extends Room {
+    def write = s"room/users ${roomId.value} ${users mkString ","}"
+  }
+
+  sealed trait Tour extends Room
 }

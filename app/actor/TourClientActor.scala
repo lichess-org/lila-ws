@@ -1,83 +1,38 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
-import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import play.api.libs.json._
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ Behavior, PostStop }
 
 import ipc._
-import sm._
 
 object TourClientActor {
 
   import ClientActor._
 
   case class State(
-      tour: Tour,
-      isTroll: IsTroll,
-      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd,
+      room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
-  ) {
-    def roomId = RoomId(tour.id)
-  }
+  )
 
-  def start(tour: Tour, isTroll: IsTroll, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    import deps._
-    val state = State(tour, isTroll)
-    onStart(deps, ctx)
-    req.user foreach { u =>
-      queue(_.user, UserSM.Connect(u, ctx.self))
-    }
-    queue(_.crowd, CrowdSM.Connect(state.roomId, req.user))
-    bus.subscribe(ctx.self, _ room state.roomId)
-    RoomEvents.getFrom(state.roomId, fromVersion) match {
-      case None => clientIn(ClientIn.Resync)
-      case Some(events) => events map { versionFor(isTroll, _) } foreach clientIn
-    }
-    apply(state, deps)
+  def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+    RoomActor.onStart(roomState, fromVersion, deps, ctx)
+    apply(State(roomState), deps)
   }
-
-  private def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
-    if (!msg.troll.value || isTroll.value) msg.full
-    else msg.skip
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
 
     import deps._
 
-    msg match {
+    def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
+
+      case ClientCtrl.Broom(oldSeconds) =>
+        if (state.site.lastPing < oldSeconds) Behaviors.stopped
+        else {
+          queue(_.tour, LilaIn.KeepAlive(state.room.id))
+          Behaviors.same
+        }
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
-
-      case versioned: ClientIn.Versioned =>
-        clientIn(versionFor(state.isTroll, versioned))
-        Behavior.same
-
-      case ClientIn.OnlyFor(endpoint, payload) =>
-        if (endpoint == ClientIn.OnlyFor.Room(state.tour.id)) clientIn(payload)
-        Behavior.same
-
-      case crowd: ClientIn.Crowd =>
-        if (crowd == state.lastCrowd) Behavior.same
-        else {
-          clientIn(crowd)
-          apply(state.copy(lastCrowd = crowd), deps)
-        }
-
-      case in: ClientIn =>
-        clientIn(in)
-        Behavior.same
-
-      case ClientOut.ChatSay(msg) =>
-        req.user foreach { u =>
-          queue(_.tour, LilaIn.ChatSay(state.roomId, u.id, msg))
-        }
-        Behavior.same
-
-      case ClientOut.ChatTimeout(suspect, reason) =>
-        req.user foreach { u =>
-          queue(_.tour, LilaIn.ChatTimeout(state.roomId, u.id, suspect, reason))
-        }
-        Behavior.same
 
       // default receive (site)
       case msg: ClientOutSite =>
@@ -86,10 +41,16 @@ object TourClientActor {
         else apply(state.copy(site = siteState), deps)
     }
 
+    RoomActor.receive(state.room, deps, deps.queue.tour).lift(msg).fold(receive(msg)) {
+      _.fold(Behaviors.same[ClientMsg]) { roomState =>
+        apply(state.copy(room = roomState), deps)
+      }
+    }
+
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      deps.queue(_.crowd, CrowdSM.Disconnect(state.roomId, deps.req.user))
+      RoomActor.onStop(state.room, deps)
       Behaviors.same
   }
 }

@@ -77,7 +77,7 @@ object ClientIn {
     sealed trait Endpoint
     case object Site extends Endpoint
     case object Lobby extends Endpoint
-    case class Room(id: String) extends Endpoint
+    case class Room(id: RoomId) extends Endpoint
   }
   def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
 

@@ -52,15 +52,15 @@ object Stream {
       friends: SourceQueue[LilaIn.Friends],
       site: SourceQueue[LilaIn.Site],
       lobby: SourceQueue[LilaIn.Lobby],
-      simul: SourceQueue[LilaIn.Simul],
-      tour: SourceQueue[LilaIn.Tour],
+      simul: SourceQueue[LilaIn.Room],
+      tour: SourceQueue[LilaIn.Room],
       connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[LagSM.Input],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
       user: SourceQueue[UserSM.Input],
-      crowd: SourceQueue[CrowdSM.Input]
+      crowd: SourceQueue[RoomCrowd.Input]
   ) {
     def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =
       select(this) offer msg

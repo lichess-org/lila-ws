@@ -39,8 +39,6 @@ object LilaOut {
 
   case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut
 
-  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut with TourOut
-
   // lobby
 
   case class TellLobby(json: JsonString) extends LobbyOut
@@ -55,7 +53,10 @@ object LilaOut {
 
   // simul, tour
 
-  case class TellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut
+  case class TellRoom(roomId: RoomId, json: JsonString) extends SimulOut with TourOut
+  case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut
+  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut with TourOut
+  case class GetRoomUsers(roomId: RoomId) extends TourOut
 
   case class RoomStart(roomId: RoomId) extends SimulOut with TourOut
   case class RoomStop(roomId: RoomId) extends SimulOut with TourOut
@@ -113,9 +114,14 @@ object LilaOut {
         case _ => None
       }
 
-      case "tell/version" => args.split(" ", 4) match {
+      case "tell/room" => args.split(" ", 2) match {
+        case Array(roomId, payload) => Some(TellRoom(RoomId(roomId), JsonString(payload)))
+        case _ => None
+      }
+
+      case "tell/room/version" => args.split(" ", 4) match {
         case Array(roomId, version, troll, payload) => parseIntOption(version) map { sv =>
-          TellVersion(RoomId(roomId), SocketVersion(sv), IsTroll(troll == "true"), JsonString(payload))
+          TellRoomVersion(RoomId(roomId), SocketVersion(sv), IsTroll(troll == "true"), JsonString(payload))
         }
         case _ => None
       }
@@ -124,6 +130,8 @@ object LilaOut {
         case Array(roomId, userId, payload) => Some(TellRoomUser(RoomId(roomId), userId, JsonString(payload)))
         case _ => None
       }
+
+      case "room/get/users" => Some(GetRoomUsers(RoomId(args)))
 
       case "room/start" => Some(RoomStart(RoomId(args)))
       case "room/stop" => Some(RoomStop(RoomId(args)))

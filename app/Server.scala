@@ -53,7 +53,7 @@ final class Server @Inject() (
     auth(req, None) flatMap { user =>
       user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
         actorFlow(req) { clientIn =>
-          SimulClientActor.start(simul, isTroll, fromVersion) {
+          SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
           }
         }
@@ -68,7 +68,7 @@ final class Server @Inject() (
     auth(req, None) flatMap { user =>
       user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
         actorFlow(req) { clientIn =>
-          TourClientActor.start(tour, isTroll, fromVersion) {
+          TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
           }
         }

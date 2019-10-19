@@ -14,8 +14,8 @@ object Graph {
   def apply(
     lilaInSite: Sink[LilaIn.Site, _],
     lilaInLobby: Sink[LilaIn.Lobby, _],
-    lilaInSimul: Sink[LilaIn.Simul, _],
-    lilaInTour: Sink[LilaIn.Tour, _],
+    lilaInSimul: Sink[LilaIn.Room, _],
+    lilaInTour: Sink[LilaIn.Room, _],
     crowdJson: CrowdJson
   )(implicit system: akka.actor.ActorSystem): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
@@ -26,15 +26,15 @@ object Graph {
     Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
     Source.queue[LilaIn.Site](8192, overflow), // clients -> lila:site (forward)
     Source.queue[LilaIn.Lobby](8192, overflow), // clients -> lila:lobby
-    Source.queue[LilaIn.Simul](1024, overflow), // clients -> lila:simul
-    Source.queue[LilaIn.Tour](8192, overflow), // clients -> lila:tour
+    Source.queue[LilaIn.Room](1024, overflow), // clients -> lila:simul
+    Source.queue[LilaIn.Room](8192, overflow), // clients -> lila:tour
     Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine,
-    Source.queue[sm.CrowdSM.Input](256, overflow) // clients -> crowd machine
+    Source.queue[RoomCrowd.Input](256, overflow) // clients -> crowd machine
   ) {
       case (siteOut, lobbyOut, simulOut, tourOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd) => (
         siteOut, lobbyOut, simulOut, tourOut,
@@ -42,6 +42,14 @@ object Graph {
       )
     } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, TourOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby,
       ClientToSimul, ClientToTour, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser, ClientToCrowd) =>
+
+      def ToSiteOut: FlowShape[LilaOut, SiteOut] = b.add {
+        Flow[LilaOut].collect {
+          case siteOut: SiteOut => siteOut
+        }
+      }
+
+      def broadcast[A](ports: Int): UniformFanOutShape[A, A] = b.add(Broadcast[A](ports))
 
       def merge[A](ports: Int): UniformFanInShape[A, A] = b.add(Merge[A](ports))
 
@@ -53,7 +61,7 @@ object Graph {
 
       val SiteOut = merge[SiteOut](4)
 
-      val SOBroad: UniformFanOutShape[SiteOut, SiteOut] = b.add(Broadcast[SiteOut](5))
+      val SOBroad = broadcast[SiteOut](5)
 
       val SOBus: FlowShape[SiteOut, Bus.Msg] = b.add {
         Flow[SiteOut].collect {
@@ -76,7 +84,7 @@ object Graph {
           case LilaOut.TellUsers(users, json) => sm.UserSM.TellMany(users, ClientIn.Payload(json))
           case LilaOut.DisconnectUser(user) => sm.UserSM.Kick(user)
           case LilaOut.TellRoomUser(roomId, user, json) =>
-            sm.UserSM.TellOne(user, ClientIn.onlyFor(_ Room roomId.value, ClientIn.Payload(json)))
+            sm.UserSM.TellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
         }
       }
 
@@ -144,14 +152,7 @@ object Graph {
 
       // lobby
 
-      val LOBroad: UniformFanOutShape[LobbyOut, LobbyOut] = b.add(Broadcast[LobbyOut](4))
-
-      // forward site messages coming from lobby chan
-      val LOSite: FlowShape[LobbyOut, SiteOut] = b.add {
-        Flow[LobbyOut].collect {
-          case siteOut: SiteOut => siteOut
-        }
-      }
+      val LOBroad = broadcast[LobbyOut](4)
 
       val LOBus: FlowShape[LobbyOut, Bus.Msg] = b.add {
         Flow[LobbyOut].mapConcat {
@@ -182,11 +183,28 @@ object Graph {
 
       val LobbyInlet: Inlet[LilaIn.Lobby] = b.add(lilaInLobby).in
 
+      // crowd
+
+      val Crowd: FlowShape[RoomCrowd.Input, RoomCrowd.Output] = b.add {
+        Flow[RoomCrowd.Input].mapConcat(in => RoomCrowd(in).toList)
+      }
+
+      val CrowdJson: FlowShape[RoomCrowd.Output, Bus.Msg] = b.add {
+        Flow[RoomCrowd.Output]
+          .groupedWithin(1024, 1.second)
+          .mapConcat { all =>
+            all.foldLeft(Map.empty[RoomId, RoomCrowd.Output]) {
+              case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
+            }.values.toList
+          }
+          .mapAsyncUnordered(8)(crowdJson.apply)
+      }
+
       // room
 
       def EventStore: SinkShape[RoomOut] = b.add {
         Sink.foreach[RoomOut] {
-          case LilaOut.TellVersion(roomId, version, troll, json) =>
+          case LilaOut.TellRoomVersion(roomId, version, troll, json) =>
             RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
           case LilaOut.RoomStop(roomId) => RoomEvents.stop(roomId)
           case LilaOut.RoomStart(roomId) => RoomEvents.reset(roomId)
@@ -196,39 +214,17 @@ object Graph {
 
       def RoomBus: FlowShape[RoomOut, Bus.Msg] = b.add {
         Flow[RoomOut].collect {
-          case LilaOut.TellVersion(roomId, version, troll, payload) =>
+          case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
             Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
+          case LilaOut.TellRoom(roomId, payload) =>
+            Bus.msg(ClientIn.Payload(payload), _ room roomId)
         }
-      }
-
-      // simul
-
-      val SimBroad: UniformFanOutShape[SimulOut, SimulOut] = b.add(Broadcast[SimulOut](3))
-
-      // forward site messages coming from lobby chan
-      val SimOSite: FlowShape[SimulOut, SiteOut] = b.add {
-        Flow[SimulOut].collect {
-          case siteOut: SiteOut => siteOut
-        }
-      }
-
-      val CrowdSM: FlowShape[sm.CrowdSM.Input, sm.CrowdSM.RoomCrowd] = machine(sm.CrowdSM.machine)
-
-      val CrowdJson: FlowShape[sm.CrowdSM.RoomCrowd, Bus.Msg] = b.add {
-        Flow[sm.CrowdSM.RoomCrowd]
-          .groupedWithin(1024, 1.second)
-          .mapConcat { all =>
-            all.foldLeft(Map.empty[RoomId, sm.CrowdSM.RoomCrowd]) {
-              case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
-            }.values.toList
-          }
-          .mapAsyncUnordered(8)(crowdJson.apply)
       }
 
       // extract KeepAlive events from the stream,
       // and send the room ids to another sink every 15 seconds
-      val AndKeepAlive = Flow[LilaIn.Simul].divertTo(
-        that = Flow[LilaIn.Simul]
+      def andKeepAlive[In <: LilaIn.Room](sink: Sink[LilaIn.KeepAlives, _]) = Flow[In].divertTo(
+        that = Flow[In]
           .conflateWithSeed[Set[RoomId]]({
             case LilaIn.KeepAlive(roomId) => Set(roomId)
             case _ => Set.empty
@@ -238,27 +234,36 @@ object Graph {
           }
           .throttle(1, per = 15.second)
           .map(LilaIn.KeepAlives.apply)
-          .to(lilaInSimul),
+          .to(sink),
         when = {
-          case ka: LilaIn.KeepAlive => true
+          case _: LilaIn.KeepAlive => true
           case _ => false
         }
       )
 
-      val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
+      // simul
+
+      val SimBroad = broadcast[SimulOut](3)
+
+      val SimKeepAlive = andKeepAlive[LilaIn.Room](lilaInSimul)
+
+      val SimulInlet: Inlet[LilaIn.Room] = b.add(lilaInSimul).in
 
       // tournament
 
-      val TourInlet: Inlet[LilaIn.Tour] = b.add(lilaInTour).in
+      val TouBroad = broadcast[TourOut](4)
 
-      val TouBroad: UniformFanOutShape[TourOut, TourOut] = b.add(Broadcast[TourOut](3))
-
-      // forward site messages coming from lobby chan
-      val TouOSite: FlowShape[TourOut, SiteOut] = b.add {
+      val CrowdUsers: FlowShape[TourOut, LilaIn.RoomUsers] = b.add {
         Flow[TourOut].collect {
-          case siteOut: SiteOut => siteOut
+          case LilaOut.GetRoomUsers(roomId) => LilaIn.RoomUsers(roomId, RoomCrowd getUsers roomId)
         }
       }
+
+      val TourKeepAlive = andKeepAlive[LilaIn.Room](lilaInTour)
+
+      val TourIn = merge[LilaIn.Room](2)
+
+      val TourInlet: Inlet[LilaIn.Room] = b.add(lilaInTour).in
 
       // tickers
 
@@ -268,43 +273,43 @@ object Graph {
 
       // format: OFF
 
-      // source      broadcast  collect     merge    machine     merge        sink
-      SiteOut     ~> SOBroad  ~> SOBus                         ~> ClientBus ~> BusPublish
-                     SOBroad  ~> SOFen    ~> Fen
-                     SOBroad  ~> SOLag    ~> Lag
-                     SOBroad  ~> SOUser   ~> User
-                     SOBroad  ~> SOCount  ~> Count
-      ClientToFen                         ~> Fen   ~> FenSM    ~> SiteIn
-      ClientToLag                         ~> Lag   ~> LagSM    ~> SiteIn
-      ClientToUser                        ~> User  ~> UserSM   ~> SiteIn
-      ClientToCount                       ~> Count ~> CountSM  ~> SiteIn
-      ClientToFriends                              ~> Friends  ~> SiteIn
-      ClientToNotified                             ~> Notified ~> SiteIn
-      ClientToSite                                             ~> SiteIn    ~> SiteInlet
+      // source      broadcast   collect      merge    machine     merge        sink
+      SiteOut     ~> SOBroad  ~> SOBus                          ~> ClientBus ~> BusPublish
+                     SOBroad  ~> SOFen     ~> Fen
+                     SOBroad  ~> SOLag     ~> Lag
+                     SOBroad  ~> SOUser    ~> User
+                     SOBroad  ~> SOCount   ~> Count
+      ClientToFen                          ~> Fen   ~> FenSM    ~> SiteIn
+      ClientToLag                          ~> Lag   ~> LagSM    ~> SiteIn
+      ClientToUser                         ~> User  ~> UserSM   ~> SiteIn
+      ClientToCount                        ~> Count ~> CountSM  ~> SiteIn
+      ClientToFriends                               ~> Friends  ~> SiteIn
+      ClientToNotified                              ~> Notified ~> SiteIn
+      ClientToSite                                              ~> SiteIn    ~> SiteInlet
 
       SiteOutlet  ~> SiteOut
 
-      LobbyOutlet ~> LOBroad ~> LOSite  ~> SiteOut // merge site messages coming from lobby input into site input
-                     LOBroad ~> LOUser  ~> User
-                     LOBroad ~> LOBus                        ~> ClientBus
-                     LOBroad                                              ~> LobbyPong
-      ClientToLobby                                          ~> LobbyIn
-      ClientConnect                     ~> Connects          ~> LobbyIn
-      ClientDisconnect                  ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
+      LobbyOutlet ~> LOBroad  ~> ToSiteOut ~> SiteOut
+                     LOBroad  ~> LOUser    ~> User
+                     LOBroad  ~> LOBus                          ~> ClientBus
+                     LOBroad                                                 ~> LobbyPong
+      ClientToLobby                                             ~> LobbyIn
+      ClientConnect                        ~> Connects          ~> LobbyIn
+      ClientDisconnect                     ~> Disconnects       ~> LobbyIn   ~> LobbyInlet
 
-      SimulOutlet ~> SimBroad ~> SimOSite  ~> SiteOut
-                     SimBroad ~> SimOBus                      ~> ClientBus
-                     SimBroad                                              ~> EventStore
-      ClientToSimul          ~> AndKeepAlive                              ~> SimulInlet
+      SimulOutlet ~> SimBroad ~> ToSiteOut ~> SiteOut
+                     SimBroad ~> RoomBus                        ~> ClientBus
+                     SimBroad                                                ~> EventStore
+      ClientToSimul           ~> SimKeepAlive                                ~> SimulInlet
 
-      TourOutlet ~>  TouBroad ~> TouOSite ~> SiteOut
-                     TouBroad ~> RoomBus                       ~> ClientBus
-                     TouBroad                                               ~> EventStore
-      ClientToTour                                                          ~> TourInlet
+      TourOutlet ~>  TouBroad ~> ToSiteOut ~> SiteOut
+                     TouBroad ~> RoomBus                        ~> ClientBus
+                     TouBroad                                                ~> EventStore
+                     TouBroad ~> CrowdUsers                     ~> TourIn    ~> TourInlet
+      ClientToTour            ~> TourKeepAlive                  ~> TourIn
 
-      ClientToCrowd                              ~> CrowdSM  ~> CrowdJson ~> ClientBus
-
-      UserTicker                        ~> User
+      ClientToCrowd                                 ~> Crowd    ~> CrowdJson ~> ClientBus
+      UserTicker                           ~> User
 
       // format: ON
 
