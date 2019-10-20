@@ -65,7 +65,7 @@ object LilaIn {
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
-    def write = s"connect/sris ${commas(sris)}"
+    def write = s"connect/sris ${commas(sris map render)}"
   }
 
   case class DisconnectSri(sri: Sri) extends Lobby {
