@@ -81,7 +81,7 @@ object LilaOut {
       }
 
       case "tell/users" => args.split(" ", 2) match {
-        case Array(users, payload) => Some(TellUsers(users split ",", JsonString(payload)))
+        case Array(users, payload) => Some(TellUsers(commas(users), JsonString(payload)))
         case _ => None
       }
 
@@ -98,7 +98,7 @@ object LilaOut {
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))
 
       case "tell/lobby/users" => args.split(" ", 2) match {
-        case Array(users, payload) => Some(TellLobbyUsers(users split ',', JsonString(payload)))
+        case Array(users, payload) => Some(TellLobbyUsers(commas(users), JsonString(payload)))
         case _ => None
       }
 
@@ -108,7 +108,7 @@ object LilaOut {
 
       case "tell/sris" => args.split(" ", 2) match {
         case Array(sris, payload) => Some(TellSris(
-          sris.split(",").toSeq map Sri.apply,
+          commas(sris).toSeq map Sri.apply,
           JsonString(payload)
         ))
         case _ => None
@@ -139,4 +139,6 @@ object LilaOut {
       case _ => None
     }
   }
+
+  def commas(str: String): Array[String] = if (str == "-") Array.empty else str split ','
 }

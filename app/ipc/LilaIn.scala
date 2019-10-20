@@ -27,18 +27,18 @@ object LilaIn {
     def write = s"notified $userId"
   }
   case class NotifiedBatch(userIds: Iterable[User.ID]) extends Site {
-    def write = s"notified/batch ${userIds mkString ","}"
+    def write = s"notified/batch ${commas(userIds)}"
   }
 
   case class Friends(userId: User.ID) extends Site {
     def write = s"friends $userId"
   }
   case class FriendsBatch(userIds: Iterable[User.ID]) extends Site {
-    def write = s"friends/batch ${userIds mkString ","}"
+    def write = s"friends/batch ${commas(userIds)}"
   }
 
   case class Lags(value: Map[User.ID, Int]) extends Site {
-    def write = s"lags ${value.map { case (user, lag) => s"$user:$lag" } mkString ","}"
+    def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
   }
 
   case class Connections(count: Int) extends Site {
@@ -50,7 +50,7 @@ object LilaIn {
   }
 
   case class DisconnectUsers(userIds: Set[User.ID]) extends Site {
-    def write = s"disconnect/users ${userIds mkString ","}"
+    def write = s"disconnect/users ${commas(userIds)}"
   }
 
   case object DisconnectAll extends Site {
@@ -65,14 +65,14 @@ object LilaIn {
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
-    def write = s"connect/sris ${sris map render mkString ","}"
+    def write = s"connect/sris ${commas(sris)}"
   }
 
   case class DisconnectSri(sri: Sri) extends Lobby {
     def write = s"disconnect/sri $sri"
   }
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
-    def write = s"disconnect/sris ${sris mkString ","}"
+    def write = s"disconnect/sris ${commas(sris)}"
   }
 
   sealed trait Room extends LilaIn
@@ -81,7 +81,7 @@ object LilaIn {
     def write = s"room/alive ${roomId.value}"
   }
   case class KeepAlives(roomIds: Iterable[RoomId]) extends Room {
-    def write = s"room/alives ${roomIds.map(_.value) mkString ","}"
+    def write = s"room/alives ${commas(roomIds)}"
   }
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Room {
     def write = s"chat/say ${roomId.value} $userId $msg"
@@ -90,8 +90,10 @@ object LilaIn {
     def write = s"chat/timeout ${roomId.value} $userId $suspectId $reason"
   }
   case class RoomUsers(roomId: RoomId, users: Iterable[User.ID]) extends Room {
-    def write = s"room/users ${roomId.value} ${users mkString ","}"
+    def write = s"room/users ${roomId.value} ${commas(users)}"
   }
 
   sealed trait Tour extends Room
+
+  private def commas(as: Iterable[Any]): String = if (as.isEmpty) "-" else as mkString ","
 }
