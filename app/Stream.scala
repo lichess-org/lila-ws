@@ -56,7 +56,7 @@ object Stream {
       tour: SourceQueue[LilaIn.Room],
       connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
-      lag: SourceQueue[LagSM.Input],
+      lag: SourceQueue[UserLag],
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
       user: SourceQueue[UserSM.Input],

@@ -42,7 +42,7 @@ object ClientActor {
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
-    for { l <- msg.lag; u <- deps.req.user } deps.queue(_.lag, LagSM.Set(u, l))
+    for { l <- msg.lag; u <- deps.req.user } deps.queue(_.lag, UserLag(u.id, l))
     state.copy(lastPing = nowSeconds)
   }
 

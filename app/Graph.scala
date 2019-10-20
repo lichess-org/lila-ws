@@ -30,7 +30,7 @@ object Graph {
     Source.queue[LilaIn.Room](8192, overflow), // clients -> lila:tour
     Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
-    Source.queue[sm.LagSM.Input](256, overflow), // clients -> lag machine
+    Source.queue[UserLag](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine,
@@ -61,7 +61,7 @@ object Graph {
 
       val SiteOut = merge[SiteOut](4)
 
-      val SOBroad = broadcast[SiteOut](5)
+      val SOBroad = broadcast[SiteOut](4)
 
       val SOBus: FlowShape[SiteOut, Bus.Msg] = b.add {
         Flow[SiteOut].collect {
@@ -102,15 +102,11 @@ object Graph {
 
       val FenSM: FlowShape[sm.FenSM.Input, LilaIn.Site] = machine(sm.FenSM.machine)
 
-      val SOLag: FlowShape[LilaOut, sm.LagSM.Input] = b.add {
-        Flow[LilaOut].collect {
-          case LilaOut.Mlat(millis) => sm.LagSM.Publish
+      val Lag: FlowShape[UserLag, LilaIn.Lags] = b.add {
+        Flow[UserLag].groupedWithin(128, 947.millis) map { lags =>
+          LilaIn.Lags(lags.map(l => l.userId -> l.lag).toMap)
         }
       }
-
-      val Lag = merge[sm.LagSM.Input](2)
-
-      val LagSM: FlowShape[sm.LagSM.Input, LilaIn.Site] = machine(sm.LagSM.machine)
 
       val SOCount: FlowShape[LilaOut, sm.CountSM.Input] = b.add {
         Flow[LilaOut].collect {
@@ -276,15 +272,14 @@ object Graph {
       // source      broadcast   collect      merge    machine     merge        sink
       SiteOut     ~> SOBroad  ~> SOBus                          ~> ClientBus ~> BusPublish
                      SOBroad  ~> SOFen     ~> Fen
-                     SOBroad  ~> SOLag     ~> Lag
                      SOBroad  ~> SOUser    ~> User
                      SOBroad  ~> SOCount   ~> Count
       ClientToFen                          ~> Fen   ~> FenSM    ~> SiteIn
-      ClientToLag                          ~> Lag   ~> LagSM    ~> SiteIn
       ClientToUser                         ~> User  ~> UserSM   ~> SiteIn
       ClientToCount                        ~> Count ~> CountSM  ~> SiteIn
       ClientToFriends                               ~> Friends  ~> SiteIn
       ClientToNotified                              ~> Notified ~> SiteIn
+      ClientToLag                                   ~> Lag      ~> SiteIn
       ClientToSite                                              ~> SiteIn    ~> SiteInlet
 
       SiteOutlet  ~> SiteOut
