@@ -66,6 +66,13 @@ object ClientIn {
   }
   val emptyCrowd = Crowd(Json.obj())
 
+  case class LobbyPairing(fullId: Game.FullID) extends ClientIn {
+    def write = clientMsg("redirect", Json.obj(
+      "id" -> fullId,
+      "url" -> s"/${fullId}"
+    ))
+  }
+
   case class LobbyNonIdle(payload: Payload) extends ClientIn {
     def write = payload.write
   }

@@ -41,6 +41,7 @@ object LilaOut {
 
   // lobby
 
+  case class LobbyPairings(pairings: List[(Sri, Game.FullID)]) extends LobbyOut
   case class TellLobby(json: JsonString) extends LobbyOut
   case class TellLobbyActive(json: JsonString) extends LobbyOut
   case class TellLobbyUsers(users: Iterable[User.ID], json: JsonString) extends LobbyOut
@@ -93,6 +94,12 @@ object LilaOut {
       case "tell/all" => Some(TellAll(JsonString(args)))
 
       case "disconnect/user" => Some(DisconnectUser(args))
+
+      case "lobby/pairings" => Some(LobbyPairings {
+        commas(args).map(_ split ':').collect {
+          case Array(sri, fullId) => (Sri(sri), fullId)
+        }.toList
+      })
 
       case "tell/lobby" => Some(TellLobby(JsonString(args)))
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))

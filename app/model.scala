@@ -19,6 +19,7 @@ case class Game(id: Game.ID) extends AnyVal
 
 object Game {
   type ID = String
+  type FullID = String
 }
 
 object Simul {

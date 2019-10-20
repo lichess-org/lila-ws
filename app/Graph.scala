@@ -157,6 +157,9 @@ object Graph {
           case LilaOut.TellSris(sris, payload) => sris map { sri =>
             Bus.msg(ClientIn.Payload(payload), _ sri sri)
           }
+          case LilaOut.LobbyPairings(pairings) => pairings.map {
+            case (sri, fullId) => Bus.msg(ClientIn.LobbyPairing(fullId), _ sri sri)
+          }
           case _ => Nil
         }
       }
