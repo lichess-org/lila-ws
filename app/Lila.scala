@@ -17,7 +17,10 @@ final class Lila(redisUri: RedisURI) {
     val connIn = redis.connectPubSub()
     val connOut = redis.connectPubSub()
 
-    def send(in: LilaIn): Unit = connIn.async.publish(chanIn, in.write)
+    def send(in: LilaIn): Unit = {
+      val timer = Monitor.redisPublishTime.start()
+      connIn.async.publish(chanIn, in.write).thenRun { timer.stop _ }
+    }
 
     val init: (SourceQueueWithComplete[Out], List[LilaIn]) => Unit = (queue, initialMsgs) => {
 

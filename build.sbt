@@ -9,6 +9,7 @@ lazy val root = (project in file("."))
 .disablePlugins(PlayFilters, PlayNettyServer)
 
 val akkaVersion = "2.6.0-RC1"
+val kamonVersion= "2.0.1"
 
 scalaVersion := "2.13.1"
 
@@ -24,6 +25,8 @@ libraryDependencies += "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
 libraryDependencies += "joda-time" % "joda-time" % "2.10.4"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
+libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion
+libraryDependencies += "io.kamon" %% "kamon-influxdb" % "2.0.0"
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
