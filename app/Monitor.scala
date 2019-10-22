@@ -5,4 +5,5 @@ import kamon.Kamon
 object Monitor {
 
   val redisPublishTime = Kamon.timer("redis.publish.time").withoutTags
+  val clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
 }

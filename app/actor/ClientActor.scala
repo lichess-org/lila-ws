@@ -105,6 +105,7 @@ object ClientActor {
         state
 
       case ClientOut.Unexpected(msg) =>
+        Monitor.clientOutUnexpected.increment()
         if (state.ignoreLog) state
         else {
           Logger("SiteClient").info(s"Unexpected $msg $req")
@@ -127,7 +128,9 @@ object ClientActor {
       sri: Sri,
       flag: Option[Flag],
       user: Option[User]
-  )
+  ) {
+    override def toString = s"${user getOrElse "Anon"} $name"
+  }
 
   case class Deps(
       client: SourceQueue[ClientIn],
