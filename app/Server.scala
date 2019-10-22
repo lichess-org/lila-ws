@@ -31,7 +31,7 @@ final class Server @Inject() (
 
   private val bus = Bus(system)
 
-  system.scheduler.schedule(30.seconds, 7211.millis) {
+  system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
 
@@ -110,20 +110,24 @@ final class Server @Inject() (
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
     Flow.fromSinkAndSource(
-      Sink.actorRef(system.actorOf(akka.actor.Props(new akka.actor.Actor {
-        val flowActor: ActorRef[ClientMsg] = context.spawn(clientActor(outQueue), "flowActor")
-        context.watch(flowActor)
+      Sink.actorRef(
+        ref = system.actorOf(akka.actor.Props(new akka.actor.Actor {
+          val flowActor: ActorRef[ClientMsg] = context.spawn(clientActor(outQueue), "flowActor")
+          context.watch(flowActor)
 
-        def receive = {
-          case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
-          case Terminated(_) => context.stop(self)
-          case msg: ClientOut => flowActor ! msg
-        }
+          def receive = {
+            case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
+            case Terminated(_) => context.stop(self)
+            case msg: ClientOut => flowActor ! msg
+          }
 
-        override def supervisorStrategy = OneForOneStrategy() {
-          case _ => SupervisorStrategy.Stop
-        }
-      })), Status.Success(())),
+          override def supervisorStrategy = OneForOneStrategy() {
+            case _ => SupervisorStrategy.Stop
+          }
+        })),
+        onCompleteMessage = Status.Success(()),
+        onFailureMessage = t => Status.Failure(t)
+      ),
       Source.fromPublisher(publisher)
     )
   }

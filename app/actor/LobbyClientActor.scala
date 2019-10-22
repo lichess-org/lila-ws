@@ -39,15 +39,15 @@ object LobbyClientActor {
 
       case ClientIn.LobbyNonIdle(payload) =>
         if (!state.idle) clientIn(payload)
-        Behavior.same
+        Behaviors.same
 
       case ClientIn.OnlyFor(endpoint, payload) =>
         if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
-        Behavior.same
+        Behaviors.same
 
       case in: ClientIn =>
         clientIn(in)
-        Behavior.same
+        Behaviors.same
 
       case msg: ClientOut.Ping =>
         clientIn(LobbyPongStore.get)
@@ -55,7 +55,7 @@ object LobbyClientActor {
 
       case ClientOut.Forward(payload) =>
         forward(payload)
-        Behavior.same
+        Behaviors.same
 
       case ClientOut.Idle(value, payload) =>
         forward(payload)
@@ -64,7 +64,7 @@ object LobbyClientActor {
       // default receive (site)
       case msg: ClientOutSite =>
         val siteState = globalReceive(state.site, deps, ctx, msg)
-        if (siteState == state.site) Behavior.same
+        if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
     }
 

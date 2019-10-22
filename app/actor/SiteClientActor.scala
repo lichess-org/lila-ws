@@ -28,15 +28,15 @@ object SiteClientActor {
 
       case ClientIn.OnlyFor(endpoint, payload) =>
         if (endpoint == ClientIn.OnlyFor.Site) deps.clientIn(payload)
-        Behavior.same
+        Behaviors.same
 
       case in: ClientIn =>
         deps.clientIn(in)
-        Behavior.same
+        Behaviors.same
 
       case msg: ClientOutSite =>
         val newState = globalReceive(state, deps, ctx, msg)
-        if (newState == state) Behavior.same
+        if (newState == state) Behaviors.same
         else apply(newState, deps)
     }
 

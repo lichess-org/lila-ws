@@ -37,7 +37,7 @@ object TourClientActor {
       // default receive (site)
       case msg: ClientOutSite =>
         val siteState = globalReceive(state.site, deps, ctx, msg)
-        if (siteState == state.site) Behavior.same
+        if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
     }
 

@@ -8,14 +8,12 @@ lazy val root = (project in file("."))
 .enablePlugins(PlayScala, PlayAkkaHttpServer)
 .disablePlugins(PlayFilters, PlayNettyServer)
 
-/* val akkaVersion = "2.6.0-M2" */
+val akkaVersion = "2.6.0-RC1"
 
 scalaVersion := "2.13.1"
 
-val akkaVersion = "2.5.25"
-
 libraryDependencies += guice
-libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.7"
+libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "0.18.8"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.2.0.RELEASE"
 libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.42.Final" classifier "linux-x86_64"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.25"
