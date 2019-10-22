@@ -6,24 +6,39 @@ import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
 import chess.variant.{ Variant, Crazyhouse }
+import play.api.Logger
 
 import ipc._
 
 object Chess {
 
-  def apply(req: ClientOut.AnaMove): ClientIn =
+  private val logger = Logger("chess")
+
+  def apply(req: ClientOut.AnaMove): ClientIn = try {
     chess.Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion).toOption flatMap {
       case (game, move) => game.pgnMoves.lastOption map { san =>
         makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
       }
     } getOrElse ClientIn.StepFailure
+  }
+  catch {
+    case e: java.lang.ArrayIndexOutOfBoundsException =>
+      logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
+      ClientIn.StepFailure
+  }
 
-  def apply(req: ClientOut.AnaDrop): ClientIn =
+  def apply(req: ClientOut.AnaDrop): ClientIn = try {
     chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
       case (game, drop) => game.pgnMoves.lastOption map { san =>
         makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
       }
     } getOrElse ClientIn.StepFailure
+  }
+  catch {
+    case e: java.lang.ArrayIndexOutOfBoundsException =>
+      logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
+      ClientIn.StepFailure
+  }
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests = ClientIn.Dests(
     path = req.path,
