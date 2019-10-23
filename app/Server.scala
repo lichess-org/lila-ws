@@ -18,7 +18,8 @@ import lila.ws.util.Util.{ reqName, flagOf, nowSeconds }
 final class Server @Inject() (
     auth: Auth,
     mongo: Mongo,
-    stream: Stream
+    stream: Stream,
+    config: play.api.Configuration
 )(implicit
     ec: ExecutionContext,
     system: akka.actor.ActorSystem,
@@ -35,7 +36,10 @@ final class Server @Inject() (
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
 
-  kamon.Kamon.init()
+  if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
+    play.api.Logger(getClass).info("Kamon is enabled")
+    kamon.Kamon.loadModules()
+  }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
