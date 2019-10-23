@@ -13,6 +13,7 @@ sealed trait ClientOut extends ClientMsg
 
 sealed trait ClientOutSite extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
+sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutChat extends ClientOut
 
 object ClientOut {
@@ -55,7 +56,7 @@ object ClientOut {
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
-  case class Forward(payload: JsValue) extends ClientOutSite
+  case class SiteForward(payload: JsValue) extends ClientOutSite
 
   case class Unexpected(msg: JsValue) extends ClientOutSite
 
@@ -64,6 +65,11 @@ object ClientOut {
   // lobby
 
   case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
+  case class LobbyForward(payload: JsValue) extends ClientOutLobby
+
+  // study
+
+  case class StudyForward(payload: JsValue) extends ClientOutStudy
 
   // chat
 
@@ -115,11 +121,14 @@ object ClientOut {
           variant = dataVariant(d)
           chapterId = d str "ch" map ChapterId.apply
         } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
-        case "evalGet" | "evalPut" => Some(Forward(o))
+        case "evalGet" | "evalPut" => Some(SiteForward(o))
         // lobby
         case "idle" => o boolean "d" map { Idle(_, o) }
         case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
-          Some(Forward(o))
+          Some(LobbyForward(o))
+        // study
+        case "like" | "setPath" =>
+          Some(StudyForward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }
         case "timeout" => for {

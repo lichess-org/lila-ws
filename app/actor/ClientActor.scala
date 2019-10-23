@@ -100,7 +100,7 @@ object ClientActor {
         clientIn(Chess(anaDests))
         state
 
-      case ClientOut.Forward(payload) =>
+      case ClientOut.SiteForward(payload) =>
         queue(_.site, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 

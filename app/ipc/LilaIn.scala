@@ -11,6 +11,12 @@ object LilaIn {
 
   sealed trait Site extends LilaIn
 
+  sealed trait Room extends LilaIn
+
+  sealed trait Lobby extends Room
+
+  sealed trait Study extends Room
+
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
@@ -57,8 +63,6 @@ object LilaIn {
     def write = "disconnect/all"
   }
 
-  sealed trait Lobby extends LilaIn
-
   case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {
     def write = s"connect/sri $sri${userId.fold("")(" " + _)}"
   }
@@ -75,22 +79,24 @@ object LilaIn {
     def write = s"disconnect/sris ${commas(sris)}"
   }
 
-  sealed trait Room extends LilaIn
-
   case class KeepAlive(roomId: RoomId) extends Room {
-    def write = s"room/alive ${roomId.value}"
+    def write = s"room/alive $roomId"
   }
   case class KeepAlives(roomIds: Iterable[RoomId]) extends Room {
     def write = s"room/alives ${commas(roomIds)}"
   }
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Room {
-    def write = s"chat/say ${roomId.value} $userId $msg"
+    def write = s"chat/say $roomId $userId $msg"
   }
   case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Room {
-    def write = s"chat/timeout ${roomId.value} $userId $suspectId $reason"
+    def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
   case class RoomUsers(roomId: RoomId, users: Iterable[User.ID]) extends Room {
-    def write = s"room/users ${roomId.value} ${commas(users)}"
+    def write = s"room/users $roomId ${commas(users)}"
+  }
+  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Site with Study with Room {
+    import tellSri._
+    def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
   sealed trait Tour extends Room

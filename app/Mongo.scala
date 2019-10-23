@@ -25,6 +25,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def streamerColl = collNamed("streamer")
   def simulColl = collNamed("simul")
   def tourColl = collNamed("tournament2")
+  def studyColl = collNamed("study")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
@@ -37,8 +38,13 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def tourExists(id: Simul.ID): Future[Boolean] =
     tourColl flatMap { exists(_, BSONDocument("_id" -> id)) }
 
-  def isTroll(user: User): Future[IsTroll] =
-    userColl flatMap { exists(_, BSONDocument("_id" -> user.id, "troll" -> true)) } map IsTroll.apply
+  def studyExists(id: Simul.ID): Future[Boolean] =
+    studyColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+
+  def isTroll(user: Option[User]): Future[IsTroll] =
+    user.fold(Future successful IsTroll(false)) { u =>
+      userColl flatMap { exists(_, BSONDocument("_id" -> u.id, "troll" -> true)) } map IsTroll.apply
+    }
 
   private def exists(coll: BSONCollection, selector: BSONDocument): Future[Boolean] =
     coll.count(

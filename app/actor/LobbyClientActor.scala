@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import play.api.libs.json._
+import play.api.libs.json.JsValue
 
 import ipc._
 import sm._
@@ -53,7 +53,7 @@ object LobbyClientActor {
         clientIn(LobbyPongStore.get)
         apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
-      case ClientOut.Forward(payload) =>
+      case ClientOut.LobbyForward(payload) =>
         forward(payload)
         Behaviors.same
 

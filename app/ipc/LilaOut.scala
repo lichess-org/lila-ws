@@ -17,6 +17,8 @@ sealed trait SimulOut extends RoomOut
 
 sealed trait TourOut extends RoomOut
 
+sealed trait StudyOut extends RoomOut
+
 sealed trait SiteOut extends LilaOut
 
 object LilaOut {
@@ -54,13 +56,13 @@ object LilaOut {
 
   // simul, tour
 
-  case class TellRoom(roomId: RoomId, json: JsonString) extends SimulOut with TourOut
-  case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut
+  case class TellRoom(roomId: RoomId, json: JsonString) extends SimulOut with TourOut with StudyOut
+  case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut with StudyOut
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut with TourOut
   case class GetRoomUsers(roomId: RoomId) extends TourOut
 
-  case class RoomStart(roomId: RoomId) extends SimulOut with TourOut
-  case class RoomStop(roomId: RoomId) extends SimulOut with TourOut
+  case class RoomStart(roomId: RoomId) extends SimulOut with TourOut with StudyOut
+  case class RoomStop(roomId: RoomId) extends SimulOut with TourOut with StudyOut
 
   // impl
 

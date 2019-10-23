@@ -34,6 +34,12 @@ object Tour {
 
 case class Tour(id: Tour.ID) extends AnyVal
 
+object Study {
+  type ID = String
+}
+
+case class Study(id: Study.ID) extends AnyVal
+
 object Chat {
   type ID = String
 }

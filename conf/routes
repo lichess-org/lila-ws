@@ -7,3 +7,4 @@ GET  /lobby/socket                       controllers.SocketController.lobby(sri:
 GET  /lobby/socket/v:apiVersion          controllers.SocketController.lobby(sri: String, apiVersion: Int)
 GET  /simul/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.simul(id: String, sri: String, apiVersion: Int)
 GET  /tournament/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.tournament(id: String, sri: String, apiVersion: Int)
+GET  /study/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.study(id: String, sri: String, apiVersion: Int)

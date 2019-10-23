@@ -57,7 +57,7 @@ final class Server @Inject() (
 
   def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
-      user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
+      mongo.isTroll(user) map { isTroll =>
         actorFlow(req) { clientIn =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
@@ -72,7 +72,7 @@ final class Server @Inject() (
 
   def connectToTour(req: RequestHeader, tour: Tour, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
-      user.fold(Future successful IsTroll(false))(mongo.isTroll) map { isTroll =>
+      mongo.isTroll(user) map { isTroll =>
         actorFlow(req) { clientIn =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
@@ -82,7 +82,22 @@ final class Server @Inject() (
     } map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 20.seconds,
-      name = s"simul ${reqName(req)}"
+      name = s"tour ${reqName(req)}"
+    ))
+
+  def connectToStudy(req: RequestHeader, study: Study, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+    auth(req, None) flatMap { user =>
+      mongo.isTroll(user) map { isTroll =>
+        actorFlow(req) { clientIn =>
+          StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+          }
+        }
+      }
+    } map asWebsocket(new RateLimit(
+      maxCredits = 50,
+      duration = 20.seconds,
+      name = s"study ${reqName(req)}"
     ))
 
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(

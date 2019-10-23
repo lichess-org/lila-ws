@@ -43,6 +43,14 @@ class SocketController @Inject() (
       }
     }
 
+  def study(id: Simul.ID, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      mongo studyExists id flatMap {
+        case false => Future successful Left(NotFound)
+        case true => server.connectToStudy(req, Study(id), sri, getSocketVersion(req)) map Right.apply
+      }
+    }
+
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }

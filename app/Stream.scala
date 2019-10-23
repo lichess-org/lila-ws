@@ -33,13 +33,17 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     val (tourInit, tourSink) = lila.pubsub("tour-in", "tour-out") {
       case out: TourOut => out
     }
+    val (studyInit, studySink) = lila.pubsub("study-in", "study-out") {
+      case out: StudyOut => out
+    }
 
-    val (siteOut, lobbyOut, simulOut, tourOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, crowdJson).run()
+    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, crowdJson).run()
 
     siteInit(siteOut, List(LilaIn.DisconnectAll))
     lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
     simulInit(simulOut, List(LilaIn.DisconnectAll))
     tourInit(tourOut, List(LilaIn.DisconnectAll))
+    studyInit(studyOut, List(LilaIn.DisconnectAll))
 
     queues
   }
@@ -54,6 +58,7 @@ object Stream {
       lobby: SourceQueue[LilaIn.Lobby],
       simul: SourceQueue[LilaIn.Room],
       tour: SourceQueue[LilaIn.Room],
+      study: SourceQueue[LilaIn.Room],
       connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[UserLag],
