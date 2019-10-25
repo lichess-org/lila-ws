@@ -1,0 +1,43 @@
+
+  // always show study members
+  // since that's how the client knows if they're online
+  // WCC has thousands of spectators. mutable implementation.
+  private def showSpectatorsAndMembers(studyMemberIds: Set[User.ID]): JsValue = {
+    var nb = 0
+    var titleNames = List.empty[String]
+    members foreachValue { w =>
+      nb = nb + 1
+      w.userId.filter(studyMemberIds.contains) foreach { userId =>
+        titleNames = lightUserApi.sync(userId).fold(userId)(_.titleName) :: titleNames
+      }
+    }
+    Json.obj("nb" -> nb, "users" -> titleNames)
+  }
+
+
+
+  private def sendStudyDoor(enters: Boolean)(userId: User.ID) =
+    lightStudyCache get studyId foreach {
+      _ foreach { study =>
+        lilaBus.publish(
+          lila.hub.actorApi.study.StudyDoor(
+            userId = userId,
+            studyId = studyId.value,
+            contributor = study contributors userId,
+            public = study.isPublic,
+            enters = enters
+          ),
+          'study
+        )
+      }
+    }
+  override protected def afterQuit(sri: Sri, member: Member) = {
+    member.userId foreach sendStudyDoor(false)
+    notifyCrowd
+  }
+
+
+  def websocket(id: String, apiVersion: Int) = SocketOption[JsValue] { implicit ctx =>
+    get("sri") ?? { sri =>
+      env.api byId id flatMap {
+        _.filter(canView) ?? { study =>

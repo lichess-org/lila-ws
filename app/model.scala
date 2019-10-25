@@ -81,3 +81,5 @@ case class IsTroll(value: Boolean) extends AnyVal
 case class RoomId(value: String) extends AnyVal with StringValue
 
 case class UserLag(userId: User.ID, lag: Int)
+
+case class ReqId(value: Int) extends AnyVal with IntValue

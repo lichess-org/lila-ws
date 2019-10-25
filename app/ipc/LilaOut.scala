@@ -37,9 +37,7 @@ object LilaOut {
 
   case class DisconnectUser(user: User.ID) extends SiteOut
 
-  // site, lobby, simul
-
-  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with StudyOut
 
   // lobby
 
@@ -59,10 +57,12 @@ object LilaOut {
   case class TellRoom(roomId: RoomId, json: JsonString) extends SimulOut with TourOut with StudyOut
   case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut with StudyOut
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut with TourOut
+  case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends SiteOut with StudyOut
   case class GetRoomUsers(roomId: RoomId) extends TourOut
 
   case class RoomStart(roomId: RoomId) extends SimulOut with TourOut with StudyOut
   case class RoomStop(roomId: RoomId) extends SimulOut with TourOut with StudyOut
+  case class RoomIsPresent(reqId: Int, roomId: RoomId, userId: User.ID) extends StudyOut
 
   // impl
 
@@ -139,11 +139,22 @@ object LilaOut {
         case Array(roomId, userId, payload) => Some(TellRoomUser(RoomId(roomId), userId, JsonString(payload)))
         case _ => None
       }
+      case "tell/room/users" => args.split(" ", 3) match {
+        case Array(roomId, userIds, payload) => Some(TellRoomUsers(RoomId(roomId), commas(userIds), JsonString(payload)))
+        case _ => None
+      }
 
       case "room/get/users" => Some(GetRoomUsers(RoomId(args)))
 
       case "room/start" => Some(RoomStart(RoomId(args)))
       case "room/stop" => Some(RoomStop(RoomId(args)))
+
+      case "room/present" => args.split(" ", 3) match {
+        case Array(reqIdS, roomId, userId) => parseIntOption(reqIdS) map { reqId =>
+          RoomIsPresent(reqId, RoomId(roomId), userId)
+        }
+        case _ => None
+      }
 
       case _ => None
     }

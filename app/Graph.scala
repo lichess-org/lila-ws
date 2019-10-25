@@ -89,6 +89,8 @@ object Graph {
           case LilaOut.DisconnectUser(user) => sm.UserSM.Kick(user)
           case LilaOut.TellRoomUser(roomId, user, json) =>
             sm.UserSM.TellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
+          case LilaOut.TellRoomUsers(roomId, users, json) =>
+            sm.UserSM.TellMany(users, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
         }
       }
 
@@ -256,7 +258,7 @@ object Graph {
 
       val TouBroad = broadcast[TourOut](4)
 
-      val CrowdUsers: FlowShape[TourOut, LilaIn.RoomUsers] = b.add {
+      val TouCrowd: FlowShape[TourOut, LilaIn.RoomUsers] = b.add {
         Flow[TourOut].collect {
           case LilaOut.GetRoomUsers(roomId) => LilaIn.RoomUsers(roomId, RoomCrowd getUsers roomId)
         }
@@ -270,9 +272,18 @@ object Graph {
 
       // study
 
-      val StuBroad = broadcast[StudyOut](3)
+      val StuBroad = broadcast[StudyOut](4)
+
+      val StuCrowd: FlowShape[StudyOut, LilaIn.ReqResponse] = b.add {
+        Flow[StudyOut].collect {
+          case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
+            LilaIn.ReqResponse(reqId, RoomCrowd.isPresent(roomId, userId).toString)
+        }
+      }
 
       val StuKeepAlive = andKeepAlive[LilaIn.Room](lilaInStudy)
+
+      val StudyIn = merge[LilaIn.Room](2)
 
       val StudyInlet: Inlet[LilaIn.Room] = b.add(lilaInStudy).in
 
@@ -315,13 +326,14 @@ object Graph {
       TourOutlet  ~> TouBroad ~> ToSiteOut ~> SiteOut
                      TouBroad ~> RoomBus                        ~> ClientBus
                      TouBroad                                                ~> EventStore
-                     TouBroad ~> CrowdUsers                     ~> TourIn    ~> TourInlet
+                     TouBroad ~> TouCrowd                       ~> TourIn    ~> TourInlet
       ClientToTour            ~> TourKeepAlive                  ~> TourIn
 
       StudyOutlet ~> StuBroad ~> ToSiteOut ~> SiteOut
                      StuBroad ~> RoomBus                        ~> ClientBus
                      StuBroad                                                ~> EventStore
-      ClientToStudy           ~> StuKeepAlive                                ~> StudyInlet
+                     StuBroad ~> StuCrowd                       ~> StudyIn   ~> StudyInlet
+      ClientToStudy           ~> StuKeepAlive                   ~> StudyIn
 
       ClientToCrowd                                 ~> Crowd    ~> CrowdJson ~> ClientBus
       UserTicker                           ~> User

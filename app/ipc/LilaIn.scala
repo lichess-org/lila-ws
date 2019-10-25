@@ -99,7 +99,14 @@ object LilaIn {
     def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
-  sealed trait Tour extends Room
+  case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Site with Study with Room {
+    import tellSri._
+    def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
+  }
+
+  case class ReqResponse(reqId: Int, value: String) extends Site with Study with Room {
+    def write = s"req/response $reqId $value"
+  }
 
   private def commas(as: Iterable[Any]): String = if (as.isEmpty) "-" else as mkString ","
 }

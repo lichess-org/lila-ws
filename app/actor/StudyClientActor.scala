@@ -26,7 +26,7 @@ object StudyClientActor {
 
     def forward(payload: JsValue): Unit = queue(
       _.study,
-      LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+      LilaIn.TellStudySri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
     )
 
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
@@ -42,6 +42,16 @@ object StudyClientActor {
 
       case ClientOut.StudyForward(payload) =>
         forward(payload)
+        Behaviors.same
+
+      case anaMove: ClientOut.AnaMove =>
+        clientIn(Chess(anaMove))
+        forward(anaMove.payload)
+        Behaviors.same
+
+      case anaDrop: ClientOut.AnaDrop =>
+        clientIn(Chess(anaDrop))
+        forward(anaDrop.payload)
         Behaviors.same
 
       // default receive (site)

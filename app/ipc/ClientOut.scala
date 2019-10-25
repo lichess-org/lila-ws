@@ -37,7 +37,8 @@ object ClientOut {
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
-      promotion: Option[chess.PromotableRole]
+      promotion: Option[chess.PromotableRole],
+      payload: JsObject
   ) extends ClientOutSite
 
   case class AnaDrop(
@@ -46,7 +47,8 @@ object ClientOut {
       fen: FEN,
       path: Path,
       variant: Variant,
-      chapterId: Option[ChapterId]
+      chapterId: Option[ChapterId],
+      payload: JsObject
   ) extends ClientOutSite
 
   case class AnaDests(
@@ -104,7 +106,7 @@ object ClientOut {
           variant = dataVariant(d)
           chapterId = d str "ch" map ChapterId.apply
           promotion = d str "promotion" flatMap chess.Role.promotable
-        } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion)
+        } yield AnaMove(orig, dest, FEN(fen), Path(path), variant, chapterId, promotion, o)
         case "anaDrop" => for {
           d <- o obj "d"
           role <- d str "role" flatMap chess.Role.allByName.get
@@ -113,7 +115,7 @@ object ClientOut {
           fen <- d str "fen"
           variant = dataVariant(d)
           chapterId = d str "ch" map ChapterId.apply
-        } yield AnaDrop(role, pos, FEN(fen), Path(path), variant, chapterId)
+        } yield AnaDrop(role, pos, FEN(fen), Path(path), variant, chapterId, o)
         case "anaDests" => for {
           d <- o obj "d"
           path <- d str "path"
@@ -127,7 +129,10 @@ object ClientOut {
         case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
           Some(LobbyForward(o))
         // study
-        case "like" | "setPath" =>
+        case "like" | "setPath" | "anaMove" | "anaDrop" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" | "leave" |
+          "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" |
+          "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGameBook" | "toggleGlyph" | "explorerGame" |
+          "requestAnalysis" | "invite" | "relaySync" =>
           Some(StudyForward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }

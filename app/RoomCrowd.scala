@@ -65,6 +65,9 @@ object RoomCrowd {
   def getUsers(roomId: RoomId): Set[User.ID] =
     Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet)
 
+  def isPresent(roomId: RoomId, userId: User.ID): Boolean =
+    Option(rooms get roomId).exists(_.users contains userId)
+
   private def outputOf(roomId: RoomId, room: RoomState) = Output(
     roomId = roomId,
     members = room.nbMembers,
