@@ -16,6 +16,7 @@ class SocketController @Inject() (
     server: Server,
     config: Configuration,
     mongo: Mongo,
+    auth: Auth,
     val controllerComponents: ControllerComponents
 )(implicit ec: ExecutionContext) extends BaseController {
 
@@ -45,9 +46,11 @@ class SocketController @Inject() (
 
   def study(id: Simul.ID, sriStr: String, apiVersion: Int) =
     LichessWebSocket(sriStr) { (sri, req) =>
-      mongo studyExists id flatMap {
-        case false => Future successful Left(NotFound)
-        case true => server.connectToStudy(req, Study(id), sri, getSocketVersion(req)) map Right.apply
+      auth(req, None) flatMap { user =>
+        mongo.studyExistsFor(id, user) flatMap {
+          case false => Future successful Left(NotFound)
+          case true => server.connectToStudy(req, Study(id), user, sri, getSocketVersion(req)) map Right.apply
+        }
       }
     }
 

@@ -38,8 +38,21 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def tourExists(id: Simul.ID): Future[Boolean] =
     tourColl flatMap { exists(_, BSONDocument("_id" -> id)) }
 
-  def studyExists(id: Simul.ID): Future[Boolean] =
-    studyColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+  def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
+    exists(_, BSONDocument(
+      "_id" -> id,
+      user.fold(visibilityNotPrivate) { u =>
+        BSONDocument(
+          "$or" -> BSONArray(
+            visibilityNotPrivate,
+            BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
+          )
+        )
+      }
+    ))
+  }
+
+  private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
   def isTroll(user: Option[User]): Future[IsTroll] =
     user.fold(Future successful IsTroll(false)) { u =>

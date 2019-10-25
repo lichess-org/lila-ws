@@ -85,13 +85,11 @@ final class Server @Inject() (
       name = s"tour ${reqName(req)}"
     ))
 
-  def connectToStudy(req: RequestHeader, study: Study, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
-    auth(req, None) flatMap { user =>
-      mongo.isTroll(user) map { isTroll =>
-        actorFlow(req) { clientIn =>
-          StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
-          }
+  def connectToStudy(req: RequestHeader, study: Study, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+    mongo.isTroll(user) map { isTroll =>
+      actorFlow(req) { clientIn =>
+        StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
         }
       }
     } map asWebsocket(new RateLimit(
