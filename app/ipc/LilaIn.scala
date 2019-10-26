@@ -91,9 +91,6 @@ object LilaIn {
   case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Room {
     def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
-  case class RoomUsers(roomId: RoomId, users: Iterable[User.ID]) extends Room {
-    def write = s"room/users $roomId ${commas(users)}"
-  }
   case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Site with Study with Room {
     import tellSri._
     def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
@@ -102,6 +99,10 @@ object LilaIn {
   case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Site with Study with Room {
     import tellSri._
     def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
+  }
+
+  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], active: Set[User.ID]) extends Room {
+    def write = s"tour/waiting $roomId ${commas(present intersect active)}"
   }
 
   case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {

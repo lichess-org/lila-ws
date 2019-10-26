@@ -4,6 +4,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import GraphDSL.Implicits._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 import ipc._
 
@@ -18,8 +19,9 @@ object Graph {
     lilaInSimul: Sink[LilaIn.Room, _],
     lilaInTour: Sink[LilaIn.Room, _],
     lilaInStudy: Sink[LilaIn.Room, _],
+    mongo: Mongo,
     crowdJson: CrowdJson
-  )(implicit system: akka.actor.ActorSystem): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
+  )(implicit system: akka.actor.ActorSystem, ec: ExecutionContext): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
     Source.queue[SimulOut](8192, overflow), // from simul chan
@@ -96,7 +98,7 @@ object Graph {
         }
       }
 
-      val User = merge[sm.UserSM.Input](4)
+      val User = merge[sm.UserSM.Input](5)
 
       val UserSM: FlowShape[sm.UserSM.Input, LilaIn.Site] = machine(sm.UserSM.machine)
 
@@ -260,9 +262,29 @@ object Graph {
 
       val TouBroad = broadcast[TourOut](4)
 
-      val TouCrowd: FlowShape[TourOut, LilaIn.RoomUsers] = b.add {
+      val TouCrowd: FlowShape[TourOut, LilaIn.WaitingUsers] = b.add {
         Flow[TourOut].collect {
-          case LilaOut.GetRoomUsers(roomId) => LilaIn.RoomUsers(roomId, RoomCrowd getUsers roomId)
+          case LilaOut.GetWaitingUsers(roomId, name) => (roomId, name, RoomCrowd.getUsers(roomId))
+        }.mapAsyncUnordered(4) {
+          case (roomId, name, present) => mongo tournamentActiveUsers roomId.value map { active =>
+            LilaIn.WaitingUsers(roomId, name, present, active)
+          }
+        }
+      }
+
+      val TouCrowdB = broadcast[LilaIn.WaitingUsers](2)
+
+      val TouRemind: FlowShape[LilaIn.WaitingUsers, sm.UserSM.TellMany] = b.add {
+        Flow[LilaIn.WaitingUsers].mapConcat {
+          case LilaIn.WaitingUsers(roomId, name, present, active) =>
+            val allAbsent = active diff present
+            val absent = {
+              if (allAbsent.size > 100) scala.util.Random.shuffle(allAbsent) take 80
+              else allAbsent
+            }.toSet
+            if (absent.nonEmpty)
+              List(sm.UserSM.TellMany(absent, ClientIn.TourReminder(roomId.value, name)))
+            else Nil
         }
       }
 
@@ -338,7 +360,8 @@ object Graph {
       TourOutlet  ~> TouBroad ~> ToSiteOut ~> SiteOut
                      TouBroad ~> RoomBus                        ~> ClientBus
                      TouBroad                                                ~> EventStore
-                     TouBroad ~> TouCrowd                       ~> TourIn    ~> TourInlet
+                     TouBroad ~> TouCrowd  ~> TouCrowdB         ~> TouRemind ~> User
+                                              TouCrowdB         ~> TourIn    ~> TourInlet
       ClientToTour            ~> TourKeepAlive                  ~> TourIn
 
       StudyOutlet ~> StuBroad ~> ToSiteOut ~> SiteOut

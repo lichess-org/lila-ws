@@ -13,6 +13,7 @@ import sm._
 @Singleton
 final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(implicit
     ec: ExecutionContext,
+    mongo: Mongo,
     system: ActorSystem,
     mat: akka.stream.Materializer
 ) {
@@ -37,7 +38,7 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
       case out: StudyOut => out
     }
 
-    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, crowdJson).run()
+    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, mongo, crowdJson).run()
 
     siteInit(siteOut, List(LilaIn.DisconnectAll))
     lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))

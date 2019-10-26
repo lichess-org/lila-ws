@@ -60,6 +60,7 @@ object ClientIn {
   case class Payload(json: JsonString) extends ClientIn {
     def write = json.value
   }
+  def payload(js: JsValue) = Payload(JsonString(Json stringify js))
 
   case class Crowd(doc: JsObject) extends ClientIn {
     lazy val write = clientMsg("crowd", doc)
@@ -87,6 +88,13 @@ object ClientIn {
     case class Room(id: RoomId) extends Endpoint
   }
   def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
+
+  case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn {
+    val write = clientMsg("tournamentReminder", Json.obj(
+      "id" -> tourId,
+      "name" -> tourName
+    ))
+  }
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = clientMsg("opening", Json.obj(

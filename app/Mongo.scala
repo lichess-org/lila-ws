@@ -26,6 +26,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def streamerColl = collNamed("streamer")
   def simulColl = collNamed("simul")
   def tourColl = collNamed("tournament2")
+  def tourPlayerColl = collNamed("tournament_player")
   def studyColl = collNamed("study")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
@@ -66,6 +67,15 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
           members <- doc.getAs[BSONDocument]("members")
         } yield members.stream.collect { case Success(BSONElement(key, _)) => key }.toSet
       } map (_ getOrElse Set.empty)
+  }
+
+  def tournamentActiveUsers(tourId: Tour.ID): Future[Set[User.ID]] = tourPlayerColl flatMap {
+    _.distinct[User.ID, Set](
+      key = "uid",
+      selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
+      readConcern = ReadConcern.Local,
+      collation = None
+    )
   }
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
