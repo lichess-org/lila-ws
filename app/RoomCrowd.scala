@@ -71,7 +71,7 @@ object RoomCrowd {
   private def outputOf(roomId: RoomId, room: RoomState) = Output(
     roomId = roomId,
     members = room.nbMembers,
-    users = if (room.nbUsers > 15) Nil else room.users.keys,
+    users = room.users.keys,
     anons = room.anons
   )
 }

@@ -7,6 +7,7 @@ import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Success
 
 @Singleton
 final class Mongo @Inject() (config: Configuration)(implicit executionContext: ExecutionContext) {
@@ -38,6 +39,9 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def tourExists(id: Simul.ID): Future[Boolean] =
     tourColl flatMap { exists(_, BSONDocument("_id" -> id)) }
 
+  def studyExists(id: Study.ID): Future[Boolean] =
+    studyColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(_, BSONDocument(
       "_id" -> id,
@@ -50,6 +54,18 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
         )
       }
     ))
+  }
+
+  def studyMembers(id: Study.ID): Future[Set[User.ID]] = studyColl flatMap {
+    _.find(
+      selector = BSONDocument("_id" -> id),
+      projection = Some(BSONDocument("members" -> true))
+    ).one[BSONDocument] map { docOpt =>
+        for {
+          doc <- docOpt
+          members <- doc.getAs[BSONDocument]("members")
+        } yield members.stream.collect { case Success(BSONElement(key, _)) => key }.toSet
+      } map (_ getOrElse Set.empty)
   }
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))

@@ -83,3 +83,5 @@ case class RoomId(value: String) extends AnyVal with StringValue
 case class UserLag(userId: User.ID, lag: Int)
 
 case class ReqId(value: Int) extends AnyVal with IntValue
+
+case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])

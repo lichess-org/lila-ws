@@ -65,7 +65,8 @@ object Stream {
       fen: SourceQueue[FenSM.Input],
       count: SourceQueue[CountSM.Input],
       user: SourceQueue[UserSM.Input],
-      crowd: SourceQueue[RoomCrowd.Input]
+      crowd: SourceQueue[RoomCrowd.Input],
+      studyDoor: SourceQueue[ThroughStudyDoor]
   ) {
     def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =
       select(this) offer msg

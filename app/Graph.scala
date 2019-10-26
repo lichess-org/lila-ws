@@ -38,14 +38,16 @@ object Graph {
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.CountSM.Input](256, overflow), // clients -> count machine
     Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine,
-    Source.queue[RoomCrowd.Input](256, overflow) // clients -> crowd machine
+    Source.queue[RoomCrowd.Input](256, overflow), // clients -> crowd machine
+    Source.queue[ThroughStudyDoor](256, overflow) // clients -> study door machine
   ) {
-      case (siteOut, lobbyOut, simulOut, tourOut, studyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd) => (
+      case (siteOut, lobbyOut, simulOut, tourOut, studyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor) => (
         siteOut, lobbyOut, simulOut, tourOut, studyOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor)
       )
     } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, TourOutlet, StudyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby,
-      ClientToSimul, ClientToTour, ClientToStudy, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser, ClientToCrowd) =>
+      ClientToSimul, ClientToTour, ClientToStudy, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser,
+      ClientToCrowd, ClientToStudyDoor) =>
 
       def ToSiteOut: FlowShape[LilaOut, SiteOut] = b.add {
         Flow[LilaOut].collect {
@@ -281,9 +283,19 @@ object Graph {
         }
       }
 
+      val StudyDoor: FlowShape[ThroughStudyDoor, LilaIn.StudyDoor] = b.add {
+        Flow[ThroughStudyDoor].groupedWithin(64, 1931.millis) map { throughs =>
+          LilaIn.StudyDoor {
+            throughs.foldLeft(Map.empty[lila.ws.User.ID, Either[RoomId, RoomId]]) {
+              case (doors, ThroughStudyDoor(user, through)) => doors + (user.id -> through)
+            }
+          }
+        }
+      }
+
       val StuKeepAlive = andKeepAlive[LilaIn.Room](lilaInStudy)
 
-      val StudyIn = merge[LilaIn.Room](2)
+      val StudyIn = merge[LilaIn.Room](3)
 
       val StudyInlet: Inlet[LilaIn.Room] = b.add(lilaInStudy).in
 
@@ -334,6 +346,7 @@ object Graph {
                      StuBroad                                                ~> EventStore
                      StuBroad ~> StuCrowd                       ~> StudyIn   ~> StudyInlet
       ClientToStudy           ~> StuKeepAlive                   ~> StudyIn
+      ClientToStudyDoor       ~> StudyDoor                      ~> StudyIn
 
       ClientToCrowd                                 ~> Crowd    ~> CrowdJson ~> ClientBus
       UserTicker                           ~> User

@@ -104,6 +104,15 @@ object LilaIn {
     def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
+  case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {
+    def write = s"study/door ${
+      commas(users.map {
+        case (u, Right(s)) => s"$u:$s:+"
+        case (u, Left(s)) => s"$u:$s:-"
+      })
+    }"
+  }
+
   case class ReqResponse(reqId: Int, value: String) extends Site with Study with Room {
     def write = s"req/response $reqId $value"
   }
