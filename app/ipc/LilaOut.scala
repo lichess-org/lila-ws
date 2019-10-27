@@ -131,7 +131,7 @@ object LilaOut {
 
       case "tell/room/version" => args.split(" ", 4) match {
         case Array(roomId, version, troll, payload) => parseIntOption(version) map { sv =>
-          TellRoomVersion(RoomId(roomId), SocketVersion(sv), IsTroll(troll == "true"), JsonString(payload))
+          TellRoomVersion(RoomId(roomId), SocketVersion(sv), IsTroll(bool(troll)), JsonString(payload))
         }
         case _ => None
       }
@@ -165,4 +165,5 @@ object LilaOut {
   }
 
   def commas(str: String): Array[String] = if (str == "-") Array.empty else str split ','
+  def bool(str: String): Boolean = str == "true"
 }
