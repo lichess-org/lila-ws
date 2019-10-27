@@ -27,6 +27,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def simulColl = collNamed("simul")
   def tourColl = collNamed("tournament2")
   def tourPlayerColl = collNamed("tournament_player")
+  def tourPairingColl = collNamed("tournament_pairing")
   def studyColl = collNamed("study")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
@@ -73,6 +74,15 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
     _.distinct[User.ID, Set](
       key = "uid",
       selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
+      readConcern = ReadConcern.Local,
+      collation = None
+    )
+  }
+
+  def tournamentPlayingUsers(tourId: Tour.ID): Future[Set[User.ID]] = tourPairingColl flatMap {
+    _.distinct[User.ID, Set](
+      key = "u",
+      selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
       readConcern = ReadConcern.Local,
       collation = None
     )

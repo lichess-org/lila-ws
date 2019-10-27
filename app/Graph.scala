@@ -266,9 +266,11 @@ object Graph {
         Flow[TourOut].collect {
           case LilaOut.GetWaitingUsers(roomId, name) => (roomId, name, RoomCrowd.getUsers(roomId))
         }.mapAsyncUnordered(4) {
-          case (roomId, name, present) => mongo tournamentActiveUsers roomId.value map { active =>
-            LilaIn.WaitingUsers(roomId, name, present, active)
-          }
+          case (roomId, name, present) => mongo.tournamentActiveUsers(roomId.value) zip
+            mongo.tournamentPlayingUsers(roomId.value) map {
+              case (active, playing) =>
+                LilaIn.WaitingUsers(roomId, name, present, active diff playing)
+            }
         }
       }
 
@@ -276,8 +278,8 @@ object Graph {
 
       val TouRemind: FlowShape[LilaIn.WaitingUsers, sm.UserSM.TellMany] = b.add {
         Flow[LilaIn.WaitingUsers].mapConcat {
-          case LilaIn.WaitingUsers(roomId, name, present, active) =>
-            val allAbsent = active diff present
+          case LilaIn.WaitingUsers(roomId, name, present, standby) =>
+            val allAbsent = standby diff present
             val absent = {
               if (allAbsent.size > 100) scala.util.Random.shuffle(allAbsent) take 80
               else allAbsent

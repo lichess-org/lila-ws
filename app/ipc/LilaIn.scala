@@ -101,8 +101,8 @@ object LilaIn {
     def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
-  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], active: Set[User.ID]) extends Room {
-    def write = s"tour/waiting $roomId ${commas(present intersect active)}"
+  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Room {
+    def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }
 
   case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {
