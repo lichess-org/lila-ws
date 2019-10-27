@@ -3,10 +3,12 @@ package lila.ws
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ ActorRef, Behavior }
 import akka.stream.scaladsl._
+import akka.stream.typed.scaladsl.ActorSink
 import akka.stream.{ Materializer, OverflowStrategy }
 import javax.inject._
 import play.api.http.websocket._
 import play.api.libs.streams.AkkaStreams
+import play.api.Logger
 import play.api.mvc.RequestHeader
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -57,7 +59,7 @@ final class Server @Inject() (
 
   def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
-      mongo.isTroll(user) map { isTroll =>
+      mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
@@ -72,7 +74,7 @@ final class Server @Inject() (
 
   def connectToTour(req: RequestHeader, tour: Tour, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
-      mongo.isTroll(user) map { isTroll =>
+      mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
@@ -86,7 +88,7 @@ final class Server @Inject() (
     ))
 
   def connectToStudy(req: RequestHeader, study: Study, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
-    mongo.isTroll(user) map { isTroll =>
+    mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
         StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
@@ -101,7 +103,7 @@ final class Server @Inject() (
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =
-    auth(req, flag) map { user =>
+    auth(req, flag) flatMap { user =>
       actorFlow(req) { clientIn =>
         actor {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, flag, user), bus)
@@ -119,35 +121,27 @@ final class Server @Inject() (
 
   private def actorFlow(req: RequestHeader)(
     clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
-  ): Flow[ClientOut, ClientIn, _] = {
-
-    import akka.actor.{ Status, Terminated, OneForOneStrategy, SupervisorStrategy }
+  ): Future[Flow[ClientOut, ClientIn, _]] = {
 
     val (outQueue, publisher) = Source.queue[ClientIn](
       bufferSize = 8,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
-    Flow.fromSinkAndSource(
-      Sink.actorRef(
-        ref = system.actorOf(akka.actor.Props(new akka.actor.Actor {
-          val flowActor: ActorRef[ClientMsg] = context.spawn(clientActor(outQueue), "flowActor")
-          context.watch(flowActor)
-
-          def receive = {
-            case Status.Success(_) | Status.Failure(_) => flowActor ! ClientCtrl.Disconnect
-            case Terminated(_) => context.stop(self)
-            case msg: ClientOut => flowActor ! msg
+    Spawner(clientActor(outQueue)) map { actor =>
+      Flow.fromSinkAndSource(
+        ActorSink.actorRef[ClientMsg](
+          ref = actor,
+          onCompleteMessage = ClientCtrl.Disconnect,
+          onFailureMessage = t => {
+            logger.warn(s"$t ${reqName(req)}")
+            ClientCtrl.Disconnect
           }
-
-          override def supervisorStrategy = OneForOneStrategy() {
-            case _ => SupervisorStrategy.Stop
-          }
-        })),
-        onCompleteMessage = Status.Success(()),
-        onFailureMessage = t => Status.Failure(t)
-      ),
-      Source.fromPublisher(publisher)
-    )
+        ),
+        Source.fromPublisher(publisher)
+      )
+    }
   }
+
+  private val logger = Logger("Server")
 }

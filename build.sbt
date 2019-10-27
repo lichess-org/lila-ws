@@ -23,6 +23,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-protobuf" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
 libraryDependencies += "joda-time" % "joda-time" % "2.10.4"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
 libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion
