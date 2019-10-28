@@ -29,20 +29,20 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def tourPlayerColl = collNamed("tournament_player")
   def tourPairingColl = collNamed("tournament_pairing")
   def studyColl = collNamed("study")
+  def gameColl = collNamed("game5")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
   def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
   def user[A](f: BSONCollection => Future[A]): Future[A] = userColl flatMap f
 
-  def simulExists(id: Simul.ID): Future[Boolean] =
-    simulColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+  def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
 
-  def tourExists(id: Simul.ID): Future[Boolean] =
-    tourColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+  def tourExists(id: Simul.ID): Future[Boolean] = tourColl flatMap idExists(id)
 
-  def studyExists(id: Study.ID): Future[Boolean] =
-    studyColl flatMap { exists(_, BSONDocument("_id" -> id)) }
+  def studyExists(id: Study.ID): Future[Boolean] = studyColl flatMap idExists(id)
+
+  def gameExists(id: Game.ID): Future[Boolean] = gameColl flatMap idExists(id)
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(_, BSONDocument(
@@ -94,6 +94,9 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
     user.fold(Future successful IsTroll(false)) { u =>
       userColl flatMap { exists(_, BSONDocument("_id" -> u.id, "troll" -> true)) } map IsTroll.apply
     }
+
+  private def idExists(id: String)(coll: BSONCollection): Future[Boolean] =
+    exists(coll, BSONDocument("_id" -> id))
 
   private def exists(coll: BSONCollection, selector: BSONDocument): Future[Boolean] =
     coll.count(
