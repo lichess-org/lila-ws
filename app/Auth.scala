@@ -1,7 +1,6 @@
 package lila.ws
 
 import javax.inject._
-import play.api.Logger
 import play.api.mvc.RequestHeader
 import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -41,6 +40,4 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
       case _ => None
     } orElse
       req.target.getQueryParameter(sessionIdKey)
-
-  private val logger = Logger("Auth")
 }
