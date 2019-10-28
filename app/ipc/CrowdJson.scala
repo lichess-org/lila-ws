@@ -18,7 +18,7 @@ final class CrowdJson @Inject() (
   def apply(crowd: RoomCrowd.Output): Future[Bus.Msg] = {
     if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
     else {
-      if (crowd.users.size > 15) keepOnlyStudyMembers(crowd)
+      if (crowd.users.size > 20) keepOnlyStudyMembers(crowd)
       else Future successful crowd.users
     } flatMap { users =>
       Future sequence { users map lightUserApi.get } map { lights =>
@@ -39,6 +39,6 @@ final class CrowdJson @Inject() (
   private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.ID]] =
     isStudyCache.get(crowd.roomId.value) flatMap {
       case false => Future successful Nil
-      case true => mongo.studyMembers(crowd.roomId.value) map crowd.users.toSet.diff
+      case true => mongo.studyMembers(crowd.roomId.value) map crowd.users.toSet.intersect
     }
 }
