@@ -96,7 +96,7 @@ final class Server @Inject() (
       }
     } map asWebsocket(new RateLimit(
       maxCredits = 50,
-      duration = 20.seconds,
+      duration = 15.seconds,
       name = s"study ${reqName(req)}"
     ))
 
@@ -133,10 +133,7 @@ final class Server @Inject() (
         ActorSink.actorRef[ClientMsg](
           ref = actor,
           onCompleteMessage = ClientCtrl.Disconnect,
-          onFailureMessage = t => {
-            logger.warn(s"$t ${reqName(req)}")
-            ClientCtrl.Disconnect
-          }
+          onFailureMessage = _ => ClientCtrl.Disconnect
         ),
         Source.fromPublisher(publisher)
       )

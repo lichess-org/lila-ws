@@ -108,7 +108,7 @@ object ClientActor {
         Monitor.clientOutUnexpected.increment()
         if (state.ignoreLog) state
         else {
-          Logger("SiteClient").info(s"Unexpected $msg $req")
+          Logger("ClientActor").info(s"Unexpected $msg $req")
           state.copy(ignoreLog = true)
         }
 

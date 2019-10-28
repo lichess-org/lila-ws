@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import play.api.libs.json._
+import play.api.Logger
 
 import ipc._
 import sm._
@@ -38,6 +39,10 @@ object SiteClientActor {
         val newState = globalReceive(state, deps, ctx, msg)
         if (newState == state) Behaviors.same
         else apply(newState, deps)
+
+      case msg =>
+        Logger("SiteClientActor").info(s"Unexpected $msg ${deps.req}")
+        Behaviors.same
     }
 
   }.receiveSignal {
