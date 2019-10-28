@@ -94,10 +94,6 @@ object LilaIn {
   case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends AnyRoom {
     def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
-  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study {
-    import tellSri._
-    def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
-  }
 
   case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Study {
     import tellSri._
