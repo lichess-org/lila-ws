@@ -17,6 +17,8 @@ object LilaIn {
 
   sealed trait Study extends Room
 
+  sealed trait Round extends Room
+
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }

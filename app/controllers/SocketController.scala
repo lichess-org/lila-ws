@@ -54,6 +54,16 @@ class SocketController @Inject() (
       }
     }
 
+  def roundWatch(id: Game.ID, color: String, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      auth(req, None) flatMap { user =>
+        mongo.gameExists(id) flatMap {
+          case false => Future successful Left(NotFound)
+          case true => server.connectToRoomWatch(req, Game(id), user, sri, getSocketVersion(req)) map Right.apply
+        }
+      }
+    }
+
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }

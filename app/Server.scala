@@ -100,6 +100,19 @@ final class Server @Inject() (
       name = s"study ${reqName(req)}"
     ))
 
+  def connectToRoundWatch(req: RequestHeader, game: Game, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+    mongo.isTroll(user) flatMap { isTroll =>
+      actorFlow(req) { clientIn =>
+        RoundClientActor.start(RoomActor.State(RoomId(game.id), isTroll), fromVersion) {
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+        }
+      }
+    } map asWebsocket(new RateLimit(
+      maxCredits = 50,
+      duration = 20.seconds,
+      name = s"round/watch ${reqName(req)}"
+    ))
+
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =

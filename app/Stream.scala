@@ -60,6 +60,7 @@ object Stream {
       simul: SourceQueue[LilaIn.Room],
       tour: SourceQueue[LilaIn.Room],
       study: SourceQueue[LilaIn.Room],
+      round: SourceQueue[LilaIn.Room],
       connect: SourceQueue[LilaIn.ConnectSri],
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[UserLag],
