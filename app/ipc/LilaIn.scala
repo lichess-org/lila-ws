@@ -11,11 +11,14 @@ object LilaIn {
 
   sealed trait Site extends LilaIn
 
+  sealed trait Lobby extends LilaIn
+
   sealed trait Room extends LilaIn
-
-  sealed trait Lobby extends Room
-
+  sealed trait Simul extends Room
+  sealed trait Tour extends Room
   sealed trait Study extends Room
+
+  sealed trait AnyRoom extends Simul with Tour with Study
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
@@ -79,29 +82,29 @@ object LilaIn {
     def write = s"disconnect/sris ${commas(sris)}"
   }
 
-  case class KeepAlive(roomId: RoomId) extends Room {
+  case class KeepAlive(roomId: RoomId) extends AnyRoom {
     def write = s"room/alive $roomId"
   }
-  case class KeepAlives(roomIds: Iterable[RoomId]) extends Room {
+  case class KeepAlives(roomIds: Iterable[RoomId]) extends AnyRoom {
     def write = s"room/alives ${commas(roomIds)}"
   }
-  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Room {
+  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
     def write = s"chat/say $roomId $userId $msg"
   }
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends Room {
+  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends AnyRoom {
     def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
-  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Site with Study with Room {
+  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study {
     import tellSri._
     def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
-  case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Site with Study with Room {
+  case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Study {
     import tellSri._
     def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
-  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Room {
+  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Tour {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }
 
@@ -114,7 +117,7 @@ object LilaIn {
     }"
   }
 
-  case class ReqResponse(reqId: Int, value: String) extends Site with Study with Room {
+  case class ReqResponse(reqId: Int, value: String) extends Study {
     def write = s"req/response $reqId $value"
   }
 

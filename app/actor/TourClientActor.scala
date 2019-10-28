@@ -41,10 +41,12 @@ object TourClientActor {
         else apply(state.copy(site = siteState), deps)
     }
 
-    RoomActor.receive(state.room, deps, deps.queue.tour).lift(msg).fold(receive(msg)) {
-      _.fold(Behaviors.same[ClientMsg]) { roomState =>
-        apply(state.copy(room = roomState), deps)
-      }
+    RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
+      case (newState, emit) =>
+        emit foreach deps.queue.simul.offer
+        newState.fold(Behaviors.same[ClientMsg]) { roomState =>
+          apply(state.copy(room = roomState), deps)
+        }
     }
 
   }.receiveSignal {

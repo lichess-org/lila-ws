@@ -42,37 +42,35 @@ object RoomActor {
     if (!msg.troll.value || isTroll.value) msg.full
     else msg.skip
 
-  def receive(state: State, deps: Deps, queue: SourceQueue[LilaIn.Room]): PartialFunction[ClientMsg, Option[State]] = {
+  def receive(state: State, deps: Deps): PartialFunction[ClientMsg, (Option[State], Option[LilaIn.AnyRoom])] = {
 
     case versioned: ClientIn.Versioned =>
       deps.clientIn(versionFor(state.isTroll, versioned))
-      None
+      None -> None
 
     case ClientIn.OnlyFor(endpoint, payload) =>
       if (endpoint == ClientIn.OnlyFor.Room(state.id)) deps.clientIn(payload)
-      None
+      None -> None
 
     case crowd: ClientIn.Crowd =>
-      if (crowd == state.lastCrowd) None
+      if (crowd == state.lastCrowd) None -> None
       else Some {
         deps.clientIn(crowd)
         state.copy(lastCrowd = crowd)
-      }
+      } -> None
 
     case in: ClientIn =>
       deps.clientIn(in)
-      None
+      None -> None
 
     case ClientOut.ChatSay(msg) =>
-      deps.req.user foreach { u =>
-        queue offer (LilaIn.ChatSay(state.id, u.id, msg): LilaIn.Room)
+      None -> deps.req.user.map { u =>
+        LilaIn.ChatSay(state.id, u.id, msg)
       }
-      None
 
     case ClientOut.ChatTimeout(suspect, reason) =>
-      deps.req.user foreach { u =>
-        queue offer LilaIn.ChatTimeout(state.id, u.id, suspect, reason)
+      None -> deps.req.user.map { u =>
+        LilaIn.ChatTimeout(state.id, u.id, suspect, reason)
       }
-      None
   }
 }
