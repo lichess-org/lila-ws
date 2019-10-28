@@ -15,13 +15,15 @@ final class CrowdJson @Inject() (
     lightUserApi: LightUserApi
 )(implicit ec: ExecutionContext) {
 
-  def apply(crowd: RoomCrowd.Output): Future[Bus.Msg] = {
+  def apply(in: RoomCrowd.Output): Future[Bus.Msg] = {
+    if (in.users.size > 20) keepOnlyStudyMembers(in) map { users =>
+      in.copy(users = users, anons = 0)
+    }
+    else Future successful in
+  } flatMap { crowd =>
     if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
     else {
-      if (crowd.users.size > 20) keepOnlyStudyMembers(crowd)
-      else Future successful crowd.users
-    } flatMap { users =>
-      Future sequence { users map lightUserApi.get } map { lights =>
+      Future sequence { crowd.users map lightUserApi.get } map { lights =>
         Json.obj(
           "nb" -> crowd.members,
           "users" -> lights.flatMap(_.map(_.titleName)),
@@ -29,7 +31,7 @@ final class CrowdJson @Inject() (
         )
       }
     }
-  } map ClientIn.Crowd.apply map { Bus.msg(_, _ room crowd.roomId) }
+  } map ClientIn.Crowd.apply map { Bus.msg(_, _ room in.roomId) }
 
   private val isStudyCache: AsyncLoadingCache[String, Boolean] =
     Scaffeine()
