@@ -16,9 +16,9 @@ object Graph {
   def apply(
     lilaInSite: Sink[LilaIn.Site, _],
     lilaInLobby: Sink[LilaIn.Lobby, _],
-    lilaInSimul: Sink[LilaIn.Room, _],
-    lilaInTour: Sink[LilaIn.Room, _],
-    lilaInStudy: Sink[LilaIn.Room, _],
+    lilaInSimul: Sink[LilaIn.Simul, _],
+    lilaInTour: Sink[LilaIn.Tour, _],
+    lilaInStudy: Sink[LilaIn.Study, _],
     mongo: Mongo,
     crowdJson: CrowdJson
   )(implicit system: akka.actor.ActorSystem, ec: ExecutionContext): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
@@ -31,9 +31,9 @@ object Graph {
     Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
     Source.queue[LilaIn.Site](8192, overflow), // clients -> lila:site (forward)
     Source.queue[LilaIn.Lobby](8192, overflow), // clients -> lila:lobby
-    Source.queue[LilaIn.Room](1024, overflow), // clients -> lila:simul
-    Source.queue[LilaIn.Room](8192, overflow), // clients -> lila:tour
-    Source.queue[LilaIn.Room](8192, overflow), // clients -> lila:study
+    Source.queue[LilaIn.Simul](1024, overflow), // clients -> lila:simul
+    Source.queue[LilaIn.Tour](8192, overflow), // clients -> lila:tour
+    Source.queue[LilaIn.Study](8192, overflow), // clients -> lila:study
     Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[UserLag](256, overflow), // clients -> lag machine
@@ -254,9 +254,9 @@ object Graph {
 
       val SimBroad = broadcast[SimulOut](3)
 
-      val SimKeepAlive = andKeepAlive[LilaIn.Room](lilaInSimul)
+      val SimKeepAlive = andKeepAlive[LilaIn.Simul](lilaInSimul)
 
-      val SimulInlet: Inlet[LilaIn.Room] = b.add(lilaInSimul).in
+      val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
 
       // tournament
 
@@ -290,11 +290,11 @@ object Graph {
         }
       }
 
-      val TourKeepAlive = andKeepAlive[LilaIn.Room](lilaInTour)
+      val TourKeepAlive = andKeepAlive[LilaIn.Tour](lilaInTour)
 
-      val TourIn = merge[LilaIn.Room](2)
+      val TourIn = merge[LilaIn.Tour](2)
 
-      val TourInlet: Inlet[LilaIn.Room] = b.add(lilaInTour).in
+      val TourInlet: Inlet[LilaIn.Tour] = b.add(lilaInTour).in
 
       // study
 
@@ -317,11 +317,11 @@ object Graph {
         }
       }
 
-      val StuKeepAlive = andKeepAlive[LilaIn.Room](lilaInStudy)
+      val StuKeepAlive = andKeepAlive[LilaIn.Study](lilaInStudy)
 
-      val StudyIn = merge[LilaIn.Room](3)
+      val StudyIn = merge[LilaIn.Study](3)
 
-      val StudyInlet: Inlet[LilaIn.Room] = b.add(lilaInStudy).in
+      val StudyInlet: Inlet[LilaIn.Study] = b.add(lilaInStudy).in
 
       // tickers
 
