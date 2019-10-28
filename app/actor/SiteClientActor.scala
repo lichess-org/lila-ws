@@ -39,10 +39,6 @@ object SiteClientActor {
         val newState = globalReceive(state, deps, ctx, msg)
         if (newState == state) Behaviors.same
         else apply(newState, deps)
-
-      case msg =>
-        Logger("SiteClientActor").info(s"Unexpected $msg ${deps.req}")
-        Behaviors.same
     }
 
   }.receiveSignal {
