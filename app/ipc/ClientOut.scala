@@ -87,7 +87,7 @@ object ClientOut {
         case "p" => Some(Ping(o int "l"))
         case "startWatching" => o str "d" map { d =>
           Watch(d.split(" ").take(16).toSet)
-        }
+        } orElse Some(Ignore) // old apps send empty watch lists
         case "moveLat" => Some(MoveLat)
         case "notified" => Some(Notified)
         case "following_onlines" => Some(FollowingOnline)
