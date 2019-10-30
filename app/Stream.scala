@@ -22,29 +22,21 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
 
   def start: Stream.Queues = {
 
-    val (siteInit, siteSink) = lila.pubsub("site-in", "site-out") {
-      case out: SiteOut => out
-    }
-    val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") {
-      case out: LobbyOut => out
-    }
-    val (simulInit, simulSink) = lila.pubsub("simul-in", "simul-out") {
-      case out: SimulOut => out
-    }
-    val (tourInit, tourSink) = lila.pubsub("tour-in", "tour-out") {
-      case out: TourOut => out
-    }
-    val (studyInit, studySink) = lila.pubsub("study-in", "study-out") {
-      case out: StudyOut => out
-    }
+    val (siteInit, siteSink) = lila.pubsub("site-in", "site-out") { case out: SiteOut => out }
+    val (tourInit, tourSink) = lila.pubsub("tour-in", "tour-out") { case out: TourOut => out }
+    val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") { case out: LobbyOut => out }
+    val (simulInit, simulSink) = lila.pubsub("simul-in", "simul-out") { case out: SimulOut => out }
+    val (studyInit, studySink) = lila.pubsub("study-in", "study-out") { case out: StudyOut => out }
+    val (roundInit, roundSink) = lila.pubsub("round-in", "round-out") { case out: RoundOut => out }
 
-    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, mongo, crowdJson).run()
+    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, mongo, crowdJson).run()
 
     siteInit(siteOut, List(LilaIn.DisconnectAll))
     lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
     simulInit(simulOut, List(LilaIn.DisconnectAll))
     tourInit(tourOut, List(LilaIn.DisconnectAll))
     studyInit(studyOut, List(LilaIn.DisconnectAll))
+    roundInit(roundOut, List(LilaIn.DisconnectAll))
 
     queues
   }

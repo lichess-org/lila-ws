@@ -31,19 +31,18 @@ object RoundClientActor {
 
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
 
-      // case ClientCtrl.Broom(oldSeconds) =>
-      //   if (state.site.lastPing < oldSeconds) Behaviors.stopped
-      //   else {
-      //     queue(_.study, LilaIn.KeepAlive(state.room.id))
-      //     Behaviors.same
-      //   }
+      case ClientCtrl.Broom(oldSeconds) =>
+        if (state.site.lastPing < oldSeconds) Behaviors.stopped
+        else {
+          queue(_.round, LilaIn.KeepAlive(state.room.id))
+          Behaviors.same
+        }
 
-      // case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       // case ClientOut.StudyForward(payload) =>
       //   forward(payload)
       //   Behaviors.same
-
 
       // default receive (site)
       case msg: ClientOutSite =>
@@ -52,10 +51,12 @@ object RoundClientActor {
         else apply(state.copy(site = siteState), deps)
     }
 
-    RoomActor.receive(state.room, deps, deps.queue.round).lift(msg).fold(receive(msg)) {
-      _.fold(Behaviors.same[ClientMsg]) { roomState =>
-        apply(state.copy(room = roomState), deps)
-      }
+    RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
+      case (newState, emit) =>
+        emit foreach queue.round.offer
+        newState.fold(Behaviors.same[ClientMsg]) { roomState =>
+          apply(state.copy(room = roomState), deps)
+        }
     }
 
   }.receiveSignal {

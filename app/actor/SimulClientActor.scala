@@ -43,7 +43,7 @@ object SimulClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach deps.queue.simul.offer
+        emit foreach queue.simul.offer
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }

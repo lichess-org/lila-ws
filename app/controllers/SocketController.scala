@@ -59,7 +59,7 @@ class SocketController @Inject() (
       auth(req, None) flatMap { user =>
         mongo.gameExists(id) flatMap {
           case false => Future successful Left(NotFound)
-          case true => server.connectToRoomWatch(req, Game(id), user, sri, getSocketVersion(req)) map Right.apply
+          case true => server.connectToRoundWatch(req, Game(id), user, sri, getSocketVersion(req)) map Right.apply
         }
       }
     }

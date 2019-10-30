@@ -9,6 +9,8 @@ import lila.ws.util.Util._
 
 sealed trait LilaOut extends LilaMsg
 
+sealed trait SiteOut extends LilaOut
+
 sealed trait LobbyOut extends LilaOut
 
 sealed trait RoomOut extends LilaOut
@@ -19,7 +21,9 @@ sealed trait TourOut extends RoomOut
 
 sealed trait StudyOut extends RoomOut
 
-sealed trait SiteOut extends LilaOut
+sealed trait RoundOut extends RoomOut
+
+sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut
 
 object LilaOut {
 
@@ -52,16 +56,21 @@ object LilaOut {
 
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
 
-  // simul, tour
+  // room
 
-  case class TellRoom(roomId: RoomId, json: JsonString) extends SimulOut with TourOut with StudyOut
-  case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends SimulOut with TourOut with StudyOut
-  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends SiteOut with SimulOut with TourOut
-  case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends SiteOut with StudyOut
+  case class TellRoom(roomId: RoomId, json: JsonString) extends AnyRoomOut
+  case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends AnyRoomOut
+  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut
+  case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends AnyRoomOut
 
-  case class RoomStart(roomId: RoomId) extends SimulOut with TourOut with StudyOut
-  case class RoomStop(roomId: RoomId) extends SimulOut with TourOut with StudyOut
+  case class RoomStart(roomId: RoomId) extends AnyRoomOut
+  case class RoomStop(roomId: RoomId) extends AnyRoomOut
+
+  // study
+
   case class RoomIsPresent(reqId: Int, roomId: RoomId, userId: User.ID) extends StudyOut
+
+  // tour
 
   case class GetWaitingUsers(roomId: RoomId, name: String) extends TourOut
 

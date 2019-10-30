@@ -11,7 +11,7 @@ import ipc._
 object Graph {
 
   type SQ[A] = SourceQueueWithComplete[A]
-  type GraphType = RunnableGraph[(SQ[SiteOut], SQ[LobbyOut], SQ[SimulOut], SQ[TourOut], SQ[StudyOut], Stream.Queues)]
+  type GraphType = RunnableGraph[(SQ[SiteOut], SQ[LobbyOut], SQ[SimulOut], SQ[TourOut], SQ[StudyOut], SQ[RoundOut], Stream.Queues)]
 
   def apply(
     lilaInSite: Sink[LilaIn.Site, _],
@@ -19,6 +19,7 @@ object Graph {
     lilaInSimul: Sink[LilaIn.Simul, _],
     lilaInTour: Sink[LilaIn.Tour, _],
     lilaInStudy: Sink[LilaIn.Study, _],
+    lilaInRound: Sink[LilaIn.Round, _],
     mongo: Mongo,
     crowdJson: CrowdJson
   )(implicit system: akka.actor.ActorSystem, ec: ExecutionContext): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
@@ -27,6 +28,7 @@ object Graph {
     Source.queue[SimulOut](8192, overflow), // from simul chan
     Source.queue[TourOut](8192, overflow), // from tour chan
     Source.queue[StudyOut](8192, overflow), // from study chan
+    Source.queue[RoundOut](8192, overflow), // from round chan
     Source.queue[LilaIn.Notified](128, overflow), // clients -> lila:site notified
     Source.queue[LilaIn.Friends](128, overflow), // clients -> lila:site friends
     Source.queue[LilaIn.Site](8192, overflow), // clients -> lila:site (forward)
@@ -34,6 +36,7 @@ object Graph {
     Source.queue[LilaIn.Simul](1024, overflow), // clients -> lila:simul
     Source.queue[LilaIn.Tour](8192, overflow), // clients -> lila:tour
     Source.queue[LilaIn.Study](8192, overflow), // clients -> lila:study
+    Source.queue[LilaIn.Round](8192, overflow), // clients -> lila:round
     Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
     Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[UserLag](256, overflow), // clients -> lag machine
@@ -43,12 +46,13 @@ object Graph {
     Source.queue[RoomCrowd.Input](256, overflow), // clients -> crowd machine
     Source.queue[ThroughStudyDoor](256, overflow) // clients -> study door machine
   ) {
-      case (siteOut, lobbyOut, simulOut, tourOut, studyOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor) => (
-        siteOut, lobbyOut, simulOut, tourOut, studyOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor)
+      case (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul,
+        lilaInTour, lilaInStudy, lilaInRound, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor) => (
+        siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut,
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInRound, lilaInConnect, lilaInDisconnect, lag, fen, count, user, crowd, studyDoor)
       )
-    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, TourOutlet, StudyOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby,
-      ClientToSimul, ClientToTour, ClientToStudy, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser,
+    } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, TourOutlet, StudyOutlet, RoundOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby,
+      ClientToSimul, ClientToTour, ClientToStudy, ClientToRound, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToCount, ClientToUser,
       ClientToCrowd, ClientToStudyDoor) =>
 
       def ToSiteOut: FlowShape[LilaOut, SiteOut] = b.add {
@@ -67,7 +71,7 @@ object Graph {
 
       // site
 
-      val SiteOut = merge[SiteOut](5)
+      val SiteOut = merge[SiteOut](6)
 
       val SOBroad = broadcast[SiteOut](4)
 
@@ -80,7 +84,7 @@ object Graph {
         }
       }
 
-      val ClientBus = merge[Bus.Msg](6)
+      val ClientBus = merge[Bus.Msg](7)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
         val bus = Bus(system)
@@ -246,7 +250,7 @@ object Graph {
           .to(sink),
         when = {
           case _: LilaIn.KeepAlive => true
-          case _ => false
+          case m => false
         }
       )
 
@@ -323,6 +327,14 @@ object Graph {
 
       val StudyInlet: Inlet[LilaIn.Study] = b.add(lilaInStudy).in
 
+      // round
+
+      val RouBroad = broadcast[RoundOut](3)
+
+      val RouKeepAlive = andKeepAlive[LilaIn.Round](lilaInRound)
+
+      val RoundInlet: Inlet[LilaIn.Round] = b.add(lilaInRound).in
+
       // tickers
 
       val UserTicker: SourceShape[sm.UserSM.Input] = b.add {
@@ -372,6 +384,11 @@ object Graph {
                      StuBroad ~> StuCrowd                       ~> StudyIn   ~> StudyInlet
       ClientToStudy           ~> StuKeepAlive                   ~> StudyIn
       ClientToStudyDoor       ~> StudyDoor                      ~> StudyIn
+
+      RoundOutlet ~> RouBroad ~> ToSiteOut ~> SiteOut
+                     RouBroad ~> RoomBus                        ~> ClientBus
+                     RouBroad                                                ~> EventStore
+      ClientToRound           ~> RouKeepAlive                                ~> RoundInlet
 
       ClientToCrowd                                 ~> Crowd    ~> CrowdJson ~> ClientBus
       UserTicker                           ~> User
