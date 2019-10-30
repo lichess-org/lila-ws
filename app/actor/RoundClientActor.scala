@@ -10,14 +10,24 @@ object RoundClientActor {
 
   import ClientActor._
 
+  case class Player(
+    id: Game.PlayerId,
+    color: chess.Color
+  )
+
   case class State(
       room: RoomActor.State,
+      player: Option[Player],
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(
+    roomState: RoomActor.State,
+    player: Option[Player],
+    fromVersion: Option[SocketVersion]
+  )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    apply(State(roomState), deps)
+    apply(State(roomState, player), deps)
   }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
@@ -29,7 +39,17 @@ object RoundClientActor {
     //   LilaIn.TellStudySri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
     // )
 
+    def gameId = Game.Id(state.room.id.value)
+    def fullId = state.player map { p => gameId full p.id }
+
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
+
+      case msg: ClientOut.Ping =>
+        clientIn(ClientIn.Pong)
+        state.player foreach { p =>
+          queue(_.round, LilaIn.RoundPlayerPing(gameId, p.color))
+        }
+        apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped

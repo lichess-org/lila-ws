@@ -118,7 +118,7 @@ object ClientActor {
   }
 
   case class State(
-      watchedGames: Set[Game.ID] = Set.empty,
+      watchedGames: Set[Game.Id] = Set.empty,
       lastPing: Int = nowSeconds,
       ignoreLog: Boolean = false
   )

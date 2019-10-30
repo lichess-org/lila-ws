@@ -10,7 +10,7 @@ import ipc._
 object FenSM {
 
   case class State(
-      games: Map[Game.ID, Watched] = Map.empty,
+      games: Map[Game.Id, Watched] = Map.empty,
       emit: List[LilaIn.Site] = Nil
   )
 
@@ -64,8 +64,8 @@ object FenSM {
   }
 
   sealed trait Input
-  case class Watch(gameIds: Iterable[Game.ID], client: ActorRef[ClientMsg]) extends Input
-  case class Unwatch(gameIds: Iterable[Game.ID], client: ActorRef[ClientMsg]) extends Input
+  case class Watch(gameIds: Iterable[Game.Id], client: ActorRef[ClientMsg]) extends Input
+  case class Unwatch(gameIds: Iterable[Game.Id], client: ActorRef[ClientMsg]) extends Input
   case class Move(move: LilaOut.Move) extends Input
 
   case class Position(lastUci: Uci, fen: FEN)

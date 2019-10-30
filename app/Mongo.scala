@@ -42,7 +42,28 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
 
   def studyExists(id: Study.ID): Future[Boolean] = studyColl flatMap idExists(id)
 
-  def gameExists(id: Game.ID): Future[Boolean] = gameColl flatMap idExists(id)
+  def gameExists(id: Game.Id): Future[Boolean] = gameColl flatMap idExists(id.value)
+
+  def playerColor(fullId: Game.FullId, user: Option[User]): Future[Option[chess.Color]] = gameColl flatMap {
+    _.find(
+      selector = BSONDocument("_id" -> fullId.gameId.value),
+      projection = Some(BSONDocument("is" -> true, "us" -> true))
+    ).one[BSONDocument] map { docOpt =>
+        for {
+          doc <- docOpt
+          playerIds <- doc.getAs[String]("is")
+          users <- doc.getAs[List[String]]("us")
+          playerId = fullId.playerId
+          color <- {
+            if (playerId.value == playerIds.take(4)) Some(chess.White)
+            else if (playerId.value == playerIds.drop(4)) Some(chess.Black)
+            else None
+          }
+          expectedUserId = color.fold(users.headOption.filter(_.nonEmpty), users.lift(1).filter(_.nonEmpty))
+          if user.map(_.id) == expectedUserId
+        } yield color
+      }
+  }
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(_, BSONDocument(

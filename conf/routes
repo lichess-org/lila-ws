@@ -9,3 +9,4 @@ GET  /simul/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.simul(id
 GET  /tournament/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.tournament(id: String, sri: String, apiVersion: Int)
 GET  /study/$id<\w{8}>/socket/v:apiVersion controllers.SocketController.study(id: String, sri: String, apiVersion: Int)
 GET  /ws/watch/$gameId<\w{8}>/$color<white|black>/v:apiVersion controllers.SocketController.roundWatch(gameId: String, color: String, sri: String, apiVersion: Int)
+GET  /ws/play/$fullId<\w{12}>/v:apiVersion controllers.SocketController.roundPlay(fullId: String, sri: String, apiVersion: Int)

@@ -29,7 +29,7 @@ object LilaOut {
 
   // site
 
-  case class Move(game: Game.ID, lastUci: Uci, fen: FEN) extends SiteOut
+  case class Move(game: Game.Id, lastUci: Uci, fen: FEN) extends SiteOut
 
   case class Mlat(millis: Double) extends SiteOut
 
@@ -45,7 +45,7 @@ object LilaOut {
 
   // lobby
 
-  case class LobbyPairings(pairings: List[(Sri, Game.FullID)]) extends LobbyOut
+  case class LobbyPairings(pairings: List[(Sri, Game.FullId)]) extends LobbyOut
   case class TellLobby(json: JsonString) extends LobbyOut
   case class TellLobbyActive(json: JsonString) extends LobbyOut
   case class TellLobbyUsers(users: Iterable[User.ID], json: JsonString) extends LobbyOut
@@ -82,7 +82,7 @@ object LilaOut {
     parts(0) match {
 
       case "move" => args.split(" ", 3) match {
-        case Array(game, lastUci, fen) => Uci(lastUci) map { Move(game, _, FEN(fen)) }
+        case Array(game, lastUci, fen) => Uci(lastUci) map { Move(Game.Id(game), _, FEN(fen)) }
         case _ => None
       }
 
@@ -109,7 +109,7 @@ object LilaOut {
 
       case "lobby/pairings" => Some(LobbyPairings {
         commas(args).map(_ split ':').collect {
-          case Array(sri, fullId) => (Sri(sri), fullId)
+          case Array(sri, fullId) => (Sri(sri), Game.FullId(fullId))
         }.toList
       })
 

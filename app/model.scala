@@ -15,11 +15,15 @@ object User {
   type ID = String
 }
 
-case class Game(id: Game.ID) extends AnyVal
-
 object Game {
-  type ID = String
-  type FullID = String
+  case class Id(value: String) extends AnyVal with StringValue {
+    def full(playerId: PlayerId) = FullId(s"$value{$playerId.value}")
+  }
+  case class FullId(value: String) extends AnyVal with StringValue {
+    def gameId = Id(value take 8)
+    def playerId = PlayerId(value drop 8)
+  }
+  case class PlayerId(value: String) extends AnyVal with StringValue
 }
 
 object Simul {

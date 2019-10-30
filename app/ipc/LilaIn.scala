@@ -1,6 +1,7 @@
 package lila.ws
 package ipc
 
+import chess.Color
 import play.api.libs.json._
 
 sealed trait LilaIn extends LilaMsg {
@@ -25,11 +26,11 @@ object LilaIn {
     def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
-  case class Watch(id: Game.ID) extends Site {
+  case class Watch(id: Game.Id) extends Site {
     def write = s"watch $id"
   }
 
-  case class Unwatch(id: Game.ID) extends Site {
+  case class Unwatch(id: Game.Id) extends Site {
     def write = s"unwatch $id"
   }
 
@@ -112,6 +113,10 @@ object LilaIn {
         case (u, Left(s)) => s"$u:$s:-"
       })
     }"
+  }
+
+  case class RoundPlayerPing(gameId: Game.Id, color: Color) extends Round {
+    def write = s"round/${color.fold("w", "b")} $gameId"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {

@@ -20,7 +20,7 @@ object ClientOut {
 
   case class Ping(lag: Option[Int]) extends ClientOutSite
 
-  case class Watch(ids: Set[Game.ID]) extends ClientOutSite
+  case class Watch(ids: Set[Game.Id]) extends ClientOutSite
 
   case object MoveLat extends ClientOutSite
 
@@ -86,7 +86,7 @@ object ClientOut {
       case o: JsObject => o str "t" flatMap {
         case "p" => Some(Ping(o int "l"))
         case "startWatching" => o str "d" map { d =>
-          Watch(d.split(" ").take(16).toSet)
+          Watch(d.split(" ").take(16).map(Game.Id.apply).toSet)
         } orElse Some(Ignore) // old apps send empty watch lists
         case "moveLat" => Some(MoveLat)
         case "notified" => Some(Notified)

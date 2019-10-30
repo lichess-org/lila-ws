@@ -54,12 +54,24 @@ class SocketController @Inject() (
       }
     }
 
-  def roundWatch(id: Game.ID, color: String, sriStr: String, apiVersion: Int) =
+  def roundWatch(idS: String, color: String, sriStr: String, apiVersion: Int) =
     LichessWebSocket(sriStr) { (sri, req) =>
+      val id = Game.Id(idS)
       auth(req, None) flatMap { user =>
         mongo.gameExists(id) flatMap {
           case false => Future successful Left(NotFound)
-          case true => server.connectToRoundWatch(req, Game(id), user, sri, getSocketVersion(req)) map Right.apply
+          case true => server.connectToRoundWatch(req, id, user, sri, getSocketVersion(req)) map Right.apply
+        }
+      }
+    }
+
+  def roundPlay(fullId: String, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      val id = Game.FullId(fullId)
+      auth(req, None) flatMap { user =>
+        mongo.playerColor(id, user) flatMap {
+          case None => Future successful Left(NotFound)
+          case Some(color) => server.connectToRoundPlay(req, id, color, user, sri, getSocketVersion(req)) map Right.apply
         }
       }
     }

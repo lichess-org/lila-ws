@@ -32,9 +32,9 @@ object ClientIn {
     )
   }
 
-  case class Fen(game: Game.ID, lastUci: Uci, fen: FEN) extends ClientIn {
+  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
     def write = clientMsg("fen", Json.obj(
-      "id" -> game,
+      "id" -> gameId.value,
       "lm" -> lastUci,
       "fen" -> fen
     ))
@@ -67,10 +67,10 @@ object ClientIn {
   }
   val emptyCrowd = Crowd(Json.obj())
 
-  case class LobbyPairing(fullId: Game.FullID) extends ClientIn {
+  case class LobbyPairing(fullId: Game.FullId) extends ClientIn {
     def write = clientMsg("redirect", Json.obj(
-      "id" -> fullId,
-      "url" -> s"/${fullId}"
+      "id" -> fullId.value,
+      "url" -> s"/$fullId"
     ))
   }
 
@@ -158,10 +158,7 @@ object ClientIn {
     "d" -> data
   )
 
-  private def clientMsg(t: String, data: JsonString): String =
-    s"""{"t":"$t","d":${data.value}}"""
+  private def clientMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
 
-  private def clientMsg(t: String) = Json stringify Json.obj(
-    "t" -> t
-  )
+  private def clientMsg(t: String): String = s"""{"t":"$t"}"""
 }
