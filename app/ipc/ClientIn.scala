@@ -21,7 +21,7 @@ object ClientIn {
   }
 
   case object Resync extends ClientIn {
-    val write = Json stringify Json.obj("t" -> "resync")
+    val write = clientMsg("resync")
   }
 
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
@@ -153,12 +153,22 @@ object ClientIn {
       .add("ch", chapterId))
   }
 
+  case class Ack(id: Option[Int]) extends ClientIn {
+    def write = id.fold(clientMsg("ack")) { clientMsg("ack", _) }
+  }
+
+  case class ResyncPlayer(playerId: Game.PlayerId) extends ClientIn {
+    def write = clientMsg("resync")
+  }
+
   private def clientMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
     "t" -> t,
     "d" -> data
   )
 
   private def clientMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
+
+  private def clientMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
 
   private def clientMsg(t: String): String = s"""{"t":"$t"}"""
 }

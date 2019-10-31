@@ -103,7 +103,7 @@ final class Server @Inject() (
   def connectToRoundWatch(req: RequestHeader, gameId: Game.Id, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
-        RoundClientActor.start(RoomActor.State(RoomId(gameId.value), isTroll), None, fromVersion) {
+        RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
         }
       }
@@ -117,7 +117,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
         val player = RoundClientActor.Player(fullId.playerId, color)
-        RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId.value), isTroll), Some(player), fromVersion) {
+        RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
         }
       }

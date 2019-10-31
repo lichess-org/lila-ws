@@ -225,13 +225,15 @@ object Graph {
         }
       }
 
+      val roomBusCollect: PartialFunction[RoomOut, Bus.Msg] = {
+        case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
+          Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
+        case LilaOut.TellRoom(roomId, payload) =>
+          Bus.msg(ClientIn.Payload(payload), _ room roomId)
+      }
+
       def RoomBus: FlowShape[RoomOut, Bus.Msg] = b.add {
-        Flow[RoomOut].collect {
-          case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
-            Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
-          case LilaOut.TellRoom(roomId, payload) =>
-            Bus.msg(ClientIn.Payload(payload), _ room roomId)
-        }
+        Flow[RoomOut].collect(roomBusCollect)
       }
 
       // extract KeepAlive events from the stream,
@@ -331,6 +333,14 @@ object Graph {
 
       val RouBroad = broadcast[RoundOut](3)
 
+      val RoundBus: FlowShape[RoundOut, Bus.Msg] = b.add {
+        val roundCollect: PartialFunction[RoundOut, Bus.Msg] = {
+          case LilaOut.RoundResyncPlayer(fullId) =>
+            Bus.msg(ClientIn.ResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
+        }
+        Flow[RoundOut].collect(roundCollect orElse roomBusCollect)
+      }
+
       val RouKeepAlive = andKeepAlive[LilaIn.Round](lilaInRound)
 
       val RoundInlet: Inlet[LilaIn.Round] = b.add(lilaInRound).in
@@ -386,7 +396,7 @@ object Graph {
       ClientToStudyDoor       ~> StudyDoor                      ~> StudyIn
 
       RoundOutlet ~> RouBroad ~> ToSiteOut ~> SiteOut
-                     RouBroad ~> RoomBus                        ~> ClientBus
+                     RouBroad ~> RoundBus                       ~> ClientBus
                      RouBroad                                                ~> EventStore
       ClientToRound           ~> RouKeepAlive                                ~> RoundInlet
 

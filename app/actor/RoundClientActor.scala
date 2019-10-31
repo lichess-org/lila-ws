@@ -11,8 +11,8 @@ object RoundClientActor {
   import ClientActor._
 
   case class Player(
-    id: Game.PlayerId,
-    color: chess.Color
+      id: Game.PlayerId,
+      color: chess.Color
   )
 
   case class State(
@@ -34,11 +34,6 @@ object RoundClientActor {
 
     import deps._
 
-    // def forward(payload: JsValue): Unit = queue(
-    //   _.study,
-    //   LilaIn.TellStudySri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
-    // )
-
     def gameId = Game.Id(state.room.id.value)
     def fullId = state.player map { p => gameId full p.id }
 
@@ -54,15 +49,29 @@ object RoundClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.round, LilaIn.KeepAlive(state.room.id))
+          // players already send pings to the server, keeping the room alive
+          if (state.player.isEmpty) queue(_.round, LilaIn.KeepAlive(state.room.id))
           Behaviors.same
         }
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
-      // case ClientOut.StudyForward(payload) =>
-      //   forward(payload)
-      //   Behaviors.same
+      case ClientOut.RoundMove(uci, blur, lag, ackId) =>
+        fullId foreach { fid =>
+          clientIn(ClientIn.Ack(ackId))
+          queue(_.round, LilaIn.RoundMove(fid, uci, blur, lag))
+        }
+        Behaviors.same
+
+      case ClientOut.RoundPlayerForward(payload) =>
+        fullId foreach { fid =>
+          queue(_.round, LilaIn.RoundPlayerDo(fid, payload))
+        }
+        Behaviors.same
+
+      case resync: ClientIn.ResyncPlayer =>
+        if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
+        Behaviors.same
 
       // default receive (site)
       case msg: ClientOutSite =>

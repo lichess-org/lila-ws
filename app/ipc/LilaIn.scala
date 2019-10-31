@@ -1,7 +1,8 @@
 package lila.ws
 package ipc
 
-import chess.Color
+import chess.{ Color, Centis, MoveMetrics }
+import chess.format.Uci
 import play.api.libs.json._
 
 sealed trait LilaIn extends LilaMsg {
@@ -23,7 +24,7 @@ object LilaIn {
   sealed trait AnyRoom extends Simul with Tour with Study with Round
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
-    def write = s"tell/sri ${sri.value} ${userId getOrElse "-"} ${Json.stringify(payload)}"
+    def write = s"tell/sri $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
   case class Watch(id: Game.Id) extends Site {
@@ -97,9 +98,9 @@ object LilaIn {
     def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
 
-  case class TellStudySri(studyId: RoomId, tellSri: TellSri) extends Study {
+  case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round {
     import tellSri._
-    def write = s"tell/study/sri $studyId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
+    def write = s"tell/room/sri $roomId $sri ${userId getOrElse "-"} ${Json.stringify(payload)}"
   }
 
   case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Tour {
@@ -119,9 +120,20 @@ object LilaIn {
     def write = s"round/${color.fold("w", "b")} $gameId"
   }
 
+  case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
+    def write = s"round/do $fullId ${Json.stringify(payload)}"
+  }
+
+  case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
+    private def centis(c: Option[Centis]) = c.fold("-")(_.centis.toString)
+    def write = s"round/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+  }
+
   case class ReqResponse(reqId: Int, value: String) extends Study {
     def write = s"req/response $reqId $value"
   }
 
   private def commas(as: Iterable[Any]): String = if (as.isEmpty) "-" else as mkString ","
+
+  private def boolean(b: Boolean): String = if (b) "+" else "-"
 }

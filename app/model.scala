@@ -17,7 +17,7 @@ object User {
 
 object Game {
   case class Id(value: String) extends AnyVal with StringValue {
-    def full(playerId: PlayerId) = FullId(s"$value{$playerId.value}")
+    def full(playerId: PlayerId) = FullId(s"$value$playerId")
   }
   case class FullId(value: String) extends AnyVal with StringValue {
     def gameId = Id(value take 8)
@@ -83,6 +83,10 @@ case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[S
 case class IsTroll(value: Boolean) extends AnyVal
 
 case class RoomId(value: String) extends AnyVal with StringValue
+
+object RoomId {
+  def apply(v: StringValue): RoomId = RoomId(v.value)
+}
 
 case class UserLag(userId: User.ID, lag: Int)
 

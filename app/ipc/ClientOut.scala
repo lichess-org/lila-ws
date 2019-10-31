@@ -1,9 +1,9 @@
 package lila.ws
 package ipc
 
-import chess.format.FEN
-import chess.Pos
+import chess.format.{ FEN, Uci }
 import chess.variant.Variant
+import chess.{ Pos, Centis, MoveMetrics }
 import play.api.libs.json._
 import scala.util.{ Try, Success }
 
@@ -14,6 +14,7 @@ sealed trait ClientOut extends ClientMsg
 sealed trait ClientOutSite extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
 sealed trait ClientOutStudy extends ClientOut
+sealed trait ClientOutRound extends ClientOut
 sealed trait ClientOutChat extends ClientOut
 
 object ClientOut {
@@ -72,6 +73,11 @@ object ClientOut {
   // study
 
   case class StudyForward(payload: JsValue) extends ClientOutStudy
+
+  // round
+
+  case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
+  case class RoundMove(uci: Uci, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
 
   // chat
 
@@ -134,6 +140,23 @@ object ClientOut {
           "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGameBook" | "toggleGlyph" | "explorerGame" |
           "requestAnalysis" | "invite" | "relaySync" =>
           Some(StudyForward(o))
+        // round
+        case "move" => for {
+          d <- o obj "d"
+          move <- d str "u" flatMap Uci.Move.apply orElse parseOldMove(d)
+          blur = d int "b" contains 1
+          ackId = d int "a"
+        } yield RoundMove(move, blur, parseLag(d), ackId)
+        case "drop" => for {
+          d <- o obj "d"
+          role <- d str "role"
+          pos <- d str "pos"
+          drop <- Uci.Drop.fromStrings(role, pos)
+          blur = d int "b" contains 1
+          ackId = d int "a"
+        } yield RoundMove(drop, blur, parseLag(d), ackId)
+        case "moretime" =>
+          Some(RoundPlayerForward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }
         case "timeout" => for {
@@ -151,4 +174,16 @@ object ClientOut {
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
   private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
+
+  private def parseOldMove(d: JsObject) = for {
+    orig <- d str "from"
+    dest <- d str "to"
+    prom = d str "promotion"
+    move <- Uci.Move.fromStrings(orig, dest, prom)
+  } yield move
+
+  private def parseLag(d: JsObject) = MoveMetrics(
+    d.int("l") orElse d.int("lag") map Centis.ofMillis,
+    d.str("s") flatMap { v => Try(Centis(Integer.parseInt(v, 36))).toOption }
+  )
 }
