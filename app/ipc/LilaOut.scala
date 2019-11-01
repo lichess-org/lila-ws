@@ -77,6 +77,7 @@ object LilaOut {
   // round
 
   case class RoundResyncPlayer(fullId: Game.FullId) extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
 
   // impl
 
@@ -174,6 +175,11 @@ object LilaOut {
       }
 
       case "round/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
+
+      case "round/gone" => args.split(" ", 2) match {
+        case Array(fullId, gone) => Some(RoundGone(Game.FullId(fullId), boolean(gone)))
+        case _ => None
+      }
 
       case _ => None
     }

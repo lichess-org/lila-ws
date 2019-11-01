@@ -13,6 +13,19 @@ object RoomCrowd {
     def nbUsers = users.size
     def nbMembers = anons + nbUsers
     def isEmpty = nbMembers < 1
+
+    def connect(user: Option[User]) = copy(
+      anons = anons + (if (user.isDefined) 0 else 1),
+      users = user.fold(users) { u =>
+        users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1)))
+      }
+    )
+    def disconnect(user: Option[User]) = copy(
+      anons = anons - (if (user.isDefined) 0 else 1),
+      users = user.fold(users) { u =>
+        users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0))
+      }
+    )
   }
 
   case class Output(
@@ -33,28 +46,12 @@ object RoomCrowd {
     case Connect(roomId, user) => Some {
       outputOf(
         roomId,
-        rooms.compute(roomId, (_, cur: RoomState) => {
-          val room = Option(cur).getOrElse(RoomState())
-          room.copy(
-            anons = room.anons + (if (user.isDefined) 0 else 1),
-            users = user.fold(room.users) { u =>
-              room.users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1)))
-            }
-          )
-        })
+        rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
       )
     }
 
-    case Disconnect(roomId: RoomId, user: Option[User]) =>
-      val room = rooms.compute(roomId, (_, cur) =>
-        Option(cur).fold(RoomState()) { room =>
-          room.copy(
-            anons = room.anons - (if (user.isDefined) 0 else 1),
-            users = user.fold(room.users) { u =>
-              room.users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0))
-            }
-          )
-        })
+    case Disconnect(roomId, user) =>
+      val room = rooms.compute(roomId, (_, cur) => Option(cur).fold(RoomState())(_ disconnect user))
       if (room.isEmpty) {
         rooms remove roomId
         None
@@ -68,7 +65,7 @@ object RoomCrowd {
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rooms get roomId).exists(_.users contains userId)
 
-  private def outputOf(roomId: RoomId, room: RoomState) = Output(
+  def outputOf(roomId: RoomId, room: RoomState) = Output(
     roomId = roomId,
     members = room.nbMembers,
     users = room.users.keys,

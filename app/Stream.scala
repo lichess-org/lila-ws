@@ -57,9 +57,9 @@ object Stream {
       disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[UserLag],
       fen: SourceQueue[FenSM.Input],
-      count: SourceQueue[CountSM.Input],
       user: SourceQueue[UserSM.Input],
       crowd: SourceQueue[RoomCrowd.Input],
+      roundCrowd: SourceQueue[RoundCrowd.Input],
       studyDoor: SourceQueue[ThroughStudyDoor]
   ) {
     def apply[A](select: Queues => SourceQueue[A], msg: A): Unit =

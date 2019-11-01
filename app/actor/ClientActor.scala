@@ -13,7 +13,7 @@ object ClientActor {
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    queue(_.count, CountSM.Connect)
+    CountSM.connect
     bus.subscribe(ctx.self, _ sri req.sri)
     bus.subscribe(ctx.self, _.all)
     req.flag foreach { f =>
@@ -23,7 +23,7 @@ object ClientActor {
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    queue(_.count, CountSM.Disconnect)
+    CountSM.disconnect
     req.user foreach { u =>
       queue(_.user, UserSM.Disconnect(u, ctx.self))
     }

@@ -26,7 +26,17 @@ object RoundClientActor {
     player: Option[Player],
     fromVersion: Option[SocketVersion]
   )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    RoomActor.onStart(roomState, fromVersion, deps, ctx)
+    import deps._
+    ClientActor.onStart(deps, ctx)
+    req.user foreach { u =>
+      queue(_.user, sm.UserSM.Connect(u, ctx.self))
+    }
+    bus.subscribe(ctx.self, _ room roomState.id)
+    queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
+    RoomEvents.getFrom(roomState.id, fromVersion) match {
+      case None => clientIn(ClientIn.Resync)
+      case Some(events) => events map { RoomActor.versionFor(roomState.isTroll, _) } foreach clientIn
+    }
     apply(State(roomState, player), deps)
   }
 
@@ -38,13 +48,6 @@ object RoundClientActor {
     def fullId = state.player map { p => gameId full p.id }
 
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
-
-      case msg: ClientOut.Ping =>
-        clientIn(ClientIn.Pong)
-        state.player foreach { p =>
-          queue(_.round, LilaIn.RoundPlayerPing(gameId, p.color))
-        }
-        apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
@@ -73,8 +76,12 @@ object RoundClientActor {
         queue(_.round, LilaIn.RoundAnyDo(gameId, state.player.map(_.id), payload))
         Behaviors.same
 
-      case resync: ClientIn.ResyncPlayer =>
+      case resync: ClientIn.RoundResyncPlayer =>
         if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
+        Behaviors.same
+
+      case gone: ClientIn.RoundGone =>
+        if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
         Behaviors.same
 
       case ClientOut.ChatSay(msg) =>
@@ -122,7 +129,7 @@ object RoundClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      RoomActor.onStop(state.room, deps)
+      deps.queue(_.roundCrowd, RoundCrowd.Disconnect(state.room.id, deps.req.user, state.player.map(_.color)))
       Behaviors.same
   }
 }

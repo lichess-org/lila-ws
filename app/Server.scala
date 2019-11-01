@@ -37,6 +37,9 @@ final class Server @Inject() (
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
+  system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+    queues(_.site, LilaIn.Connections(sm.CountSM.get))
+  }
 
   if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
     play.api.Logger(getClass).info("Kamon is enabled")

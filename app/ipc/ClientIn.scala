@@ -157,8 +157,11 @@ object ClientIn {
     def write = id.fold(clientMsg("ack")) { clientMsg("ack", _) }
   }
 
-  case class ResyncPlayer(playerId: Game.PlayerId) extends ClientIn {
+  case class RoundResyncPlayer(playerId: Game.PlayerId) extends ClientIn {
     def write = clientMsg("resync")
+  }
+  case class RoundGone(playerId: Game.PlayerId, v: Boolean) extends ClientIn {
+    def write = clientMsg("gone", v)
   }
 
   private def clientMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
@@ -169,6 +172,8 @@ object ClientIn {
   private def clientMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
 
   private def clientMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
+
+  private def clientMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
 
   private def clientMsg(t: String): String = s"""{"t":"$t"}"""
 }

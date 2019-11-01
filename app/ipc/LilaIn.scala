@@ -1,8 +1,8 @@
 package lila.ws
 package ipc
 
-import chess.{ Color, Centis, MoveMetrics }
 import chess.format.Uci
+import chess.{ Color, Centis, MoveMetrics }
 import play.api.libs.json._
 
 sealed trait LilaIn extends LilaMsg {
@@ -116,10 +116,6 @@ object LilaIn {
     }"
   }
 
-  case class RoundPlayerPing(gameId: Game.Id, color: Color) extends Round {
-    def write = s"round/${color.fold("w", "b")} $gameId"
-  }
-
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
     def write = s"round/do $fullId ${Json.stringify(payload)}"
   }
@@ -149,6 +145,12 @@ object LilaIn {
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
     def write = s"chat/say/w $roomId $userId $msg"
+  }
+
+  case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {
+    private def one(r: RoundCrowd.Output) =
+      s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
+    def write = s"round/ons ${commas(many map one)}"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {
