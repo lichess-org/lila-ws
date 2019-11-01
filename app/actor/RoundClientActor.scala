@@ -69,8 +69,39 @@ object RoundClientActor {
         }
         Behaviors.same
 
+      case ClientOut.RoundAnyForward(payload) =>
+        queue(_.round, LilaIn.RoundAnyDo(gameId, state.player.map(_.id), payload))
+        Behaviors.same
+
       case resync: ClientIn.ResyncPlayer =>
         if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
+        Behaviors.same
+
+      case ClientOut.ChatSay(msg) =>
+        state.player.fold[Option[LilaIn.Round]](
+          req.user map { u => LilaIn.WatcherChatSay(state.room.id, u.id, msg) }
+        ) { p =>
+            Some(LilaIn.PlayerChatSay(state.room.id, req.user.map(_.id).toLeft(p.color), msg))
+          } foreach { queue(_.round, _) }
+        Behaviors.same
+
+      case ClientOut.RoundBerserk(ackId) =>
+        if (state.player.isDefined) req.user foreach { u =>
+          clientIn(ClientIn.Ack(ackId))
+          queue(_.round, LilaIn.RoundBerserk(gameId, u.id))
+        }
+        Behaviors.same
+
+      case ClientOut.RoundHold(mean, sd) =>
+        fullId foreach { fid =>
+          queue(_.round, LilaIn.RoundHold(fid, req.ip, mean, sd))
+        }
+        Behaviors.same
+
+      case ClientOut.RoundSelfReport(name) =>
+        fullId foreach { fid =>
+          queue(_.round, LilaIn.RoundSelfReport(fid, req.ip, req.user.map(_.id), name))
+        }
         Behaviors.same
 
       // default receive (site)

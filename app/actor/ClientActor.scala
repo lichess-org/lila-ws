@@ -123,8 +123,17 @@ object ClientActor {
       ignoreLog: Boolean = false
   )
 
+  def Req(req: play.api.mvc.RequestHeader, sri: Sri, user: Option[User], flag: Option[Flag] = None): Req = Req(
+    name = lila.ws.util.Util.reqName(req),
+    ip = IpAddress(req.remoteAddress),
+    sri = sri,
+    user = user,
+    flag = flag
+  )
+
   case class Req(
       name: String,
+      ip: IpAddress,
       sri: Sri,
       flag: Option[Flag],
       user: Option[User]

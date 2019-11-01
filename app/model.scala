@@ -70,6 +70,8 @@ object Flag {
   val api = Flag("api")
 }
 
+case class IpAddress(value: String) extends AnyVal with StringValue
+
 case class Path(value: String) extends AnyVal with StringValue
 
 case class ChapterId(value: String) extends AnyVal with StringValue

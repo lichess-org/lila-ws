@@ -62,7 +62,7 @@ final class Server @Inject() (
       mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
           }
         }
       }
@@ -77,7 +77,7 @@ final class Server @Inject() (
       mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
           }
         }
       }
@@ -91,7 +91,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
         StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
       }
     } map asWebsocket(new RateLimit(
@@ -104,7 +104,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
         RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
       }
     } map asWebsocket(new RateLimit(
@@ -118,7 +118,7 @@ final class Server @Inject() (
       actorFlow(req) { clientIn =>
         val player = RoundClientActor.Player(fullId.playerId, color)
         RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, None, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
       }
     } map asWebsocket(new RateLimit(
@@ -133,7 +133,7 @@ final class Server @Inject() (
     auth(req, flag) flatMap { user =>
       actorFlow(req) { clientIn =>
         actor {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(reqName(req), sri, flag, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
         }
       }
     }
