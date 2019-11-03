@@ -27,7 +27,7 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     val (lobbyInit, lobbySink) = lila.pubsub("lobby-in", "lobby-out") { case out: LobbyOut => out }
     val (simulInit, simulSink) = lila.pubsub("simul-in", "simul-out") { case out: SimulOut => out }
     val (studyInit, studySink) = lila.pubsub("study-in", "study-out") { case out: StudyOut => out }
-    val (roundInit, roundSink) = lila.pubsub("round-in", "round-out") { case out: RoundOut => out }
+    val (roundInit, roundSink) = lila.pubsub("r-in", "r-out") { case out: RoundOut => out }
 
     val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, queues) = Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, mongo, crowdJson).run()
 

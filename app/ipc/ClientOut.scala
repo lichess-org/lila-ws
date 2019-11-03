@@ -3,7 +3,7 @@ package ipc
 
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
-import chess.{ Pos, Centis, MoveMetrics }
+import chess.{ Pos, Centis, MoveMetrics, Color }
 import play.api.libs.json._
 import scala.util.{ Try, Success }
 
@@ -77,11 +77,12 @@ object ClientOut {
   // round
 
   case class RoundPlayerForward(payload: JsValue) extends ClientOutRound
-  case class RoundAnyForward(payload: JsValue) extends ClientOutRound
   case class RoundMove(uci: Uci, blur: Boolean, lag: MoveMetrics, ackId: Option[Int]) extends ClientOutRound
   case class RoundHold(mean: Int, sd: Int) extends ClientOutRound
   case class RoundBerserk(ackId: Option[Int]) extends ClientOutRound
   case class RoundSelfReport(name: String) extends ClientOutRound
+  case class RoundFlag(color: Color) extends ClientOutRound
+  case object RoundBye extends ClientOutRound
 
   // chat
 
@@ -166,9 +167,10 @@ object ClientOut {
         } yield RoundHold(mean, sd)
         case "berserk" => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
         case "rep" => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
-        case "flag" => Some(RoundAnyForward(o))
+        case "flag" => o str "d" flatMap Color.apply map RoundFlag.apply
+        case "bye" => Some(RoundBye)
         case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
-          "resign-force" | "draw-force" | "abort" | "moretime" | "outoftime" | "bye2" =>
+          "resign-force" | "draw-force" | "abort" | "moretime" | "outoftime" =>
           Some(RoundPlayerForward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }

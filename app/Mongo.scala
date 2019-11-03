@@ -53,13 +53,12 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
           doc <- docOpt
           playerIds <- doc.getAs[String]("is")
           users <- doc.getAs[List[String]]("us")
-          playerId = fullId.playerId
           color <- {
-            if (playerId.value == playerIds.take(4)) Some(chess.White)
-            else if (playerId.value == playerIds.drop(4)) Some(chess.Black)
+            if (fullId.playerId.value == playerIds.take(4)) Some(chess.White)
+            else if (fullId.playerId.value == playerIds.drop(4)) Some(chess.Black)
             else None
           }
-          expectedUserId = color.fold(users.headOption.filter(_.nonEmpty), users.lift(1).filter(_.nonEmpty))
+          expectedUserId = color.fold(users.headOption, users.lift(1)).filter(_.nonEmpty)
           if user.map(_.id) == expectedUserId
         } yield color
       }

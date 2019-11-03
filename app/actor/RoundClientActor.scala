@@ -72,8 +72,14 @@ object RoundClientActor {
         }
         Behaviors.same
 
-      case ClientOut.RoundAnyForward(payload) =>
-        queue(_.round, LilaIn.RoundAnyDo(gameId, state.player.map(_.id), payload))
+      case ClientOut.RoundFlag(color) =>
+        queue(_.round, LilaIn.RoundFlag(gameId, color, state.player.map(_.id)))
+        Behaviors.same
+
+      case ClientOut.RoundBye =>
+        fullId foreach { fid =>
+          queue(_.round, LilaIn.RoundBye(fid))
+        }
         Behaviors.same
 
       case resync: ClientIn.RoundResyncPlayer =>

@@ -117,30 +117,38 @@ object LilaIn {
   }
 
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
-    def write = s"round/do $fullId ${Json.stringify(payload)}"
+    def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
-  case class RoundAnyDo(gameId: Game.Id, playerId: Option[Game.PlayerId], payload: JsValue) extends Round {
-    def write = s"round/do/any $gameId ${optional(playerId.map(_.value))} ${Json.stringify(payload)}"
-  }
+  // case class RoundAnyDo(gameId: Game.Id, playerId: Option[Game.PlayerId], payload: JsValue) extends Round {
+  //   def write = s"r/do/any $gameId ${optional(playerId.map(_.value))} ${Json.stringify(payload)}"
+  // }
 
   case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
-    def write = s"round/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+    def write = s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
   }
 
   case class RoundBerserk(gameId: Game.Id, userId: User.ID) extends Round {
-    def write = s"round/berserk $gameId $userId"
+    def write = s"r/berserk $gameId $userId"
   }
 
   case class RoundHold(fullId: Game.FullId, ip: IpAddress, mean: Int, sd: Int) extends Round {
-    def write = s"round/hold $fullId $ip $mean $sd"
+    def write = s"r/hold $fullId $ip $mean $sd"
   }
   case class RoundSelfReport(fullId: Game.FullId, ip: IpAddress, userId: Option[User.ID], name: String) extends Round {
-    def write = s"round/report $fullId $ip ${optional(userId)} $name"
+    def write = s"r/report $fullId $ip ${optional(userId)} $name"
+  }
+
+  case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId]) extends Round {
+    def write = s"r/flag $gameId ${writeColor(color)} ${optional(playerId.map(_.value))}"
+  }
+
+  case class RoundBye(fullId: Game.FullId) extends Round {
+    def write = s"r/bye $fullId"
   }
 
   case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String) extends Round {
-    def author = userIdOrColor.fold(identity, _.fold("w", "b"))
+    def author = userIdOrColor.fold(identity, writeColor)
     def write = s"chat/say $roomId $author $msg"
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
@@ -150,7 +158,7 @@ object LilaIn {
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {
     private def one(r: RoundCrowd.Output) =
       s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
-    def write = s"round/ons ${commas(many map one)}"
+    def write = s"r/ons ${commas(many map one)}"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {
@@ -160,4 +168,5 @@ object LilaIn {
   private def commas(as: Iterable[Any]): String = if (as.isEmpty) "-" else as mkString ","
   private def boolean(b: Boolean): String = if (b) "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
+  private def writeColor(c: Color): String = c.fold("w", "b")
 }

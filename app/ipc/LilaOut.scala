@@ -174,9 +174,9 @@ object LilaOut {
         case _ => None
       }
 
-      case "round/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
+      case "r/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
 
-      case "round/gone" => args.split(" ", 2) match {
+      case "r/gone" => args.split(" ", 2) match {
         case Array(fullId, gone) => Some(RoundGone(Game.FullId(fullId), boolean(gone)))
         case _ => None
       }
