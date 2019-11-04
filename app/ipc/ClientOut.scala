@@ -168,9 +168,9 @@ object ClientOut {
         case "berserk" => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
         case "rep" => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
         case "flag" => o str "d" flatMap Color.apply map RoundFlag.apply
-        case "bye" => Some(RoundBye)
+        case "bye2" => Some(RoundBye)
         case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
-          "resign-force" | "draw-force" | "abort" | "moretime" | "outoftime" =>
+          "resign-force" | "draw-force" | "abort" | "outoftime" =>
           Some(RoundPlayerForward(o))
         // chat
         case "talk" => o str "d" map { ChatSay.apply }

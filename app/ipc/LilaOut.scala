@@ -7,7 +7,7 @@ import scala.util.Try
 
 import lila.ws.util.Util._
 
-sealed trait LilaOut extends LilaMsg
+sealed trait LilaOut
 
 sealed trait SiteOut extends LilaOut
 
@@ -76,8 +76,10 @@ object LilaOut {
 
   // round
 
+  case class RoundVersion(gameId: Game.Id, version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId) extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
+  case class UserTvNewGame(gameId: Game.Id, userId: User.ID) extends RoundOut
 
   // impl
 
@@ -174,10 +176,35 @@ object LilaOut {
         case _ => None
       }
 
+      case "r/ver" => args.split(" ", 5) match {
+        case Array(roomId, version, f, tpe, data) => parseIntOption(version) map { sv =>
+          val flags = RoundEventFlags(
+            watcher = f contains 's',
+            owner = f contains 'p',
+            player =
+              if (f contains 'w') Some(chess.White)
+              else if (f contains 'b') Some(chess.Black)
+              else None,
+            moveBy =
+              if (f contains 'B') Some(chess.Black)
+              else if (f contains 'W') Some(chess.White)
+              else None,
+            troll = f contains 't'
+          )
+          RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
+        }
+        case _ => None
+      }
+
       case "r/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
 
       case "r/gone" => args.split(" ", 2) match {
         case Array(fullId, gone) => Some(RoundGone(Game.FullId(fullId), boolean(gone)))
+        case _ => None
+      }
+
+      case "r/tv" => args.split(" ", 2) match {
+        case Array(gameId, userId) => Some(UserTvNewGame(Game.Id(gameId), userId))
         case _ => None
       }
 

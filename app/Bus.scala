@@ -22,6 +22,8 @@ class Bus extends Extension with EventBus with LookupClassification {
 
   def subscribe(actor: ActorRef[ClientMsg], channel: Bus.channel.type => Classifier): Unit =
     subscribe(actor, channel(Bus.channel))
+
+  def apply(payload: ClientMsg, channel: Bus.channel.type => Classifier) = publish(Bus.msg(payload, channel))
 }
 
 object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvider {
@@ -29,6 +31,8 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
   type Classifier = String
 
   case class Msg(payload: ClientMsg, channel: String)
+
+  val nullMsg = Msg(ClientNull, "")
 
   object channel {
     def sri(sri: Sri) = s"sri/${sri.value}"

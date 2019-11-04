@@ -27,4 +27,10 @@ object Util {
 
   def parseIntOption(str: String) = Try(parseInt(str)).toOption
   def parseDoubleOption(str: String) = Try(parseDouble(str)).toOption
+
+  def reqString(req: RequestHeader, name: String): Option[String] =
+    req.queryString get name flatMap (_.headOption)
+
+  def reqInt(req: RequestHeader, name: String): Option[Int] =
+    reqString(req, name) flatMap parseIntOption
 }

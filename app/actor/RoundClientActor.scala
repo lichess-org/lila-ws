@@ -18,27 +18,38 @@ object RoundClientActor {
   case class State(
       room: RoomActor.State,
       player: Option[Player],
+      userTv: Option[UserTv],
       site: ClientActor.State = ClientActor.State()
   )
 
   def start(
     roomState: RoomActor.State,
     player: Option[Player],
+    userTv: Option[UserTv],
     fromVersion: Option[SocketVersion]
   )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
+    val state = State(roomState, player, userTv)
     ClientActor.onStart(deps, ctx)
     req.user foreach { u =>
       queue(_.user, sm.UserSM.Connect(u, ctx.self))
     }
     bus.subscribe(ctx.self, _ room roomState.id)
     queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
-    RoomEvents.getFrom(roomState.id, fromVersion) match {
+    RoundEvents.getFrom(Game.Id(roomState.id.value), fromVersion) match {
       case None => clientIn(ClientIn.Resync)
-      case Some(events) => events map { RoomActor.versionFor(roomState.isTroll, _) } foreach clientIn
+      case Some(events) => events map { versionFor(state, _) } foreach clientIn
     }
-    apply(State(roomState, player), deps)
+    apply(state, deps)
   }
+
+  def versionFor(state: State, msg: ClientIn.RoundVersioned): ClientIn.Payload =
+    if (msg.flags.troll && !state.room.isTroll.value) msg.skip
+    else if (msg.flags.owner && state.player.isEmpty) msg.skip
+    else if (msg.flags.watcher && state.player.isDefined) msg.skip
+    else if (msg.flags.player.exists(c => state.player.fold(true)(_.color != c))) msg.skip
+    else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c))) msg.noDests
+    else msg.full
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
 
@@ -47,17 +58,44 @@ object RoundClientActor {
     def gameId = Game.Id(state.room.id.value)
     def fullId = state.player map { p => gameId full p.id }
 
-    def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
+    msg match {
 
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
           // players already send pings to the server, keeping the room alive
-          if (state.player.isEmpty) queue(_.round, LilaIn.KeepAlive(state.room.id))
+          // if (state.player.isEmpty) queue(_.round, LilaIn.KeepAlive(state.room.id))
           Behaviors.same
         }
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
+
+      case versioned: ClientIn.RoundVersioned =>
+        clientIn(versionFor(state, versioned))
+        Behaviors.same
+
+      case ClientIn.OnlyFor(endpoint, payload) =>
+        if (endpoint == ClientIn.OnlyFor.Room(state.room.id)) clientIn(payload)
+        Behaviors.same
+
+      case crowd: ClientIn.Crowd =>
+        if (crowd != state.room.lastCrowd) Behaviors.same
+        else {
+          deps.clientIn(crowd)
+          apply(state.copy(room = state.room.copy(lastCrowd = crowd)), deps)
+        }
+
+      case resync: ClientIn.RoundResyncPlayer =>
+        if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
+        Behaviors.same
+
+      case gone: ClientIn.RoundGone =>
+        if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
+        Behaviors.same
+
+      case in: ClientIn =>
+        clientIn(in)
+        Behaviors.same
 
       case ClientOut.RoundMove(uci, blur, lag, ackId) =>
         fullId foreach { fid =>
@@ -82,20 +120,18 @@ object RoundClientActor {
         }
         Behaviors.same
 
-      case resync: ClientIn.RoundResyncPlayer =>
-        if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
-        Behaviors.same
-
-      case gone: ClientIn.RoundGone =>
-        if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
-        Behaviors.same
-
       case ClientOut.ChatSay(msg) =>
         state.player.fold[Option[LilaIn.Round]](
           req.user map { u => LilaIn.WatcherChatSay(state.room.id, u.id, msg) }
         ) { p =>
             Some(LilaIn.PlayerChatSay(state.room.id, req.user.map(_.id).toLeft(p.color), msg))
           } foreach { queue(_.round, _) }
+        Behaviors.same
+
+      case ClientOut.ChatTimeout(suspect, reason) =>
+        deps.req.user foreach { u =>
+          queue(_.round, LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason))
+        }
         Behaviors.same
 
       case ClientOut.RoundBerserk(ackId) =>
@@ -117,19 +153,15 @@ object RoundClientActor {
         }
         Behaviors.same
 
+      case UserTvNewGame(userId) =>
+        if (state.userTv.exists(_.value == userId)) clientIn(ClientIn.Resync)
+        Behaviors.same
+
       // default receive (site)
       case msg: ClientOutSite =>
         val siteState = globalReceive(state.site, deps, ctx, msg)
         if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
-    }
-
-    RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
-      case (newState, emit) =>
-        emit foreach queue.round.offer
-        newState.fold(Behaviors.same[ClientMsg]) { roomState =>
-          apply(state.copy(room = roomState), deps)
-        }
     }
 
   }.receiveSignal {

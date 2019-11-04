@@ -11,5 +11,6 @@ package object ipc {
     case class Broom(oldSeconds: Int) extends ClientCtrl
   }
 
-  trait LilaMsg
+  object ClientNull extends ClientMsg
+  case class UserTvNewGame(userId: User.ID) extends ClientMsg
 }

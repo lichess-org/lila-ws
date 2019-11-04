@@ -103,10 +103,13 @@ final class Server @Inject() (
       name = s"study ${reqName(req)}"
     ))
 
-  def connectToRoundWatch(req: RequestHeader, gameId: Game.Id, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+  def connectToRoundWatch(req: RequestHeader, gameId: Game.Id, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion], userTv: Option[UserTv]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
-        RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, fromVersion) {
+        userTv foreach { tv =>
+          queues(_.round, LilaIn.UserTv(gameId, tv.value))
+        }
+        RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, userTv, fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
       }
@@ -120,7 +123,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn =>
         val player = RoundClientActor.Player(fullId.playerId, color)
-        RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), fromVersion) {
+        RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), None, fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
       }

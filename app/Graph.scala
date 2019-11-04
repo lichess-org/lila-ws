@@ -85,7 +85,7 @@ object Graph {
         }
       }
 
-      val ClientBus = merge[Bus.Msg](8)
+      val ClientBus = merge[Bus.Msg](7)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
         val bus = Bus(system)
@@ -322,19 +322,41 @@ object Graph {
 
       // round
 
-      val RouBroad = broadcast[RoundOut](3)
+      val RouBroad = broadcast[RoundOut](2)
 
-      val RoundBus: FlowShape[RoundOut, Bus.Msg] = b.add {
-        val roundCollect: PartialFunction[RoundOut, Bus.Msg] = {
+      val RoundBus: SinkShape[RoundOut] = b.add {
+        val bus = Bus(system)
+        implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
+        implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
+        Sink.foreach[RoundOut] {
           case LilaOut.RoundResyncPlayer(fullId) =>
-            Bus.msg(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
+            bus(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
           case LilaOut.RoundGone(fullId, gone) =>
-            Bus.msg(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
+            bus(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
+          case LilaOut.RoundVersion(gameId, version, flags, tpe, data) =>
+            val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
+            RoundEvents.add(gameId, versioned)
+            bus(versioned, _ room gameId)
+          case LilaOut.UserTvNewGame(gameId, userId) =>
+            bus(UserTvNewGame(userId), _ room gameId)
+          case LilaOut.RoomStop(roomId) =>
+            RoundEvents.stop(roomId)
+            bus(ClientCtrl.Disconnect, _ room roomId)
+          case LilaOut.RoomStart(roomId) =>
+            val hadEvents = RoundEvents hasEvents roomId
+            if (hadEvents) {
+              println(RoundEvents.getFrom(roomId, None))
+              println(s"start round $roomId that had events! kicking members")
+            }
+            RoundEvents.reset(roomId)
+            if (hadEvents) bus(ClientCtrl.Disconnect, _ room roomId)
+          case LilaOut.TellRoom(roomId, payload) =>
+            bus(ClientIn.Payload(payload), _ room roomId)
+          case _ =>
         }
-        Flow[RoundOut].collect(roundCollect orElse roomBusCollect)
       }
 
-      val RouKeepAlive = andKeepAlive[LilaIn.Round](lilaInRound)
+      // val RouKeepAlive = andKeepAlive[LilaIn.Round](lilaInRound)
 
       val RouCrowd: FlowShape[RoundCrowd.Input, List[RoundCrowd.Output]] = b.add {
         Flow[RoundCrowd.Input]
@@ -412,9 +434,8 @@ object Graph {
       ClientToStudyDoor       ~> StudyDoor                      ~> StudyIn
 
       RoundOutlet ~> RouBroad ~> ToSiteOut ~> SiteOut
-                     RouBroad ~> RoundBus                       ~> ClientBus
-                     RouBroad                                                   ~> EventStore
-      ClientToRound           ~> RouKeepAlive                   ~> RoundIn
+                     RouBroad ~> RoundBus
+      ClientToRound                                             ~> RoundIn
       ClientToRoundCrowd                            ~> RouCrowd ~> RouCrowdBroad
                      RouCrowdBroad                              ~> RouCrowdJson ~> ClientBus
                      RouCrowdBroad                  ~> RouOns   ~> RoundIn      ~> RoundInlet

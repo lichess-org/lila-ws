@@ -25,7 +25,9 @@ object RoundCrowd {
   case class Output(
       room: RoomCrowd.Output,
       players: Color.Map[Int]
-  )
+  ) {
+    def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
+  }
 
   sealed trait Input
   case class Connect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
@@ -44,11 +46,8 @@ object RoundCrowd {
 
     case Disconnect(roomId, user, player) =>
       val room = rooms.compute(roomId, (_, cur) => Option(cur).fold(RoundState())(_.disconnect(user, player)))
-      if (room.isEmpty) {
-        rooms remove roomId
-        None
-      }
-      else Some(outputOf(roomId, room))
+      if (room.isEmpty) rooms remove roomId
+      Some(outputOf(roomId, room))
   }
 
   def getUsers(roomId: RoomId): Set[User.ID] =

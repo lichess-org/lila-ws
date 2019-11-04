@@ -9,7 +9,7 @@ import play.api.mvc._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import lila.ws._
-import lila.ws.util.Util.{ reqName, flagOf, parseIntOption }
+import lila.ws.util.Util.{ reqName, flagOf, parseIntOption, reqString, reqInt }
 
 @Singleton
 class SocketController @Inject() (
@@ -60,7 +60,9 @@ class SocketController @Inject() (
       auth(req, None) flatMap { user =>
         mongo.gameExists(id) flatMap {
           case false => Future successful Left(NotFound)
-          case true => server.connectToRoundWatch(req, id, user, sri, getSocketVersion(req)) map Right.apply
+          case true =>
+            val userTv = reqString(req, "userTv") map UserTv.apply
+            server.connectToRoundWatch(req, id, user, sri, getSocketVersion(req), userTv) map Right.apply
         }
       }
     }
@@ -118,7 +120,7 @@ class SocketController @Inject() (
     }
 
   protected def getSocketVersion(req: RequestHeader): Option[SocketVersion] =
-    req.queryString get "v" flatMap (_.headOption) flatMap parseIntOption map SocketVersion.apply
+    reqInt(req, "v") map SocketVersion.apply
 
   private val logger = Logger("Controller")
 }

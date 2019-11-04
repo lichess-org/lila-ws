@@ -38,4 +38,6 @@ object RoomEvents {
 
   def reset(roomId: RoomId) = cache.put(roomId.value, Nil)
   def stop(roomId: RoomId) = cache.invalidate(roomId.value)
+
+  def hasEvents(roomId: RoomId) = cache.getIfPresent(roomId.value).exists(_.nonEmpty)
 }

@@ -21,7 +21,7 @@ object ClientIn {
   }
 
   case object Resync extends ClientIn {
-    val write = clientMsg("resync")
+    val write = cliMsg("resync")
   }
 
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
@@ -33,7 +33,7 @@ object ClientIn {
   }
 
   case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
-    def write = clientMsg("fen", Json.obj(
+    def write = cliMsg("fen", Json.obj(
       "id" -> gameId.value,
       "lm" -> lastUci,
       "fen" -> fen
@@ -41,15 +41,15 @@ object ClientIn {
   }
 
   case class Mlat(millis: Double) extends ClientIn {
-    lazy val write = clientMsg("mlat", millis)
+    lazy val write = cliMsg("mlat", millis)
   }
 
   case class NbMembers(value: Int) extends ClientIn {
-    lazy val write = clientMsg("member/nb", value)
+    lazy val write = cliMsg("member/nb", value)
   }
 
   case class NbRounds(value: Int) extends ClientIn {
-    lazy val write = clientMsg("round/nb", value)
+    lazy val write = cliMsg("round/nb", value)
   }
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends ClientMsg {
@@ -63,12 +63,12 @@ object ClientIn {
   def payload(js: JsValue) = Payload(JsonString(Json stringify js))
 
   case class Crowd(doc: JsObject) extends ClientIn {
-    lazy val write = clientMsg("crowd", doc)
+    lazy val write = cliMsg("crowd", doc)
   }
   val emptyCrowd = Crowd(Json.obj())
 
   case class LobbyPairing(fullId: Game.FullId) extends ClientIn {
-    def write = clientMsg("redirect", Json.obj(
+    def write = cliMsg("redirect", Json.obj(
       "id" -> fullId.value,
       "url" -> s"/$fullId"
     ))
@@ -90,21 +90,21 @@ object ClientIn {
   def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
 
   case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn {
-    val write = clientMsg("tournamentReminder", Json.obj(
+    val write = cliMsg("tournamentReminder", Json.obj(
       "id" -> tourId,
       "name" -> tourName
     ))
   }
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
-    def write = clientMsg("opening", Json.obj(
+    def write = cliMsg("opening", Json.obj(
       "path" -> path,
       "opening" -> opening
     ))
   }
 
   case object StepFailure extends ClientIn {
-    def write = clientMsg("stepFailure")
+    def write = cliMsg("stepFailure")
   }
 
   case class Node(
@@ -120,7 +120,7 @@ object ClientIn {
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = clientMsg("node", Json.obj(
+    def write = cliMsg("node", Json.obj(
       "path" -> path,
       "node" -> Json.obj(
         "ply" -> ply,
@@ -146,7 +146,7 @@ object ClientIn {
       opening: Option[chess.opening.FullOpening],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = clientMsg("dests", Json.obj(
+    def write = cliMsg("dests", Json.obj(
       "dests" -> dests,
       "path" -> path
     ).add("opening" -> opening)
@@ -154,26 +154,31 @@ object ClientIn {
   }
 
   case class Ack(id: Option[Int]) extends ClientIn {
-    def write = id.fold(clientMsg("ack")) { clientMsg("ack", _) }
+    def write = id.fold(cliMsg("ack")) { cliMsg("ack", _) }
   }
 
   case class RoundResyncPlayer(playerId: Game.PlayerId) extends ClientIn {
-    def write = clientMsg("resync")
+    def write = cliMsg("resync")
   }
   case class RoundGone(playerId: Game.PlayerId, v: Boolean) extends ClientIn {
-    def write = clientMsg("gone", v)
+    def write = cliMsg("gone", v)
+  }
+  case class RoundVersioned(version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends ClientMsg {
+    lazy val full = Payload(JsonString(cliMsg(tpe, data, version)))
+    lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
+    lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
 
-  private def clientMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
+  private val destsRemover = ""","dests":\{[^\}]+}""".r
+
+  private def cliMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
     "t" -> t,
     "d" -> data
   )
-
-  private def clientMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
-
-  private def clientMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
-
-  private def clientMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
-
-  private def clientMsg(t: String): String = s"""{"t":"$t"}"""
+  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
+  private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
+    s"""{"t":"$t","v":$version,"d":${data.value}}"""
+  private def cliMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
+  private def cliMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
+  private def cliMsg(t: String): String = s"""{"t":"$t"}"""
 }

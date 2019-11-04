@@ -95,3 +95,13 @@ case class UserLag(userId: User.ID, lag: Int)
 case class ReqId(value: Int) extends AnyVal with IntValue
 
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
+
+case class RoundEventFlags(
+    watcher: Boolean,
+    owner: Boolean,
+    player: Option[chess.Color],
+    moveBy: Option[chess.Color],
+    troll: Boolean
+)
+
+case class UserTv(value: String) extends AnyVal with StringValue

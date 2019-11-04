@@ -5,7 +5,7 @@ import chess.format.Uci
 import chess.{ Color, Centis, MoveMetrics }
 import play.api.libs.json._
 
-sealed trait LilaIn extends LilaMsg {
+sealed trait LilaIn {
   def write: String
 }
 
@@ -157,8 +157,13 @@ object LilaIn {
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round {
     private def one(r: RoundCrowd.Output) =
-      s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
+      if (r.isEmpty) r.room.roomId.value
+      else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
     def write = s"r/ons ${commas(many map one)}"
+  }
+
+  case class UserTv(gameId: Game.Id, userId: User.ID) extends Round {
+    def write = s"r/tv $gameId $userId"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {
