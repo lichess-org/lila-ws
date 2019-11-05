@@ -22,7 +22,7 @@ object LobbyClientActor {
     req.user foreach { u =>
       queue(_.user, UserSM.ConnectSilently(u, ctx.self))
     }
-    queue(_.connect, LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
+    queue(_.lobby, LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
     bus.subscribe(ctx.self, _.lobby)
     apply(State(), deps)
   }
@@ -72,7 +72,7 @@ object LobbyClientActor {
     case (ctx, PostStop) =>
       import deps._
       onStop(state.site, deps, ctx)
-      queue(_.disconnect, LilaIn.DisconnectSri(req.sri))
+      queue(_.lobby, LilaIn.DisconnectSri(req.sri))
       Behaviors.same
   }
 }

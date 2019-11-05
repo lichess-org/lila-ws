@@ -19,6 +19,10 @@ object RoundCrowd {
       room = if (player.isDefined) room else room disconnect user,
       players = player.fold(players)(c => players.update(c, _ - 1))
     )
+    def botOnline(color: Color, online: Boolean): Option[RoundState] =
+      if (online == players(color) > 0) None
+      else if (online) Some(connect(None, Some(color)))
+      else Some(disconnect(None, Some(color)))
     def isEmpty = room.isEmpty && players.forall(1 > _)
   }
 
@@ -32,6 +36,7 @@ object RoundCrowd {
   sealed trait Input
   case class Connect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
   case class Disconnect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
+  case class BotOnline(roomId: RoomId, color: Color, online: Boolean) extends Input
 
   private val rooms = new ConcurrentHashMap[RoomId, RoundState]
 
@@ -44,10 +49,17 @@ object RoundCrowd {
       )
     }
 
-    case Disconnect(roomId, user, player) =>
+    case Disconnect(roomId, user, player) => Some {
       val room = rooms.compute(roomId, (_, cur) => Option(cur).fold(RoundState())(_.disconnect(user, player)))
       if (room.isEmpty) rooms remove roomId
-      Some(outputOf(roomId, room))
+      outputOf(roomId, room)
+    }
+
+    case BotOnline(roomId, color, online) =>
+      Option(rooms get roomId).getOrElse(RoundState()).botOnline(color, online) map { room =>
+        rooms.put(roomId, room)
+        outputOf(roomId, room)
+      }
   }
 
   def getUsers(roomId: RoomId): Set[User.ID] =
@@ -60,5 +72,15 @@ object RoundCrowd {
     room = RoomCrowd.outputOf(roomId, round.room),
     players = round.players
   )
-}
 
+  def botListener(push: Input => Unit) = {
+    import akka.actor.typed.scaladsl.Behaviors
+    Behaviors.receive[ClientMsg] {
+      case (_, RoundBotOnline(gameId, color, online)) =>
+        push(RoundCrowd.BotOnline(RoomId(gameId), color, online))
+        Behaviors.same
+      case _ =>
+        Behaviors.same
+    }
+  }
+}

@@ -1,6 +1,7 @@
 package lila.ws
 package ipc
 
+import chess.Color
 import chess.format.{ FEN, Uci }
 import play.api.libs.json._
 import scala.util.Try
@@ -79,6 +80,7 @@ object LilaOut {
   case class RoundVersion(gameId: Game.Id, version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId) extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
   case class UserTvNewGame(gameId: Game.Id, userId: User.ID) extends RoundOut
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
@@ -210,10 +212,15 @@ object LilaOut {
         case _ => None
       }
 
+      case "r/bot/online" => args.split(" ", 3) match {
+        case Array(gameId, color, v) => Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
+        case _ => None
+      }
+
       // tv
 
       case "tv/select" => args.split(" ", 3) match {
-        case Array(gameId, speedS, data) => 
+        case Array(gameId, speedS, data) =>
           parseIntOption(speedS) flatMap chess.Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
@@ -226,4 +233,5 @@ object LilaOut {
 
   def commas(str: String): Array[String] = if (str == "-") Array.empty else str split ','
   def boolean(str: String): Boolean = str == "+"
+  def readColor(str: String): Color = Color(str == "w")
 }

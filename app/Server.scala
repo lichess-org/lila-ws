@@ -40,6 +40,9 @@ final class Server @Inject() (
   system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
     queues(_.site, LilaIn.Connections(sm.CountSM.get))
   }
+  Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
+    bus.subscribe(_, _.roundBot)
+  }
 
   if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
     play.api.Logger(getClass).info("Kamon is enabled")

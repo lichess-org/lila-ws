@@ -32,12 +32,13 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, queues) =
       Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, mongo, crowdJson).run()
 
-    siteInit(siteOut, List(LilaIn.DisconnectAll))
-    lobbyInit(lobbyOut, List(LilaIn.DisconnectAll))
-    simulInit(simulOut, List(LilaIn.DisconnectAll))
-    tourInit(tourOut, List(LilaIn.DisconnectAll))
-    studyInit(studyOut, List(LilaIn.DisconnectAll))
-    roundInit(roundOut, List(LilaIn.DisconnectAll))
+    val init = List(LilaIn.DisconnectAll)
+    siteInit(siteOut, init)
+    tourInit(tourOut, init)
+    lobbyInit(lobbyOut, init)
+    simulInit(simulOut, init)
+    studyInit(studyOut, init)
+    roundInit(roundOut, init)
 
     queues
   }
@@ -54,8 +55,6 @@ object Stream {
       tour: SourceQueue[LilaIn.Tour],
       study: SourceQueue[LilaIn.Study],
       round: SourceQueue[LilaIn.Round],
-      connect: SourceQueue[LilaIn.ConnectSri],
-      disconnect: SourceQueue[LilaIn.DisconnectSri],
       lag: SourceQueue[UserLag],
       fen: SourceQueue[FenSM.Input],
       user: SourceQueue[UserSM.Input],

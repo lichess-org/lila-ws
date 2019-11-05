@@ -37,8 +37,6 @@ object Graph {
     Source.queue[LilaIn.Tour](8192, overflow), // clients -> lila:tour
     Source.queue[LilaIn.Study](8192, overflow), // clients -> lila:study
     Source.queue[LilaIn.Round](8192, overflow), // clients -> lila:round
-    Source.queue[LilaIn.ConnectSri](8192, overflow), // clients -> lila:lobby connect/sri
-    Source.queue[LilaIn.DisconnectSri](8192, overflow), // clients -> lila:lobby disconnect/sri
     Source.queue[UserLag](256, overflow), // clients -> lag machine
     Source.queue[sm.FenSM.Input](256, overflow), // clients -> fen machine
     Source.queue[sm.UserSM.Input](256, overflow), // clients -> user machine,
@@ -47,13 +45,12 @@ object Graph {
     Source.queue[ThroughStudyDoor](256, overflow) // clients -> study door machine
   ) {
       case (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul,
-        lilaInTour, lilaInStudy, lilaInRound, lilaInConnect, lilaInDisconnect, lag, fen, user, crowd, roundCrowd, studyDoor) => (
+        lilaInTour, lilaInStudy, lilaInRound, lag, fen, user, crowd, roundCrowd, studyDoor) => (
         siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut,
-        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInRound,
-          lilaInConnect, lilaInDisconnect, lag, fen, user, crowd, roundCrowd, studyDoor)
+        Stream.Queues(lilaInNotified, lilaInFriends, lilaInSite, lilaInLobby, lilaInSimul, lilaInTour, lilaInStudy, lilaInRound, lag, fen, user, crowd, roundCrowd, studyDoor)
       )
     } { implicit b => (SiteOutlet, LobbyOutlet, SimulOutlet, TourOutlet, StudyOutlet, RoundOutlet, ClientToNotified, ClientToFriends, ClientToSite, ClientToLobby,
-      ClientToSimul, ClientToTour, ClientToStudy, ClientToRound, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToUser,
+      ClientToSimul, ClientToTour, ClientToStudy, ClientToRound, ClientToLag, ClientToFen, ClientToUser,
       ClientToCrowd, ClientToRoundCrowd, ClientToStudyDoor) =>
 
       val bus = Bus(system)
@@ -137,18 +134,6 @@ object Graph {
         }
       }
 
-      val Connects: FlowShape[LilaIn.ConnectSri, LilaIn.ConnectSris] = b.add {
-        Flow[LilaIn.ConnectSri].groupedWithin(5, 479.millis) map { con =>
-          LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
-        }
-      }
-
-      val Disconnects: FlowShape[LilaIn.DisconnectSri, LilaIn.DisconnectSris] = b.add {
-        Flow[LilaIn.DisconnectSri].groupedWithin(50, 487.millis) map { dis =>
-          LilaIn.DisconnectSris(dis.map(_.sri))
-        }
-      }
-
       val SiteIn = merge[LilaIn.Site](6)
 
       val SiteInlet: Inlet[LilaIn.Site] = b.add(lilaInSite).in
@@ -185,7 +170,7 @@ object Graph {
         }
       }
 
-      val LobbyIn = merge[LilaIn.Lobby](3)
+      val Lobby: FlowShape[LilaIn.Lobby, LilaIn.Lobby] = b add LobbyFlow
 
       val LobbyInlet: Inlet[LilaIn.Lobby] = b.add(lilaInLobby).in
 
@@ -352,6 +337,7 @@ object Graph {
             }
             RoundEvents.reset(roomId)
             if (hadEvents) bus(ClientCtrl.Disconnect, _ room roomId)
+          case LilaOut.RoundBotOnline(gameId, color, v) => bus(RoundBotOnline(gameId, color, v), _.roundBot)
           case LilaOut.TellRoom(roomId, payload) =>
             bus(ClientIn.Payload(payload), _ room roomId)
           case _ =>
@@ -410,9 +396,7 @@ object Graph {
                      LOBroad  ~> LOUser    ~> User
                      LOBroad  ~> LOBus                          ~> ClientBus
                      LOBroad                                                    ~> LobbyPong
-      ClientToLobby                                             ~> LobbyIn
-      ClientConnect                        ~> Connects          ~> LobbyIn
-      ClientDisconnect                     ~> Disconnects       ~> LobbyIn      ~> LobbyInlet
+                     ClientToLobby                  ~> Lobby                    ~> LobbyInlet
 
       SimulOutlet ~> SimBroad ~> ToSiteOut ~> SiteOut
                      SimBroad ~> RoomBus                        ~> ClientBus
@@ -447,6 +431,36 @@ object Graph {
 
       ClosedShape
     })
+
+  def LobbyFlow = Flow.fromGraph(GraphDSL.create() { implicit b =>
+    val broad = b.add(Broadcast[LilaIn.Lobby](3))
+    val connect = b.add {
+      Flow[LilaIn.Lobby].collect {
+        case con: LilaIn.ConnectSri => con
+      }.groupedWithin(5, 479.millis) map { con =>
+        LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
+      }
+    }
+    val disconnect = b.add {
+      Flow[LilaIn.Lobby].collect {
+        case con: LilaIn.DisconnectSri => con
+      }.groupedWithin(50, 487.millis) map { dis =>
+        LilaIn.DisconnectSris(dis.map(_.sri))
+      }
+    }
+    val tell = b.add {
+      Flow[LilaIn.Lobby].collect {
+        case con: LilaIn.TellSri => con
+      }
+    }
+    val merge = b.add(Merge[LilaIn.Lobby](3))
+
+    broad.out(0) ~> connect ~> merge.in(0)
+    broad.out(1) ~> disconnect ~> merge.in(1)
+    broad.out(2) ~> tell ~> merge.in(2)
+
+    FlowShape(broad.in, merge.out)
+  })
 
   // If the buffer is full when a new element arrives,
   // drops the oldest element from the buffer to make space for the new element.
