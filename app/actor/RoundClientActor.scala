@@ -79,7 +79,7 @@ object RoundClientActor {
         Behaviors.same
 
       case crowd: ClientIn.Crowd =>
-        if (crowd != state.room.lastCrowd) Behaviors.same
+        if (crowd == state.room.lastCrowd) Behaviors.same
         else {
           deps.clientIn(crowd)
           apply(state.copy(room = state.room.copy(lastCrowd = crowd)), deps)
@@ -91,6 +91,10 @@ object RoundClientActor {
 
       case gone: ClientIn.RoundGone =>
         if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
+        Behaviors.same
+
+      case in: ClientIn.Payload =>
+        clientIn(in)
         Behaviors.same
 
       case in: ClientIn =>

@@ -163,7 +163,7 @@ object LilaIn {
   }
 
   case class UserTv(gameId: Game.Id, userId: User.ID) extends Round {
-    def write = s"r/tv $gameId $userId"
+    def write = s"r/tv/user $gameId $userId"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {

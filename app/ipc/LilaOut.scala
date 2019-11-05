@@ -81,6 +81,8 @@ object LilaOut {
   case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
   case class UserTvNewGame(gameId: Game.Id, userId: User.ID) extends RoundOut
 
+  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
+
   // impl
 
   def read(str: String): Option[LilaOut] = {
@@ -203,8 +205,18 @@ object LilaOut {
         case _ => None
       }
 
-      case "r/tv" => args.split(" ", 2) match {
+      case "r/tv/user" => args.split(" ", 2) match {
         case Array(gameId, userId) => Some(UserTvNewGame(Game.Id(gameId), userId))
+        case _ => None
+      }
+
+      // tv
+
+      case "tv/select" => args.split(" ", 3) match {
+        case Array(gameId, speedS, data) => 
+          parseIntOption(speedS) flatMap chess.Speed.apply map { speed =>
+            TvSelect(Game.Id(gameId), speed, JsonString(data))
+          }
         case _ => None
       }
 

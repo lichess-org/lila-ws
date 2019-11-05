@@ -56,6 +56,9 @@ object Graph {
       ClientToSimul, ClientToTour, ClientToStudy, ClientToRound, ClientConnect, ClientDisconnect, ClientToLag, ClientToFen, ClientToUser,
       ClientToCrowd, ClientToRoundCrowd, ClientToStudyDoor) =>
 
+      val bus = Bus(system)
+      val tv = new Tv(bus)
+
       def ToSiteOut: FlowShape[LilaOut, SiteOut] = b.add {
         Flow[LilaOut].collect {
           case siteOut: SiteOut => siteOut
@@ -88,7 +91,6 @@ object Graph {
       val ClientBus = merge[Bus.Msg](7)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
-        val bus = Bus(system)
         Sink.foreach[Bus.Msg](bus.publish)
       }
 
@@ -325,7 +327,6 @@ object Graph {
       val RouBroad = broadcast[RoundOut](2)
 
       val RoundBus: SinkShape[RoundOut] = b.add {
-        val bus = Bus(system)
         implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
         implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
         Sink.foreach[RoundOut] {
@@ -339,6 +340,7 @@ object Graph {
             bus(versioned, _ room gameId)
           case LilaOut.UserTvNewGame(gameId, userId) =>
             bus(UserTvNewGame(userId), _ room gameId)
+          case o: LilaOut.TvSelect => tv select o
           case LilaOut.RoomStop(roomId) =>
             RoundEvents.stop(roomId)
             bus(ClientCtrl.Disconnect, _ room roomId)
@@ -356,12 +358,10 @@ object Graph {
         }
       }
 
-      // val RouKeepAlive = andKeepAlive[LilaIn.Round](lilaInRound)
-
       val RouCrowd: FlowShape[RoundCrowd.Input, List[RoundCrowd.Output]] = b.add {
         Flow[RoundCrowd.Input]
           .mapConcat(in => RoundCrowd(in).toList)
-          .groupedWithin(1024, 1.second)
+          .groupedWithin(256, 500.millis)
           .map { all =>
             all.foldLeft(Map.empty[RoomId, RoundCrowd.Output]) {
               case (crowds, crowd) => crowds.updated(crowd.room.roomId, crowd)

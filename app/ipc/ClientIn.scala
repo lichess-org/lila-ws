@@ -96,6 +96,8 @@ object ClientIn {
     ))
   }
 
+  def tvSelect(data: JsonString) = Payload(JsonString(cliMsg("tvSelect", data)))
+
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = cliMsg("opening", Json.obj(
       "path" -> path,

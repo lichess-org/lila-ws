@@ -40,6 +40,7 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
     val mlat = "mlat"
     val all = "all"
     val lobby = "lobby"
+    val tv = "tv"
     def room(id: RoomId) = s"room/$id"
   }
 

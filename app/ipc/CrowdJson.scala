@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import LightUser._
+import lila.ws.util.LilaJsObject.augment
 
 @Singleton
 final class CrowdJson @Inject() (
@@ -26,11 +27,12 @@ final class CrowdJson @Inject() (
     spectatorsOf(crowd.room.copy(
       users = if (crowd.room.users.size > 20) Nil else crowd.room.users
     )) map { spectators =>
-      Bus.msg(ClientIn.Crowd(Json.obj(
-        "white" -> (crowd.players.white > 0),
-        "black" -> (crowd.players.black > 0),
-        "watchers" -> spectators
-      )), _ room crowd.room.roomId)
+      Bus.msg(ClientIn.Crowd(
+        Json.obj(
+          "white" -> (crowd.players.white > 0),
+          "black" -> (crowd.players.black > 0)
+        ).add("watchers" -> (if (crowd.room.users.nonEmpty) Some(spectators) else None))
+      ), _ room crowd.room.roomId)
     }
 
   private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
