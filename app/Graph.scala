@@ -323,6 +323,8 @@ object Graph {
             val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
             RoundEvents.add(gameId, versioned)
             bus(versioned, _ room gameId)
+          case LilaOut.RoundTellOwners(gameId, tpe, data) =>
+            bus(ClientIn.RoundTellOwners(tpe, data), _ room gameId)
           case LilaOut.UserTvNewGame(gameId, userId) =>
             bus(UserTvNewGame(userId), _ room gameId)
           case o: LilaOut.TvSelect => tv select o
@@ -437,7 +439,7 @@ object Graph {
     val connect = b.add {
       Flow[LilaIn.Lobby].collect {
         case con: LilaIn.ConnectSri => con
-      }.groupedWithin(5, 479.millis) map { con =>
+      }.groupedWithin(6, 479.millis) map { con =>
         LilaIn.ConnectSris(con.map { c => (c.sri, c.userId) })
       }
     }

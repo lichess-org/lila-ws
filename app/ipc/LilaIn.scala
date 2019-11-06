@@ -70,7 +70,7 @@ object LilaIn {
   }
 
   case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {
-    def write = s"connect/sri $sri${userId.fold("")(" " + _)}"
+    def write = ConnectSris(List(sri -> userId)).write
   }
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
@@ -79,7 +79,7 @@ object LilaIn {
   }
 
   case class DisconnectSri(sri: Sri) extends Lobby {
-    def write = s"disconnect/sri $sri"
+    def write = DisconnectSris(List(sri)).write
   }
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
     def write = s"disconnect/sris ${commas(sris)}"

@@ -170,6 +170,9 @@ object ClientIn {
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
+  case class RoundTellOwners(tpe: String, data: JsonString) extends ClientIn {
+    def write = cliMsg(tpe, data)
+  }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 

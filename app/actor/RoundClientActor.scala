@@ -74,6 +74,10 @@ object RoundClientActor {
         clientIn(versionFor(state, versioned))
         Behaviors.same
 
+      case msg: ClientIn.RoundTellOwners =>
+        if (state.player.isDefined) clientIn(msg)
+        Behaviors.same
+
       case ClientIn.OnlyFor(endpoint, payload) =>
         if (endpoint == ClientIn.OnlyFor.Room(state.room.id)) clientIn(payload)
         Behaviors.same
