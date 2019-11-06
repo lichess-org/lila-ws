@@ -117,10 +117,25 @@ object ClientActor {
     }
   }
 
+  def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] = msg match {
+
+    case msg: ClientIn.TourReminder =>
+      if (state.tourReminded) None
+      else {
+        deps clientIn msg
+        Some(state.copy(tourReminded = true))
+      }
+
+    case in: ClientIn =>
+      deps clientIn in
+      None
+  }
+
   case class State(
       watchedGames: Set[Game.Id] = Set.empty,
       lastPing: Int = nowSeconds,
-      ignoreLog: Boolean = false
+      ignoreLog: Boolean = false,
+      tourReminded: Boolean = false
   )
 
   def Req(req: play.api.mvc.RequestHeader, sri: Sri, user: Option[User], flag: Option[Flag] = None): Req = Req(

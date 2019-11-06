@@ -25,6 +25,11 @@ object SimulClientActor {
 
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
 
+      case in: ClientIn => clientInReceive(state.site, deps, in) match {
+        case None => Behaviors.same
+        case Some(s) => apply(state.copy(site = s), deps)
+      }
+
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {

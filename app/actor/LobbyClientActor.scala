@@ -45,9 +45,10 @@ object LobbyClientActor {
         if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
         Behaviors.same
 
-      case in: ClientIn =>
-        clientIn(in)
-        Behaviors.same
+      case in: ClientIn => clientInReceive(state.site, deps, in) match {
+        case None => Behaviors.same
+        case Some(s) => apply(state.copy(site = s), deps)
+      }
 
       case msg: ClientOut.Ping =>
         clientIn(LobbyPongStore.get)

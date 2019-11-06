@@ -59,10 +59,6 @@ object RoomActor {
         state.copy(lastCrowd = crowd)
       } -> None
 
-    case in: ClientIn =>
-      deps.clientIn(in)
-      None -> None
-
     case ClientOut.ChatSay(msg) =>
       None -> deps.req.user.map { u =>
         LilaIn.ChatSay(state.id, u.id, msg)

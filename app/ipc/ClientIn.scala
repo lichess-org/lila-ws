@@ -91,7 +91,7 @@ object ClientIn {
   def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
 
   case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn {
-    val write = cliMsg("tournamentReminder", Json.obj(
+    lazy val write = cliMsg("tournamentReminder", Json.obj(
       "id" -> tourId,
       "name" -> tourName
     ))
