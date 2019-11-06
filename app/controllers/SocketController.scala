@@ -71,9 +71,9 @@ class SocketController @Inject() (
     LichessWebSocket(sriStr) { (sri, req) =>
       val id = Game.FullId(fullId)
       auth(req, None) flatMap { user =>
-        mongo.playerColor(id, user) flatMap {
+        mongo.player(id, user) flatMap {
           case None => Future successful Left(NotFound)
-          case Some(color) => server.connectToRoundPlay(req, id, color, user, sri, getSocketVersion(req)) map Right.apply
+          case Some(player) => server.connectToRoundPlay(req, id, player, user, sri, getSocketVersion(req)) map Right.apply
         }
       }
     }

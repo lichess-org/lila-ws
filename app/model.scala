@@ -90,6 +90,8 @@ object RoomId {
   def apply(v: StringValue): RoomId = RoomId(v.value)
 }
 
+case class Player(id: Game.PlayerId, color: chess.Color, tourId: Option[Tour.ID])
+
 case class UserLag(userId: User.ID, lag: Int)
 
 case class ReqId(value: Int) extends AnyVal with IntValue

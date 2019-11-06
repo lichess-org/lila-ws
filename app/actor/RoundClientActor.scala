@@ -10,11 +10,6 @@ object RoundClientActor {
 
   import ClientActor._
 
-  case class Player(
-      id: Game.PlayerId,
-      color: chess.Color
-  )
-
   case class State(
       room: RoomActor.State,
       player: Option[Player],
@@ -33,6 +28,9 @@ object RoundClientActor {
     ClientActor.onStart(deps, ctx)
     req.user foreach { u =>
       queue(_.user, sm.UserSM.Connect(u, ctx.self))
+    }
+    player.flatMap(_.tourId) foreach { tourId =>
+      bus.subscribe(ctx.self, _ tourStanding tourId)
     }
     bus.subscribe(ctx.self, _ room roomState.id)
     queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
@@ -72,10 +70,6 @@ object RoundClientActor {
 
       case versioned: ClientIn.RoundVersioned =>
         clientIn(versionFor(state, versioned))
-        Behaviors.same
-
-      case msg: ClientIn.RoundTellOwners =>
-        if (state.player.isDefined) clientIn(msg)
         Behaviors.same
 
       case ClientIn.OnlyFor(endpoint, payload) =>

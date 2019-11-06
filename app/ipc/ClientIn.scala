@@ -61,6 +61,7 @@ object ClientIn {
     def write = json.value
   }
   def payload(js: JsValue) = Payload(JsonString(Json stringify js))
+  def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
   case class Crowd(doc: JsObject) extends ClientIn {
     lazy val write = cliMsg("crowd", doc)
@@ -96,7 +97,7 @@ object ClientIn {
     ))
   }
 
-  def tvSelect(data: JsonString) = Payload(JsonString(cliMsg("tvSelect", data)))
+  def tvSelect(data: JsonString) = payload("tvSelect", data)
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
     def write = cliMsg("opening", Json.obj(
@@ -170,9 +171,7 @@ object ClientIn {
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
-  case class RoundTellOwners(tpe: String, data: JsonString) extends ClientIn {
-    def write = cliMsg(tpe, data)
-  }
+  def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 

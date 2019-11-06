@@ -323,8 +323,8 @@ object Graph {
             val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
             RoundEvents.add(gameId, versioned)
             bus(versioned, _ room gameId)
-          case LilaOut.RoundTellOwners(gameId, tpe, data) =>
-            bus(ClientIn.RoundTellOwners(tpe, data), _ room gameId)
+          case LilaOut.RoundTourStanding(tourId, data) =>
+            bus(ClientIn.roundTourStanding(data), _ tourStanding tourId)
           case LilaOut.UserTvNewGame(gameId, userId) =>
             bus(UserTvNewGame(userId), _ room gameId)
           case o: LilaOut.TvSelect => tv select o

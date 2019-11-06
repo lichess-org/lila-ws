@@ -78,7 +78,7 @@ object LilaOut {
   // round
 
   case class RoundVersion(gameId: Game.Id, version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends RoundOut
-  case class RoundTellOwners(gameId: Game.Id, tpe: String, data: JsonString) extends RoundOut
+  case class RoundTourStanding(tourId: Tour.ID, data: JsonString) extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId) extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
@@ -201,8 +201,8 @@ object LilaOut {
         case _ => None
       }
 
-      case "r/tell/owners" => args.split(" ", 3) match {
-        case Array(roomId, tpe, data) => Some(RoundTellOwners(Game.Id(roomId), tpe, JsonString(data)))
+      case "r/tour/standing" => args.split(" ", 2) match {
+        case Array(tourId, data) => Some(RoundTourStanding(tourId, JsonString(data)))
         case _ => None
       }
 

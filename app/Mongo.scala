@@ -44,10 +44,10 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
 
   def gameExists(id: Game.Id): Future[Boolean] = gameColl flatMap idExists(id.value)
 
-  def playerColor(fullId: Game.FullId, user: Option[User]): Future[Option[chess.Color]] = gameColl flatMap {
+  def player(fullId: Game.FullId, user: Option[User]): Future[Option[Player]] = gameColl flatMap {
     _.find(
       selector = BSONDocument("_id" -> fullId.gameId.value),
-      projection = Some(BSONDocument("is" -> true, "us" -> true))
+      projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
     ).one[BSONDocument] map { docOpt =>
         for {
           doc <- docOpt
@@ -60,7 +60,8 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
           }
           expectedUserId = color.fold(users.headOption, users.lift(1)).filter(_.nonEmpty)
           if user.map(_.id) == expectedUserId
-        } yield color
+          tourId = doc.getAs[Tour.ID]("tid")
+        } yield Player(fullId.playerId, color, tourId)
       }
   }
 

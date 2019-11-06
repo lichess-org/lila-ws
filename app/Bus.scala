@@ -43,6 +43,7 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
     val tv = "tv"
     def room(id: RoomId) = s"room/$id"
     val roundBot = "round-bot"
+    def tourStanding(id: Tour.ID) = s"tour-standing/$id"
   }
 
   def msg(payload: ClientMsg, channel: Bus.channel.type => Classifier) =
