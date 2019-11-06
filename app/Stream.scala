@@ -15,7 +15,8 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     ec: ExecutionContext,
     mongo: Mongo,
     system: ActorSystem,
-    mat: akka.stream.Materializer
+    mat: akka.stream.Materializer,
+    lifecycle: play.api.inject.ApplicationLifecycle
 ) {
 
   private val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
@@ -42,6 +43,8 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
 
     queues
   }
+
+  lifecycle addStopHook { () => Future successful lila.closeAll }
 }
 
 object Stream {

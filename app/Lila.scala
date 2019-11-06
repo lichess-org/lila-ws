@@ -12,6 +12,8 @@ final class Lila(redisUri: RedisURI) {
   private val logger = Logger(getClass)
   private val redis = RedisClient create redisUri
 
+  private var closeFunctions = List.empty[() => Unit]
+
   def pubsub[Out](chanIn: String, chanOut: String)(collect: PartialFunction[LilaOut, Out]) = {
 
     val connIn = redis.connectPubSub()
@@ -42,6 +44,17 @@ final class Lila(redisUri: RedisURI) {
 
     val sink = Sink foreach send
 
+    val close = () => {
+      connIn.close()
+      connOut.close()
+    }
+    closeFunctions = close :: closeFunctions
+
     (init, sink)
+  }
+
+  def closeAll: Unit = {
+    closeFunctions.foreach(_())
+    closeFunctions = Nil
   }
 }

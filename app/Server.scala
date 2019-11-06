@@ -21,7 +21,8 @@ final class Server @Inject() (
     auth: Auth,
     mongo: Mongo,
     stream: Stream,
-    config: play.api.Configuration
+    config: play.api.Configuration,
+    lifecycle: play.api.inject.ApplicationLifecycle
 )(implicit
     ec: ExecutionContext,
     system: akka.actor.ActorSystem,
