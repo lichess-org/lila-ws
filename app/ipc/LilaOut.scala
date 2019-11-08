@@ -56,8 +56,8 @@ object LilaOut {
 
   case class TellRoom(roomId: RoomId, json: JsonString) extends AnyRoomOut
   case class TellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, json: JsonString) extends AnyRoomOut
-  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut
-  case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends AnyRoomOut
+  case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
+  case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends AnyRoomOut with SiteOut
 
   case class RoomStart(roomId: RoomId) extends AnyRoomOut
   case class RoomStop(roomId: RoomId) extends AnyRoomOut
