@@ -11,20 +11,15 @@ import lila.ws.util.Util._
 sealed trait LilaOut
 
 sealed trait SiteOut extends LilaOut
-
 sealed trait LobbyOut extends LilaOut
-
 sealed trait RoomOut extends LilaOut
-
 sealed trait SimulOut extends RoomOut
-
 sealed trait TourOut extends RoomOut
-
 sealed trait StudyOut extends RoomOut
-
 sealed trait RoundOut extends RoomOut
+sealed trait ChallengeOut extends RoomOut
 
-sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut
+sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with ChallengeOut
 
 object LilaOut {
 
@@ -88,31 +83,30 @@ object LilaOut {
 
   // impl
 
+  private def get(args: String, nb: Int)(f: PartialFunction[Array[String], Option[LilaOut]]): Option[LilaOut] =
+    f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
+
   def read(str: String): Option[LilaOut] = {
     val parts = str.split(" ", 2)
     val args = parts.lift(1) getOrElse ""
     parts(0) match {
 
-      case "move" => args.split(" ", 3) match {
+      case "move" => get(args, 3) {
         case Array(game, lastUci, fen) => Uci(lastUci) map { Move(Game.Id(game), _, FEN(fen)) }
-        case _ => None
       }
 
       case "mlat" => parseDoubleOption(args) map Mlat.apply
 
-      case "tell/flag" => args.split(" ", 2) match {
+      case "tell/flag" => get(args, 2) {
         case Array(flag, payload) => Some(TellFlag(flag, JsonString(payload)))
-        case _ => None
       }
 
-      case "tell/users" => args.split(" ", 2) match {
+      case "tell/users" => get(args, 2) {
         case Array(users, payload) => Some(TellUsers(commas(users), JsonString(payload)))
-        case _ => None
       }
 
-      case "tell/sri" => args.split(" ", 2) match {
+      case "tell/sri" => get(args, 2) {
         case Array(sri, payload) => Some(TellSri(Sri(sri), JsonString(payload)))
-        case _ => None
       }
 
       case "tell/all" => Some(TellAll(JsonString(args)))
@@ -128,60 +122,52 @@ object LilaOut {
       case "tell/lobby" => Some(TellLobby(JsonString(args)))
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))
 
-      case "tell/lobby/users" => args.split(" ", 2) match {
+      case "tell/lobby/users" => get(args, 2) {
         case Array(users, payload) => Some(TellLobbyUsers(commas(users), JsonString(payload)))
-        case _ => None
       }
 
       case "member/nb" => parseIntOption(args) map NbMembers.apply
 
       case "round/nb" => parseIntOption(args) map NbRounds.apply
 
-      case "tell/sris" => args.split(" ", 2) match {
+      case "tell/sris" => get(args, 2) {
         case Array(sris, payload) => Some(TellSris(
           commas(sris).toSeq map Sri.apply,
           JsonString(payload)
         ))
-        case _ => None
       }
 
-      case "tell/room" => args.split(" ", 2) match {
+      case "tell/room" => get(args, 2) {
         case Array(roomId, payload) => Some(TellRoom(RoomId(roomId), JsonString(payload)))
-        case _ => None
       }
 
-      case "tell/room/version" => args.split(" ", 4) match {
+      case "tell/room/version" => get(args, 4) {
         case Array(roomId, version, troll, payload) => parseIntOption(version) map { sv =>
           TellRoomVersion(RoomId(roomId), SocketVersion(sv), IsTroll(boolean(troll)), JsonString(payload))
         }
-        case _ => None
       }
 
-      case "tell/room/user" => args.split(" ", 3) match {
+      case "tell/room/user" => get(args, 3) {
         case Array(roomId, userId, payload) => Some(TellRoomUser(RoomId(roomId), userId, JsonString(payload)))
-        case _ => None
       }
-      case "tell/room/users" => args.split(" ", 3) match {
+      case "tell/room/users" => get(args, 3) {
         case Array(roomId, userIds, payload) => Some(TellRoomUsers(RoomId(roomId), commas(userIds), JsonString(payload)))
-        case _ => None
       }
 
       case "room/start" => Some(RoomStart(RoomId(args)))
       case "room/stop" => Some(RoomStop(RoomId(args)))
 
-      case "room/present" => args.split(" ", 3) match {
+      case "room/present" => get(args, 3) {
         case Array(reqIdS, roomId, userId) => parseIntOption(reqIdS) map { reqId =>
           RoomIsPresent(reqId, RoomId(roomId), userId)
         }
-        case _ => None
       }
 
-      case "tour/get/waiting" => args.split(" ", 2) match {
+      case "tour/get/waiting" => get(args, 2) {
         case Array(roomId, name) => Some(GetWaitingUsers(RoomId(roomId), name))
-        case _ => None
       }
 
-      case "r/ver" => args.split(" ", 5) match {
+      case "r/ver" => get(args, 5) {
         case Array(roomId, version, f, tpe, data) => parseIntOption(version) map { sv =>
           val flags = RoundEventFlags(
             watcher = f contains 's',
@@ -198,39 +184,33 @@ object LilaOut {
           )
           RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
         }
-        case _ => None
       }
 
-      case "r/tour/standing" => args.split(" ", 2) match {
+      case "r/tour/standing" => get(args, 2) {
         case Array(tourId, data) => Some(RoundTourStanding(tourId, JsonString(data)))
-        case _ => None
       }
 
       case "r/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
 
-      case "r/gone" => args.split(" ", 2) match {
+      case "r/gone" => get(args, 2) {
         case Array(fullId, gone) => Some(RoundGone(Game.FullId(fullId), boolean(gone)))
-        case _ => None
       }
 
-      case "r/tv/user" => args.split(" ", 2) match {
+      case "r/tv/user" => get(args, 2) {
         case Array(gameId, userId) => Some(UserTvNewGame(Game.Id(gameId), userId))
-        case _ => None
       }
 
-      case "r/bot/online" => args.split(" ", 3) match {
+      case "r/bot/online" => get(args, 3) {
         case Array(gameId, color, v) => Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
-        case _ => None
       }
 
       // tv
 
-      case "tv/select" => args.split(" ", 3) match {
+      case "tv/select" => get(args, 3) {
         case Array(gameId, speedS, data) =>
           parseIntOption(speedS) flatMap chess.Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
-        case _ => None
       }
 
       case _ => None

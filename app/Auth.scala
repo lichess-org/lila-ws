@@ -32,12 +32,20 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
 
   private val cookieName = "lila2"
   private val sessionIdKey = "sessionId"
-  private val sidRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+  private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+  private val sidKey = "sid"
+  private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
 
-  private def sessionIdFromReq(req: RequestHeader): Option[String] =
+  def sessionIdFromReq(req: RequestHeader): Option[String] =
     req.cookies.get(cookieName).map(_.value).flatMap {
-      case sidRegex(id) => Some(id)
+      case sessionIdRegex(id) => Some(id)
       case _ => None
     } orElse
       req.target.getQueryParameter(sessionIdKey)
+
+  def sidFromReq(req: RequestHeader): Option[String] =
+    req.cookies.get(cookieName).map(_.value).flatMap {
+      case sidRegex(id) => Some(id)
+      case _ => None
+    }
 }

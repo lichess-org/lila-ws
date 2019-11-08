@@ -16,6 +16,7 @@ sealed trait ClientOutLobby extends ClientOut
 sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutRound extends ClientOut
 sealed trait ClientOutChat extends ClientOut
+sealed trait ClientOutChallenge extends ClientOut
 
 object ClientOut {
 
@@ -88,6 +89,10 @@ object ClientOut {
 
   case class ChatSay(msg: String) extends ClientOutChat
   case class ChatTimeout(suspect: String, reason: String) extends ClientOutChat
+
+  // challenge
+
+  case object ChallengePing extends ClientOutChallenge
 
   // impl
 
@@ -179,8 +184,7 @@ object ClientOut {
           userId <- data str "userId"
           reason <- data str "reason"
         } yield ChatTimeout(userId, reason)
-        // meh
-        case "ping" => Some(Ignore) // outdated clients
+        case "ping" => Some(ChallengePing)
         case _ => None
       } getOrElse Unexpected(o)
       case js => Unexpected(js)

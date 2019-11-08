@@ -78,6 +78,22 @@ class SocketController @Inject() (
       }
     }
 
+  def challenge(idS: String, sriStr: String, apiVersion: Int) =
+    LichessWebSocket(sriStr) { (sri, req) =>
+      val id = Challenge.Id(idS)
+      auth(req, None) flatMap { user =>
+        mongo.challenger(id) map {
+          _ map {
+            case Challenge.Anon(secret) => auth sidFromReq req contains secret
+            case Challenge.User(userId) => user.exists(_.id == userId)
+          }
+        } flatMap {
+          case None => Future successful Left(NotFound)
+          case Some(owner) => server.connectToChallenge(req, id, owner, user, sri, getSocketVersion(req)) map Right.apply
+        }
+      }
+    }
+
   def api: WebSocket = WebSocket { req =>
     server.connectToSite(req, Sri.random, Some(Flag.api)) map Right.apply
   }

@@ -29,9 +29,10 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     val (simulInit, simulSink) = lila.pubsub("simul-in", "simul-out") { case out: SimulOut => out }
     val (studyInit, studySink) = lila.pubsub("study-in", "study-out") { case out: StudyOut => out }
     val (roundInit, roundSink) = lila.pubsub("r-in", "r-out") { case out: RoundOut => out }
+    val (challengeInit, challengeSink) = lila.pubsub("chal-in", "chal-out") { case out: ChallengeOut => out }
 
-    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, queues) =
-      Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, mongo, crowdJson).run()
+    val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, challengeOut, queues) =
+      Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, challengeSink, mongo, crowdJson).run()
 
     val init = List(LilaIn.DisconnectAll)
     siteInit(siteOut, init)
@@ -40,6 +41,7 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     simulInit(simulOut, init)
     studyInit(studyOut, init)
     roundInit(roundOut, init)
+    challengeInit(challengeOut, init)
 
     queues
   }
@@ -58,6 +60,7 @@ object Stream {
       tour: SourceQueue[LilaIn.Tour],
       study: SourceQueue[LilaIn.Study],
       round: SourceQueue[LilaIn.Round],
+      challenge: SourceQueue[LilaIn.Challenge],
       lag: SourceQueue[UserLag],
       fen: SourceQueue[FenSM.Input],
       user: SourceQueue[UserSM.Input],

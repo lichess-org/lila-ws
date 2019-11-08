@@ -5,18 +5,19 @@ import akka.actor.typed.{ Behavior, PostStop }
 
 import ipc._
 
-object TourClientActor {
+object ChallengeClientActor {
 
   import ClientActor._
 
   case class State(
+      owner: Boolean,
       room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
+  def start(roomState: RoomActor.State, owner: Boolean, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    apply(State(roomState), deps)
+    apply(State(owner, roomState), deps)
   }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
@@ -33,11 +34,15 @@ object TourClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.tour, LilaIn.KeepAlive(state.room.id))
+          queue(_.challenge, LilaIn.KeepAlive(state.room.id))
           Behaviors.same
         }
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
+
+      case ClientOut.ChallengePing =>
+        if (state.owner) queue(_.challenge, LilaIn.ChallengePing(state.room.id))
+        Behaviors.same
 
       // default receive (site)
       case msg: ClientOutSite =>
@@ -48,7 +53,7 @@ object TourClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach queue.tour.offer
+        emit foreach queue.challenge.offer
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }

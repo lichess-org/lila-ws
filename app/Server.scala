@@ -136,6 +136,17 @@ final class Server @Inject() (
       name = s"round/watch ${reqName(req)}"
     ))
 
+  def connectToChallenge(req: RequestHeader, challengeId: Challenge.Id, owner: Boolean, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
+    actorFlow(req) { clientIn =>
+      ChallengeClientActor.start(RoomActor.State(RoomId(challengeId), IsTroll(false)), owner, fromVersion) {
+        ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+      }
+    } map asWebsocket(new RateLimit(
+      maxCredits = 50,
+      duration = 30.seconds,
+      name = s"challenge ${reqName(req)}"
+    ))
+
   private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
     actor: ClientActor.Deps => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] =
@@ -169,7 +180,10 @@ final class Server @Inject() (
         ActorSink.actorRef[ClientMsg](
           ref = actor,
           onCompleteMessage = ClientCtrl.Disconnect,
-          onFailureMessage = _ => ClientCtrl.Disconnect
+          onFailureMessage = e => {
+            // println(s"failure $req $e")
+            ClientCtrl.Disconnect
+          }
         ),
         Source.fromPublisher(publisher)
       )

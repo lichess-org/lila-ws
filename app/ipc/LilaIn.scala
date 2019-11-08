@@ -20,8 +20,9 @@ object LilaIn {
   sealed trait Tour extends Room
   sealed trait Study extends Room
   sealed trait Round extends Room
+  sealed trait Challenge extends Room
 
-  sealed trait AnyRoom extends Simul with Tour with Study with Round
+  sealed trait AnyRoom extends Simul with Tour with Study with Round with Challenge
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
@@ -164,6 +165,10 @@ object LilaIn {
 
   case class UserTv(gameId: Game.Id, userId: User.ID) extends Round {
     def write = s"r/tv/user $gameId $userId"
+  }
+
+  case class ChallengePing(id: RoomId) extends Challenge {
+    def write = s"challenge/ping $id"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {

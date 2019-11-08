@@ -30,6 +30,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
   def tourPairingColl = collNamed("tournament_pairing")
   def studyColl = collNamed("study")
   def gameColl = collNamed("game5")
+  def challengeColl = collNamed("challenge")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
@@ -107,6 +108,21 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
       readConcern = ReadConcern.Local,
       collation = None
     )
+  }
+
+  def challenger(challengeId: Challenge.Id): Future[Option[Challenge.Challenger]] = challengeColl flatMap {
+    _.find(
+      selector = BSONDocument("_id" -> challengeId.value),
+      projection = Some(BSONDocument("challenger" -> true))
+    ).one[BSONDocument] map { docOpt =>
+        for {
+          doc <- docOpt
+          c <- doc.getAs[BSONDocument]("challenger")
+          anon = c.getAs[String]("s") map Challenge.Anon.apply
+          user = c.getAs[String]("id") map Challenge.User.apply
+          challenger <- anon orElse user
+        } yield challenger
+      }
   }
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))

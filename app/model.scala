@@ -48,6 +48,13 @@ object Chat {
   type ID = String
 }
 
+object Challenge {
+  case class Id(value: String) extends AnyVal with StringValue
+  sealed trait Challenger
+  case class Anon(secret: String) extends Challenger
+  case class User(userId: String) extends Challenger
+}
+
 case class Chat(id: Chat.ID) extends AnyVal
 
 case class Sri(value: String) extends AnyVal with StringValue
