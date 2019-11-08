@@ -26,18 +26,13 @@ object LilaOut {
   // site
 
   case class Move(game: Game.Id, lastUci: Uci, fen: FEN) extends SiteOut
-
   case class Mlat(millis: Double) extends SiteOut
-
   case class TellFlag(flag: String, json: JsonString) extends SiteOut
-
   case class TellUsers(users: Iterable[User.ID], json: JsonString) extends SiteOut
-
   case class TellAll(json: JsonString) extends SiteOut
-
   case class DisconnectUser(user: User.ID) extends SiteOut
-
   case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with StudyOut
+  case class SetTroll(user: User.ID, v: IsTroll) extends SiteOut
 
   // lobby
 
@@ -129,6 +124,10 @@ object LilaOut {
       case "member/nb" => parseIntOption(args) map NbMembers.apply
 
       case "round/nb" => parseIntOption(args) map NbRounds.apply
+
+      case "troll/set" => get(args, 2) {
+        case Array(user, v) => Some(SetTroll(user, IsTroll(boolean(v))))
+      }
 
       case "tell/sris" => get(args, 2) {
         case Array(sris, payload) => Some(TellSris(

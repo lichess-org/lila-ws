@@ -103,6 +103,7 @@ object Graph {
             sm.UserSM.TellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
           case LilaOut.TellRoomUsers(roomId, users, json) =>
             sm.UserSM.TellMany(users, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
+          case LilaOut.SetTroll(user, v) => sm.UserSM.SetTroll(user, v)
         }
       }
 

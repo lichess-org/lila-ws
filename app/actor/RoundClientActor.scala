@@ -83,6 +83,9 @@ object RoundClientActor {
           apply(state.copy(room = state.room.copy(lastCrowd = crowd)), deps)
         }
 
+      case SetTroll(v) =>
+        apply(state.copy(room = state.room.copy(isTroll = v)), deps)
+
       case resync: ClientIn.RoundResyncPlayer =>
         if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
         Behaviors.same

@@ -77,6 +77,12 @@ object UserSM {
         _ foreach { _ ! ClientCtrl.Disconnect }
       }
       state.copy(emit = None)
+
+    case SetTroll(userId, v) =>
+      state.users get userId foreach {
+        _ foreach { _ ! ipc.SetTroll(v) }
+      }
+      state.copy(emit = None)
   }
 
   sealed trait Input
@@ -86,6 +92,7 @@ object UserSM {
   case class TellOne(userId: User.ID, payload: ClientIn) extends Input
   case class TellMany(userIds: Iterable[User.ID], payload: ClientIn) extends Input
   case class Kick(userId: User.ID) extends Input
+  case class SetTroll(userId: User.ID, v: IsTroll) extends Input
   case object PublishDisconnects extends Input
 
   def machine = StateMachine[State, Input, LilaIn.Site](State(), apply _, _.emit.toList)
