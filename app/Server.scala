@@ -186,6 +186,8 @@ final class Server @Inject() (
           }
         ),
         Source.fromPublisher(publisher)
+        // quick way to simulate network lag!
+        // .delay(900.millis)
       )
     }
   }
