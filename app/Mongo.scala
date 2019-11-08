@@ -53,7 +53,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
         for {
           doc <- docOpt
           playerIds <- doc.getAs[String]("is")
-          users <- doc.getAs[List[String]]("us")
+          users = doc.getAs[List[String]]("us") getOrElse Nil
           color <- {
             if (fullId.playerId.value == playerIds.take(4)) Some(chess.White)
             else if (fullId.playerId.value == playerIds.drop(4)) Some(chess.Black)
