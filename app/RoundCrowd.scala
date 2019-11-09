@@ -38,7 +38,7 @@ object RoundCrowd {
   case class Disconnect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
   case class BotOnline(roomId: RoomId, color: Color, online: Boolean) extends Input
 
-  private val rooms = new ConcurrentHashMap[RoomId, RoundState]
+  private val rooms = new ConcurrentHashMap[RoomId, RoundState](32768)
 
   def apply(in: Input): Option[Output] = in match {
 

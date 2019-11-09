@@ -39,7 +39,7 @@ object RoomCrowd {
   case class Connect(roomId: RoomId, user: Option[User]) extends Input
   case class Disconnect(roomId: RoomId, user: Option[User]) extends Input
 
-  private val rooms = new ConcurrentHashMap[RoomId, RoomState]
+  private val rooms = new ConcurrentHashMap[RoomId, RoomState](1024)
 
   def apply(in: Input): Option[Output] = in match {
 

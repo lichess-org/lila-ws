@@ -8,11 +8,11 @@ object RoundEvents {
 
   private val historySize = 30
 
-  private val stacks = new ConcurrentHashMap[String, List[RoundVersioned]]
+  private val stacks = new ConcurrentHashMap[String, List[RoundVersioned]](32768)
 
   def add(gameId: Game.Id, event: RoundVersioned): Unit =
     stacks.compute(gameId.value, (_, cur) =>
-      event :: Option(cur).getOrElse(List.empty[RoundVersioned]).take(historySize))
+      event :: Option(cur).getOrElse(Nil).take(historySize))
 
   def getFrom(gameId: Game.Id, versionOpt: Option[SocketVersion]): Option[List[RoundVersioned]] = {
     val roomEvents = stacks.getOrDefault(gameId.value,  Nil)
