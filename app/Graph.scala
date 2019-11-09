@@ -201,9 +201,9 @@ object Graph {
       def EventStore: SinkShape[RoomOut] = b.add {
         Sink.foreach[RoomOut] {
           case LilaOut.TellRoomVersion(roomId, version, troll, json) =>
-            RoomEvents.add(roomId, ClientIn.Versioned(json, version, troll))
-          case LilaOut.RoomStop(roomId) => RoomEvents.stop(roomId)
-          case LilaOut.RoomStart(roomId) => RoomEvents.reset(roomId)
+            History.room.add(roomId, ClientIn.Versioned(json, version, troll))
+          case LilaOut.RoomStop(roomId) => History.room.stop(roomId)
+          case LilaOut.RoomStart(roomId) => History.room.reset(roomId)
           case _ =>
         }
       }
@@ -326,7 +326,7 @@ object Graph {
             bus(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
           case LilaOut.RoundVersion(gameId, version, flags, tpe, data) =>
             val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
-            RoundEvents.add(gameId, versioned)
+            History.round.add(gameId, versioned)
             bus(versioned, _ room gameId)
           case LilaOut.RoundTourStanding(tourId, data) =>
             bus(ClientIn.roundTourStanding(data), _ tourStanding tourId)
@@ -334,15 +334,15 @@ object Graph {
             bus(UserTvNewGame(userId), _ room gameId)
           case o: LilaOut.TvSelect => tv select o
           case LilaOut.RoomStop(roomId) =>
-            RoundEvents.stop(roomId)
+            History.round.stop(roomId)
             bus(ClientCtrl.Disconnect, _ room roomId)
           case LilaOut.RoomStart(roomId) =>
-            val hadEvents = RoundEvents hasEvents roomId
+            val hadEvents = History.round hasEvents roomId
             if (hadEvents) {
-              println(RoundEvents.getFrom(roomId, None).map(_.map(_.version)))
+              println(History.round.getFrom(roomId, None).map(_.map(_.version)))
               println(s"start round $roomId that had events! kicking members")
             }
-            RoundEvents.reset(roomId)
+            History.round.reset(roomId)
             if (hadEvents) bus(ClientCtrl.Disconnect, _ room roomId)
           case LilaOut.RoundBotOnline(gameId, color, v) => bus(RoundBotOnline(gameId, color, v), _.roundBot)
           case LilaOut.TellRoom(roomId, payload) =>

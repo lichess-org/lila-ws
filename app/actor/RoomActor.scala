@@ -29,7 +29,7 @@ object RoomActor {
     }
     bus.subscribe(ctx.self, _ room roomState.id)
     queue(_.crowd, RoomCrowd.Connect(roomState.id, req.user))
-    RoomEvents.getFrom(roomState.id, fromVersion) match {
+    History.room.getFrom(roomState.id, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(roomState.isTroll, _) } foreach clientIn
     }

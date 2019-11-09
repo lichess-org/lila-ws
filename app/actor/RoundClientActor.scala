@@ -34,7 +34,7 @@ object RoundClientActor {
     }
     bus.subscribe(ctx.self, _ room roomState.id)
     queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
-    RoundEvents.getFrom(Game.Id(roomState.id.value), fromVersion) match {
+    History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
       case None => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(state, _) } foreach clientIn
     }

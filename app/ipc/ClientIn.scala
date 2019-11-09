@@ -52,7 +52,11 @@ object ClientIn {
     lazy val write = cliMsg("round/nb", value)
   }
 
-  case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends ClientMsg {
+  sealed trait HasVersion extends ClientMsg {
+    val version: SocketVersion
+  }
+
+  case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends HasVersion {
     lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
   }
@@ -166,7 +170,7 @@ object ClientIn {
   case class RoundGone(playerId: Game.PlayerId, v: Boolean) extends ClientIn {
     def write = cliMsg("gone", v)
   }
-  case class RoundVersioned(version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends ClientMsg {
+  case class RoundVersioned(version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends HasVersion {
     lazy val full = Payload(JsonString(cliMsg(tpe, data, version)))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
