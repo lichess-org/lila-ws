@@ -339,7 +339,7 @@ object Graph {
           case LilaOut.RoomStart(roomId) =>
             val hadEvents = RoundEvents hasEvents roomId
             if (hadEvents) {
-              println(RoundEvents.getFrom(roomId, None))
+              println(RoundEvents.getFrom(roomId, None).map(_.map(_.version)))
               println(s"start round $roomId that had events! kicking members")
             }
             RoundEvents.reset(roomId)

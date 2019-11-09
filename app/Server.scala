@@ -51,14 +51,26 @@ final class Server @Inject() (
   }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(SiteClientActor.start) map asWebsocket(new RateLimit(
+    auth(req, flag) flatMap { user =>
+      actorFlow(req, bufferSize = 8) { clientIn =>
+        SiteClientActor.start {
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
+        }
+      }
+    } map asWebsocket(new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
       name = s"site ${reqName(req)}"
     ))
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
-    connectTo(req, sri, flag)(LobbyClientActor.start) map asWebsocket(new RateLimit(
+    auth(req, flag) flatMap { user =>
+      actorFlow(req, bufferSize = 8) { clientIn =>
+        LobbyClientActor.start {
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
+        }
+      }
+    } map asWebsocket(new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
       name = s"lobby ${reqName(req)}"
@@ -147,17 +159,6 @@ final class Server @Inject() (
       name = s"challenge ${reqName(req)}"
     ))
 
-  private def connectTo(req: RequestHeader, sri: Sri, flag: Option[Flag])(
-    actor: ClientActor.Deps => Behavior[ClientMsg]
-  ): Future[Flow[ClientOut, ClientIn, _]] =
-    auth(req, flag) flatMap { user =>
-      actorFlow(req) { clientIn =>
-        actor {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
-        }
-      }
-    }
-
   private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
     AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
       case TextMessage(text) if limiter(text) && text.size < 2000 => ClientOut.parse(text).fold(
@@ -166,12 +167,12 @@ final class Server @Inject() (
       )
     })(flow map { out => TextMessage(out.write) })
 
-  private def actorFlow(req: RequestHeader)(
+  private def actorFlow(req: RequestHeader, bufferSize: Int = roomClientInBufferSize)(
     clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
   ): Future[Flow[ClientOut, ClientIn, _]] = {
 
     val (outQueue, publisher) = Source.queue[ClientIn](
-      bufferSize = 8,
+      bufferSize = bufferSize,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
@@ -186,11 +187,15 @@ final class Server @Inject() (
           }
         ),
         Source.fromPublisher(publisher)
-        // quick way to simulate network lag!
-        // .delay(900.millis)
+      // .wireTap(x => println(s"  $x"))
+      // .delay(900.millis) // quick way to simulate network lag!
       )
     }
   }
+
+  // when a client connects from an old socket version,
+  // catch-up messages are buffered until sent
+  private val roomClientInBufferSize = 32
 
   private val logger = Logger("Server")
 }
