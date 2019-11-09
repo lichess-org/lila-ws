@@ -22,6 +22,7 @@ final class Server @Inject() (
     mongo: Mongo,
     stream: Stream,
     config: play.api.Configuration,
+    monitor: Monitor,
     lifecycle: play.api.inject.ApplicationLifecycle
 )(implicit
     ec: ExecutionContext,
@@ -35,6 +36,8 @@ final class Server @Inject() (
 
   private val bus = Bus(system)
 
+  monitor.start
+
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
@@ -43,11 +46,6 @@ final class Server @Inject() (
   }
   Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
     bus.subscribe(_, _.roundBot)
-  }
-
-  if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
-    play.api.Logger(getClass).info("Kamon is enabled")
-    kamon.Kamon.loadModules()
   }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
