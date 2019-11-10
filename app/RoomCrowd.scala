@@ -71,4 +71,6 @@ object RoomCrowd {
     users = room.users.keys,
     anons = room.anons
   )
+
+  def size = rooms.size
 }

@@ -83,4 +83,6 @@ object RoundCrowd {
         Behaviors.same
     }
   }
+
+  def size = rooms.size
 }

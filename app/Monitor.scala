@@ -23,6 +23,8 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
   private def periodicMetrics = {
     historyRoomSize.update(History.room.size)
     historyRoundSize.update(History.round.size)
+    crowdRoomSize.update(RoomCrowd.size)
+    crowdRoundSize.update(RoundCrowd.size)
   }
 }
 
@@ -33,4 +35,7 @@ object Monitor {
 
   val historyRoomSize = Kamon.gauge("history.room.size").withoutTags
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags
+
+  val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags
+  val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
 }
