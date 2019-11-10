@@ -3,11 +3,11 @@ package lila.ws
 import javax.inject._
 import org.joda.time.DateTime
 import play.api.Configuration
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.bson._
+import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
-import reactivemongo.bson._
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
+import scala.util.{ Try, Success }
 
 @Singleton
 final class Mongo @Inject() (config: Configuration)(implicit executionContext: ExecutionContext) {
@@ -87,8 +87,8 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
     ).one[BSONDocument] map { docOpt =>
         for {
           doc <- docOpt
-          members <- doc.getAs[BSONDocument]("members")
-        } yield members.stream.collect { case Success(BSONElement(key, _)) => key }.toSet
+          members <- doc.getAsOpt[BSONDocument]("members")
+        } yield members.elements.map { case BSONElement(key, _) => key }.toSet
       } map (_ getOrElse Set.empty)
   }
 
@@ -147,9 +147,11 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
 
 object Mongo {
 
-  implicit val BSONDateTimeHandler: BSONHandler[BSONDateTime, DateTime] =
-    new BSONHandler[BSONDateTime, DateTime] {
-      def read(time: BSONDateTime) = new DateTime(time.value)
-      def write(jdtime: DateTime) = BSONDateTime(jdtime.getMillis)
-    }
+  implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
+
+    @inline def readTry(bson: BSONValue): Try[DateTime] =
+      bson.asTry[BSONDateTime] map { dt => new DateTime(dt.value) }
+
+    @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
+  }
 }

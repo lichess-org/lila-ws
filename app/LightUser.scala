@@ -3,7 +3,7 @@ package lila.ws
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import javax.inject._
 import play.api.libs.json.{ Json, OWrites }
-import reactivemongo.bson._
+import reactivemongo.api.bson._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -35,8 +35,8 @@ final class LightUserApi @Inject() (mongo: Mongo)(implicit executionContext: Exe
       ).one[BSONDocument] map { docOpt =>
           for {
             doc <- docOpt
-            name <- doc.getAs[String]("username")
-            title = doc.getAs[String]("title")
+            name <- doc.getAsOpt[String]("username")
+            title = doc.getAsOpt[String]("title")
           } yield LightUser(name, title)
         }
     }

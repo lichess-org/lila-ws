@@ -3,9 +3,9 @@ package lila.ws
 import javax.inject._
 import org.joda.time.DateTime
 import play.api.mvc.RequestHeader
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import reactivemongo.bson._
+import reactivemongo.api.bson._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -30,7 +30,7 @@ final class SeenAtUpdate @Inject() (mongo: Mongo)( implicit
       modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
       fields = BSONDocument("roles" -> true, "_id" -> false),
     )
-    isCoach = userDoc.exists(_.getAs[List[String]]("roles").exists(_ contains "ROLE_COACH"))
+    isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
     _ <- if (isCoach) mongo.coach(_.update(ordered = false).one(
       BSONDocument("_id" -> user.id),
       BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
