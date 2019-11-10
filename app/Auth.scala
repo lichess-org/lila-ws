@@ -2,7 +2,7 @@ package lila.ws
 
 import javax.inject._
 import play.api.mvc.RequestHeader
-import reactivemongo.bson._
+import reactivemongo.api.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
@@ -21,7 +21,7 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
           ).one[BSONDocument]
         } map {
           _ flatMap {
-            _.getAs[User.ID]("user") map User.apply
+            _.getAsOpt[User.ID]("user") map User.apply
           }
         } map { user =>
           user foreach seenAt.apply
