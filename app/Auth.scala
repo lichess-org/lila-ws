@@ -23,9 +23,11 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
           _ flatMap {
             _.getAsOpt[User.ID]("user") map User.apply
           }
-        } map { user =>
-          user foreach seenAt.apply
-          user
+        } map {
+          _ map { user =>
+            seenAt(user)
+            sm.ImpersonateSM.get(user.id).fold(user)(User.apply)
+          }
         }
       case None => Future successful None
     }

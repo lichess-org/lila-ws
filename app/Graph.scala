@@ -78,7 +78,7 @@ object Graph {
 
       val SiteOut = merge[SiteOut](7)
 
-      val SOBroad = broadcast[SiteOut](3)
+      val SOBroad = broadcast[SiteOut](4)
 
       val SOBus: FlowShape[SiteOut, Bus.Msg] = b.add {
         Flow[SiteOut].collect {
@@ -120,6 +120,13 @@ object Graph {
       val Fen = merge[sm.FenSM.Input](2)
 
       val FenSM: FlowShape[sm.FenSM.Input, LilaIn.Site] = machine(sm.FenSM.machine)
+
+      val SOMisc: SinkShape[LilaOut] = b.add {
+        Sink.foreach[LilaOut] {
+          case i: LilaOut.Impersonate => sm.ImpersonateSM(i)
+          case _ =>
+        }
+      }
 
       val Lag: FlowShape[UserLag, LilaIn.Lags] = b.add {
         Flow[UserLag].groupedWithin(128, 947.millis) map { lags =>
@@ -398,6 +405,7 @@ object Graph {
       SiteOut     ~> SOBroad  ~> SOBus                          ~> ClientBus    ~> BusPublish
                      SOBroad  ~> SOFen     ~> Fen
                      SOBroad  ~> SOUser    ~> User
+                     SOBroad  ~> SOMisc
       ClientToFen                          ~> Fen   ~> FenSM    ~> SiteIn
       ClientToUser                         ~> User  ~> UserSM   ~> SiteIn
       ClientToFriends                               ~> Friends  ~> SiteIn

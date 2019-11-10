@@ -33,6 +33,7 @@ object LilaOut {
   case class DisconnectUser(user: User.ID) extends SiteOut
   case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with StudyOut
   case class SetTroll(user: User.ID, v: IsTroll) extends SiteOut
+  case class Impersonate(user: User.ID, by: Option[User.ID]) extends SiteOut
 
   // lobby
 
@@ -125,8 +126,11 @@ object LilaOut {
 
       case "round/nb" => parseIntOption(args) map NbRounds.apply
 
-      case "troll/set" => get(args, 2) {
+      case "mod/troll/set" => get(args, 2) {
         case Array(user, v) => Some(SetTroll(user, IsTroll(boolean(v))))
+      }
+      case "mod/impersonate" => get(args, 2) {
+        case Array(user, by) => Some(Impersonate(user, optional(by)))
       }
 
       case "tell/sris" => get(args, 2) {
@@ -219,4 +223,5 @@ object LilaOut {
   def commas(str: String): Array[String] = if (str == "-") Array.empty else str split ','
   def boolean(str: String): Boolean = str == "+"
   def readColor(str: String): Color = Color(str == "w")
+  def optional(str: String): Option[String] = if (str == "-") None else Some(str)
 }
