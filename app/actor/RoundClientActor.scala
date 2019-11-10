@@ -60,11 +60,7 @@ object RoundClientActor {
 
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
-        else {
-          // players already send pings to the server, keeping the room alive
-          // if (state.player.isEmpty) queue(_.round, LilaIn.KeepAlive(state.room.id))
-          Behaviors.same
-        }
+        else Behaviors.same
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
@@ -92,10 +88,6 @@ object RoundClientActor {
 
       case gone: ClientIn.RoundGone =>
         if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
-        Behaviors.same
-
-      case in: ClientIn.Payload =>
-        clientIn(in)
         Behaviors.same
 
       case in: ClientIn =>
