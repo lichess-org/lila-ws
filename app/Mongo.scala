@@ -52,8 +52,8 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
     ).one[BSONDocument] map { docOpt =>
         for {
           doc <- docOpt
-          playerIds <- doc.getAs[String]("is")
-          users = doc.getAs[List[String]]("us") getOrElse Nil
+          playerIds <- doc.getAsOpt[String]("is")
+          users = doc.getAsOpt[List[String]]("us") getOrElse Nil
           color <- {
             if (fullId.playerId.value == playerIds.take(4)) Some(chess.White)
             else if (fullId.playerId.value == playerIds.drop(4)) Some(chess.Black)
@@ -61,7 +61,7 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
           }
           expectedUserId = color.fold(users.headOption, users.lift(1)).filter(_.nonEmpty)
           if user.map(_.id) == expectedUserId
-          tourId = doc.getAs[Tour.ID]("tid")
+          tourId = doc.getAsOpt[Tour.ID]("tid")
         } yield Player(fullId.playerId, color, tourId)
       }
   }
@@ -117,9 +117,9 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
     ).one[BSONDocument] map { docOpt =>
         for {
           doc <- docOpt
-          c <- doc.getAs[BSONDocument]("challenger")
-          anon = c.getAs[String]("s") map Challenge.Anon.apply
-          user = c.getAs[String]("id") map Challenge.User.apply
+          c <- doc.getAsOpt[BSONDocument]("challenger")
+          anon = c.getAsOpt[String]("s") map Challenge.Anon.apply
+          user = c.getAsOpt[String]("id") map Challenge.User.apply
           challenger <- anon orElse user
         } yield challenger
       }
