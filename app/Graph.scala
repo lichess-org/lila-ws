@@ -22,7 +22,8 @@ object Graph {
     lilaInRound: Sink[LilaIn.Round, _],
     lilaInChallenge: Sink[LilaIn.Challenge, _],
     mongo: Mongo,
-    crowdJson: CrowdJson
+    crowdJson: CrowdJson,
+    directRoundSend: LilaIn => Unit
   )(implicit system: akka.actor.ActorSystem, ec: ExecutionContext): GraphType = RunnableGraph.fromGraph(GraphDSL.create(
     Source.queue[SiteOut](8192, overflow), // from site chan
     Source.queue[LobbyOut](8192, overflow), // from lobby chan
@@ -327,22 +328,21 @@ object Graph {
         implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
         implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
         Sink.foreach[RoundOut] {
-          case LilaOut.RoundResyncPlayer(fullId) =>
-            bus(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
-          case LilaOut.RoundGone(fullId, gone) =>
-            bus(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
           case LilaOut.RoundVersion(gameId, version, flags, tpe, data) =>
             val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
             History.round.add(gameId, versioned)
             bus(versioned, _ room gameId)
+          case LilaOut.TellRoom(roomId, payload) =>
+            bus(ClientIn.Payload(payload), _ room roomId)
+          case LilaOut.RoundResyncPlayer(fullId) =>
+            bus(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
+          case LilaOut.RoundGone(fullId, gone) =>
+            bus(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
           case LilaOut.RoundTourStanding(tourId, data) =>
             bus(ClientIn.roundTourStanding(data), _ tourStanding tourId)
           case LilaOut.UserTvNewGame(gameId, userId) =>
             bus(UserTvNewGame(userId), _ room gameId)
           case o: LilaOut.TvSelect => tv select o
-          case LilaOut.RoomStop(roomId) =>
-            History.round.stop(roomId)
-            bus(ClientCtrl.Disconnect, _ room roomId)
           case LilaOut.RoomStart(roomId) =>
             val hadEvents = History.round hasEvents roomId
             if (hadEvents) {
@@ -351,9 +351,13 @@ object Graph {
             }
             History.round.reset(roomId)
             if (hadEvents) bus(ClientCtrl.Disconnect, _ room roomId)
+          case LilaOut.RoomStop(roomId) =>
+            History.round.stop(roomId)
+            bus(ClientCtrl.Disconnect, _ room roomId)
           case LilaOut.RoundBotOnline(gameId, color, v) => bus(RoundBotOnline(gameId, color, v), _.roundBot)
-          case LilaOut.TellRoom(roomId, payload) =>
-            bus(ClientIn.Payload(payload), _ room roomId)
+          case LilaOut.LilaBoot =>
+            println("#################### LILA BOOT ####################")
+            directRoundSend(LilaIn.RoomSetVersions(History.round.allVersions))
           case _ =>
         }
       }

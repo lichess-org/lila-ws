@@ -77,6 +77,8 @@ object LilaOut {
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
+  case object LilaBoot extends SiteOut with RoundOut
+
   // impl
 
   private def get(args: String, nb: Int)(f: PartialFunction[Array[String], Option[LilaOut]]): Option[LilaOut] =
@@ -215,6 +217,8 @@ object LilaOut {
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
       }
+
+      case "boot" => Some(LilaBoot)
 
       case _ => None
     }

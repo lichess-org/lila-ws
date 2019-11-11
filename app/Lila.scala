@@ -9,12 +9,14 @@ import ipc._
 
 final class Lila(redisUri: RedisURI) {
 
+  import Lila._
+
   private val logger = Logger(getClass)
   private val redis = RedisClient create redisUri
 
-  private var closeFunctions = List.empty[() => Unit]
+  private var connections = Map.empty[ChanIn, Connection]
 
-  def pubsub[Out](chanIn: String, chanOut: String)(collect: PartialFunction[LilaOut, Out]) = {
+  def pubsub[Out](chanIn: ChanIn, chanOut: ChanOut)(collect: PartialFunction[LilaOut, Out]) = {
 
     val connIn = redis.connectPubSub()
     val connOut = redis.connectPubSub()
@@ -30,8 +32,8 @@ final class Lila(redisUri: RedisURI) {
 
       connOut.async.subscribe(chanOut)
 
-      connOut.addListener(new RedisPubSubAdapter[String, String] {
-        override def message(channel: String, msg: String): Unit =
+      connOut.addListener(new RedisPubSubAdapter[ChanOut, String] {
+        override def message(channel: ChanOut, msg: String): Unit =
           LilaOut read msg match {
             case Some(out) => collect lift out match {
               case Some(typed) => queue offer typed
@@ -48,13 +50,26 @@ final class Lila(redisUri: RedisURI) {
       connIn.close()
       connOut.close()
     }
-    closeFunctions = close :: closeFunctions
+    connections = connections + (chanIn -> new Connection(send, close))
 
     (init, sink)
   }
 
   def closeAll: Unit = {
-    closeFunctions.foreach(_())
-    closeFunctions = Nil
+    connections.foreachEntry {
+      case (_, conn) => conn.close()
+    }
+    connections = Map.empty
   }
+
+  def directSend(chan: ChanIn)(in: LilaIn): Unit =
+    connections.get(chan).foreach(_ send in)
+}
+
+private object Lila {
+
+  type ChanIn = String
+  type ChanOut = String
+
+  final class Connection(val send: LilaIn => Unit, val close: () => Unit)
 }

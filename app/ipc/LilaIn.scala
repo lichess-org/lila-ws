@@ -104,6 +104,12 @@ object LilaIn {
     def write = s"tell/room/sri $roomId $sri ${optional(userId)} ${Json.stringify(payload)}"
   }
 
+  case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom {
+    def write = s"room/versions ${commas(versions.map {
+      case (r, v) => s"$r:$v"
+    })}"
+  }
+
   case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Tour {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }

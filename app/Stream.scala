@@ -32,7 +32,18 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
     val (challengeInit, challengeSink) = lila.pubsub("chal-in", "chal-out") { case out: ChallengeOut => out }
 
     val (siteOut, lobbyOut, simulOut, tourOut, studyOut, roundOut, challengeOut, queues) =
-      Graph(siteSink, lobbySink, simulSink, tourSink, studySink, roundSink, challengeSink, mongo, crowdJson).run()
+      Graph(
+        siteSink,
+        lobbySink,
+        simulSink,
+        tourSink,
+        studySink,
+        roundSink,
+        challengeSink,
+        mongo,
+        crowdJson,
+        directRoundSend = lila.directSend("r-in") _
+      ).run()
 
     val init = List(LilaIn.DisconnectAll)
     siteInit(siteOut, init)
