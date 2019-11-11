@@ -66,8 +66,8 @@ object LilaIn {
     def write = s"disconnect/users ${commas(userIds)}"
   }
 
-  case object DisconnectAll extends Site {
-    def write = "disconnect/all"
+  case object WsBoot extends Site {
+    def write = "boot"
   }
 
   case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {

@@ -24,7 +24,6 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](historySize:
       .map(_.reverse)
   }
 
-  def reset(key: K) = histories.put(key.toString, Nil)
   def stop(key: K) = histories.remove(key.toString)
 
   def hasEvents(key: K) = Option(histories get key.toString).exists(_.nonEmpty)

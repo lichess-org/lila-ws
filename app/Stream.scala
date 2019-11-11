@@ -21,7 +21,7 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
 
   private val lila = new Lila(redisUri = RedisURI.create(config.get[String]("redis.uri")))
 
-  def start: Stream.Queues = {
+  def start: Future[Stream.Queues] = {
 
     val (siteInit, siteSink) = lila.pubsub("site-in", "site-out") { case out: SiteOut => out }
     val (tourInit, tourSink) = lila.pubsub("tour-in", "tour-out") { case out: TourOut => out }
@@ -45,16 +45,13 @@ final class Stream @Inject() (config: Configuration, crowdJson: CrowdJson)(impli
         directRoundSend = lila.directSend("r-in") _
       ).run()
 
-    val init = List(LilaIn.DisconnectAll)
-    siteInit(siteOut, init)
-    tourInit(tourOut, init)
-    lobbyInit(lobbyOut, init)
-    simulInit(simulOut, init)
-    studyInit(studyOut, init)
-    roundInit(roundOut, init)
-    challengeInit(challengeOut, init)
-
-    queues
+    siteInit(siteOut) zip
+    tourInit(tourOut) zip
+    lobbyInit(lobbyOut) zip
+    simulInit(simulOut) zip
+    studyInit(studyOut) zip
+    roundInit(roundOut) zip
+    challengeInit(challengeOut) map { _ => queues }
   }
 
   lifecycle addStopHook { () => Future successful lila.closeAll }

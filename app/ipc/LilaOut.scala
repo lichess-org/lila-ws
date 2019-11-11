@@ -55,7 +55,6 @@ object LilaOut {
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
   case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString) extends AnyRoomOut with SiteOut
 
-  case class RoomStart(roomId: RoomId) extends AnyRoomOut
   case class RoomStop(roomId: RoomId) extends AnyRoomOut
 
   // study
@@ -159,7 +158,6 @@ object LilaOut {
         case Array(roomId, userIds, payload) => Some(TellRoomUsers(RoomId(roomId), commas(userIds), JsonString(payload)))
       }
 
-      case "room/start" => Some(RoomStart(RoomId(args)))
       case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case "room/present" => get(args, 3) {

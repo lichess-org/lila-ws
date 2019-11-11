@@ -4,6 +4,7 @@ import akka.stream.scaladsl._
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
 import play.api.Logger
+import scala.concurrent.{ Future, Promise }
 
 import ipc._
 
@@ -26,11 +27,7 @@ final class Lila(redisUri: RedisURI) {
       connIn.async.publish(chanIn, in.write).thenRun { timer.stop _ }
     }
 
-    val init: (SourceQueueWithComplete[Out], List[LilaIn]) => Unit = (queue, initialMsgs) => {
-
-      initialMsgs foreach send
-
-      connOut.async.subscribe(chanOut)
+    val init: SourceQueueWithComplete[Out] => Future[Unit] = queue => {
 
       connOut.addListener(new RedisPubSubAdapter[ChanOut, String] {
         override def message(channel: ChanOut, msg: String): Unit =
@@ -42,6 +39,13 @@ final class Lila(redisUri: RedisURI) {
             case None => logger.warn(s"Unhandled $channel LilaOut: $msg")
           }
       })
+
+      val promise = Promise[Unit]
+      connOut.async.subscribe(chanOut) thenRun { () =>
+        send(LilaIn.WsBoot)
+        promise.success(())
+      }
+      promise.future
     }
 
     val sink = Sink foreach send

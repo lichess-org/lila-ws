@@ -211,7 +211,6 @@ object Graph {
           case LilaOut.TellRoomVersion(roomId, version, troll, json) =>
             History.room.add(roomId, ClientIn.Versioned(json, version, troll))
           case LilaOut.RoomStop(roomId) => History.room.stop(roomId)
-          case LilaOut.RoomStart(roomId) => History.room.reset(roomId)
           case _ =>
         }
       }
@@ -343,14 +342,6 @@ object Graph {
           case LilaOut.UserTvNewGame(gameId, userId) =>
             bus(UserTvNewGame(userId), _ room gameId)
           case o: LilaOut.TvSelect => tv select o
-          case LilaOut.RoomStart(roomId) =>
-            val hadEvents = History.round hasEvents roomId
-            if (hadEvents) {
-              println(History.round.getFrom(roomId, None).map(_.map(_.version)))
-              println(s"start round $roomId that had events! kicking members")
-            }
-            History.round.reset(roomId)
-            if (hadEvents) bus(ClientCtrl.Disconnect, _ room roomId)
           case LilaOut.RoomStop(roomId) =>
             History.round.stop(roomId)
             bus(ClientCtrl.Disconnect, _ room roomId)

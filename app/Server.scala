@@ -32,7 +32,7 @@ final class Server @Inject() (
 
   type WebsocketFlow = Flow[Message, Message, _]
 
-  private val queues = stream.start
+  private val streamQueues: Future[Stream.Queues] = stream.start
 
   private val bus = Bus(system)
 
@@ -41,16 +41,18 @@ final class Server @Inject() (
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
     bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
-  system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-    queues(_.site, LilaIn.Connections(sm.CountSM.get))
-  }
-  Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
-    bus.subscribe(_, _.roundBot)
+  streamQueues foreach { queues =>
+    system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+      queues(_.site, LilaIn.Connections(sm.CountSM.get))
+    }
+    Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
+      bus.subscribe(_, _.roundBot)
+    }
   }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     auth(req, flag) flatMap { user =>
-      actorFlow(req, bufferSize = 8) { clientIn =>
+      actorFlow(req, bufferSize = 8) { clientIn => queues =>
         SiteClientActor.start {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
         }
@@ -63,7 +65,7 @@ final class Server @Inject() (
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     auth(req, flag) flatMap { user =>
-      actorFlow(req, bufferSize = 8) { clientIn =>
+      actorFlow(req, bufferSize = 8) { clientIn => queues =>
         LobbyClientActor.start {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
         }
@@ -77,7 +79,7 @@ final class Server @Inject() (
   def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
       mongo.isTroll(user) flatMap { isTroll =>
-        actorFlow(req) { clientIn =>
+        actorFlow(req) { clientIn => queues =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
           }
@@ -92,7 +94,7 @@ final class Server @Inject() (
   def connectToTour(req: RequestHeader, tour: Tour, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
       mongo.isTroll(user) flatMap { isTroll =>
-        actorFlow(req) { clientIn =>
+        actorFlow(req) { clientIn => queues =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
             ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
           }
@@ -106,7 +108,7 @@ final class Server @Inject() (
 
   def connectToStudy(req: RequestHeader, study: Study, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn =>
+      actorFlow(req) { clientIn => queues =>
         StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
@@ -119,7 +121,7 @@ final class Server @Inject() (
 
   def connectToRoundWatch(req: RequestHeader, gameId: Game.Id, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion], userTv: Option[UserTv]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn =>
+      actorFlow(req) { clientIn => queues =>
         userTv foreach { tv =>
           queues(_.round, LilaIn.UserTv(gameId, tv.value))
         }
@@ -135,7 +137,7 @@ final class Server @Inject() (
 
   def connectToRoundPlay(req: RequestHeader, fullId: Game.FullId, player: Player, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn =>
+      actorFlow(req) { clientIn => queues =>
         RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), None, fromVersion) {
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
         }
@@ -147,7 +149,7 @@ final class Server @Inject() (
     ))
 
   def connectToChallenge(req: RequestHeader, challengeId: Challenge.Id, owner: Boolean, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
-    actorFlow(req) { clientIn =>
+    actorFlow(req) { clientIn => queues =>
       ChallengeClientActor.start(RoomActor.State(RoomId(challengeId), IsTroll(false)), owner, fromVersion) {
         ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
       }
@@ -166,15 +168,15 @@ final class Server @Inject() (
     })(flow map { out => TextMessage(out.write) })
 
   private def actorFlow(req: RequestHeader, bufferSize: Int = roomClientInBufferSize)(
-    clientActor: SourceQueue[ClientIn] => Behavior[ClientMsg]
-  ): Future[Flow[ClientOut, ClientIn, _]] = {
+    clientActor: SourceQueue[ClientIn] => Stream.Queues => Behavior[ClientMsg]
+  ): Future[Flow[ClientOut, ClientIn, _]] = streamQueues flatMap { queues =>
 
     val (outQueue, publisher) = Source.queue[ClientIn](
       bufferSize = bufferSize,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
-    Spawner(clientActor(outQueue)) map { actor =>
+    Spawner(clientActor(outQueue)(queues)) map { actor =>
       Flow.fromSinkAndSource(
         ActorSink.actorRef[ClientMsg](
           ref = actor,
