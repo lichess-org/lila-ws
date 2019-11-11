@@ -76,7 +76,7 @@ object LilaOut {
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
-  case object LilaBoot extends SiteOut with RoundOut
+  case object LilaBoot extends AnyRoomOut
 
   // impl
 

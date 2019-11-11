@@ -215,6 +215,17 @@ object Graph {
         }
       }
 
+      def roomBoot(filter: Mongo => Mongo.IdFilter): FlowShape[RoomOut, LilaIn.RoomSetVersions] = b.add {
+        Flow[RoomOut].collect {
+          case LilaOut.LilaBoot => ()
+        }.mapAsync(1) { _ =>
+          val versions = History.room.allVersions
+          filter(mongo)(versions.map(_._1)) map { ids =>
+            LilaIn.RoomSetVersions(versions.filter(v => ids(v._1)))
+          }
+        }
+      }
+
       val roomBusCollect: PartialFunction[RoomOut, Bus.Msg] = {
         case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
           Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
@@ -248,15 +259,19 @@ object Graph {
 
       // simul
 
-      val SimBroad = broadcast[SimulOut](3)
+      val SimBroad = broadcast[SimulOut](4)
+
+      val SimBoot = roomBoot(_.idFilter.simul)
 
       val SimKeepAlive = andKeepAlive[LilaIn.Simul](lilaInSimul)
+
+      val SimulIn = merge[LilaIn.Simul](2)
 
       val SimulInlet: Inlet[LilaIn.Simul] = b.add(lilaInSimul).in
 
       // tournament
 
-      val TouBroad = broadcast[TourOut](4)
+      val TouBroad = broadcast[TourOut](5)
 
       val TouCrowd: FlowShape[TourOut, LilaIn.WaitingUsers] = b.add {
         Flow[TourOut].collect {
@@ -286,15 +301,19 @@ object Graph {
         }
       }
 
+      val TouBoot = roomBoot(_.idFilter.tour)
+
       val TourKeepAlive = andKeepAlive[LilaIn.Tour](lilaInTour)
 
-      val TourIn = merge[LilaIn.Tour](2)
+      val TourIn = merge[LilaIn.Tour](3)
 
       val TourInlet: Inlet[LilaIn.Tour] = b.add(lilaInTour).in
 
       // study
 
-      val StuBroad = broadcast[StudyOut](4)
+      val StuBroad = broadcast[StudyOut](5)
+
+      val StuBoot = roomBoot(_.idFilter.study)
 
       val StuCrowd: FlowShape[StudyOut, LilaIn.ReqResponse] = b.add {
         Flow[StudyOut].collect {
@@ -315,7 +334,7 @@ object Graph {
 
       val StuKeepAlive = andKeepAlive[LilaIn.Study](lilaInStudy)
 
-      val StudyIn = merge[LilaIn.Study](3)
+      val StudyIn = merge[LilaIn.Study](4)
 
       val StudyInlet: Inlet[LilaIn.Study] = b.add(lilaInStudy).in
 
@@ -419,19 +438,22 @@ object Graph {
       SimulOutlet ~> SimBroad ~> ToSiteOut ~> SiteOut
                      SimBroad ~> RoomBus                        ~> ClientBus
                      SimBroad                                                   ~> EventStore
-      ClientToSimul           ~> SimKeepAlive                                   ~> SimulInlet
+                     SimBroad                       ~> SimBoot  ~> SimulIn      ~> SimulInlet
+      ClientToSimul           ~> SimKeepAlive                   ~> SimulIn
 
       TourOutlet  ~> TouBroad ~> ToSiteOut ~> SiteOut
                      TouBroad ~> RoomBus                        ~> ClientBus
                      TouBroad                                                   ~> EventStore
                      TouBroad ~> TouCrowd  ~> TouCrowdB         ~> TouRemind    ~> User
-                                              TouCrowdB         ~> TourIn       ~> TourInlet
+                     TouBroad                       ~> TouBoot  ~> TourIn       ~> TourInlet
+                                              TouCrowdB         ~> TourIn
       ClientToTour            ~> TourKeepAlive                  ~> TourIn
 
       StudyOutlet ~> StuBroad ~> ToSiteOut ~> SiteOut
                      StuBroad ~> RoomBus                        ~> ClientBus
                      StuBroad                                                   ~> EventStore
-                     StuBroad ~> StuCrowd                       ~> StudyIn      ~> StudyInlet
+                     StuBroad                       ~> StuBoot  ~> StudyIn      ~> StudyInlet
+                     StuBroad ~> StuCrowd                       ~> StudyIn
       ClientToStudy           ~> StuKeepAlive                   ~> StudyIn
       ClientToStudyDoor       ~> StudyDoor                      ~> StudyIn
 

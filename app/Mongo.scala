@@ -132,6 +132,13 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
       userColl flatMap { exists(_, BSONDocument("_id" -> u.id, "troll" -> true)) } map IsTroll.apply
     }
 
+  object idFilter {
+    import Mongo._
+    val study: IdFilter = ids => studyColl flatMap filterIds(ids)
+    val tour: IdFilter = ids => tourColl flatMap filterIds(ids)
+    val simul: IdFilter = ids => simulColl flatMap filterIds(ids)
+  }
+
   private def idExists(id: String)(coll: BSONCollection): Future[Boolean] =
     exists(coll, BSONDocument("_id" -> id))
 
@@ -143,9 +150,19 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
       hint = None,
       readConcern = ReadConcern.Local
     ).map(0 < _)
+
+  private def filterIds(ids: Iterable[String])(coll: BSONCollection): Future[Set[String]] =
+    coll.distinct[String, Set](
+      key = "_id",
+      selector = Some(BSONDocument("_id" -> BSONDocument("$in" -> ids))),
+      readConcern = ReadConcern.Local,
+      collation = None
+    )
 }
 
 object Mongo {
+
+  type IdFilter = Iterable[String] => Future[Set[String]]
 
   implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
 
