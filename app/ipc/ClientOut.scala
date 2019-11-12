@@ -147,7 +147,7 @@ object ClientOut {
         // study
         case "like" | "setPath" | "anaMove" | "anaDrop" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" | "leave" |
           "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" |
-          "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGameBook" | "toggleGlyph" | "explorerGame" |
+          "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
           "requestAnalysis" | "invite" | "relaySync" =>
           Some(StudyForward(o))
         // round
