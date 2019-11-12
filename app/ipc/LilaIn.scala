@@ -174,7 +174,7 @@ object LilaIn {
   }
 
   case class ChallengePing(id: RoomId) extends Challenge {
-    def write = ChallengePings(List(id)).writee
+    def write = ChallengePings(List(id)).write
   }
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge {
     def write = s"challenge/pings ${commas(ids)}"
