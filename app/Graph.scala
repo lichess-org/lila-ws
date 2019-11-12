@@ -405,6 +405,14 @@ object Graph {
 
       val ChaKeepAlive = andKeepAlive[LilaIn.Challenge](lilaInChallenge)
 
+      val ChaPings = b.add {
+        Flow[LilaIn.Challenge].collect {
+          case ping: LilaIn.ChallengePing => ping
+        }.groupedWithin(20, 2.seconds) map { pings =>
+          LilaIn.ChallengePings(pings.map(_.id).distinct)
+        }
+      }
+
       val ChalInlet: Inlet[LilaIn.Challenge] = b.add(lilaInChallenge).in
 
       // tickers
@@ -467,7 +475,7 @@ object Graph {
       ChalOutlet  ~> ChaBroad ~> ToSiteOut ~> SiteOut
                      ChaBroad ~> RoomBus                        ~> ClientBus
                      ChaBroad                                                   ~> EventStore
-      ClientToChal            ~> ChaKeepAlive                                   ~> ChalInlet
+      ClientToChal            ~> ChaKeepAlive       ~> ChaPings                 ~> ChalInlet
 
       ClientToCrowd                                 ~> Crowd    ~> CrowdJson    ~> ClientBus
       UserTicker                           ~> User

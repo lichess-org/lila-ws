@@ -174,7 +174,10 @@ object LilaIn {
   }
 
   case class ChallengePing(id: RoomId) extends Challenge {
-    def write = s"challenge/ping $id"
+    def write = ChallengePings(List(id)).writee
+  }
+  case class ChallengePings(ids: Iterable[RoomId]) extends Challenge {
+    def write = s"challenge/pings ${commas(ids)}"
   }
 
   case class ReqResponse(reqId: Int, value: String) extends Study {
