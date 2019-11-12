@@ -41,13 +41,7 @@ object SiteClientActor {
         if (newState == state) Behaviors.same
         else apply(newState, deps)
 
-      case msg =>
-        Monitor.clientOutUnexpected.increment()
-        if (state.ignoreLog) Behaviors.same
-        else {
-          Logger("SiteClientActor").info(s"Wrong $msg ${deps.req}")
-          apply(state.copy(ignoreLog = true), deps)
-        }
+      case msg => wrong("Site", state, deps, msg) { apply(_, deps) }
     }
 
   }.receiveSignal {

@@ -44,6 +44,10 @@ object SimulClientActor {
         val siteState = globalReceive(state.site, deps, ctx, msg)
         if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
+
+      case msg => wrong("Simul", state.site, deps, msg) { s =>
+        apply(state.copy(site = s), deps)
+      }
     }
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {

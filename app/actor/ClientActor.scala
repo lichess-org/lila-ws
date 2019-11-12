@@ -46,6 +46,15 @@ object ClientActor {
     state.copy(lastPing = nowSeconds)
   }
 
+  def wrong(loggerName: String, state: State, deps: Deps, msg: ClientMsg)(update: State => Behavior[ClientMsg]): Behavior[ClientMsg] = {
+    Monitor.clientOutUnexpected.increment()
+    if (state.ignoreLog) Behaviors.same
+    else {
+      Logger(s"${loggerName}ClientActor").info(s"Wrong $msg ${deps.req}")
+      update(state.copy(ignoreLog = true))
+    }
+  }
+
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
 
     import state._

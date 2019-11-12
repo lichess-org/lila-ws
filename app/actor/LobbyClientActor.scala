@@ -67,6 +67,10 @@ object LobbyClientActor {
         val siteState = globalReceive(state.site, deps, ctx, msg)
         if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
+
+      case msg => wrong("Lobby", state.site, deps, msg) { s =>
+        apply(state.copy(site = s), deps)
+      }
     }
 
   }.receiveSignal {
