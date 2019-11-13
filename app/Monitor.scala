@@ -38,4 +38,6 @@ object Monitor {
 
   val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
+
+  val palantirChannels = Kamon.gauge("crowd.channels.size").withoutTags
 }

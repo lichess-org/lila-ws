@@ -150,6 +150,10 @@ object RoundClientActor {
         }
         Behaviors.same
 
+      case ClientOut.PalantirPing =>
+        deps.req.user map { Palantir.respondToPing(state.room.id, _) } foreach clientIn
+        Behaviors.same
+
       case UserTvNewGame(userId) =>
         if (state.userTv.exists(_.value == userId)) clientIn(ClientIn.Resync)
         Behaviors.same

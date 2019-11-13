@@ -177,6 +177,10 @@ object ClientIn {
   }
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
+  case class Palantir(userIds: Iterable[User.ID]) extends ClientIn {
+    def write = cliMsg("palantir", userIds)
+  }
+
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(

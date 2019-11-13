@@ -15,8 +15,6 @@ sealed trait ClientOutSite extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
 sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutRound extends ClientOut
-sealed trait ClientOutChat extends ClientOut
-sealed trait ClientOutChallenge extends ClientOut
 
 object ClientOut {
 
@@ -87,12 +85,16 @@ object ClientOut {
 
   // chat
 
-  case class ChatSay(msg: String) extends ClientOutChat
-  case class ChatTimeout(suspect: String, reason: String) extends ClientOutChat
+  case class ChatSay(msg: String) extends ClientOut
+  case class ChatTimeout(suspect: String, reason: String) extends ClientOut
 
   // challenge
 
-  case object ChallengePing extends ClientOutChallenge
+  case object ChallengePing extends ClientOut
+
+  // palantir
+
+  case object PalantirPing extends ClientOut
 
   // impl
 
@@ -174,6 +176,7 @@ object ClientOut {
         case "rep" => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
         case "flag" => o str "d" flatMap Color.apply map RoundFlag.apply
         case "bye2" => Some(RoundBye)
+        case "palantirPing" => Some(PalantirPing)
         case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
           "resign-force" | "draw-force" | "abort" | "outoftime" =>
           Some(RoundPlayerForward(o))
