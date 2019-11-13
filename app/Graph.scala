@@ -226,15 +226,13 @@ object Graph {
         }
       }
 
-      val roomBusCollect: PartialFunction[RoomOut, Bus.Msg] = {
-        case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
-          Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
-        case LilaOut.TellRoom(roomId, payload) =>
-          Bus.msg(ClientIn.Payload(payload), _ room roomId)
-      }
-
       def RoomBus: FlowShape[RoomOut, Bus.Msg] = b.add {
-        Flow[RoomOut].collect(roomBusCollect)
+        Flow[RoomOut].collect {
+          case LilaOut.TellRoomVersion(roomId, version, troll, payload) =>
+            Bus.msg(ClientIn.Versioned(payload, version, troll), _ room roomId)
+          case LilaOut.TellRoom(roomId, payload) =>
+            Bus.msg(ClientIn.Payload(payload), _ room roomId)
+        }
       }
 
       // extract KeepAlive events from the stream,
