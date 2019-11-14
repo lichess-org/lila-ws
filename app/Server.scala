@@ -34,19 +34,17 @@ final class Server @Inject() (
 
   private val streamQueues: Future[Stream.Queues] = stream.start
 
-  private val bus = Bus(system)
-
   monitor.start
 
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
-    bus publish Bus.msg(ClientCtrl.Broom(nowSeconds - 30), _.all)
+    Bus.publish(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
   streamQueues foreach { queues =>
     system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
       queues(_.site, LilaIn.Connections(sm.CountSM.get))
     }
     Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
-      bus.on(_, Bus.channel.roundBot)
+      Bus.subscribe(Bus.channel.roundBot, _)
     }
   }
 
@@ -54,7 +52,7 @@ final class Server @Inject() (
     auth(req, flag) flatMap { user =>
       actorFlow(req, bufferSize = 8) { clientIn => queues =>
         SiteClientActor.start {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
         }
       }
     } map asWebsocket(new RateLimit(
@@ -67,7 +65,7 @@ final class Server @Inject() (
     auth(req, flag) flatMap { user =>
       actorFlow(req, bufferSize = 8) { clientIn => queues =>
         LobbyClientActor.start {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
         }
       }
     } map asWebsocket(new RateLimit(
@@ -81,7 +79,7 @@ final class Server @Inject() (
       mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn => queues =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
           }
         }
       }
@@ -96,7 +94,7 @@ final class Server @Inject() (
       mongo.isTroll(user) flatMap { isTroll =>
         actorFlow(req) { clientIn => queues =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
           }
         }
       }
@@ -110,7 +108,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn => queues =>
         StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
     } map asWebsocket(new RateLimit(
@@ -126,7 +124,7 @@ final class Server @Inject() (
           queues(_.round, LilaIn.UserTv(gameId, tv.value))
         }
         RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, userTv, fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
     } map asWebsocket(new RateLimit(
@@ -139,7 +137,7 @@ final class Server @Inject() (
     mongo.isTroll(user) flatMap { isTroll =>
       actorFlow(req) { clientIn => queues =>
         RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), None, fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
     } map asWebsocket(new RateLimit(
@@ -151,7 +149,7 @@ final class Server @Inject() (
   def connectToChallenge(req: RequestHeader, challengeId: Challenge.Id, owner: Boolean, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     actorFlow(req) { clientIn => queues =>
       ChallengeClientActor.start(RoomActor.State(RoomId(challengeId), IsTroll(false)), owner, fromVersion) {
-        ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user), bus)
+        ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
       }
     } map asWebsocket(new RateLimit(
       maxCredits = 50,

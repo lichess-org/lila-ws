@@ -23,7 +23,7 @@ object LobbyClientActor {
       queue(_.user, UserSM.ConnectSilently(u, ctx.self))
     }
     queue(_.lobby, LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
-    bus.on(ctx.self, Bus.channel.lobby)
+    Bus.subscribe(Bus.channel.lobby, ctx.self)
     apply(State(), deps)
   }
 
@@ -75,10 +75,9 @@ object LobbyClientActor {
 
   }.receiveSignal {
     case (ctx, PostStop) =>
-      import deps._
       onStop(state.site, deps, ctx)
-      bus.off(ctx.self, Bus.channel.lobby)
-      queue(_.lobby, LilaIn.DisconnectSri(req.sri))
+      Bus.unsubscribe(Bus.channel.lobby, ctx.self)
+      deps.queue(_.lobby, LilaIn.DisconnectSri(deps.req.sri))
       Behaviors.same
   }
 }

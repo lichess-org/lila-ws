@@ -15,9 +15,8 @@ object ClientActor {
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    import deps._
     CountSM.connect
-    busChansOf(req) foreach { bus.on(ctx.self, _) }
+    busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
@@ -27,7 +26,7 @@ object ClientActor {
       queue(_.user, UserSM.Disconnect(u, ctx.self))
     }
     if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
-    (Bus.channel.mlat :: busChansOf(req)) foreach { bus.off(ctx.self, _) }
+    (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
   }
 
   def socketControl(state: State, flag: Option[Flag], msg: ClientCtrl): Behavior[ClientMsg] = msg match {
@@ -77,7 +76,7 @@ object ClientActor {
         }
 
       case ClientOut.MoveLat =>
-        bus.on(ctx.self, Bus.channel.mlat)
+        Bus.subscribe(Bus.channel.mlat, ctx.self)
         state
 
       case ClientOut.Notified =>
@@ -167,8 +166,7 @@ object ClientActor {
   case class Deps(
       client: SourceQueue[ClientIn],
       queue: Stream.Queues,
-      req: Req,
-      bus: Bus
+      req: Req
   ) {
     def clientIn(msg: ClientIn): Unit = client offer msg
   }

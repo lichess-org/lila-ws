@@ -58,9 +58,6 @@ object Graph {
       ClientToSimul, ClientToTour, ClientToStudy, ClientToRound, ClientToChal, ClientToLag, ClientToFen, ClientToUser,
       ClientToCrowd, ClientToRoundCrowd, ClientToStudyDoor) =>
 
-      val bus = Bus(system)
-      val tv = new Tv(bus)
-
       def ToSiteOut: FlowShape[LilaOut, SiteOut] = b.add {
         Flow[LilaOut].collect {
           case siteOut: SiteOut => siteOut
@@ -93,7 +90,7 @@ object Graph {
       val ClientBus = merge[Bus.Msg](8)
 
       val BusPublish: SinkShape[Bus.Msg] = b.add {
-        Sink.foreach[Bus.Msg](bus.publish)
+        Sink.foreach[Bus.Msg](Bus.publish)
       }
 
       val SOUser: FlowShape[LilaOut, sm.UserSM.Input] = b.add {
@@ -347,22 +344,22 @@ object Graph {
           case LilaOut.RoundVersion(gameId, version, flags, tpe, data) =>
             val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
             History.round.add(gameId, versioned)
-            bus(versioned, _ room gameId)
+            Bus.publish(versioned, _ room gameId)
           case LilaOut.TellRoom(roomId, payload) =>
-            bus(ClientIn.Payload(payload), _ room roomId)
+            Bus.publish(ClientIn.Payload(payload), _ room roomId)
           case LilaOut.RoundResyncPlayer(fullId) =>
-            bus(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
+            Bus.publish(ClientIn.RoundResyncPlayer(fullId.playerId), _ room RoomId(fullId.gameId))
           case LilaOut.RoundGone(fullId, gone) =>
-            bus(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
+            Bus.publish(ClientIn.RoundGone(fullId.playerId, gone), _ room RoomId(fullId.gameId))
           case LilaOut.RoundTourStanding(tourId, data) =>
-            bus(ClientIn.roundTourStanding(data), _ tourStanding tourId)
+            Bus.publish(ClientIn.roundTourStanding(data), _ tourStanding tourId)
           case LilaOut.UserTvNewGame(gameId, userId) =>
-            bus(UserTvNewGame(userId), _ room gameId)
-          case o: LilaOut.TvSelect => tv select o
+            Bus.publish(UserTvNewGame(userId), _ room gameId)
+          case o: LilaOut.TvSelect => Tv select o
           case LilaOut.RoomStop(roomId) =>
             History.round.stop(roomId)
-            bus(ClientCtrl.Disconnect, _ room roomId)
-          case LilaOut.RoundBotOnline(gameId, color, v) => bus(RoundBotOnline(gameId, color, v), _.roundBot)
+            Bus.publish(ClientCtrl.Disconnect, _ room roomId)
+          case LilaOut.RoundBotOnline(gameId, color, v) => Bus.publish(RoundBotOnline(gameId, color, v), _.roundBot)
           case LilaOut.LilaBoot =>
             println("#################### LILA BOOT ####################")
             directRoundSend(LilaIn.RoomSetVersions(History.round.allVersions))

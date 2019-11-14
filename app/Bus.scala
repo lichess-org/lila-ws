@@ -1,37 +1,33 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
-import akka.actor.{ ActorRef => _, _ }
-import akka.event._
 
-import ipc._
+import ipc.ClientMsg
 
-class Bus extends Extension with EventBus with LookupClassification {
+object Bus {
 
-  type Classifier = String
-  type Event = Bus.Msg
-  type Subscriber = ActorRef[ClientMsg]
+  private val impl = new util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
+    initialCapacity = 65535,
+    publish = (actor, event) => actor ! event
+  )
 
-  override protected val mapSize = 65535
+  def subscribe = impl.subscribe _
+  def unsubscribe = impl.unsubscribe _
 
-  protected def compareSubscribers(a: Subscriber, b: Subscriber) = a compareTo b
+  def publish(chan: Chan, event: ClientMsg): Unit =
+    impl.publish(chan, event)
 
-  def classify(event: Event): Classifier = event.channel.value
+  def publish(event: ClientMsg, chan: ChanSelect): Unit =
+    impl.publish(chan(channel), event)
 
-  def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event.payload
+  def publish(msg: Msg): Unit =
+    impl.publish(msg.channel, msg.event)
 
-  def on(actor: ActorRef[ClientMsg], chan: Bus.Chan): Unit = subscribe(actor, chan.value)
+  case class Chan(value: String) extends AnyVal with StringValue
 
-  def off(actor: ActorRef[ClientMsg], chan: Bus.Chan): Unit = unsubscribe(actor, chan.value)
+  case class Msg(event: ClientMsg, channel: Chan)
 
-  def apply(payload: ClientMsg, channel: Bus.channel.type => Bus.Chan) = publish(Bus.msg(payload, channel))
-}
-
-object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvider {
-
-  case class Chan(value: String) extends AnyVal
-
-  case class Msg(payload: ClientMsg, channel: Chan)
+  type ChanSelect = Bus.channel.type => Chan
 
   object channel {
     def sri(s: Sri) = Chan(s"sri/${s.value}")
@@ -45,10 +41,9 @@ object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvid
     def tourStanding(id: Tour.ID) = Chan(s"tour-standing/$id")
   }
 
-  def msg(payload: ClientMsg, channel: Bus.channel.type => Chan) =
-    Msg(payload, channel(Bus.channel))
+  def msg(event: ClientMsg, chan: ChanSelect) =
+    Msg(event, chan(channel))
 
-  override def lookup = Bus
-
-  override def createExtension(system: akka.actor.ExtendedActorSystem) = new Bus
+  def size = impl.size
+  def sizeOf(chan: ChanSelect) = impl sizeOf chan(channel)
 }

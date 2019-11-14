@@ -25,6 +25,8 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
     historyRoundSize.update(History.round.size)
     crowdRoomSize.update(RoomCrowd.size)
     crowdRoundSize.update(RoundCrowd.size)
+    busSize.update(Bus.size)
+    busAllSize.update(Bus.sizeOf(_.all))
   }
 }
 
@@ -40,4 +42,7 @@ object Monitor {
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
 
   val palantirChannels = Kamon.gauge("crowd.channels.size").withoutTags
+
+  val busSize = Kamon.gauge("bus.size").withoutTags
+  val busAllSize = Kamon.gauge("bus.all.size").withoutTags
 }

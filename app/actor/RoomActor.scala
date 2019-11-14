@@ -27,7 +27,7 @@ object RoomActor {
     req.user foreach { u =>
       queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    bus.on(ctx.self, Bus.channel room state.id)
+    Bus.subscribe(Bus.channel room state.id, ctx.self)
     queue(_.crowd, RoomCrowd.Connect(state.id, req.user))
     History.room.getFrom(state.id, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
@@ -36,7 +36,7 @@ object RoomActor {
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    deps.bus.off(ctx.self, Bus.channel room state.id)
+    Bus.unsubscribe(Bus.channel room state.id, ctx.self)
     deps.queue(_.crowd, RoomCrowd.Disconnect(state.id, deps.req.user))
   }
 

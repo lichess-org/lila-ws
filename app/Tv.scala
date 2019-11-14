@@ -5,7 +5,7 @@ import scala.concurrent.duration._
 
 import ipc._
 
-final class Tv(bus: Bus) {
+object Tv {
 
   private val fast: Cache[String, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
@@ -19,7 +19,7 @@ final class Tv(bus: Bus) {
     val cliMsg = ClientIn.tvSelect(out.json)
     List(fast, slow) foreach { in =>
       in.asMap.keys foreach { gameId =>
-        bus(cliMsg, _ room RoomId(gameId))
+        Bus.publish(cliMsg, _ room RoomId(gameId))
       }
     }
     (if (out.speed <= chess.Speed.Bullet) fast else slow).put(out.gameId.value, true)

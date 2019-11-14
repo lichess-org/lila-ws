@@ -32,7 +32,7 @@ object RoundClientActor {
     req.user foreach { u =>
       queue(_.user, sm.UserSM.Connect(u, ctx.self))
     }
-    state.busChans foreach { bus.on(ctx.self, _) }
+    state.busChans foreach { Bus.subscribe(_, ctx.self) }
     queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
     History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
       case None => clientIn(ClientIn.Resync)
@@ -172,7 +172,7 @@ object RoundClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      state.busChans foreach { deps.bus.off(ctx.self, _) }
+      state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
       deps.queue(_.roundCrowd, RoundCrowd.Disconnect(state.room.id, deps.req.user, state.player.map(_.color)))
       Behaviors.same
   }
