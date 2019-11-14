@@ -145,7 +145,7 @@ final class Server @Inject() (
     } map asWebsocket(new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
-      name = s"round/watch ${reqName(req)}"
+      name = s"round/play ${reqName(req)}"
     ))
 
   def connectToChallenge(req: RequestHeader, challengeId: Challenge.Id, owner: Boolean, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
