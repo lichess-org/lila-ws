@@ -45,4 +45,14 @@ object Monitor {
 
   val busSize = Kamon.gauge("bus.size").withoutTags
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags
+
+  val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
+  val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
+
+  def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
+    val timer = metric(Monitor).start()
+    val res = f
+    timer.stop
+    res
+  }
 }
