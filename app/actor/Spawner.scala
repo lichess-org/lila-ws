@@ -1,7 +1,6 @@
 package lila.ws
 
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Scheduler, Behavior, SpawnProtocol, ActorRef, ActorSystem, Props }
 import akka.util.Timeout
 import scala.concurrent.duration._

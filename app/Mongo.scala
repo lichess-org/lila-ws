@@ -1,11 +1,14 @@
 package lila.ws
 
+import chess.Color
+import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import javax.inject._
 import org.joda.time.DateTime
 import play.api.Configuration
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
+import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Try, Success }
 
@@ -43,28 +46,41 @@ final class Mongo @Inject() (config: Configuration)(implicit executionContext: E
 
   def studyExists(id: Study.ID): Future[Boolean] = studyColl flatMap idExists(id)
 
-  def gameExists(id: Game.Id): Future[Boolean] = gameColl flatMap idExists(id.value)
+  def gameExists(id: Game.Id): Future[Boolean] =
+    gameCache getIfPresent id match {
+      case None => gameColl flatMap idExists(id.value)
+      case Some(entry) => entry.map(_.isDefined)
+    }
 
-  def player(fullId: Game.FullId, user: Option[User]): Future[Option[Player]] = gameColl flatMap {
-    _.find(
-      selector = BSONDocument("_id" -> fullId.gameId.value),
-      projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
-    ).one[BSONDocument] map { docOpt =>
-        for {
-          doc <- docOpt
-          playerIds <- doc.getAsOpt[String]("is")
-          users = doc.getAsOpt[List[String]]("us") getOrElse Nil
-          color <- {
-            if (fullId.playerId.value == playerIds.take(4)) Some(chess.White)
-            else if (fullId.playerId.value == playerIds.drop(4)) Some(chess.Black)
-            else None
-          }
-          expectedUserId = color.fold(users.headOption, users.lift(1)).filter(_.nonEmpty)
-          if user.map(_.id) == expectedUserId
-          tourId = doc.getAsOpt[Tour.ID]("tid")
-        } yield Player(fullId.playerId, color, tourId)
+  def player(fullId: Game.FullId, user: Option[User]): Future[Option[Game.RoundPlayer]] =
+    gameCache get fullId.gameId map {
+      _ flatMap {
+        _.player(fullId.playerId, user.map(_.id))
       }
-  }
+    }
+
+  private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] =
+    Scaffeine()
+      .expireAfterWrite(10.minutes)
+      .buildAsyncFuture { id =>
+        gameColl flatMap {
+          _.find(
+            selector = BSONDocument("_id" -> id.value),
+            projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
+          ).one[BSONDocument] map { docOpt =>
+              for {
+                doc <- docOpt
+                playerIds <- doc.getAsOpt[String]("is")
+                users = doc.getAsOpt[List[String]]("us") getOrElse Nil
+                players = Color.Map(
+                  Game.Player(Game.PlayerId(playerIds take 4), users.headOption),
+                  Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
+                )
+                tourId = doc.getAsOpt[Tour.ID]("tid")
+              } yield Game.Round(id, players, tourId)
+            }
+        }
+      }
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(_, BSONDocument(

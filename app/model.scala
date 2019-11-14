@@ -1,5 +1,7 @@
 package lila.ws
 
+import chess.Color
+
 trait StringValue extends Any {
   def value: String
   override def toString = value
@@ -24,6 +26,18 @@ object Game {
     def playerId = PlayerId(value drop 8)
   }
   case class PlayerId(value: String) extends AnyVal with StringValue
+
+  case class Player(id: PlayerId, userId: Option[User.ID])
+
+  // must only contain invariant data (no status, turns, or termination)
+  // because it's cached in Mongo.scala
+  case class Round(id: Id, players: Color.Map[Player], tourId: Option[Tour.ID]) {
+    def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] = Color.all.collectFirst {
+      case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, tourId)
+    }
+  }
+
+  case class RoundPlayer(id: PlayerId, color: Color, tourId: Option[Tour.ID])
 }
 
 object Simul {
@@ -96,8 +110,6 @@ case class RoomId(value: String) extends AnyVal with StringValue
 object RoomId {
   def apply(v: StringValue): RoomId = RoomId(v.value)
 }
-
-case class Player(id: Game.PlayerId, color: chess.Color, tourId: Option[Tour.ID])
 
 case class UserLag(userId: User.ID, lag: Int)
 

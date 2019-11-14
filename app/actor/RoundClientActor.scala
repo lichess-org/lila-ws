@@ -12,7 +12,7 @@ object RoundClientActor {
 
   case class State(
       room: RoomActor.State,
-      player: Option[Player],
+      player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
       site: ClientActor.State = ClientActor.State()
   ) {
@@ -22,7 +22,7 @@ object RoundClientActor {
 
   def start(
     roomState: RoomActor.State,
-    player: Option[Player],
+    player: Option[Game.RoundPlayer],
     userTv: Option[UserTv],
     fromVersion: Option[SocketVersion]
   )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
