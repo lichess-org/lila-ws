@@ -16,37 +16,36 @@ class Bus extends Extension with EventBus with LookupClassification {
 
   protected def compareSubscribers(a: Subscriber, b: Subscriber) = a compareTo b
 
-  def classify(event: Event): Classifier = event.channel
+  def classify(event: Event): Classifier = event.channel.value
 
   def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event.payload
 
-  def subscribe(actor: ActorRef[ClientMsg], channel: Bus.channel.type => Classifier): Unit =
-    subscribe(actor, channel(Bus.channel))
+  def on(actor: ActorRef[ClientMsg], chan: Bus.Chan): Unit = subscribe(actor, chan.value)
 
-  def apply(payload: ClientMsg, channel: Bus.channel.type => Classifier) = publish(Bus.msg(payload, channel))
+  def off(actor: ActorRef[ClientMsg], chan: Bus.Chan): Unit = unsubscribe(actor, chan.value)
+
+  def apply(payload: ClientMsg, channel: Bus.channel.type => Bus.Chan) = publish(Bus.msg(payload, channel))
 }
 
 object Bus extends akka.actor.ExtensionId[Bus] with akka.actor.ExtensionIdProvider {
 
-  type Classifier = String
+  case class Chan(value: String) extends AnyVal
 
-  case class Msg(payload: ClientMsg, channel: String)
-
-  val nullMsg = Msg(ClientNull, "")
+  case class Msg(payload: ClientMsg, channel: Chan)
 
   object channel {
-    def sri(sri: Sri) = s"sri/${sri.value}"
-    def flag(f: String) = s"flag/$f"
-    val mlat = "mlat"
-    val all = "all"
-    val lobby = "lobby"
-    val tv = "tv"
-    def room(id: RoomId) = s"room/$id"
-    val roundBot = "round-bot"
-    def tourStanding(id: Tour.ID) = s"tour-standing/$id"
+    def sri(s: Sri) = Chan(s"sri/${s.value}")
+    def flag(f: Flag) = Chan(s"flag/$f")
+    val mlat = Chan("mlat")
+    val all = Chan("all")
+    val lobby = Chan("lobby")
+    val tv = Chan("tv")
+    def room(id: RoomId) = Chan(s"room/$id")
+    val roundBot = Chan("round-bot")
+    def tourStanding(id: Tour.ID) = Chan(s"tour-standing/$id")
   }
 
-  def msg(payload: ClientMsg, channel: Bus.channel.type => Classifier) =
+  def msg(payload: ClientMsg, channel: Bus.channel.type => Chan) =
     Msg(payload, channel(Bus.channel))
 
   override def lookup = Bus

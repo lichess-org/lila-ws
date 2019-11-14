@@ -66,7 +66,7 @@ object ChallengeClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      RoomActor.onStop(state.room, deps)
+      RoomActor.onStop(state.room, deps, ctx)
       Behaviors.same
   }
 }

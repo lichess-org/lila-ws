@@ -27,7 +27,7 @@ object LilaOut {
 
   case class Move(game: Game.Id, lastUci: Uci, fen: FEN) extends SiteOut
   case class Mlat(millis: Double) extends SiteOut
-  case class TellFlag(flag: String, json: JsonString) extends SiteOut
+  case class TellFlag(flag: Flag, json: JsonString) extends SiteOut
   case class TellUsers(users: Iterable[User.ID], json: JsonString) extends SiteOut
   case class TellAll(json: JsonString) extends SiteOut
   case class DisconnectUser(user: User.ID) extends SiteOut
@@ -95,7 +95,7 @@ object LilaOut {
       case "mlat" => parseDoubleOption(args) map Mlat.apply
 
       case "tell/flag" => get(args, 2) {
-        case Array(flag, payload) => Some(TellFlag(flag, JsonString(payload)))
+        case Array(flag, payload) => Some(TellFlag(Flag(flag), JsonString(payload)))
       }
 
       case "tell/users" => get(args, 2) {

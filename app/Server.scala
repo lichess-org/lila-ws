@@ -46,7 +46,7 @@ final class Server @Inject() (
       queues(_.site, LilaIn.Connections(sm.CountSM.get))
     }
     Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
-      bus.subscribe(_, _.roundBot)
+      bus.on(_, Bus.channel.roundBot)
     }
   }
 

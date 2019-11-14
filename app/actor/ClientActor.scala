@@ -11,14 +11,13 @@ import util.Util.nowSeconds
 
 object ClientActor {
 
+  def busChansOf(req: Req) =
+    Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
+
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     CountSM.connect
-    bus.subscribe(ctx.self, _ sri req.sri)
-    bus.subscribe(ctx.self, _.all)
-    req.flag foreach { f =>
-      bus.subscribe(ctx.self, _ flag f.value)
-    }
+    busChansOf(req) foreach { bus.on(ctx.self, _) }
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
@@ -28,7 +27,7 @@ object ClientActor {
       queue(_.user, UserSM.Disconnect(u, ctx.self))
     }
     if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
-    bus unsubscribe ctx.self
+    (Bus.channel.mlat :: busChansOf(req)) foreach { bus.off(ctx.self, _) }
   }
 
   def socketControl(state: State, flag: Option[Flag], msg: ClientCtrl): Behavior[ClientMsg] = msg match {
@@ -78,7 +77,7 @@ object ClientActor {
         }
 
       case ClientOut.MoveLat =>
-        bus.subscribe(ctx.self, _.mlat)
+        bus.on(ctx.self, Bus.channel.mlat)
         state
 
       case ClientOut.Notified =>

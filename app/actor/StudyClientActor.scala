@@ -88,7 +88,7 @@ object StudyClientActor {
   }.receiveSignal {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
-      RoomActor.onStop(state.room, deps)
+      RoomActor.onStop(state.room, deps, ctx)
       deps.req.user foreach { user =>
         deps.queue(_.studyDoor, ThroughStudyDoor(user, Left(state.room.id)))
       }

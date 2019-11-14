@@ -17,7 +17,7 @@ object RoomActor {
   )
 
   def onStart(
-    roomState: RoomActor.State,
+    state: State,
     fromVersion: Option[SocketVersion],
     deps: Deps,
     ctx: ActorContext[ClientMsg]
@@ -27,16 +27,18 @@ object RoomActor {
     req.user foreach { u =>
       queue(_.user, UserSM.Connect(u, ctx.self))
     }
-    bus.subscribe(ctx.self, _ room roomState.id)
-    queue(_.crowd, RoomCrowd.Connect(roomState.id, req.user))
-    History.room.getFrom(roomState.id, fromVersion) match {
+    bus.on(ctx.self, Bus.channel room state.id)
+    queue(_.crowd, RoomCrowd.Connect(state.id, req.user))
+    History.room.getFrom(state.id, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
-      case Some(events) => events map { versionFor(roomState.isTroll, _) } foreach clientIn
+      case Some(events) => events map { versionFor(state.isTroll, _) } foreach clientIn
     }
   }
 
-  def onStop(state: State, deps: Deps): Unit =
+  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
+    deps.bus.off(ctx.self, Bus.channel room state.id)
     deps.queue(_.crowd, RoomCrowd.Disconnect(state.id, deps.req.user))
+  }
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
     if (!msg.troll.value || isTroll.value) msg.full
