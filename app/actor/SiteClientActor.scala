@@ -27,10 +27,6 @@ object SiteClientActor {
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.req.flag, ctrl)
 
-      case ClientIn.OnlyFor(endpoint, payload) =>
-        if (endpoint == ClientIn.OnlyFor.Site) deps.clientIn(payload)
-        Behaviors.same
-
       case in: ClientIn => clientInReceive(state, deps, in) match {
         case None => Behaviors.same
         case Some(s) => apply(s, deps)
