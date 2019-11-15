@@ -170,7 +170,7 @@ object ClientIn {
     def write = cliMsg("gone", v)
   }
   case class RoundVersioned(version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends HasVersion {
-    lazy val full = Payload(JsonString(cliMsg(tpe, data, version)))
+    val full = Payload(JsonString(cliMsg(tpe, data, version)))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
