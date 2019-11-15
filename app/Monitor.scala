@@ -12,8 +12,12 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
 
   def start: Unit = {
 
+  val version = System.getProperty("java.version")
+  val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+  play.api.Logger("Monitor").info(s"Java version: $version, memory: ${memory}MB")
+
     if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
-      play.api.Logger(getClass).info("Kamon is enabled")
+      play.api.Logger("Monitor").info("Kamon is enabled")
       kamon.Kamon.loadModules()
     }
 
