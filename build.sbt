@@ -5,8 +5,8 @@ version := "1.0-SNAPSHOT"
 maintainer := "lichess.org"
 
 lazy val root = (project in file("."))
-.enablePlugins(PlayScala, PlayNettyServer)
-.disablePlugins(PlayFilters, PlayAkkaHttpServer)
+.enablePlugins(PlayScala, PlayAkkaHttpServer)
+.disablePlugins(PlayFilters, PlayNettyServer)
 
 val akkaVersion = "2.6.0"
 val kamonVersion= "2.0.1"
