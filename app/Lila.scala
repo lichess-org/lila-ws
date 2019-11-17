@@ -24,7 +24,7 @@ final class Lila(redisUri: RedisURI) {
 
     def send(in: LilaIn): Unit = {
       val msg = in.write
-      val timer = Monitor.redisPublishTime.start()
+      val timer = Monitor.redis.publishTime.start()
       connIn.async.publish(chanIn, msg).thenRun { timer.stop _ }
       Monitor.redis.in(chanIn, msg.takeWhile(' '.!=))
     }

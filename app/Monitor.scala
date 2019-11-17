@@ -60,6 +60,7 @@ object Monitor {
   val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
 
   object redis {
+    val publishTime = Kamon.timer("redis.publish.time").withoutTags
     def in(chan: String, path: String) = Kamon.counter(s"redis.in").withTags(
       TagSet.from(Map("channel" -> chan, "path" -> path))
     ).increment()
