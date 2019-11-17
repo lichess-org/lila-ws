@@ -2,6 +2,7 @@ package lila.ws
 
 import javax.inject._
 import kamon.Kamon
+import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -12,9 +13,9 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
 
   def start: Unit = {
 
-  val version = System.getProperty("java.version")
-  val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
-  play.api.Logger("Monitor").info(s"Java version: $version, memory: ${memory}MB")
+    val version = System.getProperty("java.version")
+    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    play.api.Logger("Monitor").info(s"Java version: $version, memory: ${memory}MB")
 
     if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
       play.api.Logger("Monitor").info("Kamon is enabled")
@@ -36,6 +37,11 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
 
 object Monitor {
 
+  object connection {
+    val current = Kamon.gauge("connection.current").withoutTags
+    def open(endpoint: String) = Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
+  }
+
   val redisPublishTime = Kamon.timer("redis.publish.time").withoutTags
   val clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
 
@@ -52,6 +58,15 @@ object Monitor {
 
   val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
   val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
+
+  object redis {
+    def in(chan: String, path: String) = Kamon.counter(s"redis.in").withTags(
+      TagSet.from(Map("channel" -> chan, "path" -> path))
+    ).increment()
+    def out(chan: String, path: String) = Kamon.counter(s"redis.out").withTags(
+      TagSet.from(Map("channel" -> chan, "path" -> path))
+    ).increment()
+  }
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
     val timer = metric(Monitor).start()

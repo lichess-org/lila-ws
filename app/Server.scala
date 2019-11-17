@@ -41,7 +41,9 @@ final class Server @Inject() (
   }
   streamQueues foreach { queues =>
     system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-      queues(_.site, LilaIn.Connections(sm.CountSM.get))
+      val connections = sm.CountSM.get
+      queues(_.site, LilaIn.Connections(connections))
+      Monitor.connection.current update connections
     }
     Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
       Bus.subscribe(Bus.channel.roundBot, _)
@@ -55,7 +57,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("site", new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
       name = s"site ${reqName(req)}"
@@ -68,7 +70,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("lobby", new RateLimit(
       maxCredits = 30,
       duration = 30.seconds,
       name = s"lobby ${reqName(req)}"
@@ -83,7 +85,7 @@ final class Server @Inject() (
           }
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("simul", new RateLimit(
       maxCredits = 30,
       duration = 20.seconds,
       name = s"simul ${reqName(req)}"
@@ -98,7 +100,7 @@ final class Server @Inject() (
           }
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("tour", new RateLimit(
       maxCredits = 30,
       duration = 20.seconds,
       name = s"tour ${reqName(req)}"
@@ -111,7 +113,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("study", new RateLimit(
       maxCredits = 50,
       duration = 15.seconds,
       name = s"study ${reqName(req)}"
@@ -127,7 +129,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("round-watch", new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
       name = s"round/watch ${reqName(req)}"
@@ -140,7 +142,7 @@ final class Server @Inject() (
           ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
         }
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("round-play", new RateLimit(
       maxCredits = 50,
       duration = 20.seconds,
       name = s"round/play ${reqName(req)}"
@@ -151,19 +153,21 @@ final class Server @Inject() (
       ChallengeClientActor.start(RoomActor.State(RoomId(challengeId), IsTroll(false)), owner, fromVersion) {
         ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
       }
-    } map asWebsocket(new RateLimit(
+    } map asWebsocket("challenge", new RateLimit(
       maxCredits = 50,
       duration = 30.seconds,
       name = s"challenge ${reqName(req)}"
     ))
 
-  private def asWebsocket(limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow =
+  private def asWebsocket(monitorName: String, limiter: RateLimit)(flow: Flow[ClientOut, ClientIn, _]): WebsocketFlow = {
+    Monitor.connection open monitorName
     AkkaStreams.bypassWith[Message, ClientOut, Message](Flow[Message] collect {
       case TextMessage(text) if limiter(text) && text.size < 2000 => ClientOut.parse(text).fold(
         _ => Right(CloseMessage(Some(CloseCodes.Unacceptable), "Unable to parse json message")),
         Left.apply
       )
     })(flow map { out => TextMessage(out.write) })
+  }
 
   private def actorFlow(req: RequestHeader, bufferSize: Int = roomClientInBufferSize)(
     clientActor: SourceQueue[ClientIn] => Stream.Queues => Behavior[ClientMsg]
@@ -193,7 +197,7 @@ final class Server @Inject() (
 
   // when a client connects from an old socket version,
   // catch-up messages are buffered until sent
-  private val roomClientInBufferSize = 32
+  private val roomClientInBufferSize = 22
 
   private val logger = Logger("Server")
 }

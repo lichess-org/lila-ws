@@ -23,14 +23,17 @@ final class Lila(redisUri: RedisURI) {
     val connOut = redis.connectPubSub()
 
     def send(in: LilaIn): Unit = {
+      val msg = in.write
       val timer = Monitor.redisPublishTime.start()
-      connIn.async.publish(chanIn, in.write).thenRun { timer.stop _ }
+      connIn.async.publish(chanIn, msg).thenRun { timer.stop _ }
+      Monitor.redis.in(chanIn, msg.takeWhile(' '.!=))
     }
 
     val init: SourceQueueWithComplete[Out] => Future[Unit] = queue => {
 
       connOut.addListener(new RedisPubSubAdapter[ChanOut, String] {
-        override def message(channel: ChanOut, msg: String): Unit =
+        override def message(channel: ChanOut, msg: String): Unit = {
+          Monitor.redis.out(channel, msg.takeWhile(' '.!=))
           LilaOut read msg match {
             case Some(out) => collect lift out match {
               case Some(typed) => queue offer typed
@@ -38,6 +41,7 @@ final class Lila(redisUri: RedisURI) {
             }
             case None => logger.warn(s"Unhandled $channel LilaOut: $msg")
           }
+        }
       })
 
       val promise = Promise[Unit]
