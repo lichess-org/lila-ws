@@ -36,10 +36,10 @@ final class Server @Inject() (
   monitor.start
   lila registerHandlers lilaHandler.handlers
 
-  system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
+  system.scheduler.schedule(30.seconds, 7211.millis) {
     Bus.publish(_.all, ClientCtrl.Broom(nowSeconds - 30))
   }
-  system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+  system.scheduler.schedule(5.seconds, 1811.millis) {
     val connections = Connections.get
     lila.emit.site(LilaIn.Connections(connections))
     Monitor.connection.current update connections

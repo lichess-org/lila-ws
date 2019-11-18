@@ -18,7 +18,7 @@ final class KeepAlive @Inject() (lila: Lila, system: ActorSystem)(implicit ec: E
   val simul = new AliveRooms
   val challenge = new AliveRooms
 
-  system.scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
+  system.scheduler.schedule(15.seconds, 15.seconds) {
     lila.emit.study(study.getAndClear)
     lila.emit.tour(tour.getAndClear)
     lila.emit.simul(simul.getAndClear)

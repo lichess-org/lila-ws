@@ -25,7 +25,7 @@ final class Monitor @Inject() (
       kamon.Kamon.loadModules()
     }
 
-    system.scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
+    system.scheduler.schedule(5.seconds, 1949.millis) { periodicMetrics }
   }
 
   private def periodicMetrics = {
@@ -45,7 +45,6 @@ object Monitor {
     def open(endpoint: String) = Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
   }
 
-  val redisPublishTime = Kamon.timer("redis.publish.time").withoutTags
   val clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
 
   val historyRoomSize = Kamon.gauge("history.room.size").withoutTags

@@ -18,7 +18,7 @@ final class Users @Inject() (lila: Lila)(implicit system: ActorSystem, ec: Execu
 
   private val lilaIn = lila.emit.site
 
-  system.scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
+  system.scheduler.schedule(7.seconds, 5.seconds) {
     lilaIn(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
     disconnects.clear()
   }
