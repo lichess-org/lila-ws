@@ -36,11 +36,11 @@ final class Server @Inject() (
 
   monitor.start
 
-  system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
+  system.scheduler.schedule(30.seconds, 7211.millis) {
     Bus.publish(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
   streamQueues foreach { queues =>
-    system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+    system.scheduler.schedule(5.seconds, 1811.millis) {
       val connections = sm.CountSM.get
       queues(_.site, LilaIn.Connections(connections))
       Monitor.connection.current update connections
