@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.Scheduler
+import akka.actor.ActorSystem
 import akka.actor.typed.ActorRef
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject._
@@ -11,12 +11,14 @@ import scala.jdk.CollectionConverters._
 import ipc._
 
 @Singleton
-final class Users @Inject() (lilaIn: Emit[LilaIn.Site], scheduler: Scheduler)(implicit ec: ExecutionContext) {
+final class Users @Inject() (lila: Lila, system: ActorSystem)(implicit ec: ExecutionContext) {
 
   private val users = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
 
-  scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
+  private val lilaIn = lila.emit.site
+
+  system.scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
     lilaIn(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
     disconnects.clear()
   }

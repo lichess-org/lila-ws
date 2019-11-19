@@ -3,12 +3,17 @@ package lila.ws
 import chess.Color
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject._
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import ipc._
 
 @Singleton
-final class RoundCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext) {
+final class RoundCrowd @Inject() (
+    lila: Lila,
+    json: CrowdJson,
+    groupedWithin: GroupedWithin
+)(implicit ec: ExecutionContext) {
 
   import RoundCrowd._
 
@@ -47,9 +52,19 @@ final class RoundCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext
     Option(rounds get roomId).exists(_.room.users contains userId)
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
-    json.round(outputOf(roomId, round)) foreach {
-      Bus.publish(_, _ room roomId)
+    outputBatch(outputOf(roomId, round))
+
+  private val outputBatch = groupedWithin[Output](256, 500.millis) { outputs =>
+    val aggregated = outputs.foldLeft(Map.empty[RoomId, Output]) {
+      case (crowds, crowd) => crowds.updated(crowd.room.roomId, crowd)
+    }.values
+    lila.emit.round(LilaIn.RoundOnlines(aggregated))
+    aggregated foreach { output =>
+      json round output foreach {
+        Bus.publish(_, _ room output.room.roomId)
+      }
     }
+  }
 
   def size = rounds.size
 }

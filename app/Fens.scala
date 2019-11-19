@@ -9,11 +9,13 @@ import ipc._
 
 /* Manages subscriptions to FEN updates */
 @Singleton
-final class Fens @Inject() (lilaIn: Emit[LilaIn.Site]) {
+final class Fens @Inject() (lila: Lila) {
 
   import Fens._
 
   private val games = new ConcurrentHashMap[Game.Id, Watched](1024)
+
+  private val lilaIn = lila.emit.site
 
   // client starts watching
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =

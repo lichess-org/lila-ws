@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 import ipc._
 
 @Singleton
-final class Lila(config: play.api.Configuration)(implicit ec: ExecutionContext) {
+final class Lila @Inject() (config: play.api.Configuration)(implicit ec: ExecutionContext) {
 
   import Lila._
 

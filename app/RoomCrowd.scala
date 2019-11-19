@@ -3,11 +3,15 @@ package lila.ws
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 import ipc._
 
 @Singleton
-final class RoomCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext) {
+final class RoomCrowd @Inject() (
+    json: CrowdJson,
+    groupedWithin: GroupedWithin
+)(implicit ec: ExecutionContext) {
 
   import RoomCrowd._
 
@@ -32,13 +36,17 @@ final class RoomCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext)
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rooms get roomId).exists(_.users contains userId)
 
-  private def publish(roomId: RoomId, room: RoomState): Unit = json.room(Output(
-    roomId = roomId,
-    members = room.nbMembers,
-    users = room.users.keys,
-    anons = room.anons
-  )) foreach {
-    Bus.publish(_, _ room roomId)
+  private def publish(roomId: RoomId, room: RoomState): Unit =
+    outputBatch(outputOf(roomId, room))
+
+  private val outputBatch = groupedWithin[Output](1024, 1.second) { outputs =>
+    outputs.foldLeft(Map.empty[RoomId, Output]) {
+      case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
+    }.values foreach { output =>
+      json room output foreach {
+        Bus.publish(_, _ room output.roomId)
+      }
+    }
   }
 
   def size = rooms.size
