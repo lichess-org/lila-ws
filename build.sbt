@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
 .enablePlugins(PlayScala, PlayNettyServer)
 .disablePlugins(PlayFilters, PlayAkkaHttpServer)
 
-val akkaVersion = "2.6.0"
+val akkaVersion = "2.6-20191118-220041"
 val kamonVersion= "2.0.1"
 val reactivemongoVersion = "0.19.1"
 
@@ -34,6 +34,7 @@ libraryDependencies += "io.kamon" %% "kamon-influxdb" % "2.0.0"
 libraryDependencies += "io.kamon" %% "kamon-system-metrics" % "2.0.0"
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
+resolvers += "akka-snapshots" at "https://repo.akka.io/snapshots/"
 
 scalacOptions ++= Seq(
   "-language:implicitConversions",
