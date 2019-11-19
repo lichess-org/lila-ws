@@ -36,16 +36,10 @@ object LilaIn {
     def write = s"unwatch $id"
   }
 
-  case class Notified(userId: User.ID) extends Site {
-    def write = s"notified $userId"
-  }
   case class NotifiedBatch(userIds: Iterable[User.ID]) extends Site {
     def write = s"notified/batch ${commas(userIds)}"
   }
 
-  case class Friends(userId: User.ID) extends Site {
-    def write = s"friends $userId"
-  }
   case class FriendsBatch(userIds: Iterable[User.ID]) extends Site {
     def write = s"friends/batch ${commas(userIds)}"
   }
@@ -70,25 +64,16 @@ object LilaIn {
     def write = "boot"
   }
 
-  case class ConnectSri(sri: Sri, userId: Option[User.ID]) extends Lobby {
-    def write = ConnectSris(List(sri -> userId)).write
-  }
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
     def write = s"connect/sris ${commas(sris map render)}"
   }
 
-  case class DisconnectSri(sri: Sri) extends Lobby {
-    def write = DisconnectSris(List(sri)).write
-  }
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
     def write = s"disconnect/sris ${commas(sris)}"
   }
 
-  case class KeepAlive(roomId: RoomId) extends AnyRoom {
-    def write = s"room/alive $roomId"
-  }
   case class KeepAlives(roomIds: Iterable[RoomId]) extends AnyRoom {
     def write = s"room/alives ${commas(roomIds)}"
   }

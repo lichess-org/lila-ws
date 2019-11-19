@@ -32,13 +32,13 @@ object KeepAlive {
 
   final class AliveRooms {
 
-    private var rooms = Set.empty[RoomId]
+    private val rooms = collection.mutable.Set[RoomId]()
 
-    def apply(roomId: RoomId) = rooms = rooms + roomId
+    def apply(roomId: RoomId) = rooms += roomId
 
     def getAndClear: LilaIn.KeepAlives = {
-      val ret = LilaIn.KeepAlives(rooms)
-      rooms = Set.empty
+      val ret = LilaIn.KeepAlives(rooms.toSet)
+      rooms.clear
       ret
     }
   }

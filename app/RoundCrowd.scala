@@ -19,13 +19,11 @@ final class RoundCrowd @Inject() (
 
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
-  // TODO RouOns
   def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = publish(
     roomId,
     rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
   )
 
-  // TODO RouOns
   def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
     val round = rounds.computeIfPresent(roomId, (_, round) => {
       val newRound = round.disconnect(user, player)
@@ -34,7 +32,6 @@ final class RoundCrowd @Inject() (
     if (round != null) publish(roomId, round)
   }
 
-  // TODO RouOns
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
     rounds.compute(roomId, (_, cur) => {
       Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
@@ -61,7 +58,7 @@ final class RoundCrowd @Inject() (
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
     aggregated foreach { output =>
       json round output foreach {
-        Bus.publish(_, _ room output.room.roomId)
+        Bus.publish(_ room output.room.roomId, _)
       }
     }
   }

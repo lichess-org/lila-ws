@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters._
 import ipc._
 
 @Singleton
-final class Users @Inject() (lila: Lila, system: ActorSystem)(implicit ec: ExecutionContext) {
+final class Users @Inject() (lila: Lila) (implicit system: ActorSystem, ec: ExecutionContext) {
 
   private val users = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)

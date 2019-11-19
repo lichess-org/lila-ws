@@ -21,6 +21,7 @@ final class Server @Inject() (
     auth: Auth,
     mongo: Mongo,
     lila: Lila,
+    lilaHandler: LilaHandler,
     services: Services,
     monitor: Monitor,
     lifecycle: play.api.inject.ApplicationLifecycle
@@ -33,12 +34,13 @@ final class Server @Inject() (
   type WebsocketFlow = Flow[Message, Message, _]
 
   monitor.start
+  lila registerHandlers lilaHandler.handlers
 
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
-    Bus.publish(ClientCtrl.Broom(nowSeconds - 30), _.all)
+    Bus.publish(_.all, ClientCtrl.Broom(nowSeconds - 30))
   }
   system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-    val connections = sm.CountSM.get
+    val connections = Connections.get
     lila.emit.site(LilaIn.Connections(connections))
     Monitor.connection.current update connections
   }

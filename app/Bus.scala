@@ -17,7 +17,7 @@ object Bus {
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)
 
-  def publish(event: ClientMsg, chan: ChanSelect): Unit =
+  def publish(chan: ChanSelect, event: ClientMsg): Unit =
     impl.publish(chan(channel), event)
 
   def publish(msg: Msg): Unit =

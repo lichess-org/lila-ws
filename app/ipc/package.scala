@@ -12,7 +12,6 @@ package object ipc {
   }
 
   object ClientNull extends ClientMsg
-  case class UserTvNewGame(userId: User.ID) extends ClientMsg
-  case class RoundBotOnline(gameId: Game.Id, color: chess.Color, online: Boolean) extends ClientMsg
+  case class RoundUserTvNewGame(userId: User.ID) extends ClientMsg
   case class SetTroll(v: IsTroll) extends ClientMsg
 }

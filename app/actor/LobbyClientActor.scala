@@ -20,7 +20,7 @@ object LobbyClientActor {
     import deps._
     onStart(deps, ctx)
     req.user foreach { users.connect(_, ctx.self, silently = true) }
-    lilaIn.lobby(LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
+    services.lobby.connect(req.sri, req.user.map(_.id))
     Bus.subscribe(Bus.channel.lobby, ctx.self)
     apply(State(), deps)
   }
@@ -49,7 +49,7 @@ object LobbyClientActor {
       }
 
       case msg: ClientOut.Ping =>
-        clientIn(LobbyPongStore.get)
+        clientIn(services.lobby.pong.get)
         apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
       case ClientOut.LobbyForward(payload) =>
@@ -75,7 +75,7 @@ object LobbyClientActor {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
       Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-      deps.lilaIn.lobby(LilaIn.DisconnectSri(deps.req.sri))
+      deps.services.lobby.disconnect(deps.req.sri)
       Behaviors.same
   }
 }

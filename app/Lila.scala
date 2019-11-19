@@ -5,8 +5,8 @@ import io.lettuce.core._
 import io.lettuce.core.pubsub._
 import javax.inject._
 import play.api.Logger
-import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
 import scala.concurrent.duration._
+import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
 
 import ipc._
 
@@ -21,13 +21,13 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
   val connections: Connections = Await.result(establishConnections, 3.seconds)
 
   private def establishConnections: Future[Connections] =
-    connect[LilaIn.Site, SiteOut](Chan("site")) { case out: SiteOut => out } zip
-      connect[LilaIn.Tour, TourOut](Chan("tour")) { case out: TourOut => out } zip
-      connect[LilaIn.Lobby, LobbyOut](Chan("lobby")) { case out: LobbyOut => out } zip
-      connect[LilaIn.Simul, SimulOut](Chan("simul")) { case out: SimulOut => out } zip
-      connect[LilaIn.Study, StudyOut](Chan("study")) { case out: StudyOut => out } zip
-      connect[LilaIn.Round, RoundOut](Chan("round")) { case out: RoundOut => out } zip
-      connect[LilaIn.Challenge, ChallengeOut](Chan("challenge")) { case out: ChallengeOut => out } map {
+    connect[LilaIn.Site, SiteOut](chans.site) zip
+      connect[LilaIn.Tour, TourOut](chans.tour) zip
+      connect[LilaIn.Lobby, LobbyOut](chans.lobby) zip
+      connect[LilaIn.Simul, SimulOut](chans.simul) zip
+      connect[LilaIn.Study, StudyOut](chans.study) zip
+      connect[LilaIn.Round, RoundOut](chans.round) zip
+      connect[LilaIn.Challenge, ChallengeOut](chans.challenge) map {
         case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge => new Connections(
           site, tour, lobby, simul, study, round, challenge
         )
@@ -35,7 +35,7 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
 
   def emit: Emits = connections
 
-  private def connect[In <: LilaIn, Out <: LilaOut](chan: Chan)(collect: PartialFunction[LilaOut, Out]): Future[Connection[In]] = {
+  private def connect[In <: LilaIn, Out <: LilaOut](chan: Chan): Future[Connection[In]] = {
 
     val connIn = redis.connectPubSub()
     val connOut = redis.connectPubSub()
@@ -51,11 +51,11 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
       override def message(fromChan: String, msg: String): Unit = {
         Monitor.redis.out(fromChan, msg.takeWhile(' '.!=))
         LilaOut read msg match {
-          case Some(out) => collect lift out match {
-            case Some(typed) => LilaBus.publish(chan, typed)
-            case None => logger.warn(s"Received $out on wrong channel: $fromChan")
+          case Some(out) => handlers get chan match {
+            case Some(handler) => handler(out)
+            case None => logger.warn(s"No $chan handler found for $out")
           }
-          case None => logger.warn(s"Unhandled $fromChan LilaOut: $msg")
+          case None => logger.warn(s"Can't parse $msg on $fromChan")
         }
       }
     })
@@ -76,6 +76,9 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
     }
   }
 
+  private var handlers = Map.empty[Chan, Emit[LilaOut]]
+  def registerHandlers(hs: Map[Chan, Emit[LilaOut]]): Unit = { handlers = hs }
+
   def closeAll: Unit = {
     val c = connections
     List(c.site, c.tour, c.lobby, c.simul, c.study, c.round, c.challenge).foreach(_.close())
@@ -87,6 +90,16 @@ object Lila {
   case class Chan(value: String) extends AnyVal with StringValue {
     def in = s"$value-in"
     def out = s"$value-out"
+  }
+
+  object chans {
+    val site = Chan("site")
+    val tour = Chan("tour")
+    val lobby = Chan("lobby")
+    val simul = Chan("simul")
+    val study = Chan("study")
+    val round = Chan("round")
+    val challenge = Chan("challenge")
   }
 
   final class Connection[In <: LilaIn](val emit: In => Unit, val close: () => Unit) extends Emit[In] {

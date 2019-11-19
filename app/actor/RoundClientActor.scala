@@ -174,4 +174,6 @@ object RoundClientActor {
       deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
       Behaviors.same
   }
+
+  case class UserTvNewGame(userId: User.ID) extends ClientMsg
 }

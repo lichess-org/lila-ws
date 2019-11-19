@@ -1,16 +1,15 @@
 package lila.ws
-package sm
 
-object ImpersonateSM {
+object Impersonations {
 
   private type ModId = User.ID
 
   private var all = Map.empty[ModId, User.ID]
 
-  def apply(i: ipc.LilaOut.Impersonate): Unit = i.by match {
-    case Some(modId) => all = all + (modId -> i.user)
+  def apply(user: User.ID, by: Option[User.ID]): Unit = by match {
+    case Some(modId) => all = all + (modId -> user)
     case None => all collectFirst {
-      case (m, u) if u == i.user => m
+      case (m, u) if u == user => m
     } foreach { modId =>
       all = all - modId
     }

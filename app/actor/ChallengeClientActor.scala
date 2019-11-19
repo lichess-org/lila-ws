@@ -34,7 +34,7 @@ object ChallengeClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          lilaIn.challenge(LilaIn.KeepAlive(state.room.id))
+          keepAlive challenge state.room.id
           Behaviors.same
         }
 

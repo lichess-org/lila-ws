@@ -15,13 +15,13 @@ object ClientActor {
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    CountSM.connect
+    Connections.connect
     busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    CountSM.disconnect
+    Connections.disconnect
     req.user foreach { users.disconnect(_, ctx.self) }
     if (state.watchedGames.nonEmpty) fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
@@ -38,7 +38,7 @@ object ClientActor {
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
-    for { l <- msg.lag; u <- deps.req.user } deps.lag(u.id, l)
+    for { l <- msg.lag; u <- deps.req.user } deps.services.lag(u.id, l)
     state.copy(lastPing = nowSeconds)
   }
 
@@ -78,11 +78,11 @@ object ClientActor {
         state
 
       case ClientOut.Notified =>
-        deps.notified
+        req.userId foreach services.notified.apply
         state
 
       case ClientOut.FollowingOnline =>
-        deps.friends
+        req.userId foreach services.friends.apply
         state
 
       case opening: ClientOut.Opening =>
@@ -154,6 +154,7 @@ object ClientActor {
       flag: Option[Flag],
       user: Option[User]
   ) {
+    def userId = user.map(_.id)
     override def toString = s"${user getOrElse "Anon"} $name"
   }
 
@@ -168,16 +169,5 @@ object ClientActor {
     def roomCrowd = services.roomCrowd
     def roundCrowd = services.roundCrowd
     def keepAlive = services.keepAlive
-    // TODO groupedWithin(128, 947.millis)
-    def lag(userId: User.ID, lag: Int): Unit =
-      lilaIn.site(LilaIn.Lags(Map(userId -> lag)))
-    // TODO groupedWithin(40, 1001.millis)
-    def notified: Unit = req.user foreach { u =>
-      lilaIn.site(LilaIn.NotifiedBatch(List(u.id)))
-    }
-    // TODO groupedWithin(10, 521.millis)
-    def friends: Unit = req.user foreach { u =>
-      lilaIn.site(LilaIn.FriendsBatch(List(u.id)))
-    }
   }
 }

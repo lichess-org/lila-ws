@@ -44,7 +44,7 @@ final class RoomCrowd @Inject() (
       case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
     }.values foreach { output =>
       json room output foreach {
-        Bus.publish(_, _ room output.roomId)
+        Bus.publish(_ room output.roomId, _)
       }
     }
   }
