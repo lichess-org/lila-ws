@@ -34,14 +34,14 @@ object ChallengeClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.challenge, LilaIn.KeepAlive(state.room.id))
+          lilaIn.challenge(LilaIn.KeepAlive(state.room.id))
           Behaviors.same
         }
 
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case ClientOut.ChallengePing =>
-        if (state.owner) queue(_.challenge, LilaIn.ChallengePing(state.room.id))
+        if (state.owner) lilaIn.challenge(LilaIn.ChallengePing(state.room.id))
         Behaviors.same
 
       // default receive (site)
@@ -57,7 +57,7 @@ object ChallengeClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach queue.challenge.offer
+        emit foreach lilaIn.challenge.apply
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }

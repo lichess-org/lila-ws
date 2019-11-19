@@ -20,8 +20,8 @@ import lila.ws.util.Util.{ reqName, flagOf, nowSeconds }
 final class Server @Inject() (
     auth: Auth,
     mongo: Mongo,
-    stream: Stream,
-    config: play.api.Configuration,
+    lila: Lila,
+    services: Services,
     monitor: Monitor,
     lifecycle: play.api.inject.ApplicationLifecycle
 )(implicit
@@ -32,29 +32,26 @@ final class Server @Inject() (
 
   type WebsocketFlow = Flow[Message, Message, _]
 
-  private val streamQueues: Future[Stream.Queues] = stream.start
-
   monitor.start
 
   system.scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
     Bus.publish(ClientCtrl.Broom(nowSeconds - 30), _.all)
   }
-  streamQueues foreach { queues =>
-    system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-      val connections = sm.CountSM.get
-      queues(_.site, LilaIn.Connections(connections))
-      Monitor.connection.current update connections
-    }
-    Spawner(RoundCrowd.botListener(queues(_.roundCrowd, _))) foreach {
-      Bus.subscribe(Bus.channel.roundBot, _)
-    }
+  system.scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+    val connections = sm.CountSM.get
+    lila.emit.site(LilaIn.Connections(connections))
+    Monitor.connection.current update connections
+  }
+  // TODO
+  Spawner(RoundCrowd.botListener(???)) foreach {
+    Bus.subscribe(Bus.channel.roundBot, _)
   }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     auth(req, flag) flatMap { user =>
-      actorFlow(req, bufferSize = 8) { clientIn => queues =>
+      actorFlow(req, bufferSize = 8) { clientIn =>
         SiteClientActor.start {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
+          ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user, flag), services)
         }
       }
     } map asWebsocket("site", new RateLimit(
@@ -65,9 +62,9 @@ final class Server @Inject() (
 
   def connectToLobby(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     auth(req, flag) flatMap { user =>
-      actorFlow(req, bufferSize = 8) { clientIn => queues =>
+      actorFlow(req, bufferSize = 8) { clientIn =>
         LobbyClientActor.start {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user, flag))
+          ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user, flag), services)
         }
       }
     } map asWebsocket("lobby", new RateLimit(
@@ -79,9 +76,9 @@ final class Server @Inject() (
   def connectToSimul(req: RequestHeader, simul: Simul, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
       mongo.isTroll(user) flatMap { isTroll =>
-        actorFlow(req) { clientIn => queues =>
+        actorFlow(req) { clientIn =>
           SimulClientActor.start(RoomActor.State(RoomId(simul.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+            ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
           }
         }
       }
@@ -94,9 +91,9 @@ final class Server @Inject() (
   def connectToTour(req: RequestHeader, tour: Tour, sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     auth(req, None) flatMap { user =>
       mongo.isTroll(user) flatMap { isTroll =>
-        actorFlow(req) { clientIn => queues =>
+        actorFlow(req) { clientIn =>
           TourClientActor.start(RoomActor.State(RoomId(tour.id), isTroll), fromVersion) {
-            ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+            ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
           }
         }
       }
@@ -108,9 +105,9 @@ final class Server @Inject() (
 
   def connectToStudy(req: RequestHeader, study: Study, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn => queues =>
+      actorFlow(req) { clientIn =>
         StudyClientActor.start(RoomActor.State(RoomId(study.id), isTroll), fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+          ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
         }
       }
     } map asWebsocket("study", new RateLimit(
@@ -121,12 +118,12 @@ final class Server @Inject() (
 
   def connectToRoundWatch(req: RequestHeader, gameId: Game.Id, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion], userTv: Option[UserTv]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn => queues =>
+      actorFlow(req) { clientIn =>
         userTv foreach { tv =>
-          queues(_.round, LilaIn.UserTv(gameId, tv.value))
+          lila.emit.round(LilaIn.UserTv(gameId, tv.value))
         }
         RoundClientActor.start(RoomActor.State(RoomId(gameId), isTroll), None, userTv, fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+          ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
         }
       }
     } map asWebsocket("round-watch", new RateLimit(
@@ -137,9 +134,9 @@ final class Server @Inject() (
 
   def connectToRoundPlay(req: RequestHeader, fullId: Game.FullId, player: Game.RoundPlayer, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
     mongo.isTroll(user) flatMap { isTroll =>
-      actorFlow(req) { clientIn => queues =>
+      actorFlow(req) { clientIn =>
         RoundClientActor.start(RoomActor.State(RoomId(fullId.gameId), isTroll), Some(player), None, fromVersion) {
-          ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+          ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
         }
       }
     } map asWebsocket("round-play", new RateLimit(
@@ -149,9 +146,9 @@ final class Server @Inject() (
     ))
 
   def connectToChallenge(req: RequestHeader, challengeId: Challenge.Id, owner: Boolean, user: Option[User], sri: Sri, fromVersion: Option[SocketVersion]): Future[WebsocketFlow] =
-    actorFlow(req) { clientIn => queues =>
+    actorFlow(req) { clientIn =>
       ChallengeClientActor.start(RoomActor.State(RoomId(challengeId), IsTroll(false)), owner, fromVersion) {
-        ClientActor.Deps(clientIn, queues, ClientActor.Req(req, sri, user))
+        ClientActor.Deps(clientIn, ClientActor.Req(req, sri, user), services)
       }
     } map asWebsocket("challenge", new RateLimit(
       maxCredits = 50,
@@ -170,15 +167,15 @@ final class Server @Inject() (
   }
 
   private def actorFlow(req: RequestHeader, bufferSize: Int = roomClientInBufferSize)(
-    clientActor: SourceQueue[ClientIn] => Stream.Queues => Behavior[ClientMsg]
-  ): Future[Flow[ClientOut, ClientIn, _]] = streamQueues flatMap { queues =>
+    clientActor: Emit[ClientIn] => Behavior[ClientMsg]
+  ): Future[Flow[ClientOut, ClientIn, _]] = {
 
     val (outQueue, publisher) = Source.queue[ClientIn](
       bufferSize = bufferSize,
       overflowStrategy = OverflowStrategy.dropHead
     ).toMat(Sink.asPublisher(false))(Keep.both).run()
 
-    Spawner(clientActor(outQueue)(queues)) map { actor =>
+    Spawner(clientActor(outQueue.offer)) map { actor =>
       Flow.fromSinkAndSource(
         ActorSink.actorRef[ClientMsg](
           ref = actor,
@@ -200,4 +197,6 @@ final class Server @Inject() (
   private val roomClientInBufferSize = 22
 
   private val logger = Logger("Server")
+
+  lifecycle addStopHook { () => Future successful lila.closeAll }
 }

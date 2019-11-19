@@ -22,9 +22,7 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     CountSM.disconnect
-    req.user foreach { u =>
-      queue(_.user, UserSM.Disconnect(u, ctx.self))
-    }
+    req.user foreach { deps.users.disconnect(_, ctx.self) }
     if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
   }
@@ -164,10 +162,11 @@ object ClientActor {
   }
 
   case class Deps(
-      client: SourceQueue[ClientIn],
-      queue: Stream.Queues,
-      req: Req
+      clientIn: Emit[ClientIn],
+      req: Req,
+      services: Services
   ) {
-    def clientIn(msg: ClientIn): Unit = client offer msg
+    def lilaIn = services.lila
+    def users = services.users
   }
 }
