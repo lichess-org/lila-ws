@@ -25,11 +25,11 @@ final class RoundCrowd @Inject() (
   )
 
   def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
-    val round = rounds.computeIfPresent(roomId, (_, round) => {
+    rounds.computeIfPresent(roomId, (_, round) => {
       val newRound = round.disconnect(user, player)
+      publish(roomId, newRound)
       if (newRound.isEmpty) null else newRound
     })
-    if (round != null) publish(roomId, round)
   }
 
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
