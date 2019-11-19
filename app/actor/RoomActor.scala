@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.ActorContext
 import akka.stream.scaladsl.SourceQueue
 
 import ipc._
-import sm._
 
 object RoomActor {
 

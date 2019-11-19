@@ -5,7 +5,6 @@ import akka.actor.typed.{ ActorRef, Behavior, PostStop }
 import play.api.libs.json.JsValue
 
 import ipc._
-import sm._
 
 object LobbyClientActor {
 
