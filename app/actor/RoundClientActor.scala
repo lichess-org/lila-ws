@@ -29,11 +29,9 @@ object RoundClientActor {
     import deps._
     val state = State(roomState, player, userTv)
     ClientActor.onStart(deps, ctx)
-    req.user foreach { u =>
-      queue(_.user, sm.UserSM.Connect(u, ctx.self))
-    }
+    req.user foreach { users.connect(_, ctx.self) }
     state.busChans foreach { Bus.subscribe(_, ctx.self) }
-    queue(_.roundCrowd, RoundCrowd.Connect(roomState.id, req.user, player.map(_.color)))
+    roundCrowd.connect(roomState.id, req.user, player.map(_.color))
     History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
       case None => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(state, _) } foreach clientIn
@@ -97,23 +95,23 @@ object RoundClientActor {
       case ClientOut.RoundMove(uci, blur, lag, ackId) =>
         fullId foreach { fid =>
           clientIn(ClientIn.Ack(ackId))
-          queue(_.round, LilaIn.RoundMove(fid, uci, blur, lag))
+          lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
         }
         Behaviors.same
 
       case ClientOut.RoundPlayerForward(payload) =>
         fullId foreach { fid =>
-          queue(_.round, LilaIn.RoundPlayerDo(fid, payload))
+          lilaIn.round(LilaIn.RoundPlayerDo(fid, payload))
         }
         Behaviors.same
 
       case ClientOut.RoundFlag(color) =>
-        queue(_.round, LilaIn.RoundFlag(gameId, color, state.player.map(_.id)))
+        lilaIn.round(LilaIn.RoundFlag(gameId, color, state.player.map(_.id)))
         Behaviors.same
 
       case ClientOut.RoundBye =>
         fullId foreach { fid =>
-          queue(_.round, LilaIn.RoundBye(fid))
+          lilaIn.round(LilaIn.RoundBye(fid))
         }
         Behaviors.same
 
@@ -122,31 +120,31 @@ object RoundClientActor {
           req.user map { u => LilaIn.WatcherChatSay(state.room.id, u.id, msg) }
         ) { p =>
             Some(LilaIn.PlayerChatSay(state.room.id, req.user.map(_.id).toLeft(p.color), msg))
-          } foreach { queue(_.round, _) }
+          } foreach lilaIn.round
         Behaviors.same
 
       case ClientOut.ChatTimeout(suspect, reason) =>
         deps.req.user foreach { u =>
-          queue(_.round, LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason))
+          lilaIn.round(LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason))
         }
         Behaviors.same
 
       case ClientOut.RoundBerserk(ackId) =>
         if (state.player.isDefined) req.user foreach { u =>
           clientIn(ClientIn.Ack(ackId))
-          queue(_.round, LilaIn.RoundBerserk(gameId, u.id))
+          lilaIn.round(LilaIn.RoundBerserk(gameId, u.id))
         }
         Behaviors.same
 
       case ClientOut.RoundHold(mean, sd) =>
         fullId foreach { fid =>
-          queue(_.round, LilaIn.RoundHold(fid, req.ip, mean, sd))
+          lilaIn.round(LilaIn.RoundHold(fid, req.ip, mean, sd))
         }
         Behaviors.same
 
       case ClientOut.RoundSelfReport(name) =>
         fullId foreach { fid =>
-          queue(_.round, LilaIn.RoundSelfReport(fid, req.ip, req.user.map(_.id), name))
+          lilaIn.round(LilaIn.RoundSelfReport(fid, req.ip, req.user.map(_.id), name))
         }
         Behaviors.same
 
@@ -173,7 +171,7 @@ object RoundClientActor {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
       state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
-      deps.queue(_.roundCrowd, RoundCrowd.Disconnect(state.room.id, deps.req.user, state.player.map(_.color)))
+      deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
       Behaviors.same
   }
 }

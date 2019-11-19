@@ -15,9 +15,7 @@ object SiteClientActor {
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
-    req.user foreach { u =>
-      queue(_.user, UserSM.Connect(u, ctx.self))
-    }
+    req.user foreach { users.connect(_, ctx.self) }
     apply(State(), deps)
   }
 

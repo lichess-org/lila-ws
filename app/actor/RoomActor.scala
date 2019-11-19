@@ -24,11 +24,9 @@ object RoomActor {
   ): Unit = {
     import deps._
     ClientActor.onStart(deps, ctx)
-    req.user foreach { u =>
-      queue(_.user, UserSM.Connect(u, ctx.self))
-    }
+    req.user foreach { users.connect(_, ctx.self) }
     Bus.subscribe(Bus.channel room state.id, ctx.self)
-    queue(_.crowd, RoomCrowd.Connect(state.id, req.user))
+    roomCrowd.connect(state.id, req.user)
     History.room.getFrom(state.id, fromVersion) match {
       case None => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(state.isTroll, _) } foreach clientIn
@@ -37,7 +35,7 @@ object RoomActor {
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     Bus.unsubscribe(Bus.channel room state.id, ctx.self)
-    deps.queue(_.crowd, RoomCrowd.Disconnect(state.id, deps.req.user))
+    deps.roomCrowd.disconnect(state.id, deps.req.user)
   }
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =

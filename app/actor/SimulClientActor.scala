@@ -33,7 +33,7 @@ object SimulClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.simul, LilaIn.KeepAlive(state.room.id))
+          keepAlive.simul(state.room.id)
           Behaviors.same
         }
 
@@ -52,7 +52,7 @@ object SimulClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach queue.simul.offer
+        emit foreach lilaIn.simul
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }

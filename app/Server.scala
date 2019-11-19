@@ -42,10 +42,6 @@ final class Server @Inject() (
     lila.emit.site(LilaIn.Connections(connections))
     Monitor.connection.current update connections
   }
-  // TODO
-  Spawner(RoundCrowd.botListener(???)) foreach {
-    Bus.subscribe(Bus.channel.roundBot, _)
-  }
 
   def connectToSite(req: RequestHeader, sri: Sri, flag: Option[Flag]): Future[WebsocketFlow] =
     auth(req, flag) flatMap { user =>

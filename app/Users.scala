@@ -13,8 +13,6 @@ import ipc._
 @Singleton
 final class Users @Inject() (lilaIn: Emit[LilaIn.Site], scheduler: Scheduler)(implicit ec: ExecutionContext) {
 
-  type Client = ActorRef[ClientMsg]
-
   private val users = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
 

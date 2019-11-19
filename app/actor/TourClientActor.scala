@@ -33,7 +33,7 @@ object TourClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.tour, LilaIn.KeepAlive(state.room.id))
+          keepAlive.tour(state.room.id)
           Behaviors.same
         }
 
@@ -52,7 +52,7 @@ object TourClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach queue.tour.offer
+        emit foreach lilaIn.tour
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }

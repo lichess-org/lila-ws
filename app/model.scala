@@ -111,8 +111,6 @@ object RoomId {
   def apply(v: StringValue): RoomId = RoomId(v.value)
 }
 
-case class UserLag(userId: User.ID, lag: Int)
-
 case class ReqId(value: Int) extends AnyVal with IntValue
 
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])

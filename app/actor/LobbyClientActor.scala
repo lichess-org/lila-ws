@@ -19,10 +19,8 @@ object LobbyClientActor {
   def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     onStart(deps, ctx)
-    req.user foreach { u =>
-      queue(_.user, UserSM.ConnectSilently(u, ctx.self))
-    }
-    queue(_.lobby, LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
+    req.user foreach { users.connect(_, ctx.self, silently = true) }
+    lilaIn.lobby(LilaIn.ConnectSri(req.sri, req.user.map(_.id)))
     Bus.subscribe(Bus.channel.lobby, ctx.self)
     apply(State(), deps)
   }
@@ -31,7 +29,7 @@ object LobbyClientActor {
 
     import deps._
 
-    def forward(payload: JsValue): Unit = queue(_.lobby, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+    def forward(payload: JsValue): Unit = lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
 
     msg match {
 
@@ -77,7 +75,7 @@ object LobbyClientActor {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
       Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-      deps.queue(_.lobby, LilaIn.DisconnectSri(deps.req.sri))
+      deps.lilaIn.lobby(LilaIn.DisconnectSri(deps.req.sri))
       Behaviors.same
   }
 }

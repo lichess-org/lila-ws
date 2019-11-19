@@ -4,6 +4,8 @@ package object ws {
 
   type Emit[A] = Function[A, Unit]
 
+  type Client = akka.actor.typed.ActorRef[ipc.ClientMsg]
+
   type ~[+A, +B] = Tuple2[A, B]
   object ~ {
     def apply[A, B](x: A, y: B) = Tuple2(x, y)

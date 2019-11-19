@@ -22,8 +22,8 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     CountSM.disconnect
-    req.user foreach { deps.users.disconnect(_, ctx.self) }
-    if (state.watchedGames.nonEmpty) queue(_.fen, FenSM.Unwatch(state.watchedGames, ctx.self))
+    req.user foreach { users.disconnect(_, ctx.self) }
+    if (state.watchedGames.nonEmpty) fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
   }
 
@@ -38,7 +38,7 @@ object ClientActor {
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
-    for { l <- msg.lag; u <- deps.req.user } deps.queue(_.lag, UserLag(u.id, l))
+    for { l <- msg.lag; u <- deps.req.user } deps.lag(u.id, l)
     state.copy(lastPing = nowSeconds)
   }
 
@@ -63,7 +63,7 @@ object ClientActor {
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
-        queue(_.fen, FenSM.Watch(gameIds, ctx.self))
+        fens.watch(gameIds, ctx.self)
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
@@ -78,15 +78,11 @@ object ClientActor {
         state
 
       case ClientOut.Notified =>
-        req.user foreach { u =>
-          queue(_.notified, LilaIn.Notified(u.id))
-        }
+        deps.notified
         state
 
       case ClientOut.FollowingOnline =>
-        req.user foreach { u =>
-          queue(_.friends, LilaIn.Friends(u.id))
-        }
+        deps.friends
         state
 
       case opening: ClientOut.Opening =>
@@ -106,7 +102,7 @@ object ClientActor {
         state
 
       case ClientOut.SiteForward(payload) =>
-        queue(_.site, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+        lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 
       case ClientOut.Unexpected(msg) =>
@@ -168,5 +164,20 @@ object ClientActor {
   ) {
     def lilaIn = services.lila
     def users = services.users
+    def fens = services.fens
+    def roomCrowd = services.roomCrowd
+    def roundCrowd = services.roundCrowd
+    def keepAlive = services.keepAlive
+    // TODO groupedWithin(128, 947.millis)
+    def lag(userId: User.ID, lag: Int): Unit =
+      lilaIn.site(LilaIn.Lags(Map(userId -> lag)))
+    // TODO groupedWithin(40, 1001.millis)
+    def notified: Unit = req.user foreach { u =>
+      lilaIn.site(LilaIn.NotifiedBatch(List(u.id)))
+    }
+    // TODO groupedWithin(10, 521.millis)
+    def friends: Unit = req.user foreach { u =>
+      lilaIn.site(LilaIn.FriendsBatch(List(u.id)))
+    }
   }
 }

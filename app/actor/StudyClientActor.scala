@@ -17,9 +17,10 @@ object StudyClientActor {
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    deps.req.user foreach { user =>
-      deps.queue(_.studyDoor, ThroughStudyDoor(user, Right(roomState.id)))
-    }
+    // TODO
+    // deps.req.user foreach { user =>
+    //   deps.queue(_.studyDoor, ThroughStudyDoor(user, Right(roomState.id)))
+    // }
     apply(State(roomState), deps)
   }
 
@@ -27,10 +28,8 @@ object StudyClientActor {
 
     import deps._
 
-    def forward(payload: JsValue): Unit = queue(
-      _.study,
-      LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
-    )
+    def forward(payload: JsValue): Unit =
+      lilaIn.study(LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload)))
 
     def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
 
@@ -42,7 +41,7 @@ object StudyClientActor {
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else {
-          queue(_.study, LilaIn.KeepAlive(state.room.id))
+          lilaIn.study(LilaIn.KeepAlive(state.room.id))
           Behaviors.same
         }
 
@@ -79,7 +78,7 @@ object StudyClientActor {
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
       case (newState, emit) =>
-        emit foreach queue.study.offer
+        emit foreach lilaIn.study
         newState.fold(Behaviors.same[ClientMsg]) { roomState =>
           apply(state.copy(room = roomState), deps)
         }
@@ -89,9 +88,10 @@ object StudyClientActor {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
       RoomActor.onStop(state.room, deps, ctx)
-      deps.req.user foreach { user =>
-        deps.queue(_.studyDoor, ThroughStudyDoor(user, Left(state.room.id)))
-      }
+      // TOODO
+      // deps.req.user foreach { user =>
+      //   deps.queue(_.studyDoor, ThroughStudyDoor(user, Left(state.room.id)))
+      // }
       Behaviors.same
   }
 }

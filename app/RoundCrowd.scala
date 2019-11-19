@@ -2,8 +2,69 @@ package lila.ws
 
 import chess.Color
 import java.util.concurrent.ConcurrentHashMap
+import javax.inject._
+import scala.concurrent.ExecutionContext
 
 import ipc._
+
+@Singleton
+final class RoundCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext) {
+
+  import RoundCrowd._
+
+  // case class Output(
+  //     room: RoomCrowd.Output,
+  //     players: Color.Map[Int]
+  // ) {
+  //   def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
+  // }
+
+  private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
+
+  // TODO RouOns
+  def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = publish(
+    roomId,
+    rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
+  )
+
+  // TODO RouOns
+  def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
+    val round = rounds.computeIfPresent(roomId, (_, round) => {
+      val newRound = round.disconnect(user, player)
+      if (round.isEmpty) null else round
+    })
+    if (round != null) publish(roomId, round)
+  }
+
+  // TODO RouOns
+  def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
+    rounds.compute(roomId, (_, cur) => {
+      Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
+        case None => cur
+        case Some(round) =>
+          publish(roomId, round)
+          round
+      }
+    })
+
+  def getUsers(roomId: RoomId): Set[User.ID] =
+    Option(rounds get roomId).fold(Set.empty[User.ID])(_.room.users.keySet)
+
+  def isPresent(roomId: RoomId, userId: User.ID): Boolean =
+    Option(rounds get roomId).exists(_.room.users contains userId)
+
+  private def publish(roomId: RoomId, round: RoundState): Unit = json.round(
+    roomId = roomId,
+    members = round.room.nbMembers,
+    users = round.room.users.keys,
+    anons = round.room.anons,
+    players = round.players
+  ) foreach {
+    Bus.publish(_, _ room roomId)
+  }
+
+  def size = rounds.size
+}
 
 object RoundCrowd {
 
@@ -25,64 +86,4 @@ object RoundCrowd {
       else Some(disconnect(None, Some(color)))
     def isEmpty = room.isEmpty && players.forall(1 > _)
   }
-
-  case class Output(
-      room: RoomCrowd.Output,
-      players: Color.Map[Int]
-  ) {
-    def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
-  }
-
-  sealed trait Input
-  case class Connect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
-  case class Disconnect(roomId: RoomId, user: Option[User], player: Option[Color]) extends Input
-  case class BotOnline(roomId: RoomId, color: Color, online: Boolean) extends Input
-
-  private val rooms = new ConcurrentHashMap[RoomId, RoundState](32768)
-
-  def apply(in: Input): Option[Output] = in match {
-
-    case Connect(roomId, user, player) => Some {
-      outputOf(
-        roomId,
-        rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
-      )
-    }
-
-    case Disconnect(roomId, user, player) => Some {
-      val room = rooms.compute(roomId, (_, cur) => Option(cur).fold(RoundState())(_.disconnect(user, player)))
-      if (room.isEmpty) rooms remove roomId
-      outputOf(roomId, room)
-    }
-
-    case BotOnline(roomId, color, online) =>
-      Option(rooms get roomId).getOrElse(RoundState()).botOnline(color, online) map { room =>
-        rooms.put(roomId, room)
-        outputOf(roomId, room)
-      }
-  }
-
-  def getUsers(roomId: RoomId): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.room.users.keySet)
-
-  def isPresent(roomId: RoomId, userId: User.ID): Boolean =
-    Option(rooms get roomId).exists(_.room.users contains userId)
-
-  private def outputOf(roomId: RoomId, round: RoundState) = Output(
-    room = RoomCrowd.outputOf(roomId, round.room),
-    players = round.players
-  )
-
-  def botListener(push: Input => Unit) = {
-    import akka.actor.typed.scaladsl.Behaviors
-    Behaviors.receive[ClientMsg] {
-      case (_, RoundBotOnline(gameId, color, online)) =>
-        push(RoundCrowd.BotOnline(RoomId(gameId), color, online))
-        Behaviors.same
-      case _ =>
-        Behaviors.same
-    }
-  }
-
-  def size = rooms.size
 }

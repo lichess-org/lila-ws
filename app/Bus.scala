@@ -37,7 +37,6 @@ object Bus {
     val lobby = Chan("lobby")
     val tv = Chan("tv")
     def room(id: RoomId) = Chan(s"room/$id")
-    val roundBot = Chan("round-bot")
     def tourStanding(id: Tour.ID) = Chan(s"tour-standing/$id")
   }
 
