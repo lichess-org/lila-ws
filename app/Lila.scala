@@ -98,8 +98,8 @@ object Lila {
     val lobby = Chan("lobby")
     val simul = Chan("simul")
     val study = Chan("study")
-    val round = Chan("round")
-    val challenge = Chan("challenge")
+    val round = Chan("r")
+    val challenge = Chan("chal")
   }
 
   final class Connection[In <: LilaIn](val emit: In => Unit, val close: () => Unit) extends Emit[In] {
