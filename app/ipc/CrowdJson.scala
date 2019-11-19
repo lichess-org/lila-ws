@@ -1,7 +1,6 @@
 package lila.ws
 package ipc
 
-import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import javax.inject._
 import play.api.libs.json._
@@ -17,34 +16,32 @@ final class CrowdJson @Inject() (
     lightUserApi: LightUserApi
 )(implicit ec: ExecutionContext) {
 
-  def room(roomId: RoomId, members: Int, users: Iterable[User.ID], anons: Int): Future[ClientIn.Crowd] = {
+  def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if (crowd.users.size > 20) keepOnlyStudyMembers(crowd) map { users =>
       crowd.copy(users = users, anons = 0)
     }
     else Future successful crowd
   } flatMap spectatorsOf map ClientIn.Crowd.apply
 
-  def round(roomId: RoomId, members: Int, users: Iterable[User.ID], anons: Int, players: Color.Map[Int]): Future[ClientIn.Crowd] =
-    spectatorsOf(
-      members,
-      users = if (crowd.room.users.size > 20) Nil else crowd.room.users,
-      anons
-    ) map { spectators =>
+  def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
+    spectatorsOf(crowd.room.copy(
+      users = if (crowd.room.users.size > 20) Nil else crowd.room.users
+    )) map { spectators =>
       ClientIn.Crowd(
         Json.obj(
-          "white" -> (players.white > 0),
-          "black" -> (players.black > 0)
-        ).add("watchers" -> (if (users.nonEmpty) Some(spectators) else None))
+          "white" -> (crowd.players.white > 0),
+          "black" -> (crowd.players.black > 0)
+        ).add("watchers" -> (if (crowd.room.users.nonEmpty) Some(spectators) else None))
       )
     }
 
-  private def spectatorsOf(members: Int, users: Iterable[User.ID], anons: Int): Future[JsObject] =
-    if (users.isEmpty) Future successful Json.obj("nb" -> members)
-    else Future sequence { users map lightUserApi.get } map { lights =>
+  private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
+    if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
+    else Future sequence { crowd.users map lightUserApi.get } map { lights =>
       Json.obj(
-        "nb" -> members,
+        "nb" -> crowd.members,
         "users" -> lights.flatMap(_.map(_.titleName)),
-        "anons" -> anons
+        "anons" -> crowd.anons
       )
     }
 

@@ -12,13 +12,6 @@ final class RoundCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext
 
   import RoundCrowd._
 
-  // case class Output(
-  //     room: RoomCrowd.Output,
-  //     players: Color.Map[Int]
-  // ) {
-  //   def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
-  // }
-
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
   // TODO RouOns
@@ -53,20 +46,24 @@ final class RoundCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rounds get roomId).exists(_.room.users contains userId)
 
-  private def publish(roomId: RoomId, round: RoundState): Unit = json.round(
-    roomId = roomId,
-    members = round.room.nbMembers,
-    users = round.room.users.keys,
-    anons = round.room.anons,
-    players = round.players
-  ) foreach {
-    Bus.publish(_, _ room roomId)
-  }
+  private def publish(roomId: RoomId, round: RoundState): Unit =
+    json.round(outputOf(roomId, round)) foreach {
+      Bus.publish(_, _ room roomId)
+    }
 
   def size = rounds.size
 }
 
 object RoundCrowd {
+
+  case class Output(room: RoomCrowd.Output, players: Color.Map[Int]) {
+    def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
+  }
+
+  def outputOf(roomId: RoomId, round: RoundState) = Output(
+    room = RoomCrowd.outputOf(roomId, round.room),
+    players = round.players
+  )
 
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),

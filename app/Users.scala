@@ -24,7 +24,7 @@ final class Users @Inject() (lilaIn: Emit[LilaIn.Site], scheduler: Scheduler)(im
   def connect(user: User, client: Client, silently: Boolean = false): Unit =
     users.compute(user.id, {
       case (_, null) =>
-        if (disconnects.remove(user.id) == null && !silently) lilaIn(LilaIn.ConnectUser(user))
+        if (!disconnects.remove(user.id) && !silently) lilaIn(LilaIn.ConnectUser(user))
         Set(client)
       case (_, clients) =>
         clients + client

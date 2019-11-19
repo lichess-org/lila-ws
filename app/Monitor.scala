@@ -7,7 +7,10 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 @Singleton
-final class Monitor @Inject() (config: play.api.Configuration)(implicit system: akka.actor.ActorSystem, ec: ExecutionContext) {
+final class Monitor @Inject() (
+    config: play.api.Configuration,
+    services: Services
+)(implicit system: akka.actor.ActorSystem, ec: ExecutionContext) {
 
   import Monitor._
 
@@ -28,8 +31,8 @@ final class Monitor @Inject() (config: play.api.Configuration)(implicit system: 
   private def periodicMetrics = {
     historyRoomSize.update(History.room.size)
     historyRoundSize.update(History.round.size)
-    crowdRoomSize.update(RoomCrowd.size)
-    crowdRoundSize.update(RoundCrowd.size)
+    crowdRoomSize.update(services.roomCrowd.size)
+    crowdRoundSize.update(services.roundCrowd.size)
     busSize.update(Bus.size)
     busAllSize.update(Bus.sizeOf(_.all))
   }

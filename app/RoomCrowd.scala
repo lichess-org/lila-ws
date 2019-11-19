@@ -32,12 +32,12 @@ final class RoomCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext)
   def isPresent(roomId: RoomId, userId: User.ID): Boolean =
     Option(rooms get roomId).exists(_.users contains userId)
 
-  private def publish(roomId: RoomId, room: RoomState): Unit = json.room(
+  private def publish(roomId: RoomId, room: RoomState): Unit = json.room(Output(
     roomId = roomId,
     members = room.nbMembers,
     users = room.users.keys,
     anons = room.anons
-  ) foreach {
+  )) foreach {
     Bus.publish(_, _ room roomId)
   }
 
@@ -45,6 +45,20 @@ final class RoomCrowd @Inject() (json: CrowdJson)(implicit ec: ExecutionContext)
 }
 
 object RoomCrowd {
+
+  case class Output(
+      roomId: RoomId,
+      members: Int,
+      users: Iterable[User.ID],
+      anons: Int
+  )
+
+  def outputOf(roomId: RoomId, room: RoomState) = Output(
+    roomId = roomId,
+    members = room.nbMembers,
+    users = room.users.keys,
+    anons = room.anons
+  )
 
   case class RoomState(
       anons: Int = 0,
