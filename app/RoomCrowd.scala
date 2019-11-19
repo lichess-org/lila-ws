@@ -25,7 +25,7 @@ final class RoomCrowd @Inject() (
   def disconnect(roomId: RoomId, user: Option[User]): Unit = {
     val room = rooms.computeIfPresent(roomId, (_, room) => {
       val newRoom = room disconnect user
-      if (room.isEmpty) null else room
+      if (newRoom.isEmpty) null else newRoom
     })
     if (room != null) publish(roomId, room)
   }

@@ -12,7 +12,7 @@ object Spawner {
 
   private val actor: Behavior[SpawnProtocol.Command] = SpawnProtocol()
 
-  private val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(actor, "spawner")
+  private val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(actor, "clients")
   private implicit val timeout: Timeout = Timeout(3.seconds)
   private implicit val scheduler: Scheduler = system.scheduler
 

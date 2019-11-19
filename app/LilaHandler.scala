@@ -60,7 +60,7 @@ final class LilaHandler @Inject() (
 
   private val simulHandler: Emit[LilaOut] = {
     case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
-    case msg => roomHandler("simul")
+    case msg => roomHandler(msg)
   }
 
   private val tourHandler: Emit[LilaOut] = {
@@ -78,12 +78,12 @@ final class LilaHandler @Inject() (
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
-    case msg => roomHandler("tour")
+    case msg => roomHandler(msg)
   }
 
   private val studyHandler: Emit[LilaOut] = {
     case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
-    case msg => roomHandler("study")
+    case msg => roomHandler(msg)
   }
 
   private val roundHandler: Emit[LilaOut] = {
@@ -107,13 +107,11 @@ final class LilaHandler @Inject() (
       case LilaBoot =>
         println("#################### LILA BOOT ####################")
         lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
-      case msg => roomHandler("round")
+      case msg => roomHandler(msg)
     })
   }
 
-  private val challengeHandler: Emit[LilaOut] = roomHandler("challenge")
-
-  private def roomHandler(name: String): Emit[LilaOut] = {
+  private val roomHandler: Emit[LilaOut] = {
     case TellRoomVersion(roomId, version, troll, payload) =>
       History.room.add(roomId, ClientIn.Versioned(payload, version, troll))
       publish(_ room roomId, ClientIn.Versioned(payload, version, troll))
@@ -121,7 +119,7 @@ final class LilaHandler @Inject() (
     case RoomStop(roomId) => History.room.stop(roomId)
 
     case site: SiteOut => siteHandler(site)
-    case msg => logger.warn(s"Unhandled $name: $msg")
+    case msg => logger.warn(s"Unhandled room: $msg")
   }
 
   private def roomBoot(filter: Mongo => Mongo.IdFilter, lilaIn: Emit[LilaIn.RoomSetVersions]): Unit = {
@@ -138,6 +136,6 @@ final class LilaHandler @Inject() (
     Lila.chans.tour -> tourHandler,
     Lila.chans.study -> studyHandler,
     Lila.chans.round -> roundHandler,
-    Lila.chans.challenge -> challengeHandler
+    Lila.chans.challenge -> roomHandler
   )
 }

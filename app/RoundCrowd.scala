@@ -27,7 +27,7 @@ final class RoundCrowd @Inject() (
   def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
     val round = rounds.computeIfPresent(roomId, (_, round) => {
       val newRound = round.disconnect(user, player)
-      if (round.isEmpty) null else round
+      if (newRound.isEmpty) null else newRound
     })
     if (round != null) publish(roomId, round)
   }
