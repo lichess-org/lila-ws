@@ -41,7 +41,7 @@ object ChallengeClientActor {
       case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
 
       case ClientOut.ChallengePing =>
-        if (state.owner) lilaIn.challenge(LilaIn.ChallengePing(state.room.id))
+        if (state.owner) services.challengePing(state.room.id)
         Behaviors.same
 
       // default receive (site)

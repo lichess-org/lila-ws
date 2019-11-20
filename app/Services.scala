@@ -35,4 +35,7 @@ final class Services @Inject() (
       }
     })
   }
+  val challengePing = groupedWithin[RoomId](20, 2.seconds) { ids =>
+    lila.challenge(LilaIn.ChallengePings(ids.distinct))
+  }
 }
