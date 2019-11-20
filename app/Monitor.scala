@@ -18,6 +18,7 @@ final class Monitor @Inject() (
 
     val version = System.getProperty("java.version")
     val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    play.api.Logger("Monitor").info("lila-ws stream-less play 2.7")
     play.api.Logger("Monitor").info(s"Java version: $version, memory: ${memory}MB")
 
     if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
