@@ -28,4 +28,11 @@ final class Services @Inject() (
   val friends = groupedWithin[User.ID](10, 521.millis) { userIds =>
     lila.site(LilaIn.FriendsBatch(userIds))
   }
+  val studyDoor = groupedWithin[ThroughStudyDoor](64, 1931.millis) { throughs =>
+    lila.study(LilaIn.StudyDoor {
+      throughs.foldLeft(Map.empty[User.ID, Either[RoomId, RoomId]]) {
+        case (doors, ThroughStudyDoor(user, through)) => doors + (user.id -> through)
+      }
+    })
+  }
 }

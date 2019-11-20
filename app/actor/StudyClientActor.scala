@@ -17,10 +17,9 @@ object StudyClientActor {
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    // TODO
-    // deps.req.user foreach { user =>
-    //   deps.queue(_.studyDoor, ThroughStudyDoor(user, Right(roomState.id)))
-    // }
+    deps.req.user foreach { user =>
+      deps.services.studyDoor(ThroughStudyDoor(user, Right(roomState.id)))
+    }
     apply(State(roomState), deps)
   }
 
@@ -88,10 +87,9 @@ object StudyClientActor {
     case (ctx, PostStop) =>
       onStop(state.site, deps, ctx)
       RoomActor.onStop(state.room, deps, ctx)
-      // TOODO
-      // deps.req.user foreach { user =>
-      //   deps.queue(_.studyDoor, ThroughStudyDoor(user, Left(state.room.id)))
-      // }
+      deps.req.user foreach { user =>
+        deps.services.studyDoor(ThroughStudyDoor(user, Left(state.room.id)))
+      }
       Behaviors.same
   }
 }
