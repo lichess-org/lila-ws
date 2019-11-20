@@ -18,6 +18,9 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
   private val logger = Logger(getClass)
   private val redis = RedisClient create RedisURI.create(config.get[String]("redis.uri"))
 
+  private var handlers = Map.empty[Chan, Emit[LilaOut]]
+  def registerHandlers(hs: Map[Chan, Emit[LilaOut]]): Unit = { handlers = hs }
+
   val connections: Connections = Await.result(establishConnections, 3.seconds)
 
   private def establishConnections: Future[Connections] =
@@ -75,9 +78,6 @@ final class Lila @Inject() (config: play.api.Configuration)(implicit ec: Executi
       new Connection[In](emit, close)
     }
   }
-
-  private var handlers = Map.empty[Chan, Emit[LilaOut]]
-  def registerHandlers(hs: Map[Chan, Emit[LilaOut]]): Unit = { handlers = hs }
 
   def closeAll: Unit = {
     val c = connections
