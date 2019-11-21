@@ -6,6 +6,8 @@ import ipc.ClientMsg
 
 object Bus {
 
+  type Chan = String
+
   private val impl = new util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
     initialCapacity = 65535,
     publish = (actor, event) => actor ! event
@@ -23,21 +25,19 @@ object Bus {
   def publish(msg: Msg): Unit =
     impl.publish(msg.channel, msg.event)
 
-  case class Chan(value: String) extends AnyVal with StringValue
-
   case class Msg(event: ClientMsg, channel: Chan)
 
   type ChanSelect = Bus.channel.type => Chan
 
   object channel {
-    def sri(s: Sri) = Chan(s"sri/${s.value}")
-    def flag(f: Flag) = Chan(s"flag/$f")
-    val mlat = Chan("mlat")
-    val all = Chan("all")
-    val lobby = Chan("lobby")
-    val tv = Chan("tv")
-    def room(id: RoomId) = Chan(s"room/$id")
-    def tourStanding(id: Tour.ID) = Chan(s"tour-standing/$id")
+    def sri(s: Sri) = s"sri/${s.value}"
+    def flag(f: Flag) = s"flag/$f"
+    val mlat = "mlat"
+    val all = "all"
+    val lobby = "lobby"
+    val tv = "tv"
+    def room(id: RoomId) = s"room/$id"
+    def tourStanding(id: Tour.ID) = s"tour-standing/$id"
   }
 
   def msg(event: ClientMsg, chan: ChanSelect) =
