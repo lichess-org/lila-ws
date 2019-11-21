@@ -7,6 +7,7 @@ import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import java.util.concurrent.atomic.AtomicInteger
 
 @Singleton
 final class Monitor @Inject() (
@@ -82,5 +83,22 @@ object Monitor {
     val res = f
     timer.stop
     res
+  }
+
+  object count {
+
+    final class IntPrint(name: String, every: Int) {
+      val value = new AtomicInteger
+      def inc = {
+        val v = value.incrementAndGet
+        if (v % every == 0) println(s"count $name: $v")
+      }
+    }
+
+    val client = new IntPrint("client", 100)
+    val handshake = new IntPrint("handshake", 100)
+
+    val clientOut = new IntPrint("clientOut", 5000)
+    val clientIn = new IntPrint("clientIn", 5000)
   }
 }

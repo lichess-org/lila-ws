@@ -37,17 +37,19 @@ private final class ProtocolHandler(
     val promise = Promise[Client]
     ctx.channel.attr(Clients.attrKey).set(promise.future)
     evt match {
-      case hs: WebSocketServerProtocolHandler.HandshakeComplete => router(
-        hs.requestUri,
-        hs.requestHeaders,
-        ctx.channel,
-        IpAddress(address.getAddress.getHostAddress)
-      ) foreach {
-          case Left(status) =>
-            sendSimpleErrorResponse(ctx, status)
-            promise failure new Exception("Router refused the connection")
-          case Right(actor) => connectActorToChannel(actor, ctx.channel, promise)
-        }
+      case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
+        Monitor.count.handshake.inc
+        router(
+          hs.requestUri,
+          hs.requestHeaders,
+          ctx.channel,
+          IpAddress(address.getAddress.getHostAddress)
+        ) foreach {
+            case Left(status) =>
+              sendSimpleErrorResponse(ctx, status)
+              promise failure new Exception("Router refused the connection")
+            case Right(actor) => connectActorToChannel(actor, ctx.channel, promise)
+          }
       case _ =>
     }
   }
@@ -80,7 +82,7 @@ private final class ProtocolHandler(
   }
 
   private def connectActorToChannel(actor: ClientBehavior, channel: Channel, promise: Promise[Client]): Unit = {
-    clients ! Clients.Start(actor, channel, promise)
+    clients ! Clients.Start(actor, channel.id.asShortText, promise)
     channel.closeFuture.addListener(new GenericFutureListener[Future[Void]] {
       def operationComplete(f: Future[Void]): Unit =
         Option(channel.attr(Clients.attrKey).get) match {

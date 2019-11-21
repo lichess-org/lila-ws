@@ -21,6 +21,7 @@ private final class FrameHandler(
   ) = anyFrame match {
     case frame: TextWebSocketFrame =>
       val txt = frame.text
+      frame.release
       if (txt.nonEmpty) {
         // TODO ratelimit
         ipc.ClientOut parse frame.text() foreach { out =>
