@@ -81,7 +81,7 @@ private final class ProtocolHandler(
           case Some(client) => client foreach { c =>
             clients ! Clients.Stop(c)
           }
-          case None => println(s"No client actor to stop!")
+          case None => logger.warn(s"No client actor to stop!")
         }
     })
   }

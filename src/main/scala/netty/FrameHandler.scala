@@ -2,6 +2,7 @@ package lila.ws
 package netty
 
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import com.typesafe.scalalogging.Logger
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
@@ -12,7 +13,12 @@ private final class FrameHandler(
     clients: ActorRef[Clients.Control]
 )(implicit ec: ExecutionContext) extends SimpleChannelInboundHandler[WebSocketFrame] {
 
-  override protected def channelRead0(ctx: ChannelHandlerContext, frame: WebSocketFrame) = frame match {
+  import FrameHandler._
+
+  override protected def channelRead0(
+    ctx: ChannelHandlerContext,
+    anyFrame: WebSocketFrame
+  ) = anyFrame match {
     case frame: TextWebSocketFrame =>
       val txt = frame.text
       if (txt.nonEmpty) {
@@ -20,11 +26,16 @@ private final class FrameHandler(
         ipc.ClientOut parse frame.text() foreach { out =>
           Option(ctx.channel.attr(Clients.attrKey).get) match {
             case Some(client) => client foreach (_ ! out)
-            case None => println(s"No client actor to receive $out")
+            case None => logger.warn(s"No client actor to receive $out")
           }
         }
       }
     case frame =>
-      throw new UnsupportedOperationException("unsupported frame type: " + frame.getClass().getName())
+      logger.info("unsupported frame type: " + frame.getClass().getName())
   }
+}
+
+private object FrameHandler {
+
+  private val logger = Logger(getClass)
 }

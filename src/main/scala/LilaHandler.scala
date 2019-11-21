@@ -105,7 +105,7 @@ final class LilaHandler @Inject() (
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case LilaBoot =>
-        println("#################### LILA BOOT ####################")
+        logger.info("#################### LILA BOOT ####################")
         lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
       case msg => roomHandler(msg)
     })
