@@ -16,7 +16,7 @@ final class Monitor @Inject() (
 
   import Monitor._
 
-  private val logger = Logger("Monitor")
+  private val logger = Logger(getClass)
 
   def start: Unit = {
 

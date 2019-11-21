@@ -25,6 +25,8 @@ final class Controller @Inject() (
 
   import Controller._
 
+  private val logger = Logger(getClass)
+
   def site(req: RequestHeader, emit: ClientEmit): Response =
     WebSocket(req) { sri =>
       auth(req) map { user =>
@@ -46,12 +48,14 @@ final class Controller @Inject() (
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response = req.sri match {
     case Some(validSri) => f(validSri)
-    case None => Future successful Left(HttpResponseStatus.BAD_REQUEST)
+    case None =>
+      f(Sri.random)
+    // Future successful Left(HttpResponseStatus.BAD_REQUEST)
   }
 
   private object CSRF {
 
-    val csrfDomain = config.getString("csrf.origin")
+    val csrfOrigin = config.getString("csrf.origin")
     val appOrigins = Set(
       "ionic://localhost", // ios
       "capacitor://localhost", // capacitor (ios next)
@@ -60,19 +64,20 @@ final class Controller @Inject() (
       "file://"
     )
 
-    def check(req: RequestHeader)(f: => Response): Response = req.origin match {
-      case None => f // for exotic clients and acid ape chess
-      case Some(origin) if origin == csrfDomain || appOrigins(origin) => f
-      case Some(origin) =>
-        logger.info(s"""CSRF origin: "$origin" ${req.name}""")
-        Future successful Left(HttpResponseStatus.FORBIDDEN)
-    }
+    def check(req: RequestHeader)(f: => Response): Response =
+      req.origin match {
+        case None => f // for exotic clients and acid ape chess
+        case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
+        case Some(origin) =>
+          logger.info(s"""CSRF origin: "$origin" ${req.name}""")
+          Future successful Left(HttpResponseStatus.FORBIDDEN)
+      }
   }
 }
 
 object Controller {
 
-  val logger = Logger("Controller")
+  val logger = Logger(getClass)
 
   type Response = Future[Either[HttpResponseStatus, ClientBehavior]]
 }

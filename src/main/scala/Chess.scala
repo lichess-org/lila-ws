@@ -12,7 +12,7 @@ import ipc._
 
 object Chess {
 
-  private val logger = Logger("chess")
+  private val logger = Logger(getClass)
 
   def apply(req: ClientOut.AnaMove): ClientIn = Monitor.time(_.chessMoveTime) {
     try {

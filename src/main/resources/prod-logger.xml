@@ -1,7 +1,7 @@
 <configuration>
   <appender name="STDOUT" target="System.out" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%level %logger [%thread] [%X{akkaSource}] %msg%n</pattern>
+      <pattern>%date{ISO8601} %level %logger [%thread] [%X{akkaSource}] - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -13,6 +13,7 @@
 
   <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
     <appender-ref ref="ASYNC"/>
+
   </logger>
 
   <root level="INFO">

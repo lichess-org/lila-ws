@@ -27,7 +27,7 @@ final class RateLimit(
     } else {
       if (!logged) {
         logged = true
-        Logger("RateLimit").info(s"$name MSG: $msg")
+        logger.info(s"$name MSG: $msg")
       }
       false
     }
@@ -41,4 +41,6 @@ object RateLimit {
   private type ClearAt = Long
 
   private def nowMillis = System.currentTimeMillis()
+
+  private val logger = Logger(getClass)
 }

@@ -25,6 +25,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 libraryDependencies += "joda-time" % "joda-time" % "2.10.5"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.6.0"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.0"
 libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion

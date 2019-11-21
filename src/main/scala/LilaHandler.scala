@@ -21,7 +21,7 @@ final class LilaHandler @Inject() (
   import LilaOut._
   import Bus.publish
 
-  private val logger = Logger("LilaHandler")
+  private val logger = Logger(getClass)
 
   private val siteHandler: Emit[LilaOut] = {
 
