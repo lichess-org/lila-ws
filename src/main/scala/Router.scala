@@ -27,7 +27,8 @@ final class Router @Inject() (
     val req = new RequestHeader(uri, headers, ip)
     val emit = emitToChannel(channel)
     req.path drop 1 split '/' match {
-      case Array("socket", _) => controller.site(req, emit)
+      case Array("socket") | Array("socket", _) => controller.site(req, emit)
+      case Array("api", "socket") => controller.api(req, emit)
       case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
   }

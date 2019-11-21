@@ -1,20 +1,20 @@
 package lila.ws
 
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 final class RateLimit(
     maxCredits: Int,
-    duration: Duration,
+    interval: FiniteDuration,
     name: String
 ) {
   import RateLimit._
 
-  private def makeClearAt = nowMillis + duration.toMillis
+  private def makeClearAt: Long = nowMillis + interval.toMillis
 
-  private var credits = maxCredits
-  private var clearAt = makeClearAt
-  private var logged = false
+  private var credits: Long = maxCredits
+  private var clearAt: Long = makeClearAt
+  private var logged: Boolean = false
 
   def apply(msg: => String = ""): Boolean =
     if (credits > 0) {

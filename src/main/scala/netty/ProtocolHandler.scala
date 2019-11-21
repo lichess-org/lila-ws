@@ -4,17 +4,17 @@ package netty
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.{ HttpObjectAggregator, HttpServerCodec }
 import io.netty.handler.codec.TooLongFrameException
+import io.netty.util.AttributeKey
 import java.io.IOException
 // import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.handler.ssl.SslContext
-import io.netty.util.concurrent.{ Future, GenericFutureListener }
+import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
 import java.net.InetSocketAddress
-import scala.concurrent.{ Promise, ExecutionContext }
+import scala.concurrent.{ Future, Promise, ExecutionContext }
 
 private final class ProtocolHandler(
     clients: ActorRef[Clients.Control],
@@ -31,14 +31,14 @@ private final class ProtocolHandler(
 ) {
 
   import ProtocolHandler._
+  import Controller.Endpoint
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit = {
-    ctx fireUserEventTriggered evt
-    val promise = Promise[Client]
-    ctx.channel.attr(Clients.attrKey).set(promise.future)
     evt match {
       case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
+        val promise = Promise[Client]
+        ctx.channel.attr(key.client).set(promise.future)
         router(
           hs.requestUri,
           hs.requestHeaders,
@@ -48,10 +48,11 @@ private final class ProtocolHandler(
             case Left(status) =>
               sendSimpleErrorResponse(ctx, status)
               promise failure new Exception("Router refused the connection")
-            case Right(actor) => connectActorToChannel(actor, ctx.channel, promise)
+            case Right(client) => connectActorToChannel(client, ctx.channel, promise)
           }
       case _ =>
     }
+    super.userEventTriggered(ctx, evt)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
@@ -81,11 +82,12 @@ private final class ProtocolHandler(
     f
   }
 
-  private def connectActorToChannel(actor: ClientBehavior, channel: Channel, promise: Promise[Client]): Unit = {
-    clients ! Clients.Start(actor, channel.id.asShortText, promise)
-    channel.closeFuture.addListener(new GenericFutureListener[Future[Void]] {
-      def operationComplete(f: Future[Void]): Unit =
-        Option(channel.attr(Clients.attrKey).get) match {
+  private def connectActorToChannel(endpoint: Endpoint, channel: Channel, promise: Promise[Client]): Unit = {
+    channel.attr(key.limit).set(endpoint.rateLimit)
+    clients ! Clients.Start(endpoint.behavior, channel.id.asShortText, promise)
+    channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
+      def operationComplete(f: NettyFuture[Void]): Unit =
+        Option(channel.attr(key.client).get) match {
           case Some(client) => client foreach { c =>
             clients ! Clients.Stop(c)
           }
@@ -98,4 +100,9 @@ private final class ProtocolHandler(
 private object ProtocolHandler {
 
   private val logger = Logger(getClass)
+
+  object key {
+    val client = AttributeKey.valueOf[Future[Client]]("client")
+    val limit = AttributeKey.valueOf[RateLimit]("limit")
+  }
 }

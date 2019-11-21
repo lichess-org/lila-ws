@@ -2,7 +2,6 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import io.netty.util.AttributeKey
 import scala.concurrent.{ Future, Promise }
 
 private object Clients {
@@ -28,6 +27,4 @@ private object Clients {
           Behaviors.same
       }
     }
-
-  val attrKey = AttributeKey.valueOf[Future[Client]]("client")
 }

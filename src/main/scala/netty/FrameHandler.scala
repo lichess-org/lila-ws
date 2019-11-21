@@ -14,6 +14,7 @@ private final class FrameHandler(
 )(implicit ec: ExecutionContext) extends SimpleChannelInboundHandler[WebSocketFrame] {
 
   import FrameHandler._
+  import ProtocolHandler.key
 
   override protected def channelRead0(
     ctx: ChannelHandlerContext,
@@ -22,11 +23,13 @@ private final class FrameHandler(
     case frame: TextWebSocketFrame =>
       val txt = frame.text
       if (txt.nonEmpty) {
-        // TODO ratelimit
-        ipc.ClientOut parse frame.text() foreach { out =>
-          Option(ctx.channel.attr(Clients.attrKey).get) match {
-            case Some(client) => client foreach (_ ! out)
-            case None => logger.warn(s"No client actor to receive $out")
+        val limiter = ctx.channel.attr(key.limit).get
+        if (limiter == null || limiter(txt)) {
+          ipc.ClientOut parse frame.text() foreach { out =>
+            Option(ctx.channel.attr(key.client).get) match {
+              case Some(client) => client foreach (_ ! out)
+              case None => logger.warn(s"No client actor to receive $out")
+            }
           }
         }
       }

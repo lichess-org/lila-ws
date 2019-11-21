@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 import javax.inject._
+import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import util.RequestHeader
@@ -30,16 +31,28 @@ final class Controller @Inject() (
   def site(req: RequestHeader, emit: ClientEmit): Response =
     WebSocket(req) { sri =>
       auth(req) map { user =>
-        Right(SiteClientActor.start {
-          ClientActor.Deps(emit, ClientActor.Req(req, sri, user), services)
-        })
+        endpoint(
+          SiteClientActor.start {
+            ClientActor.Deps(emit, ClientActor.Req(req, sri, user), services)
+          },
+          maxCredits = 50,
+          interval = 20.seconds,
+          name = s"site ${req.name}"
+        )
       }
     }
-  // new RateLimit(
-  //       maxCredits = 50,
-  //       duration = 20.seconds,
-  //       name = s"site ${reqName(req)}"
-  //     ))
+
+  def api(req: RequestHeader, emit: ClientEmit): Response =
+    Future successful {
+      endpoint(
+        SiteClientActor.start {
+          ClientActor.Deps(emit, ClientActor.Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+        },
+        maxCredits = 50,
+        interval = 20.seconds,
+        name = s"api ${req.name}"
+      )
+    }
 
   private def WebSocket(req: RequestHeader)(f: Sri => Response): Response =
     CSRF.check(req) {
@@ -79,5 +92,21 @@ object Controller {
 
   val logger = Logger(getClass)
 
-  type Response = Future[Either[HttpResponseStatus, ClientBehavior]]
+  final class Endpoint(val behavior: ClientBehavior, val rateLimit: RateLimit)
+
+  def endpoint(
+    behavior: ClientBehavior,
+    maxCredits: Int,
+    interval: FiniteDuration,
+    name: String
+  ) = Right(new Endpoint(
+    behavior,
+    new RateLimit(
+      maxCredits = 50,
+      interval = 20.seconds,
+      name = name
+    )
+  ))
+
+  type Response = Future[Either[HttpResponseStatus, Endpoint]]
 }
