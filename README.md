@@ -7,11 +7,7 @@ lila <-> redis <-> lila-ws <-> websocket <-> client
 Start:
 ```
 sbt
-```
-
-Start with custom port:
-```
-sbt -Dhttp.port=9664
+~reStart
 ```
 
 Start with custom config file:
@@ -22,6 +18,7 @@ sbt -Dconfig.file=/path/to/my.conf
 Custom config file example:
 ```
 include "application"
+http.port = 8080
 mongo.uri = "mongodb://localhost:27017/lichess"
 redis.uri = "redis://127.0.0.1"
 ```
