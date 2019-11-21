@@ -38,7 +38,7 @@ private final class ProtocolHandler(
     ctx.channel.attr(Clients.attrKey).set(promise.future)
     evt match {
       case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
-        Monitor.count.handshake.inc
+        // Monitor.count.handshake.inc
         router(
           hs.requestUri,
           hs.requestHeaders,

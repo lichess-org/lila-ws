@@ -23,7 +23,7 @@ final class Router @Inject() (
     channel: Channel,
     ip: IpAddress
   ): Controller.Response = {
-    Monitor.count.client.inc
+    // Monitor.count.client.inc
     val req = new RequestHeader(uri, headers, ip)
     val emit = emitToChannel(channel)
     req.path drop 1 split '/' match {
@@ -35,6 +35,6 @@ final class Router @Inject() (
   private def emitToChannel(channel: Channel): ClientEmit =
     in => {
       channel.writeAndFlush(new TextWebSocketFrame(in.write))
-      Monitor.count.clientIn.inc
+      // Monitor.count.clientIn.inc
     }
 }
