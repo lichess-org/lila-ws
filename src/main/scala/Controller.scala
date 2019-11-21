@@ -53,9 +53,9 @@ final class Controller @Inject() (
   }
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo simulExists id map {
-      case true => endpoint(
-        LobbyClientActor start {
+    mongo.simulExists(id) zip mongo.isTroll(user) map {
+      case (true, isTroll) => endpoint(
+        SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
         maxCredits = 30,
@@ -67,9 +67,9 @@ final class Controller @Inject() (
   }
 
   def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo tourExists id map {
-      case true => endpoint(
-        LobbyClientActor start {
+    mongo.tourExists(id) zip mongo.isTroll(user) map {
+      case (true, isTroll) => endpoint(
+        TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
         maxCredits = 30,
@@ -81,12 +81,12 @@ final class Controller @Inject() (
   }
 
   def study(id: Study.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.studyExistsFor(id, user) map {
-      case true => endpoint(
-        LobbyClientActor start {
+    mongo.studyExistsFor(id, user) zip mongo.isTroll(user) map {
+      case (true, isTroll) => endpoint(
+        StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
-        maxCredits = 50,
+        maxCredits = 60,
         interval = 15.seconds,
         name = s"study ${req.name}"
       )
