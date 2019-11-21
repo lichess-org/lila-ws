@@ -12,7 +12,6 @@ import java.io.IOException
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
-import io.netty.handler.ssl.SslContext
 import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
 import java.net.InetSocketAddress
 import scala.concurrent.{ Future, Promise, ExecutionContext }
