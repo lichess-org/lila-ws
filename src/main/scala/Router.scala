@@ -20,9 +20,10 @@ final class Router @Inject() (
   def apply(
     uri: String,
     headers: HttpHeaders,
-    channel: Channel
+    channel: Channel,
+    ip: IpAddress
   ): Controller.Response = {
-    val req = new RequestHeader(uri, headers, channel.remoteAddress)
+    val req = new RequestHeader(uri, headers, ip)
     val emit = emitToChannel(channel)
     req.path drop 1 split '/' match {
       case Array("socket", _) => controller.site(req, emit)

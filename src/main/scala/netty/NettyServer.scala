@@ -1,23 +1,15 @@
 package lila.ws
 package netty
 
-import io.netty.channel._
+import io.netty.channel.ChannelInitializer
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.{ HttpObjectAggregator, HttpServerCodec }
-import io.netty.handler.codec.TooLongFrameException
-import java.io.IOException
-// import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.epoll.{ EpollChannelOption, EpollEventLoopGroup, EpollServerSocketChannel }
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
-import io.netty.handler.ssl.SslContext
-import io.netty.handler.ssl.SslContextBuilder
+import io.netty.handler.ssl.{ SslContext, SslContextBuilder }
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.util.concurrent.{ Future, GenericFutureListener }
 import javax.inject._
 import scala.concurrent.ExecutionContext
 
@@ -42,7 +34,7 @@ final class NettyServer @Inject() (
     }
     else None
 
-    val bossGroup = new EpollEventLoopGroup
+    val bossGroup = new EpollEventLoopGroup(1) // 1 like in the netty examples (?)
     val workerGroup = new EpollEventLoopGroup
 
     try {
@@ -58,7 +50,7 @@ final class NettyServer @Inject() (
             pipeline.addLast(new HttpServerCodec)
             pipeline.addLast(new HttpObjectAggregator(4096)) // 8192?
             // pipeline.addLast(new WebSocketServerCompressionHandler())
-            pipeline.addLast(new ProtocolHandler(clients, router))
+            pipeline.addLast(new ProtocolHandler(clients, router, ch.localAddress))
             pipeline.addLast(new FrameHandler(clients))
           }
         })

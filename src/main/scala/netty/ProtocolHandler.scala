@@ -13,11 +13,13 @@ import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.handler.ssl.SslContext
 import io.netty.util.concurrent.{ Future, GenericFutureListener }
+import java.net.InetSocketAddress
 import scala.concurrent.{ Promise, ExecutionContext }
 
 private final class ProtocolHandler(
     clients: ActorRef[Clients.Control],
-    router: Router
+    router: Router,
+    address: InetSocketAddress
 )(implicit ec: ExecutionContext) extends WebSocketServerProtocolHandler(
   "/", // path
   null, // subprotocols (?)
@@ -35,8 +37,12 @@ private final class ProtocolHandler(
     val promise = Promise[Client]
     ctx.channel.attr(Clients.attrKey).set(promise.future)
     evt match {
-      case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
-        router(hs.requestUri, hs.requestHeaders, ctx.channel) foreach {
+      case hs: WebSocketServerProtocolHandler.HandshakeComplete => router(
+        hs.requestUri,
+        hs.requestHeaders,
+        ctx.channel,
+        IpAddress(address.getAddress.getHostAddress)
+      ) foreach {
           case Left(status) =>
             sendSimpleErrorResponse(ctx, status)
             promise failure new Exception("Router refused the connection")

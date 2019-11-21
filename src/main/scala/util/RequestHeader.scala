@@ -3,10 +3,9 @@ package util
 
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaders, QueryStringDecoder }
-import java.net.SocketAddress
 import scala.jdk.CollectionConverters._
 
-final class RequestHeader(uri: String, req: HttpHeaders, address: SocketAddress) {
+final class RequestHeader(uri: String, req: HttpHeaders, val ip: IpAddress) {
 
   private val query = new QueryStringDecoder(uri)
 
@@ -35,8 +34,6 @@ final class RequestHeader(uri: String, req: HttpHeaders, address: SocketAddress)
   def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make
 
   def name: String = s"${uri} UA: ${userAgent}"
-
-  def ip = IpAddress(address.toString)
 
   def sri = queryParameter("sri") flatMap Sri.from
 }
