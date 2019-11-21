@@ -7,7 +7,7 @@ REMOTE_DIR="/home/lila-ws"
 package_dir="target/universal"
 package="$package_dir/$APP"
 
-echo "Deploy to server $REMOTE:$REMOTE_DIR"
+echo "Deploy $APP to server $REMOTE:$REMOTE_DIR"
 
 rm $package.zip
 rm -rf $package
@@ -18,7 +18,6 @@ if [ $? != 0 ]; then
   echo "Deploy canceled"
   exit 1
 fi
-
 
 unzip $package.zip -d $package_dir
 
