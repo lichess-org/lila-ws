@@ -1,16 +1,26 @@
 #!/bin/sh
 
+APP=lila-ws-2.0
 REMOTE=$1
 REMOTE_DIR="/home/lila-ws"
 
+package_dir="target/universal"
+package="$package_dir/$APP"
+
 echo "Deploy to server $REMOTE:$REMOTE_DIR"
 
-sbt stage
+rm $package.zip
+rm -rf $package
+
+sbt universal:packageBin
 
 if [ $? != 0 ]; then
   echo "Deploy canceled"
   exit 1
 fi
+
+
+unzip $package.zip -d $package_dir
 
 RSYNC_OPTIONS=" \
   --archive \
@@ -24,8 +34,7 @@ RSYNC_OPTIONS=" \
   --exclude RUNNING_PID \
   --exclude '.git/'"
 
-stage="target/universal/stage"
-include="$stage/bin $stage/lib $stage/conf"
+include="$package/bin $package/lib"
 rsync_command="rsync $RSYNC_OPTIONS $include $REMOTE:$REMOTE_DIR"
 echo "$rsync_command"
 $rsync_command
