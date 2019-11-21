@@ -67,7 +67,7 @@ final class Controller @Inject() (
   }
 
   def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo simulExists id map {
+    mongo tourExists id map {
       case true => endpoint(
         LobbyClientActor start {
           Deps(emit, Req(req, sri, user), services)
