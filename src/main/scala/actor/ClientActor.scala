@@ -25,13 +25,14 @@ object ClientActor {
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
   }
 
-  def socketControl(state: State, flag: Option[Flag], msg: ClientCtrl): Behavior[ClientMsg] = msg match {
+  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] = msg match {
 
     case ClientCtrl.Broom(oldSeconds) =>
-      if (state.lastPing < oldSeconds && !flag.contains(Flag.api)) Behaviors.stopped
+      if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
       else Behaviors.same
 
     case ClientCtrl.Disconnect =>
+      deps.clientIn(ClientIn.Disconnect)
       Behaviors.stopped
   }
 

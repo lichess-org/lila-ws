@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.{ ActorSystem, Behavior }
 import io.netty.channel.Channel
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import javax.inject._
 import scala.concurrent.{ Future, ExecutionContext }
 
@@ -20,12 +19,11 @@ final class Router @Inject() (
   def apply(
     uri: String,
     headers: HttpHeaders,
-    channel: Channel,
+    emit: ClientEmit,
     ip: IpAddress
   ): Controller.Response = {
     // Monitor.count.client.inc
     val req = new RequestHeader(uri, headers, ip)
-    val emit = emitToChannel(channel)
     req.path drop 1 split '/' match {
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
       case Array("api", "socket") => controller.api(req, emit)
@@ -39,10 +37,4 @@ final class Router @Inject() (
       case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
   }
-
-  private def emitToChannel(channel: Channel): ClientEmit =
-    in => {
-      channel.writeAndFlush(new TextWebSocketFrame(in.write))
-      // Monitor.count.clientIn.inc
-    }
 }

@@ -4,7 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import scala.concurrent.{ Future, Promise }
 
-private object Clients {
+object Clients {
 
   type ChannelId = String
 

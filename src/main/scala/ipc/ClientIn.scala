@@ -24,6 +24,11 @@ object ClientIn {
     val write = cliMsg("resync")
   }
 
+  // triggers actual disconnection
+  case object Disconnect extends ClientIn {
+    val write = cliMsg("bye")
+  }
+
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
     val write = Json stringify Json.obj(
       "t" -> "n",

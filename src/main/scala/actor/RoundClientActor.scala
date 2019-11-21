@@ -60,7 +60,7 @@ object RoundClientActor {
         if (state.site.lastPing < oldSeconds) Behaviors.stopped
         else Behaviors.same
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps, ctrl)
 
       case versioned: ClientIn.RoundVersioned =>
         clientIn(versionFor(state, versioned))

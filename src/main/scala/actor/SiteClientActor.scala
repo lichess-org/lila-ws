@@ -21,7 +21,7 @@ object SiteClientActor {
 
     msg match {
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps.req.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state, deps, ctrl)
 
       case in: ClientIn => clientInReceive(state, deps, in) match {
         case None => Behaviors.same

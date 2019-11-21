@@ -38,7 +38,7 @@ object ChallengeClientActor {
           Behaviors.same
         }
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps.req.flag, ctrl)
+      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps, ctrl)
 
       case ClientOut.ChallengePing =>
         if (state.owner) services.challengePing(state.room.id)
