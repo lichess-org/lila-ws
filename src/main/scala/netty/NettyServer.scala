@@ -38,7 +38,6 @@ final class NettyServer @Inject() (
             val pipeline = ch.pipeline()
             pipeline.addLast(new HttpServerCodec)
             pipeline.addLast(new HttpObjectAggregator(4096)) // 8192?
-            // pipeline.addLast(new WebSocketServerCompressionHandler())
             pipeline.addLast(new ProtocolHandler(clients, router, ch.localAddress))
             pipeline.addLast(new FrameHandler(clients))
           }
