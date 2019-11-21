@@ -58,7 +58,7 @@ private final class ProtocolHandler(
 
   private def connectActorToChannel(endpoint: Endpoint, channel: Channel, promise: Promise[Client]): Unit = {
     channel.attr(key.limit).set(endpoint.rateLimit)
-    clients ! Clients.Start(endpoint.behavior, channel.id.asShortText, promise)
+    clients ! Clients.Start(endpoint.behavior, promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
         Option(channel.attr(key.client).get) match {
