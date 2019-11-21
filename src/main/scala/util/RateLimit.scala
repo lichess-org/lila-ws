@@ -5,12 +5,12 @@ import scala.concurrent.duration.FiniteDuration
 
 final class RateLimit(
     maxCredits: Int,
-    interval: FiniteDuration,
+    intervalMillis: Int,
     name: String
 ) {
   import RateLimit._
 
-  private def makeClearAt: Long = nowMillis + interval.toMillis
+  private def makeClearAt: Long = nowMillis + intervalMillis
 
   private var credits: Long = maxCredits
   private var clearAt: Long = makeClearAt

@@ -32,35 +32,35 @@ final class Controller @Inject() (
 
   def site(req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     Future successful endpoint(
-      SiteClientActor start {
+      name = "site",
+      behavior = SiteClientActor start {
         Deps(emit, Req(req, sri, user), services)
       },
-      maxCredits = 50,
-      interval = 20.seconds,
-      name = s"site ${req.name}"
+      credits = 50,
+      interval = 20.seconds
     )
   }
 
   def lobby(req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     Future successful endpoint(
-      LobbyClientActor start {
+      name = "lobby",
+      behavior = LobbyClientActor start {
         Deps(emit, Req(req, sri, user), services)
       },
-      maxCredits = 30,
-      interval = 30.seconds,
-      name = s"lobby ${req.name}"
+      credits = 30,
+      interval = 30.seconds
     )
   }
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.simulExists(id) zip mongo.isTroll(user) map {
       case (true, isTroll) => endpoint(
-        SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+        name = "simul",
+        behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
-        maxCredits = 30,
-        interval = 20.seconds,
-        name = s"simul ${req.name}"
+        credits = 30,
+        interval = 20.seconds
       )
       case _ => notFound
     }
@@ -69,12 +69,12 @@ final class Controller @Inject() (
   def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.tourExists(id) zip mongo.isTroll(user) map {
       case (true, isTroll) => endpoint(
-        TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+        name = "tour",
+        behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
-        maxCredits = 30,
-        interval = 20.seconds,
-        name = s"tour ${req.name}"
+        credits = 30,
+        interval = 20.seconds
       )
       case _ => notFound
     }
@@ -83,12 +83,12 @@ final class Controller @Inject() (
   def study(id: Study.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.studyExistsFor(id, user) zip mongo.isTroll(user) map {
       case (true, isTroll) => endpoint(
-        StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+        name = "study",
+        behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
-        maxCredits = 60,
-        interval = 15.seconds,
-        name = s"study ${req.name}"
+        credits = 60,
+        interval = 15.seconds
       )
       case _ => notFound
     }
@@ -102,12 +102,12 @@ final class Controller @Inject() (
           lila.emit.round(ipc.LilaIn.UserTv(id, tv.value))
         }
         endpoint(
-          RoundClientActor.start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
+          name = "round/watch",
+          behavior = RoundClientActor.start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
             Deps(emit, Req(req, sri, user), services)
           },
-          maxCredits = 50,
-          interval = 20.seconds,
-          name = s"round/watch ${req.name}"
+          credits = 50,
+          interval = 20.seconds
         )
       case _ => notFound
     }
@@ -116,12 +116,12 @@ final class Controller @Inject() (
   def roundPlay(id: Game.FullId, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.player(id, user) zip mongo.isTroll(user) map {
       case (Some(player), isTroll) => endpoint(
-        RoundClientActor.start(
+        name = "round/play",
+        behavior = RoundClientActor.start(
           RoomActor.State(RoomId(id.gameId), isTroll), Some(player), None, fromVersion(req)
         ) { Deps(emit, Req(req, sri, user), services) },
-        maxCredits = 50,
-        interval = 20.seconds,
-        name = s"round/play ${req.name}"
+        credits = 50,
+        interval = 20.seconds
       )
       case _ => notFound
     }
@@ -136,24 +136,24 @@ final class Controller @Inject() (
     } map {
       case None => notFound
       case Some(owner) => endpoint(
-        ChallengeClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
+        name = "challenge",
+        behavior = ChallengeClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
           Deps(emit, Req(req, sri, user), services)
         },
-        maxCredits = 50,
-        interval = 30.seconds,
-        name = s"challenge ${req.name}"
+        credits = 50,
+        interval = 30.seconds
       )
     }
   }
 
   def api(req: RequestHeader, emit: ClientEmit) = Future successful {
     endpoint(
-      SiteClientActor.start {
+      name = "api",
+      behavior = SiteClientActor.start {
         Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
       },
-      maxCredits = 50,
-      interval = 20.seconds,
-      name = s"api ${req.name}"
+      credits = 50,
+      interval = 20.seconds
     )
   }
 
@@ -203,20 +203,22 @@ object Controller {
   val logger = Logger(getClass)
 
   final class Endpoint(val behavior: ClientBehavior, val rateLimit: RateLimit)
-
   def endpoint(
+    name: String,
     behavior: ClientBehavior,
-    maxCredits: Int,
-    interval: FiniteDuration,
-    name: String
-  ) = Right(new Endpoint(
-    behavior,
-    new RateLimit(
-      maxCredits = 50,
-      interval = 20.seconds,
-      name = name
-    )
-  ))
+    credits: Int,
+    interval: FiniteDuration
+  ) = {
+    Monitor.connection open name
+    Right(new Endpoint(
+      behavior,
+      new RateLimit(
+        maxCredits = credits,
+        intervalMillis = interval.toMillis.toInt,
+        name = name
+      )
+    ))
+  }
 
   type Response = Future[Either[HttpResponseStatus, Endpoint]]
 }
