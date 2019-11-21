@@ -25,7 +25,7 @@ private final class FrameHandler(
       if (txt.nonEmpty) {
         val limiter = ctx.channel.attr(key.limit).get
         if (limiter == null || limiter(txt)) {
-          ipc.ClientOut parse frame.text() foreach { out =>
+          ipc.ClientOut parse txt foreach { out =>
             Option(ctx.channel.attr(key.client).get) match {
               case Some(client) => client foreach (_ ! out)
               case None => logger.warn(s"No client actor to receive $out")

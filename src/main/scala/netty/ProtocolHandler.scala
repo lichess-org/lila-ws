@@ -4,7 +4,7 @@ package netty
 import io.netty.channel._
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.websocketx.{ TextWebSocketFrame, CloseWebSocketFrame }
+import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.codec.TooLongFrameException
 import io.netty.util.AttributeKey
 import java.io.IOException
@@ -23,7 +23,7 @@ private final class ProtocolHandler(
 )(implicit ec: ExecutionContext) extends WebSocketServerProtocolHandler(
   "/", // path
   null, // subprotocols (?)
-  true, // allowExtensions (?)
+  false, // allowExtensions (?)
   2048, // max frame size
   false, // allowMaskMismatch (?)
   true, // checkStartsWith
