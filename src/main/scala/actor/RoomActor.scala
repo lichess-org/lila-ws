@@ -1,7 +1,6 @@
 package lila.ws
 
 import akka.actor.typed.scaladsl.ActorContext
-import akka.stream.scaladsl.SourceQueue
 
 import ipc._
 

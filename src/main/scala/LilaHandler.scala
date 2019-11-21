@@ -2,7 +2,7 @@ package lila.ws
 
 import ipc.LilaOut._
 import javax.inject._
-import play.api.Logger
+import com.typesafe.scalalogging.Logger
 import scala.concurrent.ExecutionContext
 
 import ipc._

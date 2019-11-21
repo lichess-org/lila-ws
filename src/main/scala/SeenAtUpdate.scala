@@ -2,7 +2,7 @@ package lila.ws
 
 import javax.inject._
 import org.joda.time.DateTime
-import play.api.mvc.RequestHeader
+import util.RequestHeader
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
 import reactivemongo.api.bson._
@@ -12,7 +12,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 @Singleton
 final class SeenAtUpdate @Inject() (mongo: Mongo)( implicit
   context: ExecutionContext,
-  system: akka.actor.ActorSystem
+  scheduler: akka.actor.typed.Scheduler
 ) {
 
   import Mongo._
@@ -60,7 +60,7 @@ final class SeenAtUpdate @Inject() (mongo: Mongo)( implicit
       )
     )
 
-    system.scheduler.scheduleWithFixedDelay(10.seconds, 100.seconds) { () =>
+    scheduler.scheduleWithFixedDelay(10.seconds, 100.seconds) { () =>
       fetch foreach { res =>
         ids = res
       }

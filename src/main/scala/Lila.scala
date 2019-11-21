@@ -1,22 +1,22 @@
 package lila.ws
 
-import akka.stream.scaladsl._
+import com.typesafe.config.Config
+import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
 import javax.inject._
-import play.api.Logger
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
 
 import ipc._
 
 @Singleton
-final class Lila @Inject() (config: play.api.Configuration)(implicit ec: ExecutionContext) {
+final class Lila @Inject() (config: Config)(implicit ec: ExecutionContext) {
 
   import Lila._
 
   private val logger = Logger(getClass)
-  private val redis = RedisClient create RedisURI.create(config.get[String]("redis.uri"))
+  private val redis = RedisClient create RedisURI.create(config.getString("redis.uri"))
 
   private var handlers = Map.empty[Chan, Emit[LilaOut]]
   def registerHandlers(hs: Map[Chan, Emit[LilaOut]]): Unit = { handlers = hs }

@@ -4,7 +4,7 @@ import javax.inject._
 import play.api.Configuration
 import play.api.http.HeaderNames
 import play.api.http.websocket.Message
-import play.api.Logger
+import com.typesafe.scalalogging.Logger
 import play.api.mvc._
 import scala.concurrent.{ Future, ExecutionContext }
 

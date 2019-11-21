@@ -2,8 +2,7 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
 import akka.actor.typed.{ ActorRef, Behavior, PostStop }
-import akka.stream.scaladsl._
-import play.api.Logger
+import com.typesafe.scalalogging.Logger
 
 import ipc._
 import util.Util.nowSeconds
@@ -138,12 +137,12 @@ object ClientActor {
       tourReminded: Boolean = false
   )
 
-  def Req(req: play.api.mvc.RequestHeader, sri: Sri, user: Option[User], flag: Option[Flag] = None): Req = Req(
-    name = lila.ws.util.Util.reqName(req),
-    ip = IpAddress(req.remoteAddress),
+  def Req(req: util.RequestHeader, sri: Sri, user: Option[User]): Req = Req(
+    name = req.name,
+    ip = req.ip,
     sri = sri,
     user = user,
-    flag = flag
+    flag = req.flag
   )
 
   case class Req(
@@ -158,7 +157,7 @@ object ClientActor {
   }
 
   case class Deps(
-      clientIn: Emit[ClientIn],
+      clientIn: ClientEmit,
       req: Req,
       services: Services
   ) {

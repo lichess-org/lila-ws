@@ -1,6 +1,6 @@
 package lila.ws
 
-import play.api.Logger
+import com.typesafe.scalalogging.Logger
 import scala.concurrent.duration.Duration
 
 final class RateLimit(

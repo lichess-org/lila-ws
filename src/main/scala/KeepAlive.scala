@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.ActorSystem
+import akka.actor.typed.Scheduler
 import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -9,7 +9,7 @@ import ipc._
 import util.Util.nowSeconds
 
 @Singleton
-final class KeepAlive @Inject() (lila: Lila, system: ActorSystem)(implicit ec: ExecutionContext) {
+final class KeepAlive @Inject() (lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext) {
 
   import KeepAlive._
 
@@ -18,7 +18,7 @@ final class KeepAlive @Inject() (lila: Lila, system: ActorSystem)(implicit ec: E
   val simul = new AliveRooms
   val challenge = new AliveRooms
 
-  system.scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
+  scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
     lila.emit.study(study.getAndClear)
     lila.emit.tour(tour.getAndClear)
     lila.emit.simul(simul.getAndClear)

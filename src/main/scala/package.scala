@@ -1,10 +1,15 @@
 package lila
 
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+
 package object ws {
 
   type Emit[A] = Function[A, Unit]
 
-  type Client = akka.actor.typed.ActorRef[ipc.ClientMsg]
+  type ClientSystem = ActorSystem[Clients.Control]
+  type ClientBehavior = Behavior[ipc.ClientMsg]
+  type Client = ActorRef[ipc.ClientMsg]
+  type ClientEmit = Emit[ipc.ClientIn]
 
   type ~[+A, +B] = Tuple2[A, B]
   object ~ {

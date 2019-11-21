@@ -6,7 +6,7 @@ import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
 import chess.variant.{ Variant, Crazyhouse }
-import play.api.Logger
+import com.typesafe.scalalogging.Logger
 
 import ipc._
 

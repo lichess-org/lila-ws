@@ -1,17 +1,18 @@
 package lila.ws
 
 import javax.inject._
-import play.api.mvc.RequestHeader
 import reactivemongo.api.bson._
 import scala.concurrent.{ ExecutionContext, Future }
+
+import util.RequestHeader
 
 @Singleton
 final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
   import Mongo._
 
-  def apply(req: RequestHeader, flag: Option[Flag]): Future[Option[User]] =
-    if (flag contains Flag.api) Future successful None
+  def apply(req: RequestHeader): Future[Option[User]] =
+    if (req.flag contains Flag.api) Future successful None
     else sessionIdFromReq(req) match {
       case Some(sid) =>
         mongo.security {
@@ -39,14 +40,14 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
   private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
 
   def sessionIdFromReq(req: RequestHeader): Option[String] =
-    req.cookies.get(cookieName).map(_.value).flatMap {
+    req cookie cookieName flatMap {
       case sessionIdRegex(id) => Some(id)
       case _ => None
     } orElse
-      req.target.getQueryParameter(sessionIdKey)
+      req.queryParameter(sessionIdKey)
 
   def sidFromReq(req: RequestHeader): Option[String] =
-    req.cookies.get(cookieName).map(_.value).flatMap {
+    req cookie cookieName flatMap {
       case sidRegex(id) => Some(id)
       case _ => None
     }

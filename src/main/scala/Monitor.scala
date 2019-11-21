@@ -1,5 +1,7 @@
 package lila.ws
 
+import com.typesafe.config.Config
+import com.typesafe.scalalogging.Logger
 import javax.inject._
 import kamon.Kamon
 import kamon.tag.TagSet
@@ -8,25 +10,27 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 final class Monitor @Inject() (
-    config: play.api.Configuration,
+    config: Config,
     services: Services
-)(implicit system: akka.actor.ActorSystem, ec: ExecutionContext) {
+)(implicit scheduler: akka.actor.typed.Scheduler, ec: ExecutionContext) {
 
   import Monitor._
+
+  private val logger = Logger("Monitor")
 
   def start: Unit = {
 
     val version = System.getProperty("java.version")
     val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
-    play.api.Logger("Monitor").info("lila-ws stream-less play 2.7")
-    play.api.Logger("Monitor").info(s"Java version: $version, memory: ${memory}MB")
+    logger.info("lila-ws stream-less play 2.7")
+    logger.info(s"Java version: $version, memory: ${memory}MB")
 
-    if (config.get[String]("kamon.influxdb.hostname").nonEmpty) {
-      play.api.Logger("Monitor").info("Kamon is enabled")
+    if (config.getString("kamon.influxdb.hostname").nonEmpty) {
+      logger.info("Kamon is enabled")
       kamon.Kamon.loadModules()
     }
 
-    system.scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
+    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
   }
 
   private def periodicMetrics = {

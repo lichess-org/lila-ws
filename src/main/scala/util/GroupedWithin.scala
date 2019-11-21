@@ -1,13 +1,14 @@
 package lila.ws
 
-import akka.actor.{ ActorSystem, Cancellable }
+import akka.actor.typed.Scheduler
+import akka.actor.Cancellable
 import javax.inject._
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 
 @Singleton
-final class GroupedWithin @Inject() ()(implicit system: ActorSystem, ec: ExecutionContext) {
+final class GroupedWithin @Inject() ()(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     new GroupedWithinStage[A](nb, interval, emit)
@@ -17,11 +18,11 @@ final class GroupedWithinStage[A](
     nb: Int,
     interval: FiniteDuration,
     emit: Emit[Vector[A]]
-)(implicit system: ActorSystem, ec: ExecutionContext) {
+)(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 
-  private var scheduledFlush: Cancellable = system.scheduler.scheduleOnce(interval)(flush)
+  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, () => flush)
 
   def apply(elem: A): Unit = synchronized {
     buffer += elem
@@ -34,6 +35,6 @@ final class GroupedWithinStage[A](
       buffer.clear()
     }
     scheduledFlush.cancel
-    scheduledFlush = system.scheduler.scheduleOnce(interval)(flush)
+    scheduledFlush = scheduler.scheduleOnce(interval, () => flush)
   }
 }

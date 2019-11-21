@@ -4,7 +4,7 @@ import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import javax.inject._
 import org.joda.time.DateTime
-import play.api.Configuration
+import com.typesafe.config.Config
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
@@ -13,9 +13,9 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Try, Success }
 
 @Singleton
-final class Mongo @Inject() (config: Configuration)(implicit executionContext: ExecutionContext) {
+final class Mongo @Inject() (config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val uri = config.get[String]("mongo.uri")
+  private val uri = config.getString("mongo.uri")
 
   private val driver = MongoDriver()
   private val parsedUri = MongoConnection.parseURI(uri)
