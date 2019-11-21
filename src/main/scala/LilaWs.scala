@@ -39,7 +39,6 @@ final class LilaWsServer @Inject() (
   def start: Unit = {
     monitor.start
     lila registerHandlers lilaHandler.handlers
-    nettyServer.start
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
@@ -49,5 +48,7 @@ final class LilaWsServer @Inject() (
       lila.emit.site(ipc.LilaIn.Connections(connections))
       Monitor.connection.current update connections
     }
+
+    nettyServer.start // blocks
   }
 }
