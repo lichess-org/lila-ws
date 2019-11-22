@@ -11,19 +11,34 @@ import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
 import ipc._
 
 @Singleton
-final class Lila @Inject() (config: Config)(implicit ec: ExecutionContext) {
+final class Lila @Inject() (
+    config: Config
+)(implicit ec: ExecutionContext) {
 
   import Lila._
 
   private val logger = Logger(getClass)
   private val redis = RedisClient create RedisURI.create(config.getString("redis.uri"))
+  private val connIn = redis.connectPubSub
+  private val connOut = redis.connectPubSub
 
-  private var handlers = Map.empty[Chan, Emit[LilaOut]]
-  def registerHandlers(hs: Map[Chan, Emit[LilaOut]]): Unit = { handlers = hs }
+  private val handlersPromise = Promise[Handlers]
+  private val futureHandlers: Future[Handlers] = handlersPromise.future
+  private var handlers: Handlers = chan => out => futureHandlers foreach { _(chan)(out) }
+  def setHandlers(hs: Handlers) = {
+    handlers = hs
+    handlersPromise success hs
+  }
 
-  val connections: Connections = Await.result(establishConnections, 3.seconds)
+  val emit: Emits = Await.result(
+    util.Chronometer(connectAll).lap.map { lap =>
+      logger.info(s"Redis connection took ${lap.showDuration}")
+      lap.result
+    },
+    3.seconds
+  )
 
-  private def establishConnections: Future[Connections] =
+  private def connectAll: Future[Emits] =
     connect[LilaIn.Site, SiteOut](chans.site) zip
       connect[LilaIn.Tour, TourOut](chans.tour) zip
       connect[LilaIn.Lobby, LobbyOut](chans.lobby) zip
@@ -31,100 +46,75 @@ final class Lila @Inject() (config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Study, StudyOut](chans.study) zip
       connect[LilaIn.Round, RoundOut](chans.round) zip
       connect[LilaIn.Challenge, ChallengeOut](chans.challenge) map {
-        case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge => new Connections(
+        case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge => new Emits(
           site, tour, lobby, simul, study, round, challenge
         )
       }
 
-  def emit: Emits = connections
+  private def connect[In <: LilaIn, Out <: LilaOut](chan: Chan): Future[Emit[In]] = {
 
-  private def connect[In <: LilaIn, Out <: LilaOut](chan: Chan): Future[Connection[In]] = {
-
-    val connIn = redis.connectPubSub()
-    val connOut = redis.connectPubSub()
-
-    def emit(in: In): Unit = {
+    val emit: Emit[In] = in => {
       val msg = in.write
       val timer = Monitor.redis.publishTime.start()
       connIn.async.publish(chan.in, msg).thenRun { timer.stop _ }
       Monitor.redis.in(chan.in, msg.takeWhile(' '.!=))
     }
 
-    connOut.addListener(new RedisPubSubAdapter[String, String] {
-      override def message(fromChan: String, msg: String): Unit = {
-        Monitor.redis.out(fromChan, msg.takeWhile(' '.!=))
-        LilaOut read msg match {
-          case Some(out) => handlers get chan match {
-            case Some(handler) => handler(out)
-            case None => logger.warn(s"No $chan handler found for $out")
-          }
-          case None => logger.warn(s"Can't parse $msg on $fromChan")
-        }
-      }
-    })
+    val promise = Promise[Emit[In]]
 
-    val promise = Promise[Unit]
     connOut.async.subscribe(chan.out) thenRun { () =>
       connIn.async.publish(chan.in, LilaIn.WsBoot.write)
-      promise.success(())
+      promise success emit
     }
 
-    val close = () => {
-      connIn.close()
-      connOut.close()
-    }
-
-    promise.future map { _ =>
-      new Connection[In](emit, close)
-    }
+    promise.future
   }
 
-  def closeAll: Unit = {
-    val c = connections
-    List(c.site, c.tour, c.lobby, c.simul, c.study, c.round, c.challenge).foreach(_.close())
+  connOut.addListener(new RedisPubSubAdapter[String, String] {
+    override def message(chan: String, msg: String): Unit = {
+      Monitor.redis.out(chan, msg.takeWhile(' '.!=))
+      LilaOut read msg match {
+        case Some(out) => handlers(chan)(out)
+        case None => logger.warn(s"Can't parse $msg on $chan")
+      }
+    }
+  })
+
+  def close: Unit = {
+    connIn.close()
+    connOut.close()
   }
 }
 
 object Lila {
 
-  case class Chan(value: String) extends AnyVal with StringValue {
-    def in = s"$value-in"
-    def out = s"$value-out"
+  type Handlers = String => Emit[LilaOut]
+
+  sealed abstract class Chan(value: String) {
+    val in = s"$value-in"
+    val out = s"$value-out"
   }
 
   object chans {
-    val site = Chan("site")
-    val tour = Chan("tour")
-    val lobby = Chan("lobby")
-    val simul = Chan("simul")
-    val study = Chan("study")
-    val round = Chan("r")
-    val challenge = Chan("chal")
+    object site extends Chan("site")
+    object tour extends Chan("tour")
+    object lobby extends Chan("lobby")
+    object simul extends Chan("simul")
+    object study extends Chan("study")
+    object round extends Chan("r")
+    object challenge extends Chan("chal")
   }
 
-  final class Connection[In <: LilaIn](val emit: In => Unit, val close: () => Unit) extends Emit[In] {
-    def apply(in: In) = emit(in)
-  }
-
-  trait Emits {
-    val site: Emit[LilaIn.Site]
-    val tour: Emit[LilaIn.Tour]
-    val lobby: Emit[LilaIn.Lobby]
-    val simul: Emit[LilaIn.Simul]
-    val study: Emit[LilaIn.Study]
-    val round: Emit[LilaIn.Round]
-    val challenge: Emit[LilaIn.Challenge]
+  final class Emits(
+      val site: Emit[LilaIn.Site],
+      val tour: Emit[LilaIn.Tour],
+      val lobby: Emit[LilaIn.Lobby],
+      val simul: Emit[LilaIn.Simul],
+      val study: Emit[LilaIn.Study],
+      val round: Emit[LilaIn.Round],
+      val challenge: Emit[LilaIn.Challenge]
+  ) {
 
     def apply[In](select: Emits => Emit[In], in: In) = select(this)(in)
   }
-
-  final class Connections(
-      val site: Connection[LilaIn.Site],
-      val tour: Connection[LilaIn.Tour],
-      val lobby: Connection[LilaIn.Lobby],
-      val simul: Connection[LilaIn.Simul],
-      val study: Connection[LilaIn.Study],
-      val round: Connection[LilaIn.Round],
-      val challenge: Connection[LilaIn.Challenge]
-  ) extends Emits
 }

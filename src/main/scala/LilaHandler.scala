@@ -1,9 +1,9 @@
 package lila.ws
 
+import com.typesafe.scalalogging.Logger
 import ipc.LilaOut._
 import javax.inject._
-import com.typesafe.scalalogging.Logger
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ Future, ExecutionContext }
 
 import ipc._
 
@@ -129,13 +129,14 @@ final class LilaHandler @Inject() (
     }
   }
 
-  def handlers: Map[Lila.Chan, Emit[LilaOut]] = Map(
-    Lila.chans.site -> siteHandler,
-    Lila.chans.lobby -> lobbyHandler,
-    Lila.chans.simul -> simulHandler,
-    Lila.chans.tour -> tourHandler,
-    Lila.chans.study -> studyHandler,
-    Lila.chans.round -> roundHandler,
-    Lila.chans.challenge -> roomHandler
-  )
+  lila.setHandlers({
+    case Lila.chans.round.out => roundHandler
+    case Lila.chans.site.out => siteHandler
+    case Lila.chans.study.out => studyHandler
+    case Lila.chans.lobby.out => lobbyHandler
+    case Lila.chans.simul.out => simulHandler
+    case Lila.chans.tour.out => tourHandler
+    case Lila.chans.challenge.out => roomHandler
+    case chan => in => logger.warn(s"Unknown channel $chan sent $in")
+  })
 }

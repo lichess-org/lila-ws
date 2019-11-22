@@ -7,7 +7,6 @@ import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
-import java.util.concurrent.atomic.AtomicInteger
 
 @Singleton
 final class Monitor @Inject() (
@@ -17,14 +16,7 @@ final class Monitor @Inject() (
 
   import Monitor._
 
-  private val logger = Logger(getClass)
-
   def start: Unit = {
-
-    val version = System.getProperty("java.version")
-    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
-    logger.info("lila-ws netty")
-    logger.info(s"Java version: $version, memory: ${memory}MB")
 
     if (config.getString("kamon.influxdb.hostname").nonEmpty) {
       logger.info("Kamon is enabled")
@@ -45,6 +37,15 @@ final class Monitor @Inject() (
 }
 
 object Monitor {
+
+  private val logger = Logger(getClass)
+
+  def greet: Unit = {
+    val version = System.getProperty("java.version")
+    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    logger.info("lila-ws netty")
+    logger.info(s"Java version: $version, memory: ${memory}MB")
+  }
 
   object connection {
     val current = Kamon.gauge("connection.current").withoutTags
@@ -83,22 +84,5 @@ object Monitor {
     val res = f
     timer.stop
     res
-  }
-
-  object count {
-
-    final class IntPrint(name: String, every: Int) {
-      val value = new AtomicInteger
-      def inc = {
-        val v = value.incrementAndGet
-        if (v % every == 0) println(s"count $name: $v")
-      }
-    }
-
-    val client = new IntPrint("client", 100)
-    val handshake = new IntPrint("handshake", 100)
-
-    val clientOut = new IntPrint("clientOut", 5000)
-    val clientIn = new IntPrint("clientIn", 5000)
   }
 }

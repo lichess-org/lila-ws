@@ -11,6 +11,8 @@ import util.Util.nowSeconds
 
 object Boot extends App {
 
+  Monitor.greet
+
   private val injector = Guice.createInjector(new AbstractModule {
 
     @Provides def config: Config = ConfigFactory.load
@@ -37,8 +39,8 @@ final class LilaWsServer @Inject() (
 )(implicit ec: ExecutionContext) {
 
   def start: Unit = {
+
     monitor.start
-    lila registerHandlers lilaHandler.handlers
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
