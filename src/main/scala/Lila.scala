@@ -39,19 +39,19 @@ final class Lila @Inject() (
   )
 
   private def connectAll: Future[Emits] =
-    connect[LilaIn.Site, SiteOut](chans.site) zip
-      connect[LilaIn.Tour, TourOut](chans.tour) zip
-      connect[LilaIn.Lobby, LobbyOut](chans.lobby) zip
-      connect[LilaIn.Simul, SimulOut](chans.simul) zip
-      connect[LilaIn.Study, StudyOut](chans.study) zip
-      connect[LilaIn.Round, RoundOut](chans.round) zip
-      connect[LilaIn.Challenge, ChallengeOut](chans.challenge) map {
+    connect[LilaIn.Site](chans.site) zip
+      connect[LilaIn.Tour](chans.tour) zip
+      connect[LilaIn.Lobby](chans.lobby) zip
+      connect[LilaIn.Simul](chans.simul) zip
+      connect[LilaIn.Study](chans.study) zip
+      connect[LilaIn.Round](chans.round) zip
+      connect[LilaIn.Challenge](chans.challenge) map {
         case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge => new Emits(
           site, tour, lobby, simul, study, round, challenge
         )
       }
 
-  private def connect[In <: LilaIn, Out <: LilaOut](chan: Chan): Future[Emit[In]] = {
+  private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
       val msg = in.write
