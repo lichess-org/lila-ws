@@ -27,6 +27,7 @@ object Boot extends App {
 final class LilaWsServer @Inject() (
     nettyServer: netty.NettyServer,
     lila: Lila,
+    handlers: LilaHandler, // must eagerly instanciate!
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
