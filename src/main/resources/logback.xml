@@ -1,7 +1,7 @@
 <configuration>
   <appender name="STDOUT" target="System.out" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%level %logger [%thread] [%X{akkaSource}] %msg%n</pattern>
+      <pattern>%level %logger{20} [%thread] %msg%n</pattern>
     </encoder>
   </appender>
 
