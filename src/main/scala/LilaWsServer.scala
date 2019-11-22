@@ -14,26 +14,19 @@ object Boot extends App {
   Monitor.greet
 
   private val injector = Guice.createInjector(new AbstractModule {
-
     @Provides def config: Config = ConfigFactory.load
-
-    @Provides def clientSystem: ClientSystem = ActorSystem(Clients.start, "clients")
-
+    @Provides def clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
     @Provides def scheduler: Scheduler = clientSystem.scheduler
-
     @Provides def executionContext: ExecutionContext = clientSystem.executionContext
   })
 
-  private val server = injector.getInstance(classOf[LilaWsServer])
-
-  server.start
+  injector.getInstance(classOf[LilaWsServer]).start
 }
 
 @Singleton
 final class LilaWsServer @Inject() (
     nettyServer: netty.NettyServer,
     lila: Lila,
-    lilaHandler: LilaHandler,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {

@@ -16,10 +16,7 @@ final class Controller @Inject() (
     config: Config,
     mongo: Mongo,
     auth: Auth,
-    lila: Lila,
-    lilaHandler: LilaHandler,
-    services: Services,
-    monitor: Monitor
+    services: Services
 )(implicit
     ec: ExecutionContext,
     system: ActorSystem[Clients.Control]
@@ -99,7 +96,7 @@ final class Controller @Inject() (
       case (true, isTroll) =>
         val userTv = req queryParameter "userTv" map UserTv.apply
         userTv foreach { tv =>
-          lila.emit.round(ipc.LilaIn.UserTv(id, tv.value))
+          services.lila.round(ipc.LilaIn.UserTv(id, tv.value))
         }
         endpoint(
           name = "round/watch",
@@ -166,9 +163,7 @@ final class Controller @Inject() (
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response = req.sri match {
     case Some(validSri) => f(validSri)
-    case None =>
-      // f(Sri.random)
-      Future successful Left(HttpResponseStatus.BAD_REQUEST)
+    case None => Future successful Left(HttpResponseStatus.BAD_REQUEST) // f(Sri.random)
   }
 
   private object CSRF {

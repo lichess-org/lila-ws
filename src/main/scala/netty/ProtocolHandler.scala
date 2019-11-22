@@ -19,7 +19,7 @@ import scala.concurrent.{ Future, Promise, ExecutionContext }
 private final class ProtocolHandler(
     clients: ActorRef[Clients.Control],
     router: Router,
-    address: InetSocketAddress
+    ip: IpAddress
 )(implicit ec: ExecutionContext) extends WebSocketServerProtocolHandler(
   "/", // path
   null, // subprotocols (?)
@@ -43,7 +43,7 @@ private final class ProtocolHandler(
           hs.requestUri,
           hs.requestHeaders,
           emitToChannel(ctx.channel),
-          IpAddress(address.getAddress.getHostAddress)
+          ip
         ) foreach {
             case Left(status) =>
               terminateConnection(ctx.channel)
@@ -69,11 +69,10 @@ private final class ProtocolHandler(
     })
   }
 
-  private def emitToChannel(channel: Channel): ClientEmit =
-    in => {
-      if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-      else channel.writeAndFlush(new TextWebSocketFrame(in.write))
-    }
+  private def emitToChannel(channel: Channel): ClientEmit = in => {
+    if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
+    else channel.writeAndFlush(new TextWebSocketFrame(in.write))
+  }
 
   // cancel before the handshake was completed
   private def sendSimpleErrorResponse(channel: Channel, status: HttpResponseStatus): ChannelFuture = {
@@ -94,11 +93,9 @@ private final class ProtocolHandler(
     cause match {
       // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
       // sending/receiving the response.
-      case e: IOException =>
-        logger.trace("Benign IO exception caught in Netty", e)
-        ctx.channel().close()
+      case e: IOException => ctx.channel().close()
       case e: TooLongFrameException =>
-        logger.warn("Handling TooLongFrameException", e)
+        logger.info("Handling TooLongFrameException", e)
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
       case e: IllegalArgumentException if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
         sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)

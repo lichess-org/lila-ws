@@ -16,7 +16,6 @@ import scala.util.{ Try, Success }
 final class Mongo @Inject() (config: Config)(implicit executionContext: ExecutionContext) {
 
   private val uri = config.getString("mongo.uri")
-
   private val driver = MongoDriver()
   private val parsedUri = MongoConnection.parseURI(uri)
   private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
