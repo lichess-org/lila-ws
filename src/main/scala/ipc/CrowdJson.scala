@@ -7,7 +7,6 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
-import LightUser._
 import lila.ws.util.LilaJsObject.augment
 
 @Singleton
@@ -37,10 +36,10 @@ final class CrowdJson @Inject() (
 
   private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
     if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
-    else Future sequence { crowd.users map lightUserApi.get } map { lights =>
+    else Future.traverse(crowd.users)(lightUserApi.get) map { names =>
       Json.obj(
         "nb" -> crowd.members,
-        "users" -> lights.flatMap(_.map(_.titleName)),
+        "users" -> names,
         "anons" -> crowd.anons
       )
     }
