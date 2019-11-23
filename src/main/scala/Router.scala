@@ -22,10 +22,10 @@ final class Router @Inject() (
     emit: ClientEmit,
     ip: IpAddress
   ): Controller.Response = {
-    // Monitor.count.client.inc
     val req = new RequestHeader(uri, headers, ip)
     req.path drop 1 split '/' match {
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
+      case Array("analysis", "socket") | Array("analysis", "socket", _) => controller.site(req, emit)
       case Array("api", "socket") => controller.api(req, emit)
       case Array("lobby", "socket") | Array("lobby", "socket", _) => controller.lobby(req, emit)
       case Array("simul", id, "socket", _) => controller.simul(id, req, emit)
