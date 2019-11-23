@@ -60,7 +60,7 @@ final class SeenAtUpdate @Inject() (mongo: Mongo)( implicit
       )
     )
 
-    scheduler.scheduleWithFixedDelay(10.seconds, 100.seconds) { () =>
+    scheduler.scheduleWithFixedDelay(20.seconds, 30.seconds) { () =>
       fetch foreach { res =>
         ids = res
       }
