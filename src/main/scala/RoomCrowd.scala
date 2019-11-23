@@ -2,8 +2,8 @@ package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject._
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 import ipc._
 
@@ -76,17 +76,11 @@ object RoomCrowd {
     def nbMembers = anons + nbUsers
     def isEmpty = nbMembers < 1
 
-    def connect(user: Option[User]) = copy(
-      anons = anons + (if (user.isDefined) 0 else 1),
-      users = user.fold(users) { u =>
-        users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1)))
-      }
-    )
-    def disconnect(user: Option[User]) = copy(
-      anons = anons - (if (user.isDefined) 0 else 1),
-      users = user.fold(users) { u =>
-        users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0))
-      }
-    )
+    def connect(user: Option[User]) = user.fold(copy(anons = anons + 1)) { u =>
+      copy(users = users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1))))
+    }
+    def disconnect(user: Option[User]) = user.fold(copy(anons = anons - 1)) { u =>
+      copy(users = users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0)))
+    }
   }
 }
