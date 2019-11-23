@@ -85,24 +85,21 @@ private final class ProtocolHandler(
   }
 
   // nicely terminate an ongoing connection
-  private def terminateConnection(channel: Channel): ChannelFuture = {
+  private def terminateConnection(channel: Channel): ChannelFuture =
     channel.writeAndFlush(new CloseWebSocketFrame).addListener(ChannelFutureListener.CLOSE)
-  }
 
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause match {
-      // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
-      // sending/receiving the response.
-      case e: IOException => ctx.channel().close()
-      case e: TooLongFrameException =>
-        logger.info("Handling TooLongFrameException", e)
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
-      case e: IllegalArgumentException if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
-      case e =>
-        logger.error("Exception in Netty", e)
-        super.exceptionCaught(ctx, cause)
-    }
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = cause match {
+    // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
+    // sending/receiving the response.
+    case e: IOException => ctx.channel.close()
+    case e: TooLongFrameException =>
+      logger.info("Handling TooLongFrameException", e)
+      sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
+    case e: IllegalArgumentException if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
+      sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
+    case e =>
+      logger.error("Exception in Netty", e)
+      super.exceptionCaught(ctx, cause)
   }
 }
 
