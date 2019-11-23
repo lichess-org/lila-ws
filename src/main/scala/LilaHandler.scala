@@ -82,6 +82,8 @@ final class LilaHandler @Inject() (
   }
 
   private val studyHandler: Emit[LilaOut] = {
+    case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
+      lila.emit.study(LilaIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
     case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
     case msg => roomHandler(msg)
   }
