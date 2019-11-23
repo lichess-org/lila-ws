@@ -17,7 +17,6 @@ scalaVersion := "2.13.1"
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-linux-x86-64" % "runtime" classifier "linux-x86_64"
-libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-osx-x86-64" % "runtime" classifier "osx-x86_64"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.2.1.RELEASE"
 libraryDependencies += "com.google.inject" % "guice" % "4.2.2"
 libraryDependencies += "io.netty" % "netty-all" % nettyVersion
