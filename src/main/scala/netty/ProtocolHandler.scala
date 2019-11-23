@@ -40,10 +40,8 @@ private final class ProtocolHandler(
         val promise = Promise[Client]
         ctx.channel.attr(key.client).set(promise.future)
         router(
-          hs.requestUri,
-          hs.requestHeaders,
-          emitToChannel(ctx.channel),
-          ip
+          new util.RequestHeader(hs.requestUri, hs.requestHeaders, ip),
+          emitToChannel(ctx.channel)
         ) foreach {
             case Left(status) =>
               terminateConnection(ctx.channel)

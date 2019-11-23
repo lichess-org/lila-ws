@@ -1,28 +1,15 @@
 package lila.ws
 
-import akka.actor.typed.{ ActorSystem, Behavior }
-import io.netty.channel.Channel
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.HttpResponseStatus
 import javax.inject._
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.Future
 
 import util.RequestHeader
 
 @Singleton
-final class Router @Inject() (
-    controller: Controller,
-    system: ActorSystem[Clients.Control]
-)(implicit ec: ExecutionContext) {
+final class Router @Inject() (controller: Controller) {
 
-  // implicit def ec = system.executionContext
-
-  def apply(
-    uri: String,
-    headers: HttpHeaders,
-    emit: ClientEmit,
-    ip: IpAddress
-  ): Controller.Response = {
-    val req = new RequestHeader(uri, headers, ip)
+  def apply(req: RequestHeader, emit: ClientEmit): Controller.Response =
     req.path drop 1 split '/' match {
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
       case Array("analysis", "socket") | Array("analysis", "socket", _) => controller.site(req, emit)
@@ -36,5 +23,4 @@ final class Router @Inject() (
       case Array("challenge", id, "socket", _) => controller.challenge(Challenge.Id(id), req, emit)
       case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
-  }
 }
