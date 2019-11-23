@@ -10,16 +10,17 @@ lazy val root = (project in file("."))
 val akkaVersion = "2.6.0"
 val kamonVersion= "2.0.1"
 val reactivemongoVersion = "0.19.1"
+val nettyVersion = "4.1.43.Final"
 
 scalaVersion := "2.13.1"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
-libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-linux-x86-64" % "runtime"
+libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-linux-x86-64" % "runtime" classifier "linux-x86_64"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.2.1.RELEASE"
 libraryDependencies += "com.google.inject" % "guice" % "4.2.2"
-libraryDependencies += "io.netty" % "netty-all" % "4.1.43.Final"
-libraryDependencies += "io.netty" % "netty-transport-native-epoll" % "4.1.43.Final" classifier "linux-x86_64"
+libraryDependencies += "io.netty" % "netty-all" % nettyVersion
+libraryDependencies += "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.26"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"

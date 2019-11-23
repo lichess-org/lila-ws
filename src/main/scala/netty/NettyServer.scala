@@ -6,6 +6,8 @@ import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
+import io.netty.channel.nio.NioEventLoopGroup
+import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
 import javax.inject._
@@ -25,14 +27,23 @@ final class NettyServer @Inject() (
     logger.info("Start")
 
     val port = config.getInt("http.port")
+    val useEpoll = config.getBoolean("netty.useEpoll")
 
-    val bossGroup = new EpollEventLoopGroup(1) // 1 like in the netty examples (?)
-    val workerGroup = new EpollEventLoopGroup
+    val bossGroup =
+      if (useEpoll) new EpollEventLoopGroup(1)
+      else new NioEventLoopGroup(1)
+    val workerGroup =
+      if (useEpoll) new EpollEventLoopGroup
+      else new NioEventLoopGroup
+
+    val channelClz = 
+      if (useEpoll) classOf[EpollServerSocketChannel]
+      else classOf[NioServerSocketChannel]
 
     try {
       val boot = new ServerBootstrap
       boot.group(bossGroup, workerGroup)
-        .channel(classOf[EpollServerSocketChannel])
+        .channel(channelClz)
         .childHandler(new ChannelInitializer[SocketChannel] {
           override def initChannel(ch: SocketChannel): Unit = {
             val pipeline = ch.pipeline()
