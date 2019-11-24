@@ -9,8 +9,12 @@ import util.Util.nowSeconds
 
 object ClientActor {
 
-  def busChansOf(req: Req) =
-    Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
+  case class State(
+      watchedGames: Set[Game.Id] = Set.empty,
+      lastPing: Int = nowSeconds,
+      ignoreLog: Boolean = false,
+      tourReminded: Boolean = false
+  )
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     LilaWsServer.connections.incrementAndGet
@@ -131,12 +135,8 @@ object ClientActor {
       None
   }
 
-  case class State(
-      watchedGames: Set[Game.Id] = Set.empty,
-      lastPing: Int = nowSeconds,
-      ignoreLog: Boolean = false,
-      tourReminded: Boolean = false
-  )
+  private def busChansOf(req: Req) =
+    Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
   def Req(req: util.RequestHeader, sri: Sri, user: Option[User]): Req = Req(
     name = req.name,

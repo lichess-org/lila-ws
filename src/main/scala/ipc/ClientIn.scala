@@ -26,7 +26,7 @@ object ClientIn {
 
   // triggers actual disconnection
   case object Disconnect extends ClientIn {
-    val write = cliMsg("bye")
+    val write = cliMsg("bye") // not actually sent
   }
 
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn {
