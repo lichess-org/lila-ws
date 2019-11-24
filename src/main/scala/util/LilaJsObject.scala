@@ -11,9 +11,6 @@ final class LilaJsObject(private val js: JsObject) extends AnyVal {
   def int(key: String): Option[Int] =
     (js \ key).asOpt[Int]
 
-  def long(key: String): Option[Long] =
-    (js \ key).asOpt[Long]
-
   def boolean(key: String): Option[Boolean] =
     (js \ key).asOpt[Boolean]
 
