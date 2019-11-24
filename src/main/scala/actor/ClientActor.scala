@@ -13,13 +13,13 @@ object ClientActor {
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    Connections.connect
+    LilaWsServer.connections.incrementAndGet
     busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
   }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
-    Connections.disconnect
+    LilaWsServer.connections.decrementAndGet
     req.user foreach { users.disconnect(_, ctx.self) }
     if (state.watchedGames.nonEmpty) fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }

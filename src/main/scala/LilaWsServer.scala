@@ -40,11 +40,16 @@ final class LilaWsServer @Inject() (
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
     }
     scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-      val connections = Connections.get
+      val connections = LilaWsServer.connections.get
       lila.emit.site(ipc.LilaIn.Connections(connections))
       Monitor.connection.current update connections
     }
 
     nettyServer.start // blocks
   }
+}
+
+object LilaWsServer {
+
+  val connections = new java.util.concurrent.atomic.AtomicInteger
 }
