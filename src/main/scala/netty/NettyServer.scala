@@ -36,7 +36,7 @@ final class NettyServer @Inject() (
       if (useEpoll) new EpollEventLoopGroup
       else new NioEventLoopGroup
 
-    val channelClz = 
+    val channelClz =
       if (useEpoll) classOf[EpollServerSocketChannel]
       else classOf[NioServerSocketChannel]
 
