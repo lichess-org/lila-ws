@@ -69,12 +69,16 @@ object Monitor {
   val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
   val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
 
+  def rateLimit(name: String) = Kamon.counter(s"ratelimit")
+    .withTag("name", name)
+    .increment()
+
   object redis {
     val publishTime = Kamon.timer("redis.publish.time").withoutTags
-    def in(chan: String, path: String) = Kamon.counter(s"redis.in").withTags(
+    def in(chan: String, path: String) = Kamon.counter("redis.in").withTags(
       TagSet.from(Map("channel" -> chan, "path" -> path))
     ).increment()
-    def out(chan: String, path: String) = Kamon.counter(s"redis.out").withTags(
+    def out(chan: String, path: String) = Kamon.counter("redis.out").withTags(
       TagSet.from(Map("channel" -> chan, "path" -> path))
     ).increment()
   }
