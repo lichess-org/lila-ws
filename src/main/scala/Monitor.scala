@@ -18,7 +18,15 @@ final class Monitor @Inject() (
 
   def start: Unit = {
 
-    if (config.getString("kamon.influxdb.hostname").nonEmpty) {
+    val version = System.getProperty("java.version")
+    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    val useEpoll = config.getBoolean("netty.useEpoll")
+    val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
+
+    logger.info(s"lila-ws netty epoll=$useEpoll kamon=$useKamon")
+    logger.info(s"Java version: $version, memory: ${memory}MB")
+
+    if (useKamon) {
       logger.info("Kamon is enabled")
       kamon.Kamon.loadModules()
     }
@@ -39,13 +47,6 @@ final class Monitor @Inject() (
 object Monitor {
 
   private val logger = Logger(getClass)
-
-  def greet: Unit = {
-    val version = System.getProperty("java.version")
-    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
-    logger.info("lila-ws netty")
-    logger.info(s"Java version: $version, memory: ${memory}MB")
-  }
 
   object connection {
     val current = Kamon.gauge("connection.current").withoutTags

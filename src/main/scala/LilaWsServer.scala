@@ -11,8 +11,6 @@ import util.Util.nowSeconds
 
 object Boot extends App {
 
-  Monitor.greet
-
   private val injector = Guice.createInjector(new AbstractModule {
     @Provides def config: Config = ConfigFactory.load
     @Provides def clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
