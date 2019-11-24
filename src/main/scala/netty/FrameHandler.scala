@@ -27,7 +27,10 @@ private final class FrameHandler(
         if (limiter == null || limiter(txt)) {
           ipc.ClientOut parse txt foreach { out =>
             Option(ctx.channel.attr(key.client).get) match {
-              case Some(client) => client foreach (_ ! out)
+              case Some(clientFu) => clientFu.value match {
+                case Some(client) => client foreach (_ ! out)
+                case None => clientFu foreach (_ ! out)
+              }
               case None => logger.warn(s"No client actor to receive $out")
             }
           }
