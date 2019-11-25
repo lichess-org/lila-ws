@@ -58,4 +58,6 @@ final class Users @Inject() (lila: Lila)(implicit scheduler: Scheduler, ec: Exec
     Option(users get userId) foreach {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
+
+  def size = users.size
 }

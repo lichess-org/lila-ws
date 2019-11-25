@@ -39,6 +39,7 @@ final class Monitor @Inject() (
     historyRoundSize.update(History.round.size)
     crowdRoomSize.update(services.roomCrowd.size)
     crowdRoundSize.update(services.roundCrowd.size)
+    usersSize.update(services.users.size)
     busSize.update(Bus.size)
     busAllSize.update(Bus.sizeOf(_.all))
   }
@@ -66,6 +67,7 @@ object Monitor {
 
   val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
+  val usersSize = Kamon.gauge("users.size").withoutTags
 
   val palantirChannels = Kamon.gauge("crowd.channels.size").withoutTags
 
