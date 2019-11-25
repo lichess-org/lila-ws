@@ -62,6 +62,8 @@ object ClientOut {
 
   case class Unexpected(msg: JsValue) extends ClientOutSite
 
+  case object WrongHole extends ClientOutSite
+
   case object Ignore extends ClientOutSite
 
   // lobby
@@ -188,6 +190,7 @@ object ClientOut {
           reason <- data str "reason"
         } yield ChatTimeout(userId, reason)
         case "ping" => Some(ChallengePing)
+        case "wrongHole" => Some(WrongHole)
         case _ => None
       } getOrElse Unexpected(o)
       case js => Unexpected(js)

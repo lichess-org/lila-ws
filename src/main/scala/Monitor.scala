@@ -54,7 +54,12 @@ object Monitor {
   }
 
   val redisPublishTime = Kamon.timer("redis.publish.time").withoutTags
-  val clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
+  def clientOutWrongHole = Kamon.counter("client.out.wrongHole").withoutTags
+  def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
+  def clientOutUnhandled(name: String) =
+    Kamon.counter("client.out.unhandled")
+      .withTag("name", name)
+      .increment()
 
   val historyRoomSize = Kamon.gauge("history.room.size").withoutTags
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags

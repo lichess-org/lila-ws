@@ -24,8 +24,16 @@ private final class FrameHandler(implicit ec: ExecutionContext) extends SimpleCh
       val txt = frame.text
       if (txt.nonEmpty) {
         val limiter = ctx.channel.attr(key.limit).get
-        if (limiter == null || limiter(txt)) {
-          ipc.ClientOut parse txt foreach { out =>
+        if (limiter == null || limiter(txt)) ClientOut parse txt foreach {
+
+          case ClientOut.Unexpected(msg) =>
+            Monitor.clientOutUnexpected.increment()
+            logger.info(s"Unexpected $msg")
+
+          case ClientOut.WrongHole =>
+            Monitor.clientOutWrongHole.increment()
+
+          case out =>
             Option(ctx.channel.attr(key.client).get) match {
               case Some(clientFu) => clientFu.value match {
                 case Some(client) => client foreach (_ ! out)
@@ -33,7 +41,6 @@ private final class FrameHandler(implicit ec: ExecutionContext) extends SimpleCh
               }
               case None => logger.warn(s"No client actor to receive $out")
             }
-          }
         }
       }
     case frame =>

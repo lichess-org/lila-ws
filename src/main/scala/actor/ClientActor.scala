@@ -12,7 +12,6 @@ object ClientActor {
   case class State(
       watchedGames: Set[Game.Id] = Set.empty,
       lastPing: Int = nowSeconds,
-      ignoreLog: Boolean = false,
       tourReminded: Boolean = false
   )
 
@@ -46,12 +45,9 @@ object ClientActor {
   }
 
   def wrong(loggerName: String, state: State, deps: Deps, msg: ClientMsg)(update: State => Behavior[ClientMsg]): Behavior[ClientMsg] = {
-    Monitor.clientOutUnexpected.increment()
-    if (state.ignoreLog) Behaviors.same
-    else {
-      Logger(s"${loggerName}ClientActor").info(s"Wrong $msg ${deps.req}")
-      update(state.copy(ignoreLog = true))
-    }
+    Monitor.clientOutUnhandled(loggerName).increment()
+    Logger(s"${loggerName}ClientActor").info(s"Unhandled $msg ${deps.req}")
+    Behaviors.same
   }
 
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
@@ -70,11 +66,8 @@ object ClientActor {
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
-        if (state.ignoreLog) state
-        else {
-          Logger("SiteClient").info(s"API socket doesn't support $msg $req")
-          state.copy(ignoreLog = true)
-        }
+        logger.info(s"API socket doesn't support $msg $req")
+        state
 
       case ClientOut.MoveLat =>
         Bus.subscribe(Bus.channel.mlat, ctx.self)
@@ -108,14 +101,6 @@ object ClientActor {
         lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 
-      case ClientOut.Unexpected(msg) =>
-        Monitor.clientOutUnexpected.increment()
-        if (state.ignoreLog) state
-        else {
-          Logger("ClientActor").info(s"Unexpected $msg $req")
-          state.copy(ignoreLog = true)
-        }
-
       case ClientOut.Ignore =>
         state
     }
@@ -134,6 +119,8 @@ object ClientActor {
       deps clientIn in
       None
   }
+
+  private val logger = Logger("ClientActor")
 
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
