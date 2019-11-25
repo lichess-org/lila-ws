@@ -90,6 +90,7 @@ private final class ProtocolHandler(
     // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
     // sending/receiving the response.
     case e: IOException => ctx.channel.close()
+    case e: WebSocketHandshakeException => ctx.channel.close()
     case e: TooLongFrameException =>
       logger.info("Handling TooLongFrameException", e)
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
