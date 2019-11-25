@@ -162,9 +162,9 @@ object RoundClientActor {
         if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
 
-      case msg => wrong("Round", state.site, deps, msg) { s =>
-        apply(state.copy(site = s), deps)
-      }
+      case _ =>
+        Monitor.clientOutUnhandled("round").increment()
+        Behaviors.same
     }
 
   }.receiveSignal {

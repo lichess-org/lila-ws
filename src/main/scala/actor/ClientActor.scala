@@ -44,12 +44,6 @@ object ClientActor {
     state.copy(lastPing = nowSeconds)
   }
 
-  def wrong(loggerName: String, state: State, deps: Deps, msg: ClientMsg)(update: State => Behavior[ClientMsg]): Behavior[ClientMsg] = {
-    Monitor.clientOutUnhandled(loggerName).increment()
-    Logger(s"${loggerName}ClientActor").info(s"Unhandled $msg ${deps.req}")
-    Behaviors.same
-  }
-
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
 
     import state._

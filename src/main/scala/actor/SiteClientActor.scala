@@ -33,7 +33,9 @@ object SiteClientActor {
         if (newState == state) Behaviors.same
         else apply(newState, deps)
 
-      case msg => wrong("Site", state, deps, msg) { apply(_, deps) }
+      case _ =>
+        Monitor.clientOutUnhandled("site").increment()
+        Behaviors.same
     }
 
   }.receiveSignal {

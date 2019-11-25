@@ -70,9 +70,9 @@ object StudyClientActor {
         if (siteState == state.site) Behaviors.same
         else apply(state.copy(site = siteState), deps)
 
-      case msg => wrong("Study", state.site, deps, msg) { s =>
-        apply(state.copy(site = s), deps)
-      }
+      case _ =>
+        Monitor.clientOutUnhandled("study").increment()
+        Behaviors.same
     }
 
     RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
