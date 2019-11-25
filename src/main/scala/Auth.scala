@@ -26,8 +26,12 @@ final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executi
           }
         } map {
           _ map { user =>
-            seenAt(user)
-            Impersonations.get(user.id).fold(user)(User.apply)
+            Impersonations.get(user.id) match {
+              case None =>
+                seenAt(user)
+                user
+              case Some(impersonatedId) => User(impersonatedId)
+            }
           }
         }
       case None => Future successful None
