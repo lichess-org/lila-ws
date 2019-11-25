@@ -182,7 +182,7 @@ final class Controller @Inject() (
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
-          logger.info(s"""CSRF origin: "$origin" ${req.name}""")
+          logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
           Future successful Left(HttpResponseStatus.FORBIDDEN)
       }
   }
