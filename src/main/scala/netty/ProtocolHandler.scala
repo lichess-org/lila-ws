@@ -91,8 +91,11 @@ private final class ProtocolHandler(
     // sending/receiving the response.
     case e: IOException => ctx.channel.close()
     case e: WebSocketHandshakeException => ctx.channel.close()
+    case e: CorruptedWebSocketFrameException => // Max frame length of 2048 has been exceeded.
+      logger.info("CorruptedWebSocketFrameException ", e)
+      // just ignore it I guess
     case e: TooLongFrameException =>
-      logger.info("Handling TooLongFrameException", e)
+      logger.info("TooLongFrameException", e)
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
     case e: IllegalArgumentException if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
