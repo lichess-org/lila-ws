@@ -28,7 +28,7 @@ object RoundClientActor {
   )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     import deps._
     val state = State(roomState, player, userTv)
-    ClientActor.onStart(deps, ctx)
+    onStart(deps, ctx)
     req.user foreach { users.connect(_, ctx.self) }
     state.busChans foreach { Bus.subscribe(_, ctx.self) }
     roundCrowd.connect(roomState.id, req.user, player.map(_.color))

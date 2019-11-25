@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Guice, Provides }
 import com.typesafe.config.{ Config, ConfigFactory }
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -27,6 +28,8 @@ final class LilaWsServer @Inject() (
     lila: Lila,
     handlers: LilaHandler, // must eagerly instanciate!
     monitor: Monitor,
+    lobby: Lobby,
+    roundCrowd: RoundCrowd,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
 
@@ -37,10 +40,13 @@ final class LilaWsServer @Inject() (
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
     }
-    scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
+    scheduler.scheduleWithFixedDelay(5.seconds, 1.second) { () =>
       val connections = LilaWsServer.connections.get
-      lila.emit.site(ipc.LilaIn.Connections(connections))
       Monitor.connection.current update connections
+      lobby.pong.update(_.copy(
+        members = connections,
+        rounds = roundCrowd.size
+      ))
     }
 
     nettyServer.start // blocks
@@ -49,5 +55,5 @@ final class LilaWsServer @Inject() (
 
 object LilaWsServer {
 
-  val connections = new java.util.concurrent.atomic.AtomicInteger
+  val connections = new AtomicInteger
 }

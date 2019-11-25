@@ -51,8 +51,6 @@ final class LilaHandler @Inject() (
     case TellLobbyActive(payload) => publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload) => sris foreach { sri => publish(_ sri sri, ClientIn.Payload(payload)) }
     case LobbyPairings(pairings) => pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
-    case NbMembers(nb) => lobby.pong.update(_.copy(members = nb))
-    case NbRounds(nb) => lobby.pong.update(_.copy(rounds = nb))
 
     case site: SiteOut => siteHandler(site)
     case msg => logger.warn(s"Unhandled lobby: $msg")

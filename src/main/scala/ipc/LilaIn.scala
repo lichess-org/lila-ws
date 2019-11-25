@@ -48,10 +48,6 @@ object LilaIn {
     def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
   }
 
-  case class Connections(count: Int) extends Site {
-    def write = s"connections $count"
-  }
-
   case class ConnectUser(user: User) extends Site {
     def write = s"connect/user ${user.id}"
   }
