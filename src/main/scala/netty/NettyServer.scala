@@ -20,7 +20,7 @@ final class NettyServer @Inject() (
     config: Config
 )(implicit ec: ExecutionContext) {
 
-  val logger = Logger(getClass)
+  private val logger = Logger(getClass)
 
   def start: Unit = {
 
@@ -48,7 +48,7 @@ final class NettyServer @Inject() (
           override def initChannel(ch: SocketChannel): Unit = {
             val pipeline = ch.pipeline()
             pipeline.addLast(new HttpServerCodec)
-            pipeline.addLast(new HttpObjectAggregator(4096)) // 8192?
+            pipeline.addLast(new HttpObjectAggregator(4096))
             pipeline.addLast(new ProtocolHandler(
               clients,
               router,
