@@ -54,7 +54,7 @@ final class NettyServer @Inject() (
               router,
               IpAddress(ch.localAddress.getAddress.getHostAddress)
             ))
-            pipeline.addLast(new FrameHandler(clients))
+            pipeline.addLast(new FrameHandler)
           }
         })
 

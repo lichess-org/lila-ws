@@ -9,9 +9,9 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.handler.codec.http.websocketx.WebSocketFrame
 import scala.concurrent.ExecutionContext
 
-private final class FrameHandler(
-    clients: ActorRef[Clients.Control]
-)(implicit ec: ExecutionContext) extends SimpleChannelInboundHandler[WebSocketFrame] {
+import ipc.ClientOut
+
+private final class FrameHandler(implicit ec: ExecutionContext) extends SimpleChannelInboundHandler[WebSocketFrame] {
 
   import FrameHandler._
   import ProtocolHandler.key
