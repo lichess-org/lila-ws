@@ -9,7 +9,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import util.RequestHeader
-import util.Util.parseIntOption
 
 @Singleton
 final class Controller @Inject() (
@@ -190,7 +189,7 @@ final class Controller @Inject() (
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
   private def fromVersion(req: RequestHeader): Option[SocketVersion] =
-    req queryParameter "v" flatMap parseIntOption map SocketVersion.apply
+    req queryParameter "v" flatMap (_.toIntOption) map SocketVersion.apply
 }
 
 object Controller {

@@ -25,7 +25,7 @@ final class RequestHeader(uri: String, req: HttpHeaders, val ip: IpAddress) {
     Option(query.parameters.get(name)).map(_ get 0).filter(_.nonEmpty)
 
   def queryParameterInt(name: String): Option[Int] =
-    queryParameter(name) flatMap Util.parseIntOption
+    queryParameter(name) flatMap (_.toIntOption)
 
   def userAgent: String = header(HttpHeaders.Names.USER_AGENT) getOrElse ""
 

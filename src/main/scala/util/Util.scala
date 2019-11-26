@@ -1,8 +1,6 @@
 package lila.ws
 package util
 
-import java.lang.Double.parseDouble
-import java.lang.Integer.parseInt
 import java.security.SecureRandom
 import util.RequestHeader
 import scala.util.Try
@@ -18,7 +16,4 @@ object Util {
     def char: Char = chars(secureRandom nextInt nbChars)
     def string(len: Int): String = new String(Array.fill(len)(char))
   }
-
-  def parseIntOption(str: String) = Try(parseInt(str)).toOption
-  def parseDoubleOption(str: String) = Try(parseDouble(str)).toOption
 }

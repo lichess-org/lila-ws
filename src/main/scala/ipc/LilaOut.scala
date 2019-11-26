@@ -83,7 +83,7 @@ object LilaOut {
     val args = parts.lift(1) getOrElse ""
     parts(0) match {
 
-      case "mlat" => parseDoubleOption(args) map Mlat.apply
+      case "mlat" => args.toDoubleOption map Mlat.apply
 
       case "tell/flag" => get(args, 2) {
         case Array(flag, payload) => Some(TellFlag(Flag(flag), JsonString(payload)))
@@ -133,7 +133,7 @@ object LilaOut {
       }
 
       case "tell/room/version" => get(args, 4) {
-        case Array(roomId, version, troll, payload) => parseIntOption(version) map { sv =>
+        case Array(roomId, version, troll, payload) => version.toIntOption map { sv =>
           TellRoomVersion(RoomId(roomId), SocketVersion(sv), IsTroll(boolean(troll)), JsonString(payload))
         }
       }
@@ -148,7 +148,7 @@ object LilaOut {
       case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case "room/present" => get(args, 3) {
-        case Array(reqIdS, roomId, userId) => parseIntOption(reqIdS) map { reqId =>
+        case Array(reqIdS, roomId, userId) => reqIdS.toIntOption map { reqId =>
           RoomIsPresent(reqId, RoomId(roomId), userId)
         }
       }
@@ -158,7 +158,7 @@ object LilaOut {
       }
 
       case "r/ver" => get(args, 5) {
-        case Array(roomId, version, f, tpe, data) => parseIntOption(version) map { sv =>
+        case Array(roomId, version, f, tpe, data) => version.toIntOption map { sv =>
           val flags = RoundEventFlags(
             watcher = f contains 's',
             owner = f contains 'p',
@@ -198,7 +198,7 @@ object LilaOut {
 
       case "tv/select" => get(args, 3) {
         case Array(gameId, speedS, data) =>
-          parseIntOption(speedS) flatMap chess.Speed.apply map { speed =>
+          speedS.toIntOption flatMap chess.Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
       }
