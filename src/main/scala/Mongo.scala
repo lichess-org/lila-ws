@@ -59,28 +59,27 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
       }
     }(parasitic)
 
-  private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] =
-    Scaffeine()
-      .expireAfterWrite(10.minutes)
-      .buildAsyncFuture { id =>
-        gameColl flatMap {
-          _.find(
-            selector = BSONDocument("_id" -> id.value),
-            projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
-          ).one[BSONDocument].map { docOpt =>
-              for {
-                doc <- docOpt
-                playerIds <- doc.getAsOpt[String]("is")
-                users = doc.getAsOpt[List[String]]("us") getOrElse Nil
-                players = Color.Map(
-                  Game.Player(Game.PlayerId(playerIds take 4), users.headOption),
-                  Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
-                )
-                tourId = doc.getAsOpt[Tour.ID]("tid")
-              } yield Game.Round(id, players, tourId)
-            }(parasitic)
-        }
+  private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
+    .expireAfterWrite(10.minutes)
+    .buildAsyncFuture { id =>
+      gameColl flatMap {
+        _.find(
+          selector = BSONDocument("_id" -> id.value),
+          projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
+        ).one[BSONDocument].map { docOpt =>
+            for {
+              doc <- docOpt
+              playerIds <- doc.getAsOpt[String]("is")
+              users = doc.getAsOpt[List[String]]("us") getOrElse Nil
+              players = Color.Map(
+                Game.Player(Game.PlayerId(playerIds take 4), users.headOption),
+                Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
+              )
+              tourId = doc.getAsOpt[Tour.ID]("tid")
+            } yield Game.Round(id, players, tourId)
+          }(parasitic)
       }
+    }
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(_, BSONDocument(
