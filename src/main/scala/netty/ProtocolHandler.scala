@@ -10,7 +10,6 @@ import io.netty.util.AttributeKey
 import java.io.IOException
 // import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
 import java.net.InetSocketAddress
@@ -62,7 +61,7 @@ private final class ProtocolHandler(
           case Some(client) => client foreach { c =>
             clients ! Clients.Stop(c)
           }
-          case None => logger.warn(s"No client actor to stop!")
+          case None => Monitor.websocketError("clientActorMissing")
         }
     })
   }
@@ -89,25 +88,29 @@ private final class ProtocolHandler(
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = cause match {
     // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
     // sending/receiving the response.
-    case e: IOException => ctx.channel.close()
-    case e: WebSocketHandshakeException => ctx.channel.close()
-    case e: CorruptedWebSocketFrameException => // Max frame length of 2048 has been exceeded.
-      logger.info("CorruptedWebSocketFrameException ", e)
-      // just ignore it I guess
+    case e: IOException =>
+      Monitor.websocketError("io")
+      ctx.channel.close()
+    case e: WebSocketHandshakeException =>
+      Monitor.websocketError("handshake")
+      ctx.channel.close()
+    case e: CorruptedWebSocketFrameException if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
+      Monitor.websocketError("frameLength")
+    case e: CorruptedWebSocketFrameException =>
+      Monitor.websocketError("corrupted")
     case e: TooLongFrameException =>
-      logger.info("TooLongFrameException", e)
+      Monitor.websocketError("uriTooLong")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
-    case e: IllegalArgumentException if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
+    case e: IllegalArgumentException if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+      Monitor.websocketError("headerIllegalChar")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
     case e =>
-      logger.error("Exception in Netty", e)
+      Monitor.websocketError("other")
       super.exceptionCaught(ctx, cause)
   }
 }
 
 private object ProtocolHandler {
-
-  private val logger = Logger(getClass)
 
   object key {
     val client = AttributeKey.valueOf[Future[Client]]("client")

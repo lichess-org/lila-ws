@@ -85,6 +85,8 @@ object Monitor {
   val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
   val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
 
+  def websocketError(name: String) = Kamon.counter("websocket.error").withTag("name", name).increment()
+
   def rateLimit(name: String) = Kamon.counter(s"ratelimit")
     .withTag("name", name)
     .increment()
