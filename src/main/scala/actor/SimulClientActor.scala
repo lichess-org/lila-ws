@@ -37,7 +37,7 @@ object SimulClientActor {
           Behaviors.same
         }
 
-      case ctrl: ClientCtrl => ClientActor.socketControl(state.site, deps, ctrl)
+      case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
       // default receive (site)
       case msg: ClientOutSite =>
