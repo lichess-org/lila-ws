@@ -41,10 +41,6 @@ object LilaOut {
   case class TellLobbyActive(json: JsonString) extends LobbyOut
   case class TellLobbyUsers(users: Iterable[User.ID], json: JsonString) extends LobbyOut
 
-  case class NbMembers(value: Int) extends LobbyOut
-
-  case class NbRounds(value: Int) extends LobbyOut
-
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
 
   // room
@@ -117,10 +113,6 @@ object LilaOut {
       case "tell/lobby/users" => get(args, 2) {
         case Array(users, payload) => Some(TellLobbyUsers(commas(users), JsonString(payload)))
       }
-
-      case "member/nb" => parseIntOption(args) map NbMembers.apply
-
-      case "round/nb" => parseIntOption(args) map NbRounds.apply
 
       case "mod/troll/set" => get(args, 2) {
         case Array(user, v) => Some(SetTroll(user, IsTroll(boolean(v))))

@@ -35,11 +35,18 @@ final class Monitor @Inject() (
   }
 
   private def periodicMetrics = {
+
+    val members = LilaWsServer.connections.get
+    val rounds = services.roundCrowd.size
+    services.lobby.pong.update(members, rounds)
+
+    connection.current update members
     historyRoomSize.update(History.room.size)
     historyRoundSize.update(History.round.size)
     crowdRoomSize.update(services.roomCrowd.size)
-    crowdRoundSize.update(services.roundCrowd.size)
+    crowdRoundSize.update(rounds)
     usersSize.update(services.users.size)
+    watchSize.update(Fens.size)
     busSize.update(Bus.size)
     busAllSize.update(Bus.sizeOf(_.all))
   }
@@ -68,6 +75,7 @@ object Monitor {
   val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
   val usersSize = Kamon.gauge("users.size").withoutTags
+  val watchSize = Kamon.gauge("watch.size").withoutTags
 
   val palantirChannels = Kamon.gauge("crowd.channels.size").withoutTags
 

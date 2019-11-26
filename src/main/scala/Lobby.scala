@@ -30,8 +30,8 @@ final class Lobby @Inject() (
 
     def get = value
 
-    def update(f: LobbyPong => LobbyPong): Unit = {
-      value = f(value)
+    def update(members: Int, rounds: Int): Unit = {
+      value = LobbyPong(members, rounds)
     }
   }
 }

@@ -52,4 +52,6 @@ object Fens {
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...
   private val MoveRegex = """uci":"(\w+)".+fen":"([^"]+)""".r.unanchored
+
+  def size = games.size
 }

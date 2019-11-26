@@ -27,6 +27,8 @@ final class LilaWsServer @Inject() (
     lila: Lila,
     handlers: LilaHandler, // must eagerly instanciate!
     monitor: Monitor,
+    lobby: Lobby,
+    roundCrowd: RoundCrowd,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
 
@@ -36,11 +38,6 @@ final class LilaWsServer @Inject() (
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
-    }
-    scheduler.scheduleWithFixedDelay(5.seconds, 1811.millis) { () =>
-      val connections = LilaWsServer.connections.get
-      lila.emit.site(ipc.LilaIn.Connections(connections))
-      Monitor.connection.current update connections
     }
 
     nettyServer.start // blocks
