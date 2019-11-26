@@ -31,7 +31,9 @@ final class LilaHandler @Inject() (
     case DisconnectUser(user) => users.kick(user)
     case TellRoomUser(roomId, user, json) => users.tellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
     case TellRoomUsers(roomId, us, json) => users.tellMany(us, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
-    case SetTroll(user, v) => users.setTroll(user, v)
+    case SetTroll(user, v) =>
+      users.setTroll(user, v)
+      mongo.troll.set(user, v)
 
     case Impersonate(user, by) => Impersonations(user, by)
 

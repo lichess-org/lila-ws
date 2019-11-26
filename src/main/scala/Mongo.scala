@@ -2,15 +2,15 @@ package lila.ws
 
 import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.typesafe.config.Config
 import javax.inject._
 import org.joda.time.DateTime
-import com.typesafe.config.Config
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ DefaultDB, MongoConnection, MongoDriver, ReadConcern }
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.ExecutionContext.parasitic
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Try, Success }
 
 @Singleton
@@ -143,10 +143,22 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
-  def isTroll(user: Option[User]): Future[IsTroll] =
-    user.fold(Future successful IsTroll(false)) { u =>
-      userColl flatMap { exists(_, BSONDocument("_id" -> u.id, "troll" -> true)) } map IsTroll.apply
-    }
+  object troll {
+
+    def is(user: Option[User]): Future[IsTroll] =
+      user.fold(Future successful IsTroll(false)) { u =>
+        cache.get(u.id).map(IsTroll.apply)(parasitic)
+      }
+
+    def set(userId: User.ID, v: IsTroll): Unit =
+      cache.put(userId, Future successful v.value)
+
+    private val cache: AsyncLoadingCache[User.ID, Boolean] = Scaffeine()
+      .expireAfterAccess(20.minutes)
+      .buildAsyncFuture { id =>
+        userColl flatMap { exists(_, BSONDocument("_id" -> id, "troll" -> true)) }
+      }
+  }
 
   object idFilter {
     import Mongo._

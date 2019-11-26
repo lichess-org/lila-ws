@@ -45,7 +45,7 @@ final class Controller @Inject() (
   }
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.simulExists(id) zip mongo.isTroll(user) map {
+    mongo.simulExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) => endpoint(
         name = "simul",
         behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
@@ -59,7 +59,7 @@ final class Controller @Inject() (
   }
 
   def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.tourExists(id) zip mongo.isTroll(user) map {
+    mongo.tourExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) => endpoint(
         name = "tour",
         behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
@@ -73,7 +73,7 @@ final class Controller @Inject() (
   }
 
   def study(id: Study.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.studyExistsFor(id, user) zip mongo.isTroll(user) map {
+    mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map {
       case (true, isTroll) => endpoint(
         name = "study",
         behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
@@ -87,7 +87,7 @@ final class Controller @Inject() (
   }
 
   def roundWatch(id: Game.Id, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.gameExists(id) zip mongo.isTroll(user) map {
+    mongo.gameExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) =>
         val userTv = req queryParameter "userTv" map UserTv.apply
         userTv foreach { tv =>
@@ -106,7 +106,7 @@ final class Controller @Inject() (
   }
 
   def roundPlay(id: Game.FullId, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
-    mongo.player(id, user) zip mongo.isTroll(user) map {
+    mongo.player(id, user) zip mongo.troll.is(user) map {
       case (Some(player), isTroll) => endpoint(
         name = "round/play",
         behavior = RoundClientActor.start(
