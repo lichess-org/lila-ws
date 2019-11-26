@@ -29,5 +29,5 @@ final class EventBus[Event, Channel, Subscriber](
     }
 
   def size = entries.size
-  def sizeOf(channel: Channel) = Option(entries.get(channel)).fold(0)(_.size)
+  def sizeOf(channel: Channel) = Option(entries get channel).fold(0)(_.size)
 }

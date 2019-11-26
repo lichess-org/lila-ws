@@ -10,6 +10,7 @@ import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ DefaultDB, MongoConnection, MongoDriver, ReadConcern }
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext.parasitic
 import scala.util.{ Try, Success }
 
 @Singleton
@@ -20,8 +21,8 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
   private val parsedUri = MongoConnection.parseURI(uri)
   private val connection = Future.fromTry(parsedUri.flatMap(driver.connection(_, true)))
 
-  private def db: Future[DefaultDB] = connection.flatMap(_.database("lichess"))
-  private def collNamed(name: String) = db.map(_.collection(name))
+  private def db: Future[DefaultDB] = connection.flatMap(_ database "lichess")
+  private def collNamed(name: String) = db.map(_ collection name)(parasitic)
   def securityColl = collNamed("security")
   def userColl = collNamed("user4")
   def coachColl = collNamed("coach")
@@ -48,15 +49,15 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
   def gameExists(id: Game.Id): Future[Boolean] =
     gameCache getIfPresent id match {
       case None => gameColl flatMap idExists(id.value)
-      case Some(entry) => entry.map(_.isDefined)
+      case Some(entry) => entry.map(_.isDefined)(parasitic)
     }
 
   def player(fullId: Game.FullId, user: Option[User]): Future[Option[Game.RoundPlayer]] =
-    gameCache get fullId.gameId map {
+    gameCache.get(fullId.gameId).map {
       _ flatMap {
         _.player(fullId.playerId, user.map(_.id))
       }
-    }
+    }(parasitic)
 
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] =
     Scaffeine()
@@ -66,7 +67,7 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
           _.find(
             selector = BSONDocument("_id" -> id.value),
             projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
-          ).one[BSONDocument] map { docOpt =>
+          ).one[BSONDocument].map { docOpt =>
               for {
                 doc <- docOpt
                 playerIds <- doc.getAsOpt[String]("is")
@@ -77,7 +78,7 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
                 )
                 tourId = doc.getAsOpt[Tour.ID]("tid")
               } yield Game.Round(id, players, tourId)
-            }
+            }(parasitic)
         }
       }
 
@@ -164,7 +165,7 @@ final class Mongo @Inject() (config: Config)(implicit executionContext: Executio
       skip = 0,
       hint = None,
       readConcern = ReadConcern.Local
-    ).map(0 < _)
+    ).map(0 < _)(parasitic)
 
   private def filterIds(ids: Iterable[String])(coll: BSONCollection): Future[Set[String]] =
     coll.distinct[String, Set](
