@@ -2,8 +2,6 @@ package lila.ws
 package util
 
 import java.security.SecureRandom
-import util.RequestHeader
-import scala.util.Try
 
 object Util {
 

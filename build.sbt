@@ -39,6 +39,8 @@ scalacOptions ++= Seq(
   "-language:implicitConversions",
   "-feature",
   "-deprecation",
+  "-Wdead-code",
+  "-Xlint:unused",
   "-Xfatal-warnings"
 )
 

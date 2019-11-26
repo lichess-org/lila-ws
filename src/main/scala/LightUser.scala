@@ -2,7 +2,6 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import javax.inject._
-import play.api.libs.json.{ Json, OWrites }
 import reactivemongo.api.bson._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }

@@ -2,11 +2,6 @@ package lila.ws
 package ipc
 
 import chess.Color
-import chess.format.{ FEN, Uci }
-import play.api.libs.json._
-import scala.util.Try
-
-import lila.ws.util.Util._
 
 sealed trait LilaOut
 

@@ -2,7 +2,6 @@ package lila.ws
 
 import javax.inject._
 import org.joda.time.DateTime
-import util.RequestHeader
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
 import reactivemongo.api.bson._

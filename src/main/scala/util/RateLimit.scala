@@ -1,7 +1,6 @@
 package lila.ws
 
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.duration.FiniteDuration
 
 final class RateLimit(
     maxCredits: Int,
@@ -40,8 +39,6 @@ object RateLimit {
 
   type Charge = Cost => Unit
   type Cost = Int
-
-  private type ClearAt = Long
 
   private def nowMillis = System.currentTimeMillis()
 

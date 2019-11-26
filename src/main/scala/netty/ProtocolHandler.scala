@@ -2,17 +2,14 @@ package lila.ws
 package netty
 
 import io.netty.channel._
-import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.http.websocketx._
 import io.netty.handler.codec.TooLongFrameException
 import io.netty.util.AttributeKey
 import java.io.IOException
-// import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import akka.actor.typed.ActorRef
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
-import java.net.InetSocketAddress
 import scala.concurrent.{ Future, Promise, ExecutionContext }
 
 private final class ProtocolHandler(
@@ -44,7 +41,7 @@ private final class ProtocolHandler(
         ) foreach {
             case Left(status) =>
               terminateConnection(ctx.channel)
-              promise failure new Exception("Router refused the connection")
+              promise failure new Exception(s"Router refused the connection: $status")
             case Right(client) => connectActorToChannel(client, ctx.channel, promise)
           }
       case _ =>
@@ -88,23 +85,23 @@ private final class ProtocolHandler(
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = cause match {
     // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
     // sending/receiving the response.
-    case e: IOException =>
+    case _: IOException =>
       Monitor.websocketError("io")
       ctx.channel.close()
-    case e: WebSocketHandshakeException =>
+    case _: WebSocketHandshakeException =>
       Monitor.websocketError("handshake")
       ctx.channel.close()
     case e: CorruptedWebSocketFrameException if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
       Monitor.websocketError("frameLength")
-    case e: CorruptedWebSocketFrameException =>
+    case _: CorruptedWebSocketFrameException =>
       Monitor.websocketError("corrupted")
-    case e: TooLongFrameException =>
+    case _: TooLongFrameException =>
       Monitor.websocketError("uriTooLong")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
     case e: IllegalArgumentException if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
       Monitor.websocketError("headerIllegalChar")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
-    case e =>
+    case _ =>
       Monitor.websocketError("other")
       super.exceptionCaught(ctx, cause)
   }

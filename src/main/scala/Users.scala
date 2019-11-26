@@ -32,7 +32,7 @@ final class Users @Inject() (lila: Lila)(implicit scheduler: Scheduler, ec: Exec
     })
 
   def disconnect(user: User, client: Client): Unit =
-    users.computeIfPresent(user.id, (id, clients) => {
+    users.computeIfPresent(user.id, (_, clients) => {
       val newClients = clients - client
       if (newClients.isEmpty) {
         disconnects add user.id

@@ -4,6 +4,7 @@ import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.google.inject.{ AbstractModule, Guice, Provides }
 import com.typesafe.config.{ Config, ConfigFactory }
 import javax.inject._
+import scala.annotation.unused
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -24,11 +25,8 @@ object Boot extends App {
 @Singleton
 final class LilaWsServer @Inject() (
     nettyServer: netty.NettyServer,
-    lila: Lila,
-    handlers: LilaHandler, // must eagerly instanciate!
+    @unused handlers: LilaHandler, // must eagerly instanciate!
     monitor: Monitor,
-    lobby: Lobby,
-    roundCrowd: RoundCrowd,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
 

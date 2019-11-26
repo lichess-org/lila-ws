@@ -1,9 +1,7 @@
 package lila.ws
 
-import akka.actor.typed.Scheduler
 import javax.inject._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 
 import ipc.ClientIn.LobbyPong
 import ipc.LilaIn
@@ -12,7 +10,7 @@ import ipc.LilaIn
 final class Lobby @Inject() (
     lila: Lila,
     groupedWithin: GroupedWithin
-)(implicit scheduler: Scheduler, ec: ExecutionContext) {
+) {
 
   private val lilaIn = lila.emit.lobby
 

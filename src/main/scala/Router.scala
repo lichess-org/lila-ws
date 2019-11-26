@@ -18,7 +18,7 @@ final class Router @Inject() (controller: Controller) {
       case Array("simul", id, "socket", _) => controller.simul(id, req, emit)
       case Array("tournament", id, "socket", _) => controller.tournament(id, req, emit)
       case Array("study", id, "socket", _) => controller.study(id, req, emit)
-      case Array("watch", id, color, _) => controller.roundWatch(Game.Id(id), req, emit)
+      case Array("watch", id, _, _) => controller.roundWatch(Game.Id(id), req, emit)
       case Array("play", id, _) => controller.roundPlay(Game.FullId(id), req, emit)
       case Array("challenge", id, "socket", _) => controller.challenge(Challenge.Id(id), req, emit)
       case _ => Future successful Left(HttpResponseStatus.NOT_FOUND)

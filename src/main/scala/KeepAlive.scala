@@ -6,7 +6,6 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import ipc._
-import util.Util.nowSeconds
 
 @Singleton
 final class KeepAlive @Inject() (lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext) {

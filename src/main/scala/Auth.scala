@@ -9,8 +9,6 @@ import util.RequestHeader
 @Singleton
 final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
-  import Mongo._
-
   def apply(req: RequestHeader): Future[Option[User]] =
     if (req.flag contains Flag.api) Future successful None
     else sessionIdFromReq(req) match {

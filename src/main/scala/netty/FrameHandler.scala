@@ -1,7 +1,6 @@
 package lila.ws
 package netty
 
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import com.typesafe.scalalogging.Logger
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler

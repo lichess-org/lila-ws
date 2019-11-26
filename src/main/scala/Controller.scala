@@ -1,6 +1,5 @@
 package lila.ws
 
-import akka.actor.typed.{ ActorSystem, Behavior }
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -16,10 +15,7 @@ final class Controller @Inject() (
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(implicit
-    ec: ExecutionContext,
-    system: ActorSystem[Clients.Control]
-) {
+)(implicit ec: ExecutionContext) {
 
   import Controller._
   import ClientActor.{ Deps, Req }

@@ -1,7 +1,7 @@
 package lila.ws
 
 import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
-import akka.actor.typed.{ ActorRef, Behavior, PostStop }
+import akka.actor.typed.Behavior
 import com.typesafe.scalalogging.Logger
 
 import ipc._
@@ -46,7 +46,6 @@ object ClientActor {
 
   def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
 
-    import state._
     import deps._
 
     msg match {

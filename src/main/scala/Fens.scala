@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.ActorRef
 import chess.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject._
 
 import ipc._
 

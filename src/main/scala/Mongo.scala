@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import com.typesafe.config.Config
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ Cursor, DefaultDB, MongoConnection, MongoDriver, ReadConcern }
+import reactivemongo.api.{ DefaultDB, MongoConnection, MongoDriver, ReadConcern }
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Try, Success }

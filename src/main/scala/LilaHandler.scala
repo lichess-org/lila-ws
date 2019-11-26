@@ -1,9 +1,8 @@
 package lila.ws
 
 import com.typesafe.scalalogging.Logger
-import ipc.LilaOut._
 import javax.inject._
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.ExecutionContext
 
 import ipc._
 
@@ -13,7 +12,6 @@ final class LilaHandler @Inject() (
     users: Users,
     roomCrowd: RoomCrowd,
     roundCrowd: RoundCrowd,
-    lobby: Lobby,
     mongo: Mongo
 )(implicit ec: ExecutionContext) {
 
