@@ -45,13 +45,12 @@ object Fens {
         watched.clients foreach { _ ! msg }
         watched.copy(position = Some(Position(lastUci, fen)))
       }
-      case _ =>
-        watched
+      case _ => watched
     })
   }
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...
-  private val MoveRegex = """uci":"(\w+)".+fen":"([^"]+)""".r.unanchored
+  private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
 
   def size = games.size
 }

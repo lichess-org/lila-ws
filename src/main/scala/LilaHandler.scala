@@ -91,7 +91,7 @@ final class LilaHandler @Inject() (
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
-        if (tpe == "move") Fens.move(gameId, data)
+        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) => publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
       case RoundGone(fullId, gone) => publish(_ room RoomId(fullId.gameId), ClientIn.RoundGone(fullId.playerId, gone))
