@@ -8,24 +8,19 @@ import javax.inject._
 import ipc._
 
 /* Manages subscriptions to FEN updates */
-@Singleton
-final class Fens @Inject() (lila: Lila) {
+object Fens {
 
-  import Fens._
+  case class Position(lastUci: Uci, fen: FEN)
+  case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 
   private val games = new ConcurrentHashMap[Game.Id, Watched](1024)
-
-  private val lilaIn = lila.emit.site
 
   // client starts watching
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =
     gameIds foreach { gameId =>
       games.compute(gameId, {
-        case (_, null) =>
-          lilaIn(LilaIn.Watch(gameId))
-          Watched(None, Set(client))
-        case (_, Watched(position, clients)) =>
-          Watched(position, clients + client)
+        case (_, null) => Watched(None, Set(client))
+        case (_, Watched(pos, clients)) => Watched(pos, clients + client)
       }).position foreach {
         case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
       }
@@ -36,26 +31,25 @@ final class Fens @Inject() (lila: Lila) {
     gameIds foreach { gameId =>
       games.computeIfPresent(gameId, (_, watched) => {
         val newClients = watched.clients - client
-        if (newClients.isEmpty) {
-          lilaIn(LilaIn.Unwatch(gameId))
-          null
-        }
+        if (newClients.isEmpty) null
         else watched.copy(clients = newClients)
       })
     }
 
-  // move comes from the server
-  def move(gameId: Game.Id, lastUci: Uci, fen: FEN): Unit = {
-    val watched = games.computeIfPresent(gameId, (_, watched) =>
-      watched.copy(position = Some(Position(lastUci, fen))))
-    if (watched != null) {
-      val msg = ClientIn.Fen(gameId, lastUci, fen)
-      watched.clients foreach { _ ! msg }
-    }
+  // move coming from the server
+  def move(gameId: Game.Id, json: JsonString): Unit = {
+    games.computeIfPresent(gameId, (_, watched) => json.value match {
+      case MoveRegex(uciS, fenS) => Uci(uciS).fold(watched) { lastUci =>
+        val fen = FEN(fenS)
+        val msg = ClientIn.Fen(gameId, lastUci, fen)
+        watched.clients foreach { _ ! msg }
+        watched.copy(position = Some(Position(lastUci, fen)))
+      }
+      case _ =>
+        watched
+    })
   }
-}
 
-object Fens {
-  case class Position(lastUci: Uci, fen: FEN)
-  case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
+  // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...
+  private val MoveRegex = """uci":"(\w+)".+fen":"([^"]+)""".r.unanchored
 }

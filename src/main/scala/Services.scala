@@ -10,7 +10,6 @@ final class Services @Inject() (
     lilaRedis: Lila,
     groupedWithin: GroupedWithin,
     val users: Users,
-    val fens: Fens,
     val roomCrowd: RoomCrowd,
     val roundCrowd: RoundCrowd,
     val keepAlive: KeepAlive,

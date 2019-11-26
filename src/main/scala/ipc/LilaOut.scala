@@ -25,7 +25,6 @@ object LilaOut {
 
   // site
 
-  case class Move(game: Game.Id, lastUci: Uci, fen: FEN) extends SiteOut
   case class Mlat(millis: Double) extends SiteOut
   case class TellFlag(flag: Flag, json: JsonString) extends SiteOut
   case class TellUsers(users: Iterable[User.ID], json: JsonString) extends SiteOut
@@ -87,10 +86,6 @@ object LilaOut {
     val parts = str.split(" ", 2)
     val args = parts.lift(1) getOrElse ""
     parts(0) match {
-
-      case "move" => get(args, 3) {
-        case Array(game, lastUci, fen) => Uci(lastUci) map { Move(Game.Id(game), _, FEN(fen)) }
-      }
 
       case "mlat" => parseDoubleOption(args) map Mlat.apply
 

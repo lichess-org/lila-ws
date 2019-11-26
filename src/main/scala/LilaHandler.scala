@@ -10,7 +10,6 @@ import ipc._
 @Singleton
 final class LilaHandler @Inject() (
     lila: Lila,
-    fens: Fens,
     users: Users,
     roomCrowd: RoomCrowd,
     roundCrowd: RoundCrowd,
@@ -29,8 +28,6 @@ final class LilaHandler @Inject() (
     case TellFlag(flag, payload) => publish(_ flag flag, ClientIn.Payload(payload))
     case TellSri(sri, payload) => publish(_ sri sri, ClientIn.Payload(payload))
     case TellAll(payload) => publish(_.all, ClientIn.Payload(payload))
-
-    case Move(gameId, lastUci, fen) => fens.move(gameId, lastUci, fen)
 
     case TellUsers(us, json) => users.tellMany(us, ClientIn.Payload(json))
     case DisconnectUser(user) => users.kick(user)
@@ -96,6 +93,7 @@ final class LilaHandler @Inject() (
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
         publish(_ room gameId, versioned)
+        if (tpe == "move") Fens.move(gameId, data)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) => publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
       case RoundGone(fullId, gone) => publish(_ room RoomId(fullId.gameId), ClientIn.RoundGone(fullId.playerId, gone))

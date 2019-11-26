@@ -24,7 +24,7 @@ object ClientActor {
     import deps._
     LilaWsServer.connections.decrementAndGet
     req.user foreach { users.disconnect(_, ctx.self) }
-    if (state.watchedGames.nonEmpty) fens.unwatch(state.watchedGames, ctx.self)
+    if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
   }
 
@@ -56,7 +56,7 @@ object ClientActor {
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
-        fens.watch(gameIds, ctx.self)
+        Fens.watch(gameIds, ctx.self)
         state.copy(watchedGames = state.watchedGames ++ gameIds)
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
@@ -145,7 +145,6 @@ object ClientActor {
   ) {
     def lilaIn = services.lila
     def users = services.users
-    def fens = services.fens
     def roomCrowd = services.roomCrowd
     def roundCrowd = services.roundCrowd
     def keepAlive = services.keepAlive
