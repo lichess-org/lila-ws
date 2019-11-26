@@ -46,4 +46,4 @@ sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
 
-javaOptions in reStart += "-Xmx512m"
+javaOptions in reStart += "-Xmx256m"
