@@ -152,7 +152,7 @@ object RoundClientActor {
         deps.req.user map { Palantir.respondToPing(state.room.id, _) } foreach clientIn
         Behaviors.same
 
-      case UserTvNewGame(userId) =>
+      case RoundUserTvNewGame(userId) =>
         if (state.userTv.exists(_.value == userId)) clientIn(ClientIn.Resync)
         Behaviors.same
 
@@ -174,6 +174,4 @@ object RoundClientActor {
       deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
       Behaviors.same
   }
-
-  case class UserTvNewGame(userId: User.ID) extends ClientMsg
 }
