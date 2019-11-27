@@ -77,7 +77,7 @@ object Monitor {
   val usersSize = Kamon.gauge("users.size").withoutTags
   val watchSize = Kamon.gauge("watch.size").withoutTags
 
-  val palantirChannels = Kamon.gauge("crowd.channels.size").withoutTags
+  val palantirChannels = Kamon.gauge("palantir.channels.size").withoutTags
 
   val busSize = Kamon.gauge("bus.size").withoutTags
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags
