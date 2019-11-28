@@ -1,14 +1,13 @@
 package lila.ws
+package util
 
 import akka.actor.typed.Scheduler
 import akka.actor.Cancellable
-import javax.inject._
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 
-@Singleton
-final class GroupedWithin @Inject() ()(implicit scheduler: Scheduler, ec: ExecutionContext) {
+final class GroupedWithin()(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     new GroupedWithinStage[A](nb, interval, emit)

@@ -18,7 +18,6 @@ libraryDependencies += "org.reactivemongo" %% "reactivemongo" % reactivemongoVer
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-linux-x86-64" % "runtime" classifier "linux-x86_64"
 libraryDependencies += "io.lettuce" % "lettuce-core" % "5.2.1.RELEASE"
-libraryDependencies += "com.google.inject" % "guice" % "4.2.2"
 libraryDependencies += "io.netty" % "netty-all" % nettyVersion
 libraryDependencies += "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.26"
@@ -32,6 +31,7 @@ libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.0"
 libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion
 libraryDependencies += "io.kamon" %% "kamon-influxdb" % "2.0.0"
 libraryDependencies += "io.kamon" %% "kamon-system-metrics" % "2.0.0"
+libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.3.3" % "provided"
 
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
@@ -43,6 +43,8 @@ scalacOptions ++= Seq(
   "-Xlint:unused",
   "-Xfatal-warnings"
 )
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 sources in (Compile, doc) := Seq.empty
 

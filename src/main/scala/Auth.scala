@@ -1,13 +1,11 @@
 package lila.ws
 
-import javax.inject._
 import reactivemongo.api.bson._
 import scala.concurrent.{ ExecutionContext, Future }
 
 import util.RequestHeader
 
-@Singleton
-final class Auth @Inject() (mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
   def apply(req: RequestHeader): Future[Option[User]] =
     if (req.flag contains Flag.api) Future successful None

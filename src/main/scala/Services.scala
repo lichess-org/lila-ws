@@ -1,14 +1,12 @@
 package lila.ws
 
-import javax.inject._
 import scala.concurrent.duration._
 
 import ipc.LilaIn
 
-@Singleton
-final class Services @Inject() (
+final class Services(
     lilaRedis: Lila,
-    groupedWithin: GroupedWithin,
+    groupedWithin: util.GroupedWithin,
     val users: Users,
     val roomCrowd: RoomCrowd,
     val roundCrowd: RoundCrowd,

@@ -1,13 +1,11 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import javax.inject._
 import reactivemongo.api.bson._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-@Singleton
-final class LightUserApi @Inject() (mongo: Mongo)(implicit executionContext: ExecutionContext) {
+final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionContext) {
 
   type TitleName = String
 

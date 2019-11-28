@@ -1,13 +1,11 @@
 package lila.ws
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import javax.inject._
 import scala.concurrent.Future
 
 import util.RequestHeader
 
-@Singleton
-final class Router @Inject() (controller: Controller) {
+final class Router(controller: Controller) {
 
   def apply(req: RequestHeader, emit: ClientEmit): Controller.Response =
     req.path drop 1 split '/' match {

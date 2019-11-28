@@ -1,16 +1,14 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import ipc._
 
-@Singleton
-final class RoomCrowd @Inject() (
+final class RoomCrowd(
     json: CrowdJson,
-    groupedWithin: GroupedWithin
+    groupedWithin: util.GroupedWithin
 )(implicit ec: ExecutionContext) {
 
   import RoomCrowd._

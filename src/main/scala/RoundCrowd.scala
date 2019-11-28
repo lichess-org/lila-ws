@@ -2,17 +2,15 @@ package lila.ws
 
 import chess.Color
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import ipc._
 
-@Singleton
-final class RoundCrowd @Inject() (
+final class RoundCrowd(
     lila: Lila,
     json: CrowdJson,
-    groupedWithin: GroupedWithin
+    groupedWithin: util.GroupedWithin
 )(implicit ec: ExecutionContext) {
 
   import RoundCrowd._

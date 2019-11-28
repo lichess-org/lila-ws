@@ -3,7 +3,6 @@ package lila.ws
 import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
-import javax.inject._
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
@@ -13,8 +12,7 @@ import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Try, Success }
 
-@Singleton
-final class Mongo @Inject() (config: Config)(implicit executionContext: ExecutionContext) {
+final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
   private val uri = config.getString("mongo.uri")
   private val driver = MongoDriver()

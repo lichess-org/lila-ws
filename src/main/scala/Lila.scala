@@ -4,16 +4,12 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
 
 import ipc._
 
-@Singleton
-final class Lila @Inject() (
-    config: Config
-)(implicit ec: ExecutionContext) {
+final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   import Lila._
 

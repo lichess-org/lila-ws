@@ -3,14 +3,12 @@ package lila.ws
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import util.RequestHeader
 
-@Singleton
-final class Controller @Inject() (
+final class Controller(
     config: Config,
     mongo: Mongo,
     auth: Auth,

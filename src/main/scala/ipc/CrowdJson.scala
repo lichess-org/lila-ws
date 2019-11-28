@@ -2,15 +2,13 @@ package lila.ws
 package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import javax.inject._
 import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ Future, ExecutionContext }
 
 import lila.ws.util.LilaJsObject.augment
 
-@Singleton
-final class CrowdJson @Inject() (
+final class CrowdJson(
     mongo: Mongo,
     lightUserApi: LightUserApi
 )(implicit ec: ExecutionContext) {

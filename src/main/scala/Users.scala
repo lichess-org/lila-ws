@@ -2,15 +2,13 @@ package lila.ws
 
 import akka.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
 import ipc._
 
-@Singleton
-final class Users @Inject() (lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContext) {
+final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   private val users = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)

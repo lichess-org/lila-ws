@@ -1,13 +1,11 @@
 package lila.ws
 
 import com.typesafe.scalalogging.Logger
-import javax.inject._
 import scala.concurrent.ExecutionContext
 
 import ipc._
 
-@Singleton
-final class LilaHandler @Inject() (
+final class LilaHandler(
     lila: Lila,
     users: Users,
     roomCrowd: RoomCrowd,

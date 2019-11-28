@@ -2,14 +2,12 @@ package lila.ws
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
-import javax.inject._
 import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-@Singleton
-final class Monitor @Inject() (
+final class Monitor(
     config: Config,
     services: Services
 )(implicit scheduler: akka.actor.typed.Scheduler, ec: ExecutionContext) {

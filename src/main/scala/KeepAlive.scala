@@ -1,14 +1,12 @@
 package lila.ws
 
 import akka.actor.typed.Scheduler
-import javax.inject._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 import ipc._
 
-@Singleton
-final class KeepAlive @Inject() (lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext) {
+final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext) {
 
   import KeepAlive._
 

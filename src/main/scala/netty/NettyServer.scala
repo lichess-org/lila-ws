@@ -10,11 +10,9 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
-import javax.inject._
 import scala.concurrent.ExecutionContext
 
-@Singleton
-final class NettyServer @Inject() (
+final class NettyServer(
     clients: ClientSystem,
     router: Router,
     config: Config

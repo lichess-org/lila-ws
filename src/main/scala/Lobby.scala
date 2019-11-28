@@ -1,15 +1,13 @@
 package lila.ws
 
-import javax.inject._
 import scala.concurrent.duration._
 
 import ipc.ClientIn.LobbyPong
 import ipc.LilaIn
 
-@Singleton
-final class Lobby @Inject() (
+final class Lobby(
     lila: Lila,
-    groupedWithin: GroupedWithin
+    groupedWithin: util.GroupedWithin
 ) {
 
   private val lilaIn = lila.emit.lobby
