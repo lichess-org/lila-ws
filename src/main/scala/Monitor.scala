@@ -85,7 +85,7 @@ object Monitor {
 
   def websocketError(name: String) = Kamon.counter("websocket.error").withTag("name", name).increment()
 
-  def rateLimit(name: String) = Kamon.counter(s"ratelimit")
+  def rateLimit(name: String) = Kamon.counter("ratelimit")
     .withTag("name", name)
     .increment()
 
