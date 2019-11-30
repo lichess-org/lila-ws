@@ -22,10 +22,10 @@ libraryDependencies += "io.netty" % "netty-all" % nettyVersion
 libraryDependencies += "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
 libraryDependencies += "org.lichess" %% "scalachess" % "9.0.26"
 libraryDependencies += "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 libraryDependencies += "joda-time" % "joda-time" % "2.10.5"
 libraryDependencies += "com.github.blemale" %% "scaffeine" % "3.1.0" % "compile"
-libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.0"
 libraryDependencies += "io.kamon" %% "kamon-core" % kamonVersion
@@ -43,8 +43,6 @@ scalacOptions ++= Seq(
   "-Xlint:unused",
   "-Xfatal-warnings"
 )
-
-Global / onChangedBuildSource := ReloadOnSourceChanges
 
 sources in (Compile, doc) := Seq.empty
 
