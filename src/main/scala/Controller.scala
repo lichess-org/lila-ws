@@ -110,7 +110,7 @@ final class Controller(
         behavior = RoundClientActor.start(
           RoomActor.State(RoomId(id.gameId), isTroll), Some(player), None, fromVersion(req)
         ) { Deps(emit, Req(req, sri, user), services) },
-        credits = 50,
+        credits = 100,
         interval = 20.seconds
       )
       case _ => notFound
