@@ -39,12 +39,12 @@ final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContex
       else newClients
     })
 
-  def tellOne(userId: User.ID, payload: ClientIn): Unit =
+  def tellOne(userId: User.ID, payload: ClientMsg): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! payload }
     }
 
-  def tellMany(userIds: Iterable[User.ID], payload: ClientIn): Unit =
+  def tellMany(userIds: Iterable[User.ID], payload: ClientMsg): Unit =
     userIds foreach { tellOne(_, payload) }
 
   def kick(userId: User.ID): Unit =

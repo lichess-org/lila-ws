@@ -88,7 +88,7 @@ object ClientIn {
     def write = payload.write
   }
 
-  case class OnlyFor(endpoint: OnlyFor.Endpoint, payload: Payload) extends ClientIn {
+  case class OnlyFor(endpoint: OnlyFor.Endpoint, payload: Payload) extends ClientMsg {
     def write = payload.write
   }
   object OnlyFor {
