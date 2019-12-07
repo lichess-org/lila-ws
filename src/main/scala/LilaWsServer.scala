@@ -44,7 +44,7 @@ final class LilaWsServer(
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
 
-  def start: Unit = {
+  def start(): Unit = {
 
     monitor.start
 

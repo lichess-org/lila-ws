@@ -20,7 +20,7 @@ final class NettyServer(
 
   private val logger = Logger(getClass)
 
-  def start: Unit = {
+  def start(): Unit = {
 
     logger.info("Start")
 

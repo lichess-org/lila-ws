@@ -143,12 +143,12 @@ object ClientIn {
         "children" -> JsArray()
       ).add("opening" -> opening)
         .add("check" -> check)
-        .add("drops", drops.map { drops =>
+        .add("drops" -> drops.map { drops =>
           JsString(drops.map(_.key).mkString)
         })
-        .add("crazy", crazyData)
+        .add("crazy" -> crazyData)
     )
-      .add("ch", chapterId))
+      .add("ch" -> chapterId))
   }
 
   case class Dests(
@@ -161,7 +161,7 @@ object ClientIn {
       "dests" -> dests,
       "path" -> path
     ).add("opening" -> opening)
-      .add("ch", chapterId))
+      .add("ch" -> chapterId))
   }
 
   case class Ack(id: Option[Int]) extends ClientIn {

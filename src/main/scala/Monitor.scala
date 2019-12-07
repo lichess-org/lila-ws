@@ -14,7 +14,7 @@ final class Monitor(
 
   import Monitor._
 
-  def start: Unit = {
+  def start(): Unit = {
 
     val version = System.getProperty("java.version")
     val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
@@ -24,10 +24,7 @@ final class Monitor(
     logger.info(s"lila-ws netty epoll=$useEpoll kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
-    if (useKamon) {
-      logger.info("Kamon is enabled")
-      kamon.Kamon.loadModules()
-    }
+    if (useKamon) kamon.Kamon.loadModules()
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
   }

@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
 .enablePlugins(JavaAppPackaging)
 
 val akkaVersion = "2.6.0"
-val kamonVersion= "2.0.1"
+val kamonVersion= "2.0.2"
 val reactivemongoVersion = "0.19.2"
 val nettyVersion = "4.1.43.Final"
 
@@ -39,8 +39,9 @@ scalacOptions ++= Seq(
   "-language:implicitConversions",
   "-feature",
   "-deprecation",
+  "-unchecked",
   "-Wdead-code",
-  "-Xlint:unused",
+  "-Xlint:unused,inaccessible,nullary-unit,adapted-args,infer-any,missing-interpolator,eta-zero",
   "-Xfatal-warnings"
 )
 

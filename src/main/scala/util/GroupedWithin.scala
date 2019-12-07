@@ -28,9 +28,9 @@ final class GroupedWithinStage[A](
     if (buffer.size >= nb) unsafeFlush
   }
 
-  private def flush: Unit = synchronized { unsafeFlush }
+  private def flush(): Unit = synchronized { unsafeFlush }
 
-  private def unsafeFlush: Unit = {
+  private def unsafeFlush(): Unit = {
     if (buffer.nonEmpty) {
       emit(buffer.result)
       buffer.clear

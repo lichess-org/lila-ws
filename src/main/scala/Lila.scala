@@ -76,7 +76,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     }
   })
 
-  def close: Unit = {
+  def close(): Unit = {
     connIn.close()
     connOut.close()
   }
