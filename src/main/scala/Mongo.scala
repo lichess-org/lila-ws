@@ -70,7 +70,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
               playerIds <- doc.getAsOpt[String]("is")
               users = doc.getAsOpt[List[String]]("us") getOrElse Nil
               players = Color.Map(
-                Game.Player(Game.PlayerId(playerIds take 4), users.headOption),
+                Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
               tourId = doc.getAsOpt[Tour.ID]("tid")
