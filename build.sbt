@@ -7,7 +7,7 @@ maintainer := "lichess.org"
 lazy val root = (project in file("."))
 .enablePlugins(JavaAppPackaging)
 
-val akkaVersion = "2.6.0"
+val akkaVersion = "2.6.1"
 val kamonVersion= "2.0.2"
 val reactivemongoVersion = "0.19.2"
 val nettyVersion = "4.1.43.Final"
