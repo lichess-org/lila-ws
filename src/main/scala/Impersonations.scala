@@ -16,4 +16,8 @@ object Impersonations {
   }
 
   def get(modId: ModId): Option[User.ID] = all get modId
+
+  def reset() = {
+    all = Map.empty
+  }
 }

@@ -103,6 +103,7 @@ final class LilaHandler(
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+        Impersonations.reset()
       case msg => roomHandler(msg)
     })
   }
