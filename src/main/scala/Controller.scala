@@ -167,6 +167,7 @@ final class Controller(
       "capacitor://localhost", // capacitor (ios next)
       "http://localhost", // android
       "http://localhost:8080", // local dev
+      "http://localhost:9000", // lila dev
       "file://"
     )
 
