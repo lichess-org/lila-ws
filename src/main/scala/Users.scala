@@ -10,7 +10,7 @@ import ipc._
 
 final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
-  private val users = new ConcurrentHashMap[User.ID, Set[Client]](32768)
+  private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
 
   private val lilaIn = lila.emit.site
@@ -35,8 +35,7 @@ final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContex
       if (newClients.isEmpty) {
         disconnects add user.id
         null
-      }
-      else newClients
+      } else newClients
     })
 
   def tellOne(userId: User.ID, payload: ClientMsg): Unit =

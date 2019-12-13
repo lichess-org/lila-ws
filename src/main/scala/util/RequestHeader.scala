@@ -14,12 +14,13 @@ final class RequestHeader(uri: String, req: HttpHeaders, val ip: IpAddress) {
   def header(name: String): Option[String] =
     Option(req get name).filter(_.nonEmpty)
 
-  def cookie(name: String): Option[String] = for {
-    encoded <- header(HttpHeaders.Names.COOKIE)
-    cookies = ServerCookieDecoder.LAX decode encoded
-    cookie <- cookies.asScala.find(_.name contains name)
-    value <- Some(cookie.value).filter(_.nonEmpty)
-  } yield value
+  def cookie(name: String): Option[String] =
+    for {
+      encoded <- header(HttpHeaders.Names.COOKIE)
+      cookies = ServerCookieDecoder.LAX decode encoded
+      cookie <- cookies.asScala.find(_.name contains name)
+      value  <- Some(cookie.value).filter(_.nonEmpty)
+    } yield value
 
   def queryParameter(name: String): Option[String] =
     Option(query.parameters.get(name)).map(_ get 0).filter(_.nonEmpty)

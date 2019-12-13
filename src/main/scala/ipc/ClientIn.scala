@@ -38,11 +38,15 @@ object ClientIn {
   }
 
   case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
-    def write = cliMsg("fen", Json.obj(
-      "id" -> gameId.value,
-      "lm" -> lastUci,
-      "fen" -> fen
-    ))
+    def write =
+      cliMsg(
+        "fen",
+        Json.obj(
+          "id"  -> gameId.value,
+          "lm"  -> lastUci,
+          "fen" -> fen
+        )
+      )
   }
 
   case class Mlat(millis: Double) extends ClientIn {
@@ -69,7 +73,7 @@ object ClientIn {
   case class Payload(json: JsonString) extends ClientIn {
     def write = json.value
   }
-  def payload(js: JsValue) = Payload(JsonString(Json stringify js))
+  def payload(js: JsValue)                 = Payload(JsonString(Json stringify js))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
   case class Crowd(doc: JsObject) extends ClientIn {
@@ -78,10 +82,14 @@ object ClientIn {
   val emptyCrowd = Crowd(Json.obj())
 
   case class LobbyPairing(fullId: Game.FullId) extends ClientIn {
-    def write = cliMsg("redirect", Json.obj(
-      "id" -> fullId.value,
-      "url" -> s"/$fullId"
-    ))
+    def write =
+      cliMsg(
+        "redirect",
+        Json.obj(
+          "id"  -> fullId.value,
+          "url" -> s"/$fullId"
+        )
+      )
   }
 
   case class LobbyNonIdle(payload: Payload) extends ClientIn {
@@ -93,25 +101,33 @@ object ClientIn {
   }
   object OnlyFor {
     sealed trait Endpoint
-    case object Lobby extends Endpoint
+    case object Lobby           extends Endpoint
     case class Room(id: RoomId) extends Endpoint
   }
-  def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) = OnlyFor(select(OnlyFor), payload)
+  def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) =
+    OnlyFor(select(OnlyFor), payload)
 
   case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn {
-    lazy val write = cliMsg("tournamentReminder", Json.obj(
-      "id" -> tourId,
-      "name" -> tourName
-    ))
+    lazy val write = cliMsg(
+      "tournamentReminder",
+      Json.obj(
+        "id"   -> tourId,
+        "name" -> tourName
+      )
+    )
   }
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
 
   case class Opening(path: Path, opening: FullOpening) extends ClientIn {
-    def write = cliMsg("opening", Json.obj(
-      "path" -> path,
-      "opening" -> opening
-    ))
+    def write =
+      cliMsg(
+        "opening",
+        Json.obj(
+          "path"    -> path,
+          "opening" -> opening
+        )
+      )
   }
 
   case object StepFailure extends ClientIn {
@@ -131,24 +147,31 @@ object ClientIn {
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = cliMsg("node", Json.obj(
-      "path" -> path,
-      "node" -> Json.obj(
-        "ply" -> ply,
-        "fen" -> fen,
-        "id" -> id,
-        "uci" -> move.uci,
-        "san" -> move.san,
-        "dests" -> dests,
-        "children" -> JsArray()
-      ).add("opening" -> opening)
-        .add("check" -> check)
-        .add("drops" -> drops.map { drops =>
-          JsString(drops.map(_.key).mkString)
-        })
-        .add("crazy" -> crazyData)
-    )
-      .add("ch" -> chapterId))
+    def write =
+      cliMsg(
+        "node",
+        Json
+          .obj(
+            "path" -> path,
+            "node" -> Json
+              .obj(
+                "ply"      -> ply,
+                "fen"      -> fen,
+                "id"       -> id,
+                "uci"      -> move.uci,
+                "san"      -> move.san,
+                "dests"    -> dests,
+                "children" -> JsArray()
+              )
+              .add("opening" -> opening)
+              .add("check" -> check)
+              .add("drops" -> drops.map { drops =>
+                JsString(drops.map(_.key).mkString)
+              })
+              .add("crazy" -> crazyData)
+          )
+          .add("ch" -> chapterId)
+      )
   }
 
   case class Dests(
@@ -157,11 +180,17 @@ object ClientIn {
       opening: Option[chess.opening.FullOpening],
       chapterId: Option[ChapterId]
   ) extends ClientIn {
-    def write = cliMsg("dests", Json.obj(
-      "dests" -> dests,
-      "path" -> path
-    ).add("opening" -> opening)
-      .add("ch" -> chapterId))
+    def write =
+      cliMsg(
+        "dests",
+        Json
+          .obj(
+            "dests" -> dests,
+            "path"  -> path
+          )
+          .add("opening" -> opening)
+          .add("ch" -> chapterId)
+      )
   }
 
   case class Ack(id: Option[Int]) extends ClientIn {
@@ -174,9 +203,14 @@ object ClientIn {
   case class RoundGone(playerId: Game.PlayerId, v: Boolean) extends ClientIn {
     def write = cliMsg("gone", v)
   }
-  case class RoundVersioned(version: SocketVersion, flags: RoundEventFlags, tpe: String, data: JsonString) extends HasVersion {
-    val full = Payload(JsonString(cliMsg(tpe, data, version)))
-    lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
+  case class RoundVersioned(
+      version: SocketVersion,
+      flags: RoundEventFlags,
+      tpe: String,
+      data: JsonString
+  ) extends HasVersion {
+    val full         = Payload(JsonString(cliMsg(tpe, data, version)))
+    lazy val skip    = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   }
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
@@ -194,7 +228,7 @@ object ClientIn {
   private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
     s"""{"t":"$t","v":$version,"d":${data.value}}"""
-  private def cliMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
+  private def cliMsg(t: String, int: Int): String      = s"""{"t":"$t","d":$int}"""
   private def cliMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
-  private def cliMsg(t: String): String = s"""{"t":"$t"}"""
+  private def cliMsg(t: String): String                = s"""{"t":"$t"}"""
 }

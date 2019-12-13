@@ -10,29 +10,29 @@ import util.Util.nowSeconds
 
 object Boot extends App {
 
-  lazy val config: Config = ConfigFactory.load
-  lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
-  implicit def scheduler: Scheduler = clientSystem.scheduler
+  lazy val config: Config                         = ConfigFactory.load
+  lazy val clientSystem: ClientSystem             = ActorSystem(Clients.behavior, "clients")
+  implicit def scheduler: Scheduler               = clientSystem.scheduler
   implicit def executionContext: ExecutionContext = clientSystem.executionContext
 
   lazy val groupedWithin = wire[util.GroupedWithin]
-  lazy val lightUserApi = wire[LightUserApi]
-  lazy val lilaRedis = wire[Lila]
-  lazy val lilaHandlers = wire[LilaHandler]
-  lazy val roundCrowd = wire[RoundCrowd]
-  lazy val roomCrowd = wire[RoomCrowd]
-  lazy val crowdJson = wire[ipc.CrowdJson]
-  lazy val users = wire[Users]
-  lazy val keepAlive = wire[KeepAlive]
-  lazy val lobby = wire[Lobby]
-  lazy val services = wire[Services]
-  lazy val controller = wire[Controller]
-  lazy val router = wire[Router]
-  lazy val mongo = wire[Mongo]
-  lazy val seenAt = wire[SeenAtUpdate]
-  lazy val auth = wire[Auth]
-  lazy val nettyServer = wire[netty.NettyServer]
-  lazy val monitor = wire[Monitor]
+  lazy val lightUserApi  = wire[LightUserApi]
+  lazy val lilaRedis     = wire[Lila]
+  lazy val lilaHandlers  = wire[LilaHandler]
+  lazy val roundCrowd    = wire[RoundCrowd]
+  lazy val roomCrowd     = wire[RoomCrowd]
+  lazy val crowdJson     = wire[ipc.CrowdJson]
+  lazy val users         = wire[Users]
+  lazy val keepAlive     = wire[KeepAlive]
+  lazy val lobby         = wire[Lobby]
+  lazy val services      = wire[Services]
+  lazy val controller    = wire[Controller]
+  lazy val router        = wire[Router]
+  lazy val mongo         = wire[Mongo]
+  lazy val seenAt        = wire[SeenAtUpdate]
+  lazy val auth          = wire[Auth]
+  lazy val nettyServer   = wire[netty.NettyServer]
+  lazy val monitor       = wire[Monitor]
 
   wire[LilaWsServer].start
 }

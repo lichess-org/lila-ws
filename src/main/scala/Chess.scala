@@ -16,13 +16,15 @@ object Chess {
 
   def apply(req: ClientOut.AnaMove): ClientIn = Monitor.time(_.chessMoveTime) {
     try {
-      chess.Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion).toOption flatMap {
-        case (game, move) => game.pgnMoves.lastOption map { san =>
-          makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
-        }
+      chess
+        .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
+        .toOption flatMap {
+        case (game, move) =>
+          game.pgnMoves.lastOption map { san =>
+            makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
+          }
       } getOrElse ClientIn.StepFailure
-    }
-    catch {
+    } catch {
       case e: java.lang.ArrayIndexOutOfBoundsException =>
         logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
         ClientIn.StepFailure
@@ -32,12 +34,12 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn = Monitor.time(_.chessMoveTime) {
     try {
       chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
-        case (game, drop) => game.pgnMoves.lastOption map { san =>
-          makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
-        }
+        case (game, drop) =>
+          game.pgnMoves.lastOption map { san =>
+            makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
+          }
       } getOrElse ClientIn.StepFailure
-    }
-    catch {
+    } catch {
       case e: java.lang.ArrayIndexOutOfBoundsException =>
         logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
         ClientIn.StepFailure
@@ -48,7 +50,8 @@ object Chess {
     ClientIn.Dests(
       path = req.path,
       dests = {
-        if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty) initialDests
+        if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty)
+          initialDests
         else {
           val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
           if (sit.playable(false)) json.destString(sit.destinations) else ""
@@ -66,12 +69,16 @@ object Chess {
     if (Variant.openingSensibleVariants(req.variant))
       FullOpeningDB findByFen req.fen.value map {
         ClientIn.Opening(req.path, _)
-      }
-    else None
+      } else None
 
-  private def makeNode(game: chess.Game, move: Uci.WithSan, path: Path, chapterId: Option[ChapterId]): ClientIn.Node = {
+  private def makeNode(
+      game: chess.Game,
+      move: Uci.WithSan,
+      path: Path,
+      chapterId: Option[ChapterId]
+  ): ClientIn.Node = {
     val movable = game.situation playable false
-    val fen = chess.format.Forsyth >> game
+    val fen     = chess.format.Forsyth >> game
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
@@ -81,7 +88,8 @@ object Chess {
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
-        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant)) FullOpeningDB findByFen fen
+        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant))
+          FullOpeningDB findByFen fen
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
@@ -92,15 +100,27 @@ object Chess {
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
   object json {
-    implicit val fenWrite = Writes[FEN] { fen => JsString(fen.value) }
-    implicit val pathWrite = Writes[Path] { path => JsString(path.value) }
-    implicit val uciWrite = Writes[Uci] { uci => JsString(uci.uci) }
-    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite = Writes[Pos] { pos => JsString(pos.key) }
-    implicit val chapterIdWrite = Writes[ChapterId] { ch => JsString(ch.value) }
+    implicit val fenWrite = Writes[FEN] { fen =>
+      JsString(fen.value)
+    }
+    implicit val pathWrite = Writes[Path] { path =>
+      JsString(path.value)
+    }
+    implicit val uciWrite = Writes[Uci] { uci =>
+      JsString(uci.uci)
+    }
+    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp =>
+      JsString(ucp.toString)
+    }
+    implicit val posWrite = Writes[Pos] { pos =>
+      JsString(pos.key)
+    }
+    implicit val chapterIdWrite = Writes[ChapterId] { ch =>
+      JsString(ch.value)
+    }
     implicit val openingWrite = Writes[FullOpening] { o =>
       Json.obj(
-        "eco" -> o.eco,
+        "eco"  -> o.eco,
         "name" -> o.name
       )
     }
@@ -108,7 +128,7 @@ object Chess {
       JsString(destString(dests))
     }
     def destString(dests: Map[Pos, List[Pos]]): String = {
-      val sb = new java.lang.StringBuilder(80)
+      val sb    = new java.lang.StringBuilder(80)
       var first = true
       dests foreach {
         case (orig, dests) =>

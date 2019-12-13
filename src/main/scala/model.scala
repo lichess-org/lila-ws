@@ -22,7 +22,7 @@ object Game {
     def full(playerId: PlayerId) = FullId(s"$value$playerId")
   }
   case class FullId(value: String) extends AnyVal with StringValue {
-    def gameId = Id(value take 8)
+    def gameId   = Id(value take 8)
     def playerId = PlayerId(value drop 8)
   }
   case class PlayerId(value: String) extends AnyVal with StringValue
@@ -32,9 +32,10 @@ object Game {
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
   case class Round(id: Id, players: Color.Map[Player], tourId: Option[Tour.ID]) {
-    def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] = Color.all.collectFirst {
-      case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, tourId)
-    }
+    def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
+      Color.all.collectFirst {
+        case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, tourId)
+      }
   }
 
   case class RoundPlayer(id: PlayerId, color: Color, tourId: Option[Tour.ID])
@@ -86,7 +87,7 @@ case class Flag private (value: String) extends AnyVal with StringValue
 object Flag {
   def make(value: String) = value match {
     case "simul" | "tournament" | "api" => Some(Flag(value))
-    case _ => None
+    case _                              => None
   }
   val api = Flag("api")
 }

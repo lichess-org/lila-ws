@@ -24,57 +24,61 @@ object LobbyClientActor {
     apply(State(), deps)
   }
 
-  private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
+  private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
+    Behaviors
+      .receive[ClientMsg] { (ctx, msg) =>
+        import deps._
 
-    import deps._
+        def forward(payload: JsValue): Unit =
+          lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
 
-    def forward(payload: JsValue): Unit = lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+        msg match {
 
-    msg match {
+          case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
-      case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+          case ClientIn.LobbyNonIdle(payload) =>
+            if (!state.idle) clientIn(payload)
+            Behaviors.same
 
-      case ClientIn.LobbyNonIdle(payload) =>
-        if (!state.idle) clientIn(payload)
-        Behaviors.same
+          case ClientIn.OnlyFor(endpoint, payload) =>
+            if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
+            Behaviors.same
 
-      case ClientIn.OnlyFor(endpoint, payload) =>
-        if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
-        Behaviors.same
+          case in: ClientIn =>
+            clientInReceive(state.site, deps, in) match {
+              case None    => Behaviors.same
+              case Some(s) => apply(state.copy(site = s), deps)
+            }
 
-      case in: ClientIn => clientInReceive(state.site, deps, in) match {
-        case None => Behaviors.same
-        case Some(s) => apply(state.copy(site = s), deps)
+          case msg: ClientOut.Ping =>
+            clientIn(services.lobby.pong.get)
+            apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
+
+          case ClientOut.LobbyForward(payload) =>
+            forward(payload)
+            Behaviors.same
+
+          case ClientOut.Idle(value, payload) =>
+            forward(payload)
+            apply(state.copy(idle = value), deps)
+
+          // default receive (site)
+          case msg: ClientOutSite =>
+            val siteState = globalReceive(state.site, deps, ctx, msg)
+            if (siteState == state.site) Behaviors.same
+            else apply(state.copy(site = siteState), deps)
+
+          case _ =>
+            Monitor.clientOutUnhandled("lobby").increment()
+            Behaviors.same
+        }
+
       }
-
-      case msg: ClientOut.Ping =>
-        clientIn(services.lobby.pong.get)
-        apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
-
-      case ClientOut.LobbyForward(payload) =>
-        forward(payload)
-        Behaviors.same
-
-      case ClientOut.Idle(value, payload) =>
-        forward(payload)
-        apply(state.copy(idle = value), deps)
-
-      // default receive (site)
-      case msg: ClientOutSite =>
-        val siteState = globalReceive(state.site, deps, ctx, msg)
-        if (siteState == state.site) Behaviors.same
-        else apply(state.copy(site = siteState), deps)
-
-      case _ =>
-        Monitor.clientOutUnhandled("lobby").increment()
-        Behaviors.same
-    }
-
-  }.receiveSignal {
-    case (ctx, PostStop) =>
-      onStop(state.site, deps, ctx)
-      Bus.unsubscribe(Bus.channel.lobby, ctx.self)
-      deps.services.lobby.disconnect(deps.req.sri)
-      Behaviors.same
-  }
+      .receiveSignal {
+        case (ctx, PostStop) =>
+          onStop(state.site, deps, ctx)
+          Bus.unsubscribe(Bus.channel.lobby, ctx.self)
+          deps.services.lobby.disconnect(deps.req.sri)
+          Behaviors.same
+      }
 }

@@ -16,30 +16,33 @@ object SiteClientActor {
     apply(State(), deps)
   }
 
-  private def apply(state: State, deps: Deps): Behavior[ClientMsg] = Behaviors.receive[ClientMsg] { (ctx, msg) =>
+  private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
+    Behaviors
+      .receive[ClientMsg] { (ctx, msg) =>
+        msg match {
 
-    msg match {
+          case ctrl: ClientCtrl => socketControl(state, deps, ctrl)
 
-      case ctrl: ClientCtrl => socketControl(state, deps, ctrl)
+          case in: ClientIn =>
+            clientInReceive(state, deps, in) match {
+              case None    => Behaviors.same
+              case Some(s) => apply(s, deps)
+            }
 
-      case in: ClientIn => clientInReceive(state, deps, in) match {
-        case None => Behaviors.same
-        case Some(s) => apply(s, deps)
+          case msg: ClientOutSite =>
+            val newState = globalReceive(state, deps, ctx, msg)
+            if (newState == state) Behaviors.same
+            else apply(newState, deps)
+
+          case _ =>
+            Monitor.clientOutUnhandled("site").increment()
+            Behaviors.same
+        }
+
       }
-
-      case msg: ClientOutSite =>
-        val newState = globalReceive(state, deps, ctx, msg)
-        if (newState == state) Behaviors.same
-        else apply(newState, deps)
-
-      case _ =>
-        Monitor.clientOutUnhandled("site").increment()
-        Behaviors.same
-    }
-
-  }.receiveSignal {
-    case (ctx, PostStop) =>
-      onStop(state, deps, ctx)
-      Behaviors.same
-  }
+      .receiveSignal {
+        case (ctx, PostStop) =>
+          onStop(state, deps, ctx)
+          Behaviors.same
+      }
 }

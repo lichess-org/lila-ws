@@ -16,15 +16,16 @@ private final class ProtocolHandler(
     clients: ActorRef[Clients.Control],
     router: Router,
     ip: IpAddress
-)(implicit ec: ExecutionContext) extends WebSocketServerProtocolHandler(
-  "/", // path
-  null, // subprotocols (?)
-  false, // allowExtensions (?)
-  2048, // max frame size
-  false, // allowMaskMismatch (?)
-  true, // checkStartsWith
-  true // dropPongFrames
-) {
+)(implicit ec: ExecutionContext)
+    extends WebSocketServerProtocolHandler(
+      "/",   // path
+      null,  // subprotocols (?)
+      false, // allowExtensions (?)
+      2048,  // max frame size
+      false, // allowMaskMismatch (?)
+      true,  // checkStartsWith
+      true   // dropPongFrames
+    ) {
 
   import ProtocolHandler._
   import Controller.Endpoint
@@ -39,25 +40,30 @@ private final class ProtocolHandler(
           new util.RequestHeader(hs.requestUri, hs.requestHeaders, ip),
           emitToChannel(ctx.channel)
         ) foreach {
-            case Left(status) =>
-              terminateConnection(ctx.channel)
-              promise failure new Exception(s"Router refused the connection: $status")
-            case Right(client) => connectActorToChannel(client, ctx.channel, promise)
-          }
+          case Left(status) =>
+            terminateConnection(ctx.channel)
+            promise failure new Exception(s"Router refused the connection: $status")
+          case Right(client) => connectActorToChannel(client, ctx.channel, promise)
+        }
       case _ =>
     }
     super.userEventTriggered(ctx, evt)
   }
 
-  private def connectActorToChannel(endpoint: Endpoint, channel: Channel, promise: Promise[Client]): Unit = {
+  private def connectActorToChannel(
+      endpoint: Endpoint,
+      channel: Channel,
+      promise: Promise[Client]
+  ): Unit = {
     channel.attr(key.limit).set(endpoint.rateLimit)
     clients ! Clients.Start(endpoint.behavior, promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
         Option(channel.attr(key.client).get) match {
-          case Some(client) => client foreach { c =>
-            clients ! Clients.Stop(c)
-          }
+          case Some(client) =>
+            client foreach { c =>
+              clients ! Clients.Stop(c)
+            }
           case None => Monitor.websocketError("clientActorMissing")
         }
     })
@@ -69,7 +75,10 @@ private final class ProtocolHandler(
   }
 
   // cancel before the handshake was completed
-  private def sendSimpleErrorResponse(channel: Channel, status: HttpResponseStatus): ChannelFuture = {
+  private def sendSimpleErrorResponse(
+      channel: Channel,
+      status: HttpResponseStatus
+  ): ChannelFuture = {
     val response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status)
     response.headers.set(HttpHeaderNames.CONNECTION, "close")
     response.headers.set(HttpHeaderNames.CONTENT_LENGTH, "0")
@@ -91,14 +100,16 @@ private final class ProtocolHandler(
     case _: WebSocketHandshakeException =>
       Monitor.websocketError("handshake")
       ctx.channel.close()
-    case e: CorruptedWebSocketFrameException if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
+    case e: CorruptedWebSocketFrameException
+        if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
       Monitor.websocketError("frameLength")
     case _: CorruptedWebSocketFrameException =>
       Monitor.websocketError("corrupted")
     case _: TooLongFrameException =>
       Monitor.websocketError("uriTooLong")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
-    case e: IllegalArgumentException if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+    case e: IllegalArgumentException
+        if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
       Monitor.websocketError("headerIllegalChar")
       sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
     case _ =>
@@ -111,6 +122,6 @@ private object ProtocolHandler {
 
   object key {
     val client = AttributeKey.valueOf[Future[Client]]("client")
-    val limit = AttributeKey.valueOf[RateLimit]("limit")
+    val limit  = AttributeKey.valueOf[RateLimit]("limit")
   }
 }

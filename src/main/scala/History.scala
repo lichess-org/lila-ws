@@ -2,16 +2,21 @@ package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
 
-final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](historySize: Int, initialCapacity: Int) {
+final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
+    historySize: Int,
+    initialCapacity: Int
+) {
 
   private val histories = new ConcurrentHashMap[String, List[V]](initialCapacity)
 
   def add(key: K, event: V): Unit =
-    histories.compute(key.toString, (_, cur) =>
-      event :: Option(cur).getOrElse(Nil).take(historySize))
+    histories.compute(
+      key.toString,
+      (_, cur) => event :: Option(cur).getOrElse(Nil).take(historySize)
+    )
 
   def getFrom(key: K, versionOpt: Option[SocketVersion]): Option[List[V]] = {
-    val allEvents = histories.getOrDefault(key.toString,  Nil)
+    val allEvents = histories.getOrDefault(key.toString, Nil)
     versionOpt
       .fold(Option(allEvents.take(5))) { since =>
         if (allEvents.headOption.fold(true)(_.version <= since)) Some(Nil)
@@ -43,6 +48,6 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](historySize:
 
 object History {
 
-  val room = new History[RoomId, ipc.ClientIn.Versioned](20, 4096)
+  val room  = new History[RoomId, ipc.ClientIn.Versioned](20, 4096)
   val round = new History[Game.Id, ipc.ClientIn.RoundVersioned](20, 32768)
 }

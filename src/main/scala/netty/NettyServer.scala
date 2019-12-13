@@ -24,7 +24,7 @@ final class NettyServer(
 
     logger.info("Start")
 
-    val port = config.getInt("http.port")
+    val port     = config.getInt("http.port")
     val useEpoll = config.getBoolean("netty.useEpoll")
 
     val bossGroup =
@@ -40,18 +40,21 @@ final class NettyServer(
 
     try {
       val boot = new ServerBootstrap
-      boot.group(bossGroup, workerGroup)
+      boot
+        .group(bossGroup, workerGroup)
         .channel(channelClz)
         .childHandler(new ChannelInitializer[SocketChannel] {
           override def initChannel(ch: SocketChannel): Unit = {
             val pipeline = ch.pipeline()
             pipeline.addLast(new HttpServerCodec)
             pipeline.addLast(new HttpObjectAggregator(4096))
-            pipeline.addLast(new ProtocolHandler(
-              clients,
-              router,
-              IpAddress(ch.localAddress.getAddress.getHostAddress)
-            ))
+            pipeline.addLast(
+              new ProtocolHandler(
+                clients,
+                router,
+                IpAddress(ch.localAddress.getAddress.getHostAddress)
+              )
+            )
             pipeline.addLast(new FrameHandler)
           }
         })
@@ -63,8 +66,7 @@ final class NettyServer(
       server.closeFuture().sync()
 
       logger.info(s"Closed $port")
-    }
-    finally {
+    } finally {
       bossGroup.shutdownGracefully()
       workerGroup.shutdownGracefully()
     }

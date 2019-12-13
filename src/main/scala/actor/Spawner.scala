@@ -11,8 +11,8 @@ object Spawner {
   private val actor: Behavior[SpawnProtocol.Command] = SpawnProtocol()
 
   private val system: ActorSystem[SpawnProtocol.Command] = ActorSystem(actor, "clients")
-  private implicit val timeout: Timeout = Timeout(3.seconds)
-  private implicit val scheduler: Scheduler = system.scheduler
+  private implicit val timeout: Timeout                  = Timeout(3.seconds)
+  private implicit val scheduler: Scheduler              = system.scheduler
 
   def apply[B](behavior: Behavior[B]): Future[ActorRef[B]] =
     system.ask(SpawnProtocol.Spawn(behavior = behavior, name = "", props = Props.empty, _))

@@ -44,42 +44,45 @@ final class Controller(
 
   def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.simulExists(id) zip mongo.troll.is(user) map {
-      case (true, isTroll) => endpoint(
-        name = "simul",
-        behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 30,
-        interval = 20.seconds
-      )
+      case (true, isTroll) =>
+        endpoint(
+          name = "simul",
+          behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 30,
+          interval = 20.seconds
+        )
       case _ => notFound
     }
   }
 
   def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.tourExists(id) zip mongo.troll.is(user) map {
-      case (true, isTroll) => endpoint(
-        name = "tour",
-        behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 30,
-        interval = 20.seconds
-      )
+      case (true, isTroll) =>
+        endpoint(
+          name = "tour",
+          behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 30,
+          interval = 20.seconds
+        )
       case _ => notFound
     }
   }
 
   def study(id: Study.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map {
-      case (true, isTroll) => endpoint(
-        name = "study",
-        behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 60,
-        interval = 15.seconds
-      )
+      case (true, isTroll) =>
+        endpoint(
+          name = "study",
+          behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 60,
+          interval = 15.seconds
+        )
       case _ => notFound
     }
   }
@@ -93,9 +96,10 @@ final class Controller(
         }
         endpoint(
           name = "round/watch",
-          behavior = RoundClientActor.start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
-            Deps(emit, Req(req, sri, user), services)
-          },
+          behavior = RoundClientActor
+            .start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
           credits = 50,
           interval = 20.seconds
         )
@@ -105,14 +109,18 @@ final class Controller(
 
   def roundPlay(id: Game.FullId, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.player(id, user) zip mongo.troll.is(user) map {
-      case (Some(player), isTroll) => endpoint(
-        name = "round/play",
-        behavior = RoundClientActor.start(
-          RoomActor.State(RoomId(id.gameId), isTroll), Some(player), None, fromVersion(req)
-        ) { Deps(emit, Req(req, sri, user), services) },
-        credits = 100,
-        interval = 20.seconds
-      )
+      case (Some(player), isTroll) =>
+        endpoint(
+          name = "round/play",
+          behavior = RoundClientActor.start(
+            RoomActor.State(RoomId(id.gameId), isTroll),
+            Some(player),
+            None,
+            fromVersion(req)
+          ) { Deps(emit, Req(req, sri, user), services) },
+          credits = 100,
+          interval = 20.seconds
+        )
       case _ => notFound
     }
   }
@@ -125,14 +133,16 @@ final class Controller(
       }
     } map {
       case None => notFound
-      case Some(owner) => endpoint(
-        name = "challenge",
-        behavior = ChallengeClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 50,
-        interval = 30.seconds
-      )
+      case Some(owner) =>
+        endpoint(
+          name = "challenge",
+          behavior = ChallengeClientActor
+            .start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
+              Deps(emit, Req(req, sri, user), services)
+            },
+          credits = 50,
+          interval = 30.seconds
+        )
     }
   }
 
@@ -156,16 +166,16 @@ final class Controller(
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response = req.sri match {
     case Some(validSri) => f(validSri)
-    case None => Future successful Left(HttpResponseStatus.BAD_REQUEST) // f(Sri.random)
+    case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST) // f(Sri.random)
   }
 
   private object CSRF {
 
     val csrfOrigin = config.getString("csrf.origin")
     val appOrigins = Set(
-      "ionic://localhost", // ios
+      "ionic://localhost",     // ios
       "capacitor://localhost", // capacitor (ios next)
-      "http://localhost", // android
+      "http://localhost",      // android
       "http://localhost:8080", // local dev
       "http://localhost:9663", // lila dev
       "file://"
@@ -173,7 +183,7 @@ final class Controller(
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match {
-        case None => f // for exotic clients and acid ape chess
+        case None                                                       => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
@@ -193,20 +203,22 @@ object Controller {
 
   final class Endpoint(val behavior: ClientBehavior, val rateLimit: RateLimit)
   def endpoint(
-    name: String,
-    behavior: ClientBehavior,
-    credits: Int,
-    interval: FiniteDuration
+      name: String,
+      behavior: ClientBehavior,
+      credits: Int,
+      interval: FiniteDuration
   ) = {
     Monitor.connection open name
-    Right(new Endpoint(
-      behavior,
-      new RateLimit(
-        maxCredits = credits,
-        intervalMillis = interval.toMillis.toInt,
-        name = name
+    Right(
+      new Endpoint(
+        behavior,
+        new RateLimit(
+          maxCredits = credits,
+          intervalMillis = interval.toMillis.toInt,
+          name = name
+        )
       )
-    ))
+    )
   }
 
   type Response = Future[Either[HttpResponseStatus, Endpoint]]

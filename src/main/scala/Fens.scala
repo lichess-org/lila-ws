@@ -17,10 +17,12 @@ object Fens {
   // client starts watching
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =
     gameIds foreach { gameId =>
-      games.compute(gameId, {
-        case (_, null) => Watched(None, Set(client))
-        case (_, Watched(pos, clients)) => Watched(pos, clients + client)
-      }).position foreach {
+      games
+        .compute(gameId, {
+          case (_, null)                  => Watched(None, Set(client))
+          case (_, Watched(pos, clients)) => Watched(pos, clients + client)
+        })
+        .position foreach {
         case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
       }
     }
@@ -37,15 +39,20 @@ object Fens {
 
   // move coming from the server
   def move(gameId: Game.Id, json: JsonString): Unit = {
-    games.computeIfPresent(gameId, (_, watched) => json.value match {
-      case MoveRegex(uciS, fenS) => Uci(uciS).fold(watched) { lastUci =>
-        val fen = FEN(fenS)
-        val msg = ClientIn.Fen(gameId, lastUci, fen)
-        watched.clients foreach { _ ! msg }
-        watched.copy(position = Some(Position(lastUci, fen)))
-      }
-      case _ => watched
-    })
+    games.computeIfPresent(
+      gameId,
+      (_, watched) =>
+        json.value match {
+          case MoveRegex(uciS, fenS) =>
+            Uci(uciS).fold(watched) { lastUci =>
+              val fen = FEN(fenS)
+              val msg = ClientIn.Fen(gameId, lastUci, fen)
+              watched.clients foreach { _ ! msg }
+              watched.copy(position = Some(Position(lastUci, fen)))
+            }
+          case _ => watched
+        }
+    )
   }
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...

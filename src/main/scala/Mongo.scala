@@ -14,29 +14,29 @@ import scala.util.{ Try, Success }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val uri = config.getString("mongo.uri")
-  private val driver = AsyncDriver()
-  private val parsedUri = MongoConnection.parseURI(uri)
+  private val uri        = config.getString("mongo.uri")
+  private val driver     = AsyncDriver()
+  private val parsedUri  = MongoConnection.parseURI(uri)
   private val connection = Future.fromTry(parsedUri).flatMap(driver.connect)
 
-  private def db: Future[DefaultDB] = connection.flatMap(_ database "lichess")
+  private def db: Future[DefaultDB]   = connection.flatMap(_ database "lichess")
   private def collNamed(name: String) = db.map(_ collection name)(parasitic)
-  def securityColl = collNamed("security")
-  def userColl = collNamed("user4")
-  def coachColl = collNamed("coach")
-  def streamerColl = collNamed("streamer")
-  def simulColl = collNamed("simul")
-  def tourColl = collNamed("tournament2")
-  def tourPlayerColl = collNamed("tournament_player")
-  def tourPairingColl = collNamed("tournament_pairing")
-  def studyColl = collNamed("study")
-  def gameColl = collNamed("game5")
-  def challengeColl = collNamed("challenge")
+  def securityColl                    = collNamed("security")
+  def userColl                        = collNamed("user4")
+  def coachColl                       = collNamed("coach")
+  def streamerColl                    = collNamed("streamer")
+  def simulColl                       = collNamed("simul")
+  def tourColl                        = collNamed("tournament2")
+  def tourPlayerColl                  = collNamed("tournament_player")
+  def tourPairingColl                 = collNamed("tournament_pairing")
+  def studyColl                       = collNamed("study")
+  def gameColl                        = collNamed("game5")
+  def challengeColl                   = collNamed("challenge")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
-  def coach[A](f: BSONCollection => Future[A]): Future[A] = coachColl flatMap f
+  def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
   def streamer[A](f: BSONCollection => Future[A]): Future[A] = streamerColl flatMap f
-  def user[A](f: BSONCollection => Future[A]): Future[A] = userColl flatMap f
+  def user[A](f: BSONCollection => Future[A]): Future[A]     = userColl flatMap f
 
   def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
 
@@ -46,16 +46,18 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
   def gameExists(id: Game.Id): Future[Boolean] =
     gameCache getIfPresent id match {
-      case None => gameColl flatMap idExists(id.value)
+      case None        => gameColl flatMap idExists(id.value)
       case Some(entry) => entry.map(_.isDefined)(parasitic)
     }
 
   def player(fullId: Game.FullId, user: Option[User]): Future[Option[Game.RoundPlayer]] =
-    gameCache.get(fullId.gameId).map {
-      _ flatMap {
-        _.player(fullId.playerId, user.map(_.id))
-      }
-    }(parasitic)
+    gameCache
+      .get(fullId.gameId)
+      .map {
+        _ flatMap {
+          _.player(fullId.playerId, user.map(_.id))
+        }
+      }(parasitic)
 
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
     .expireAfterWrite(10.minutes)
@@ -64,9 +66,10 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         _.find(
           selector = BSONDocument("_id" -> id.value),
           projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
-        ).one[BSONDocument].map { docOpt =>
+        ).one[BSONDocument]
+          .map { docOpt =>
             for {
-              doc <- docOpt
+              doc       <- docOpt
               playerIds <- doc.getAsOpt[String]("is")
               users = doc.getAsOpt[List[String]]("us") getOrElse Nil
               players = Color.Map(
@@ -80,17 +83,20 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     }
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
-    exists(_, BSONDocument(
-      "_id" -> id,
-      user.fold(visibilityNotPrivate) { u =>
-        BSONDocument(
-          "$or" -> BSONArray(
-            visibilityNotPrivate,
-            BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
+    exists(
+      _,
+      BSONDocument(
+        "_id" -> id,
+        user.fold(visibilityNotPrivate) { u =>
+          BSONDocument(
+            "$or" -> BSONArray(
+              visibilityNotPrivate,
+              BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
+            )
           )
-        )
-      }
-    ))
+        }
+      )
+    )
   }
 
   def studyMembers(id: Study.ID): Future[Set[User.ID]] = studyColl flatMap {
@@ -98,11 +104,11 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       selector = BSONDocument("_id" -> id),
       projection = Some(BSONDocument("members" -> true))
     ).one[BSONDocument] map { docOpt =>
-        for {
-          doc <- docOpt
-          members <- doc.getAsOpt[BSONDocument]("members")
-        } yield members.elements.map { case BSONElement(key, _) => key }.toSet
-      } map (_ getOrElse Set.empty)
+      for {
+        doc     <- docOpt
+        members <- doc.getAsOpt[BSONDocument]("members")
+      } yield members.elements.map { case BSONElement(key, _) => key }.toSet
+    } map (_ getOrElse Set.empty)
   }
 
   def tournamentActiveUsers(tourId: Tour.ID): Future[Set[User.ID]] = tourPlayerColl flatMap {
@@ -123,20 +129,21 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     )
   }
 
-  def challenger(challengeId: Challenge.Id): Future[Option[Challenge.Challenger]] = challengeColl flatMap {
-    _.find(
-      selector = BSONDocument("_id" -> challengeId.value),
-      projection = Some(BSONDocument("challenger" -> true))
-    ).one[BSONDocument] map { docOpt =>
+  def challenger(challengeId: Challenge.Id): Future[Option[Challenge.Challenger]] =
+    challengeColl flatMap {
+      _.find(
+        selector = BSONDocument("_id" -> challengeId.value),
+        projection = Some(BSONDocument("challenger" -> true))
+      ).one[BSONDocument] map { docOpt =>
         for {
           doc <- docOpt
-          c <- doc.getAsOpt[BSONDocument]("challenger")
+          c   <- doc.getAsOpt[BSONDocument]("challenger")
           anon = c.getAsOpt[String]("s") map Challenge.Anon.apply
           user = c.getAsOpt[String]("id") map Challenge.User.apply
           challenger <- anon orElse user
         } yield challenger
       }
-  }
+    }
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
@@ -160,7 +167,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   object idFilter {
     import Mongo._
     val study: IdFilter = ids => studyColl flatMap filterIds(ids)
-    val tour: IdFilter = ids => tourColl flatMap filterIds(ids)
+    val tour: IdFilter  = ids => tourColl flatMap filterIds(ids)
     val simul: IdFilter = ids => simulColl flatMap filterIds(ids)
   }
 
@@ -168,13 +175,15 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     exists(coll, BSONDocument("_id" -> id))
 
   private def exists(coll: BSONCollection, selector: BSONDocument): Future[Boolean] =
-    coll.count(
-      selector = Some(selector),
-      limit = None,
-      skip = 0,
-      hint = None,
-      readConcern = ReadConcern.Local
-    ).map(0 < _)(parasitic)
+    coll
+      .count(
+        selector = Some(selector),
+        limit = None,
+        skip = 0,
+        hint = None,
+        readConcern = ReadConcern.Local
+      )
+      .map(0 < _)(parasitic)
 
   private def filterIds(ids: Iterable[String])(coll: BSONCollection): Future[Set[String]] =
     coll.distinct[String, Set](
@@ -192,7 +201,9 @@ object Mongo {
   implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
 
     @inline def readTry(bson: BSONValue): Try[DateTime] =
-      bson.asTry[BSONDateTime] map { dt => new DateTime(dt.value) }
+      bson.asTry[BSONDateTime] map { dt =>
+        new DateTime(dt.value)
+      }
 
     @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
   }

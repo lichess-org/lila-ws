@@ -10,14 +10,15 @@ import scala.concurrent.ExecutionContext
 
 import ipc.ClientOut
 
-private final class FrameHandler(implicit ec: ExecutionContext) extends SimpleChannelInboundHandler[WebSocketFrame] {
+private final class FrameHandler(implicit ec: ExecutionContext)
+    extends SimpleChannelInboundHandler[WebSocketFrame] {
 
   import FrameHandler._
   import ProtocolHandler.key
 
   override protected def channelRead0(
-    ctx: ChannelHandlerContext,
-    anyFrame: WebSocketFrame
+      ctx: ChannelHandlerContext,
+      anyFrame: WebSocketFrame
   ) = anyFrame match {
     case frame: TextWebSocketFrame =>
       val txt = frame.text
@@ -34,10 +35,11 @@ private final class FrameHandler(implicit ec: ExecutionContext) extends SimpleCh
 
           case out =>
             Option(ctx.channel.attr(key.client).get) match {
-              case Some(clientFu) => clientFu.value match {
-                case Some(client) => client foreach (_ ! out)
-                case None => clientFu foreach (_ ! out)
-              }
+              case Some(clientFu) =>
+                clientFu.value match {
+                  case Some(client) => client foreach (_ ! out)
+                  case None         => clientFu foreach (_ ! out)
+                }
               case None => logger.warn(s"No client actor to receive $out")
             }
         }

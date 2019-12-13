@@ -38,9 +38,10 @@ object Chronometer {
       this
     }
 
-    def pp(implicit ec: ExecutionContext): Future[A] = lap map (_.pp)
+    def pp(implicit ec: ExecutionContext): Future[A]              = lap map (_.pp)
     def pp(msg: String)(implicit ec: ExecutionContext): Future[A] = lap map (_ pp msg)
-    def ppIfGt(msg: String, duration: FiniteDuration)(implicit ec: ExecutionContext): Future[A] = lap map (_.ppIfGt(msg, duration))
+    def ppIfGt(msg: String, duration: FiniteDuration)(implicit ec: ExecutionContext): Future[A] =
+      lap map (_.ppIfGt(msg, duration))
 
     def result(implicit ec: ExecutionContext) = lap.map(_.result)
   }
@@ -52,7 +53,7 @@ object Chronometer {
 
   def sync[A](f: => A): Lap[A] = {
     val start = nowNanos
-    val res = f
+    val res   = f
     Lap(res, nowNanos - start)
   }
 

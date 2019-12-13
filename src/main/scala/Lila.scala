@@ -13,14 +13,14 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   import Lila._
 
-  private val logger = Logger(getClass)
-  private val redis = RedisClient create RedisURI.create(config.getString("redis.uri"))
-  private val connIn = redis.connectPubSub
+  private val logger  = Logger(getClass)
+  private val redis   = RedisClient create RedisURI.create(config.getString("redis.uri"))
+  private val connIn  = redis.connectPubSub
   private val connOut = redis.connectPubSub
 
-  private val handlersPromise = Promise[Handlers]
+  private val handlersPromise                  = Promise[Handlers]
   private val futureHandlers: Future[Handlers] = handlersPromise.future
-  private var handlers: Handlers = chan => out => futureHandlers foreach { _(chan)(out) }
+  private var handlers: Handlers               = chan => out => futureHandlers foreach { _(chan)(out) }
   def setHandlers(hs: Handlers) = {
     handlers = hs
     handlersPromise success hs
@@ -42,15 +42,22 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Study](chans.study) zip
       connect[LilaIn.Round](chans.round) zip
       connect[LilaIn.Challenge](chans.challenge) map {
-        case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge => new Emits(
-          site, tour, lobby, simul, study, round, challenge
+      case site ~ tour ~ lobby ~ simul ~ study ~ round ~ challenge =>
+        new Emits(
+          site,
+          tour,
+          lobby,
+          simul,
+          study,
+          round,
+          challenge
         )
-      }
+    }
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
-      val msg = in.write
+      val msg   = in.write
       val timer = Monitor.redis.publishTime.start()
       connIn.async.publish(chan.in, msg).thenRun { timer.stop _ }
       Monitor.redis.in(chan.in, msg.takeWhile(' '.!=))
@@ -71,7 +78,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       Monitor.redis.out(chan, msg.takeWhile(' '.!=))
       LilaOut read msg match {
         case Some(out) => handlers(chan)(out)
-        case None => logger.warn(s"Can't parse $msg on $chan")
+        case None      => logger.warn(s"Can't parse $msg on $chan")
       }
     }
   })
@@ -87,17 +94,17 @@ object Lila {
   type Handlers = String => Emit[LilaOut]
 
   sealed abstract class Chan(value: String) {
-    val in = s"$value-in"
+    val in  = s"$value-in"
     val out = s"$value-out"
   }
 
   object chans {
-    object site extends Chan("site")
-    object tour extends Chan("tour")
-    object lobby extends Chan("lobby")
-    object simul extends Chan("simul")
-    object study extends Chan("study")
-    object round extends Chan("r")
+    object site      extends Chan("site")
+    object tour      extends Chan("tour")
+    object lobby     extends Chan("lobby")
+    object simul     extends Chan("simul")
+    object study     extends Chan("study")
+    object round     extends Chan("r")
     object challenge extends Chan("chal")
   }
 

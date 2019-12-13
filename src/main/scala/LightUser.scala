@@ -21,12 +21,12 @@ final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionConte
       BSONDocument("_id" -> id),
       Some(BSONDocument("username" -> true, "title" -> true))
     ).one[BSONDocument] map { docOpt =>
-        {
-          for {
-            doc <- docOpt
-            name <- doc.getAsOpt[String]("username")
-          } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
-        } getOrElse id
-      }
+      {
+        for {
+          doc  <- docOpt
+          name <- doc.getAsOpt[String]("username")
+        } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
+      } getOrElse id
+    }
   }
 }

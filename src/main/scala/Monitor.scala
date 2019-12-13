@@ -16,8 +16,8 @@ final class Monitor(
 
   def start(): Unit = {
 
-    val version = System.getProperty("java.version")
-    val memory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    val version  = System.getProperty("java.version")
+    val memory   = Runtime.getRuntime().maxMemory() / 1024 / 1024
     val useEpoll = config.getBoolean("netty.useEpoll")
     val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
 
@@ -26,13 +26,15 @@ final class Monitor(
 
     if (useKamon) kamon.Kamon.loadModules()
 
-    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
+    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () =>
+      periodicMetrics
+    }
   }
 
   private def periodicMetrics = {
 
     val members = LilaWsServer.connections.get
-    val rounds = services.roundCrowd.size
+    val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
 
     connection.current update members
@@ -53,52 +55,65 @@ object Monitor {
 
   object connection {
     val current = Kamon.gauge("connection.current").withoutTags
-    def open(endpoint: String) = Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
+    def open(endpoint: String) =
+      Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
   }
 
-  val redisPublishTime = Kamon.timer("redis.publish.time").withoutTags
-  def clientOutWrongHole = Kamon.counter("client.out.wrongHole").withoutTags
+  val redisPublishTime    = Kamon.timer("redis.publish.time").withoutTags
+  def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags
   def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
   def clientOutUnhandled(name: String) =
-    Kamon.counter("client.out.unhandled")
+    Kamon
+      .counter("client.out.unhandled")
       .withTag("name", name)
       .increment()
 
-  val historyRoomSize = Kamon.gauge("history.room.size").withoutTags
+  val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags
 
-  val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags
+  val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
-  val usersSize = Kamon.gauge("users.size").withoutTags
-  val watchSize = Kamon.gauge("watch.size").withoutTags
+  val usersSize      = Kamon.gauge("users.size").withoutTags
+  val watchSize      = Kamon.gauge("watch.size").withoutTags
 
   val palantirChannels = Kamon.gauge("palantir.channels.size").withoutTags
 
-  val busSize = Kamon.gauge("bus.size").withoutTags
+  val busSize    = Kamon.gauge("bus.size").withoutTags
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags
 
   val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
   val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
 
-  def websocketError(name: String) = Kamon.counter("websocket.error").withTag("name", name).increment()
+  def websocketError(name: String) =
+    Kamon.counter("websocket.error").withTag("name", name).increment()
 
-  def rateLimit(name: String) = Kamon.counter("ratelimit")
-    .withTag("name", name)
-    .increment()
+  def rateLimit(name: String) =
+    Kamon
+      .counter("ratelimit")
+      .withTag("name", name)
+      .increment()
 
   object redis {
     val publishTime = Kamon.timer("redis.publish.time").withoutTags
-    def in(chan: String, path: String) = Kamon.counter("redis.in").withTags(
-      TagSet.from(Map("channel" -> chan, "path" -> path))
-    ).increment()
-    def out(chan: String, path: String) = Kamon.counter("redis.out").withTags(
-      TagSet.from(Map("channel" -> chan, "path" -> path))
-    ).increment()
+    def in(chan: String, path: String) =
+      Kamon
+        .counter("redis.in")
+        .withTags(
+          TagSet.from(Map("channel" -> chan, "path" -> path))
+        )
+        .increment()
+    def out(chan: String, path: String) =
+      Kamon
+        .counter("redis.out")
+        .withTags(
+          TagSet.from(Map("channel" -> chan, "path" -> path))
+        )
+        .increment()
   }
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
     val timer = metric(Monitor).start()
-    val res = f
+    val res   = f
     timer.stop
     res
   }

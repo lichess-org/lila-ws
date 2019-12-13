@@ -44,7 +44,12 @@ object ClientActor {
     state.copy(lastPing = nowSeconds)
   }
 
-  def globalReceive(state: State, deps: Deps, ctx: ActorContext[ClientMsg], msg: ClientOutSite): State = {
+  def globalReceive(
+      state: State,
+      deps: Deps,
+      ctx: ActorContext[ClientMsg],
+      msg: ClientOutSite
+  ): State = {
 
     import deps._
 
@@ -133,7 +138,7 @@ object ClientActor {
       flag: Option[Flag],
       user: Option[User]
   ) {
-    def userId = user.map(_.id)
+    def userId            = user.map(_.id)
     override def toString = s"${user getOrElse "Anon"} $name"
   }
 
@@ -142,10 +147,10 @@ object ClientActor {
       req: Req,
       services: Services
   ) {
-    def lilaIn = services.lila
-    def users = services.users
-    def roomCrowd = services.roomCrowd
+    def lilaIn     = services.lila
+    def users      = services.users
+    def roomCrowd  = services.roomCrowd
     def roundCrowd = services.roundCrowd
-    def keepAlive = services.keepAlive
+    def keepAlive  = services.keepAlive
   }
 }

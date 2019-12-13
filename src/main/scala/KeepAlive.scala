@@ -10,9 +10,9 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
 
   import KeepAlive._
 
-  val study = new AliveRooms
-  val tour = new AliveRooms
-  val simul = new AliveRooms
+  val study     = new AliveRooms
+  val tour      = new AliveRooms
+  val simul     = new AliveRooms
   val challenge = new AliveRooms
 
   scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>

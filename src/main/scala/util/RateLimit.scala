@@ -11,21 +11,19 @@ final class RateLimit(
 
   private def makeClearAt: Long = nowMillis + intervalMillis
 
-  private var credits: Long = maxCredits
-  private var clearAt: Long = makeClearAt
+  private var credits: Long   = maxCredits
+  private var clearAt: Long   = makeClearAt
   private var logged: Boolean = false
 
   def apply(msg: => String = ""): Boolean =
     if (credits > 0) {
       credits -= 1
       true
-    }
-    else if (clearAt < nowMillis) {
+    } else if (clearAt < nowMillis) {
       credits = maxCredits
       clearAt = makeClearAt
       true
-    }
-    else {
+    } else {
       if (!logged) {
         logged = true
         logger.info(s"$name MSG: $msg")
@@ -38,7 +36,7 @@ final class RateLimit(
 object RateLimit {
 
   type Charge = Cost => Unit
-  type Cost = Int
+  type Cost   = Int
 
   private def nowMillis = System.currentTimeMillis()
 

@@ -7,7 +7,7 @@ object Clients {
 
   sealed trait Control
   final case class Start(behavior: ClientBehavior, promise: Promise[Client]) extends Control
-  final case class Stop(client: Client) extends Control
+  final case class Stop(client: Client)                                      extends Control
 
   def behavior = Behaviors.receive[Control] { (ctx, msg) =>
     msg match {

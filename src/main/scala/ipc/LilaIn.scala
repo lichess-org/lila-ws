@@ -15,11 +15,11 @@ object LilaIn {
 
   sealed trait Lobby extends LilaIn
 
-  sealed trait Room extends LilaIn
-  sealed trait Simul extends Room
-  sealed trait Tour extends Room
-  sealed trait Study extends Room
-  sealed trait Round extends Room
+  sealed trait Room      extends LilaIn
+  sealed trait Simul     extends Room
+  sealed trait Tour      extends Room
+  sealed trait Study     extends Room
+  sealed trait Round     extends Room
   sealed trait Challenge extends Room
 
   sealed trait AnyRoom extends Simul with Tour with Study with Round with Challenge
@@ -55,7 +55,7 @@ object LilaIn {
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
-    def write = s"connect/sris ${commas(sris map render)}"
+    def write                         = s"connect/sris ${commas(sris map render)}"
   }
 
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby {
@@ -68,7 +68,8 @@ object LilaIn {
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
     def write = s"chat/say $roomId $userId $msg"
   }
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String) extends AnyRoom {
+  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String)
+      extends AnyRoom {
     def write = s"chat/timeout $roomId $userId $suspectId $reason"
   }
 
@@ -78,22 +79,27 @@ object LilaIn {
   }
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom {
-    def write = s"room/versions ${commas(versions.map {
-      case (r, v) => s"$r:$v"
-    })}"
+    def write =
+      s"room/versions ${commas(versions.map {
+        case (r, v) => s"$r:$v"
+      })}"
   }
 
-  case class WaitingUsers(roomId: RoomId, name: String, present: Set[User.ID], standby: Set[User.ID]) extends Tour {
+  case class WaitingUsers(
+      roomId: RoomId,
+      name: String,
+      present: Set[User.ID],
+      standby: Set[User.ID]
+  ) extends Tour {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }
 
   case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {
-    def write = s"study/door ${
-      commas(users.map {
+    def write =
+      s"study/door ${commas(users.map {
         case (u, Right(s)) => s"$u:$s:+"
-        case (u, Left(s)) => s"$u:$s:-"
-      })
-    }"
+        case (u, Left(s))  => s"$u:$s:-"
+      })}"
   }
 
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
@@ -105,7 +111,8 @@ object LilaIn {
 
   case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
-    def write = s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+    def write =
+      s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
   }
 
   case class RoundBerserk(gameId: Game.Id, userId: User.ID) extends Round {
@@ -115,7 +122,12 @@ object LilaIn {
   case class RoundHold(fullId: Game.FullId, ip: IpAddress, mean: Int, sd: Int) extends Round {
     def write = s"r/hold $fullId $ip $mean $sd"
   }
-  case class RoundSelfReport(fullId: Game.FullId, ip: IpAddress, userId: Option[User.ID], name: String) extends Round {
+  case class RoundSelfReport(
+      fullId: Game.FullId,
+      ip: IpAddress,
+      userId: Option[User.ID],
+      name: String
+  ) extends Round {
     def write = s"r/report $fullId $ip ${optional(userId)} $name"
   }
 
@@ -129,7 +141,7 @@ object LilaIn {
 
   case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String) extends Round {
     def author = userIdOrColor.fold(identity, writeColor)
-    def write = s"chat/say $roomId $author $msg"
+    def write  = s"chat/say $roomId $author $msg"
   }
   case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round {
     def write = s"chat/say/w $roomId $userId $msg"
@@ -154,8 +166,8 @@ object LilaIn {
     def write = s"req/response $reqId $value"
   }
 
-  private def commas(as: Iterable[Any]): String = if (as.isEmpty) "-" else as mkString ","
-  private def boolean(b: Boolean): String = if (b) "+" else "-"
+  private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
+  private def boolean(b: Boolean): String         = if (b) "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
-  private def writeColor(c: Color): String = c.fold("w", "b")
+  private def writeColor(c: Color): String        = c.fold("w", "b")
 }

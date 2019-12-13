@@ -38,9 +38,11 @@ final class RoomCrowd(
     outputBatch(outputOf(roomId, room))
 
   private val outputBatch = groupedWithin[Output](1024, 1.second) { outputs =>
-    outputs.foldLeft(Map.empty[RoomId, Output]) {
-      case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
-    }.values foreach { output =>
+    outputs
+      .foldLeft(Map.empty[RoomId, Output]) {
+        case (crowds, crowd) => crowds.updated(crowd.roomId, crowd)
+      }
+      .values foreach { output =>
       json room output foreach {
         Bus.publish(_ room output.roomId, _)
       }
@@ -70,9 +72,9 @@ object RoomCrowd {
       anons: Int = 0,
       users: Map[User.ID, Int] = Map.empty
   ) {
-    def nbUsers = users.size
+    def nbUsers   = users.size
     def nbMembers = anons + nbUsers
-    def isEmpty = nbMembers < 1
+    def isEmpty   = nbMembers < 1
 
     def connect(user: Option[User]) = user.fold(copy(anons = anons + 1)) { u =>
       copy(users = users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1))))
