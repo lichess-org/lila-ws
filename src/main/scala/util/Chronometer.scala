@@ -1,7 +1,7 @@
 package lila.ws.util
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.{ ExecutionContext, Future }
 
 object Chronometer {
 

@@ -4,7 +4,7 @@ package ipc
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import play.api.libs.json._
 import scala.concurrent.duration._
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.{ ExecutionContext, Future }
 
 import lila.ws.util.LilaJsObject.augment
 

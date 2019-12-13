@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
 import scala.concurrent.duration._
-import scala.concurrent.{ Future, Promise, ExecutionContext, Await }
+import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
 import ipc._
 

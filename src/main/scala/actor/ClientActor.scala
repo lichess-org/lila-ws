@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.{ Behaviors, ActorContext }
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.Behavior
 import com.typesafe.scalalogging.Logger
 

@@ -5,7 +5,7 @@ import play.api.libs.json._
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
-import chess.variant.{ Variant, Crazyhouse }
+import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
 
 import ipc._

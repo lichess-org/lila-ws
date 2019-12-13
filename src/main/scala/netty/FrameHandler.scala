@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 
 import ipc.ClientOut
 
-private final class FrameHandler(implicit ec: ExecutionContext)
+final private class FrameHandler(implicit ec: ExecutionContext)
     extends SimpleChannelInboundHandler[WebSocketFrame] {
 
   import FrameHandler._

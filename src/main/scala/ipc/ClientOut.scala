@@ -3,9 +3,9 @@ package ipc
 
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
-import chess.{ Pos, Centis, MoveMetrics, Color }
+import chess.{ Centis, Color, MoveMetrics, Pos }
 import play.api.libs.json._
-import scala.util.{ Try, Success }
+import scala.util.{ Success, Try }
 
 import lila.ws.util.LilaJsObject.augment
 

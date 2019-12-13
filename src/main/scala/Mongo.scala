@@ -6,11 +6,11 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ DefaultDB, MongoConnection, AsyncDriver, ReadConcern }
+import reactivemongo.api.{ AsyncDriver, DefaultDB, MongoConnection, ReadConcern }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Try, Success }
+import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
