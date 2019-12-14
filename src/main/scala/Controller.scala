@@ -13,7 +13,7 @@ final class Controller(
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext, scheduler: akka.actor.typed.Scheduler) {
 
   import Controller._
   import ClientActor.{ Deps, Req }
@@ -87,12 +87,14 @@ final class Controller(
     }
   }
 
+  private val dedupUserTv = new util.DedupEmit[ipc.LilaIn.UserTv](3.seconds)(services.lila.round)
+
   def roundWatch(id: Game.Id, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.gameExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) =>
         val userTv = req queryParameter "userTv" map UserTv.apply
         userTv foreach { tv =>
-          services.lila.round(ipc.LilaIn.UserTv(id, tv.value))
+          dedupUserTv(ipc.LilaIn.UserTv(id, tv.value))
         }
         endpoint(
           name = "round/watch",
