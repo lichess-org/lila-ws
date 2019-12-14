@@ -178,6 +178,7 @@ final class Controller(
       "http://localhost",      // android
       "http://localhost:8080", // local dev
       "http://localhost:9663", // lila dev
+      "http://l.org",          // lila dev
       "file://"
     )
 
