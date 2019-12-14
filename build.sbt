@@ -2,8 +2,6 @@ name := "lila-ws"
 
 version := "2.0"
 
-maintainer := "lichess.org"
-
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
