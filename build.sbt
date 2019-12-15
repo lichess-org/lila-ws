@@ -14,11 +14,11 @@ scalaVersion := "2.13.1"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"      % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"          % "reactivemongo-shaded-native"  % s"0.19.3-linux-x86-64" % "runtime"
+libraryDependencies += "org.reactivemongo"          % "reactivemongo-shaded-native"  % s"$version-linux-x86-64"
 libraryDependencies += "io.lettuce"                 % "lettuce-core"                 % "5.2.1.RELEASE"
 libraryDependencies += "io.netty"                   % "netty-all"                    % nettyVersion
 libraryDependencies += "io.netty"                   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.lichess"                %% "scalachess"                  % "9.1.0"
+libraryDependencies += "org.lichess"                %% "scalachess"                  % "9.1.1"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"            % akkaVersion
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                  % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"               % "3.9.2"
