@@ -13,6 +13,7 @@ final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionConte
 
   private val cache: AsyncLoadingCache[User.ID, TitleName] =
     Scaffeine()
+      .initialCapacity(32768)
       .expireAfterWrite(15.minutes)
       .buildAsyncFuture(fetch)
 
