@@ -59,7 +59,6 @@ object Monitor {
       Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
   }
 
-  val redisPublishTime    = Kamon.timer("redis.publish.time").withoutTags
   def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags
   def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
   def clientOutUnhandled(name: String) =

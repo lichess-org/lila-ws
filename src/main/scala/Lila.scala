@@ -57,9 +57,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
-      val msg   = in.write
-      val timer = Monitor.redis.publishTime.start()
-      connIn.async.publish(chan.in, msg).thenRun { timer.stop _ }
+      val msg = in.write
+      connIn.async.publish(chan.in, msg)
       Monitor.redis.in(chan.in, msg.takeWhile(' '.!=))
     }
 
