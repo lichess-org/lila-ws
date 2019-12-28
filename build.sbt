@@ -7,14 +7,12 @@ lazy val root = (project in file("."))
 
 val akkaVersion          = "2.6.1"
 val kamonVersion         = "2.0.4"
-val reactivemongoVersion = "0.19.5"
+val reactivemongoVersion = "0.19.7"
 val nettyVersion         = "4.1.44.Final"
 
 scalaVersion := "2.13.1"
 
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"      % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"          % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
+libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % s"$reactivemongoVersion-noshaded"
 libraryDependencies += "io.lettuce"                 % "lettuce-core"                 % "5.2.1.RELEASE"
 libraryDependencies += "io.netty"                   % "netty-all"                    % nettyVersion
 libraryDependencies += "io.netty"                   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
