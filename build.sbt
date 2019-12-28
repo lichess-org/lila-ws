@@ -13,7 +13,8 @@ scalaVersion := "2.13.1"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % "0.20.0-noshaded-SNAPSHOT"
 libraryDependencies += "io.lettuce"                 % "lettuce-core"                 % "5.2.1.RELEASE"
-libraryDependencies += "io.netty"                   % "netty-all"                    % nettyVersion
+libraryDependencies += "io.netty"                   % "netty-handler"                % nettyVersion
+libraryDependencies += "io.netty"                   % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
 libraryDependencies += "org.lichess"                %% "scalachess"                  % "9.1.2"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"            % akkaVersion
