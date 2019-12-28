@@ -7,12 +7,11 @@ lazy val root = (project in file("."))
 
 val akkaVersion          = "2.6.1"
 val kamonVersion         = "2.0.4"
-val reactivemongoVersion = "0.19.7"
 val nettyVersion         = "4.1.44.Final"
 
 scalaVersion := "2.13.1"
 
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % s"$reactivemongoVersion-noshaded"
+libraryDependencies += "org.reactivemongo"          %% "reactivemongo"               % "0.20.0-noshaded-SNAPSHOT"
 libraryDependencies += "io.lettuce"                 % "lettuce-core"                 % "5.2.1.RELEASE"
 libraryDependencies += "io.netty"                   % "netty-all"                    % nettyVersion
 libraryDependencies += "io.netty"                   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
@@ -29,6 +28,7 @@ libraryDependencies += "io.kamon"                   %% "kamon-influxdb"         
 libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.0.1"
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                      % "2.3.3" % "provided"
 
+resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 scalacOptions ++= Seq(
