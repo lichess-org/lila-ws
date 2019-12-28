@@ -15,7 +15,7 @@ import scala.util.{ Success, Try }
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
   private val uri        = config.getString("mongo.uri")
-  private val driver     = AsyncDriver()
+  private val driver     = new AsyncDriver(Some(config.getConfig("reactivemongo")))
   private val parsedUri  = MongoConnection.parseURI(uri)
   private val connection = Future.fromTry(parsedUri).flatMap(driver.connect)
 
