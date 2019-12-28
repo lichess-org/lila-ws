@@ -4,6 +4,8 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
@@ -12,6 +14,33 @@ import ipc._
 final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   import Lila._
+
+  object status {
+    private var value: Status = Online
+    def setOffline()          = { value = Offline }
+    def setOnline(init: () => Unit) = {
+      value = Online
+      init()
+      buffer.flush()
+    }
+    def isOnline: Boolean = value == Online
+  }
+
+  private object buffer {
+    case class Buffered(chan: String, msg: String)
+    private val queue = new ConcurrentLinkedQueue[Buffered]()
+
+    def enqueue(chan: String, msg: String) = {
+      queue offer Buffered(chan, msg)
+    }
+    @tailrec def flush(): Unit = {
+      val next = queue.poll()
+      if (next != null) {
+        connIn.async.publish(next.chan, next.msg)
+        flush()
+      }
+    }
+  }
 
   private val logger  = Logger(getClass)
   private val redis   = RedisClient create RedisURI.create(config.getString("redis.uri"))
@@ -57,9 +86,17 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
-      val msg = in.write
-      connIn.async.publish(chan.in, msg)
-      Monitor.redis.in(chan.in, msg.takeWhile(' '.!=))
+      val msg  = in.write
+      val path = msg.takeWhile(' '.!=)
+      if (status.isOnline) {
+        connIn.async.publish(chan.in, msg)
+        Monitor.redis.in(chan.in, path)
+      } else if (in.critical) {
+        buffer.enqueue(chan.in, msg)
+        Monitor.redis.queue(chan.in, path)
+      } else {
+        Monitor.redis.drop(chan.in, path)
+      }
     }
 
     val promise = Promise[Emit[In]]
@@ -89,6 +126,10 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 }
 
 object Lila {
+
+  sealed trait Status
+  case object Online  extends Status
+  case object Offline extends Status
 
   type Handlers = String => Emit[LilaOut]
 

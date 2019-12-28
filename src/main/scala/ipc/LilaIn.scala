@@ -7,6 +7,7 @@ import play.api.libs.json._
 
 sealed trait LilaIn {
   def write: String
+  def critical: Boolean = false // will be buffered and resent after lila reboots
 }
 
 object LilaIn {
@@ -49,7 +50,8 @@ object LilaIn {
   }
 
   case object WsBoot extends Site {
-    def write = "boot"
+    def write             = "boot"
+    override def critical = true
   }
 
   type SriUserId = (Sri, Option[User.ID])
@@ -105,14 +107,12 @@ object LilaIn {
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
-  // case class RoundAnyDo(gameId: Game.Id, playerId: Option[Game.PlayerId], payload: JsValue) extends Round {
-  //   def write = s"r/do/any $gameId ${optional(playerId.map(_.value))} ${Json.stringify(payload)}"
-  // }
 
   case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
       s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+    override def critical = true
   }
 
   case class RoundBerserk(gameId: Game.Id, userId: User.ID) extends Round {
@@ -155,14 +155,15 @@ object LilaIn {
   }
 
   case class UserTv(gameId: Game.Id, userId: User.ID) extends Round {
-    def write = s"r/tv/user $gameId $userId"
+    def write             = s"r/tv/user $gameId $userId"
+    override def critical = true
   }
 
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge {
     def write = s"challenge/pings ${commas(ids)}"
   }
 
-  case class ReqResponse(reqId: Int, value: String) extends Study {
+  case class ReqResponse(reqId: Int, value: String) extends Study with Site {
     def write = s"req/response $reqId $value"
   }
 

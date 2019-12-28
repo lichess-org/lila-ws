@@ -79,7 +79,8 @@ object LilaOut {
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
-  case object LilaBoot extends AnyRoomOut
+  case object LilaBoot            extends AnyRoomOut
+  case class LilaStop(reqId: Int) extends AnyRoomOut
 
   // impl
 
@@ -251,6 +252,8 @@ object LilaOut {
         }
 
       case "boot" => Some(LilaBoot)
+
+      case "lila/stop" => args.toIntOption map LilaStop.apply
 
       case _ => None
     }

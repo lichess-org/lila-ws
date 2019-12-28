@@ -37,6 +37,11 @@ final class LilaHandler(
 
     case Impersonate(user, by) => Impersonations(user, by)
 
+    case LilaStop(reqId) =>
+      logger.info("******************** LILA STOP ********************")
+      lila.emit.site(LilaIn.ReqResponse(reqId, "See you on the other side"))
+      lila.status.setOffline()
+
     case msg => logger.warn(s"Unhandled site: $msg")
   }
 
@@ -113,7 +118,9 @@ final class LilaHandler(
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
-        lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+        lila.status.setOnline { () =>
+          lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+        }
         Impersonations.reset()
       case msg => roomHandler(msg)
     })

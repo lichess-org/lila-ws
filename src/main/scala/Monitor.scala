@@ -93,20 +93,26 @@ object Monitor {
       .increment()
 
   object redis {
-    val publishTime = Kamon.timer("redis.publish.time").withoutTags
+    val publishTime      = Kamon.timer("redis.publish.time").withoutTags
+    private val countIn  = Kamon.counter("redis.in")
+    private val countOut = Kamon.counter("redis.out")
     def in(chan: String, path: String) =
-      Kamon
-        .counter("redis.in")
-        .withTags(
-          TagSet.from(Map("channel" -> chan, "path" -> path))
-        )
+      countIn
+        .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
         .increment()
     def out(chan: String, path: String) =
+      countOut
+        .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
+        .increment()
+    def queue(chan: String, path: String) =
       Kamon
-        .counter("redis.out")
-        .withTags(
-          TagSet.from(Map("channel" -> chan, "path" -> path))
-        )
+        .counter("redis.out.queue")
+        .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
+        .increment()
+    def drop(chan: String, path: String) =
+      Kamon
+        .counter("redis.out.drop")
+        .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
         .increment()
   }
 
