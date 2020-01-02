@@ -160,7 +160,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     private val cache: AsyncLoadingCache[User.ID, Boolean] = Scaffeine()
       .expireAfterAccess(20.minutes)
       .buildAsyncFuture { id =>
-        userColl flatMap { exists(_, BSONDocument("_id" -> id, "troll" -> true)) }
+        userColl flatMap { exists(_, BSONDocument("_id" -> id, "marks" -> "troll")) }
       }
   }
 
