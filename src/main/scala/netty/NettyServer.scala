@@ -4,11 +4,10 @@ package netty
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.ChannelInitializer
+import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.channel.socket.SocketChannel
 import io.netty.handler.codec.http._
 import scala.concurrent.ExecutionContext
 
@@ -43,18 +42,12 @@ final class NettyServer(
       boot
         .group(bossGroup, workerGroup)
         .channel(channelClz)
-        .childHandler(new ChannelInitializer[SocketChannel] {
-          override def initChannel(ch: SocketChannel): Unit = {
+        .childHandler(new ChannelInitializer[Channel] {
+          override def initChannel(ch: Channel): Unit = {
             val pipeline = ch.pipeline()
             pipeline.addLast(new HttpServerCodec)
             pipeline.addLast(new HttpObjectAggregator(4096))
-            pipeline.addLast(
-              new ProtocolHandler(
-                clients,
-                router,
-                IpAddress(ch.localAddress.getAddress.getHostAddress)
-              )
-            )
+            pipeline.addLast(new ProtocolHandler(clients, router))
             pipeline.addLast(new FrameHandler)
           }
         })

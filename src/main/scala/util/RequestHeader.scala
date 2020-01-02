@@ -5,7 +5,7 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaders, HttpHeaderNames, QueryStringDecoder }
 import scala.jdk.CollectionConverters._
 
-final class RequestHeader(uri: String, req: HttpHeaders, val ip: IpAddress) {
+final class RequestHeader(uri: String, req: HttpHeaders) {
 
   private val query = new QueryStringDecoder(uri)
 
@@ -33,6 +33,8 @@ final class RequestHeader(uri: String, req: HttpHeaders, val ip: IpAddress) {
   def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
 
   def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make
+
+  def ip: Option[IpAddress] = header("X-Forwarded-For") map IpAddress
 
   def name: String = s"${uri} UA: ${userAgent}"
 

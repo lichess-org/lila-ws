@@ -14,8 +14,7 @@ import scala.concurrent.{ ExecutionContext, Future, Promise }
 
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
-    router: Router,
-    ip: IpAddress
+    router: Router
 )(implicit ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
       "/",   // path
@@ -37,7 +36,7 @@ final private class ProtocolHandler(
         val promise = Promise[Client]
         ctx.channel.attr(key.client).set(promise.future)
         router(
-          new util.RequestHeader(hs.requestUri, hs.requestHeaders, ip),
+          new util.RequestHeader(hs.requestUri, hs.requestHeaders),
           emitToChannel(ctx.channel)
         ) foreach {
           case Left(status) =>
