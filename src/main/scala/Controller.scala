@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.jdk.CollectionConverters._
 
 import util.RequestHeader
 
@@ -173,7 +174,7 @@ final class Controller(
 
   private object CSRF {
 
-    val csrfOrigin = config.getString("csrf.origin")
+    val csrfOrigins = config.getStringList("csrf.origins").asScala.toSet
     val appOrigins = Set(
       "ionic://localhost",     // ios
       "capacitor://localhost", // capacitor (ios next)
@@ -186,8 +187,8 @@ final class Controller(
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match {
-        case None                                                       => f // for exotic clients and acid ape chess
-        case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
+        case None                                                      => f // for exotic clients and acid ape chess
+        case Some(origin) if csrfOrigins(origin) || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
           Future successful Left(HttpResponseStatus.FORBIDDEN)
