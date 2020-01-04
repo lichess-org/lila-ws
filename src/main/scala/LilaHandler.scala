@@ -108,6 +108,8 @@ final class LilaHandler(
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
       case RoundGone(fullId, gone) =>
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundGone(fullId.playerId, gone))
+      case RoundGoneIn(fullId, seconds) =>
+        publish(_ room RoomId(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
       case RoundTourStanding(tourId, data) =>
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
       case UserTvNewGame(gameId, userId) => publish(_ room gameId, RoundUserTvNewGame(userId))

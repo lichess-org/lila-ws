@@ -90,6 +90,10 @@ object RoundClientActor {
             if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
             Behaviors.same
 
+          case goneIn: ClientIn.RoundGoneIn =>
+            if (state.player.exists(_.id != goneIn.playerId)) clientIn(goneIn)
+            Behaviors.same
+
           case in: ClientIn =>
             clientIn(in)
             Behaviors.same

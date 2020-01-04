@@ -74,6 +74,7 @@ object LilaOut {
   case class RoundTourStanding(tourId: Tour.ID, data: JsonString)      extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                    extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)            extends RoundOut
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
   case class UserTvNewGame(gameId: Game.Id, userId: User.ID)           extends RoundOut
 
@@ -228,6 +229,14 @@ object LilaOut {
       case "r/gone" =>
         get(args, 2) {
           case Array(fullId, gone) => Some(RoundGone(Game.FullId(fullId), boolean(gone)))
+        }
+
+      case "r/goneIn" =>
+        get(args, 2) {
+          case Array(fullId, secS) =>
+            secS.toIntOption map {
+              RoundGoneIn(Game.FullId(fullId), _)
+            }
         }
 
       case "r/tv/user" =>

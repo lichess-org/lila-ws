@@ -203,6 +203,9 @@ object ClientIn {
   case class RoundGone(playerId: Game.PlayerId, v: Boolean) extends ClientIn {
     def write = cliMsg("gone", v)
   }
+  case class RoundGoneIn(playerId: Game.PlayerId, seconds: Int) extends ClientIn {
+    def write = cliMsg("goneIn", seconds)
+  }
   case class RoundVersioned(
       version: SocketVersion,
       flags: RoundEventFlags,
