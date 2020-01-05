@@ -14,6 +14,9 @@
   <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
     <appender-ref ref="ASYNC"/>
   </logger>
+  <logger name="akka.actor.DeadLetterActorRef" level="WARN">
+    <appender-ref ref="ASYNC"/>
+  </logger>
 
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
