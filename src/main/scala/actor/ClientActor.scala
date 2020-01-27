@@ -99,6 +99,12 @@ object ClientActor {
         lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state
 
+      case ClientOut.UserForward(payload) =>
+        req.user foreach { user =>
+          lilaIn.site(LilaIn.TellUser(user.id, payload))
+        }
+        state
+
       case ClientOut.Ignore =>
         state
     }

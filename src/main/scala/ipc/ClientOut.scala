@@ -58,7 +58,9 @@ object ClientOut {
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
-  case class SiteForward(payload: JsValue) extends ClientOutSite
+  case class SiteForward(payload: JsObject) extends ClientOutSite
+
+  case class UserForward(payload: JsObject) extends ClientOutSite
 
   case class Unexpected(msg: JsValue) extends ClientOutSite
 
@@ -151,6 +153,7 @@ object ClientOut {
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
+            case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
             case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" |

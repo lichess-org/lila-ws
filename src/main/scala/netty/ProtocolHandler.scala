@@ -21,7 +21,7 @@ final private class ProtocolHandler(
       "/",   // path
       null,  // subprotocols (?)
       false, // allowExtensions (?)
-      2048,  // max frame size
+      8192,  // max frame size - /inbox allows sending 8000 chars
       false, // allowMaskMismatch (?)
       true,  // checkStartsWith
       true   // dropPongFrames

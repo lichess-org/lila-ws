@@ -29,6 +29,10 @@ object LilaIn {
     def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
   }
 
+  case class TellUser(userId: User.ID, payload: JsObject) extends Site {
+    def write = s"tell/user $userId ${Json.stringify(payload)}"
+  }
+
   case class NotifiedBatch(userIds: Iterable[User.ID]) extends Site {
     def write = s"notified/batch ${commas(userIds)}"
   }
