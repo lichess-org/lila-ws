@@ -95,6 +95,12 @@ object ClientActor {
         clientIn(Chess(anaDests))
         state
 
+      case ClientOut.MsgType(dest) =>
+        req.user foreach { orig =>
+          deps.users.tellOne(dest, ClientIn.MsgType(orig.id))
+        }
+        state
+
       case ClientOut.SiteForward(payload) =>
         lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
         state

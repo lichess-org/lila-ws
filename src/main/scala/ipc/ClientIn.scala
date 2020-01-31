@@ -222,6 +222,10 @@ object ClientIn {
     def write = cliMsg("palantir", userIds)
   }
 
+  case class MsgType(orig: User.ID) extends ClientIn {
+    def write = cliMsg("msgType", orig)
+  }
+
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(

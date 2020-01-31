@@ -58,6 +58,8 @@ object ClientOut {
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
+  case class MsgType(dest: User.ID) extends ClientOutSite
+
   case class SiteForward(payload: JsObject) extends ClientOutSite
 
   case class UserForward(payload: JsObject) extends ClientOutSite
@@ -153,6 +155,7 @@ object ClientOut {
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
+            case "msgType"             => o str "d" map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
