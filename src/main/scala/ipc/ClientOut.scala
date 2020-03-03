@@ -92,7 +92,7 @@ object ClientOut {
   // chat
 
   case class ChatSay(msg: String)                         extends ClientOut
-  case class ChatTimeout(suspect: String, reason: String) extends ClientOut
+  case class ChatTimeout(suspect: String, reason: String, text: String) extends ClientOut
 
   // challenge
 
@@ -207,7 +207,8 @@ object ClientOut {
                 data   <- o obj "d"
                 userId <- data str "userId"
                 reason <- data str "reason"
-              } yield ChatTimeout(userId, reason)
+                text <- data str "text"
+              } yield ChatTimeout(userId, reason, text)
             case "ping"      => Some(ChallengePing)
             case "wrongHole" => Some(WrongHole)
             case _           => None

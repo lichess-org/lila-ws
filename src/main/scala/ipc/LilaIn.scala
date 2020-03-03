@@ -74,9 +74,9 @@ object LilaIn {
   case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom {
     def write = s"chat/say $roomId $userId $msg"
   }
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String)
+  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String, text: String)
       extends AnyRoom {
-    def write = s"chat/timeout $roomId $userId $suspectId $reason"
+    def write = s"chat/timeout $roomId $userId $suspectId $reason $text"
   }
 
   case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round {

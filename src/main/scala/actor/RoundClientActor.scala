@@ -131,9 +131,9 @@ object RoundClientActor {
             } foreach lilaIn.round
             Behaviors.same
 
-          case ClientOut.ChatTimeout(suspect, reason) =>
+          case ClientOut.ChatTimeout(suspect, reason, text) =>
             deps.req.user foreach { u =>
-              lilaIn.round(LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason))
+              lilaIn.round(LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason, text))
             }
             Behaviors.same
 

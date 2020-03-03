@@ -69,9 +69,9 @@ object RoomActor {
         LilaIn.ChatSay(state.id, u.id, msg)
       }
 
-    case ClientOut.ChatTimeout(suspect, reason) =>
+    case ClientOut.ChatTimeout(suspect, reason, text) =>
       None -> deps.req.user.map { u =>
-        LilaIn.ChatTimeout(state.id, u.id, suspect, reason)
+        LilaIn.ChatTimeout(state.id, u.id, suspect, reason, text)
       }
   }
 }
