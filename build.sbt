@@ -29,7 +29,7 @@ libraryDependencies += "ch.qos.logback"             % "logback-classic"         
 libraryDependencies += "com.typesafe.play"          %% "play-json"                   % "2.8.1"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                  % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"              % "2.0.1-LILA"
-libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.0.1"
+libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.0.2"
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                      % "2.3.3" % "provided"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
