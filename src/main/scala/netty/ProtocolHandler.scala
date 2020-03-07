@@ -61,9 +61,7 @@ final private class ProtocolHandler(
       def operationComplete(f: NettyFuture[Void]): Unit =
         Option(channel.attr(key.client).get) match {
           case Some(client) =>
-            client foreach { c =>
-              clients ! Clients.Stop(c)
-            }
+            client foreach { c => clients ! Clients.Stop(c) }
           case None => Monitor.websocketError("clientActorMissing")
         }
     })

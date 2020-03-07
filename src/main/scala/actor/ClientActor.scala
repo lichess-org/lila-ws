@@ -96,9 +96,7 @@ object ClientActor {
         state
 
       case ClientOut.MsgType(dest) =>
-        req.user foreach { orig =>
-          deps.users.tellOne(dest, ClientIn.MsgType(orig.id))
-        }
+        req.user foreach { orig => deps.users.tellOne(dest, ClientIn.MsgType(orig.id)) }
         state
 
       case ClientOut.SiteForward(payload) =>
@@ -106,9 +104,7 @@ object ClientActor {
         state
 
       case ClientOut.UserForward(payload) =>
-        req.user foreach { user =>
-          lilaIn.site(LilaIn.TellUser(user.id, payload))
-        }
+        req.user foreach { user => lilaIn.site(LilaIn.TellUser(user.id, payload)) }
         state
 
       case ClientOut.Ignore =>

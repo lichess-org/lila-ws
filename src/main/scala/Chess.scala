@@ -69,7 +69,8 @@ object Chess {
     if (Variant.openingSensibleVariants(req.variant))
       FullOpeningDB findByFen req.fen.value map {
         ClientIn.Opening(req.path, _)
-      } else None
+      }
+    else None
 
   private def makeNode(
       game: chess.Game,
@@ -100,24 +101,12 @@ object Chess {
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
   object json {
-    implicit val fenWrite = Writes[FEN] { fen =>
-      JsString(fen.value)
-    }
-    implicit val pathWrite = Writes[Path] { path =>
-      JsString(path.value)
-    }
-    implicit val uciWrite = Writes[Uci] { uci =>
-      JsString(uci.uci)
-    }
-    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp =>
-      JsString(ucp.toString)
-    }
-    implicit val posWrite = Writes[Pos] { pos =>
-      JsString(pos.key)
-    }
-    implicit val chapterIdWrite = Writes[ChapterId] { ch =>
-      JsString(ch.value)
-    }
+    implicit val fenWrite         = Writes[FEN] { fen => JsString(fen.value) }
+    implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
+    implicit val uciWrite         = Writes[Uci] { uci => JsString(uci.uci) }
+    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
+    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
+    implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
     implicit val openingWrite = Writes[FullOpening] { o =>
       Json.obj(
         "eco"  -> o.eco,
@@ -143,9 +132,7 @@ object Chess {
     implicit val crazyhousePocketWriter: OWrites[Crazyhouse.Pocket] = OWrites { v =>
       JsObject(
         Crazyhouse.storableRoles.flatMap { role =>
-          Some(v.roles.count(role == _)).filter(0 < _).map { count =>
-            role.name -> JsNumber(count)
-          }
+          Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
         }
       )
     }

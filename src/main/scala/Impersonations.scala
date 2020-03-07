@@ -11,9 +11,7 @@ object Impersonations {
     case None =>
       all collectFirst {
         case (m, u) if u == user => m
-      } foreach { modId =>
-        all = all - modId
-      }
+      } foreach { modId => all = all - modId }
   }
 
   def get(modId: ModId): Option[User.ID] = all get modId

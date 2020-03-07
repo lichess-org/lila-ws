@@ -52,9 +52,7 @@ object RoundClientActor {
         import deps._
 
         def gameId = Game.Id(state.room.id.value)
-        def fullId = state.player map { p =>
-          gameId full p.id
-        }
+        def fullId = state.player map { p => gameId full p.id }
 
         msg match {
 
@@ -106,9 +104,7 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundPlayerForward(payload) =>
-            fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundPlayerDo(fid, payload))
-            }
+            fullId foreach { fid => lilaIn.round(LilaIn.RoundPlayerDo(fid, payload)) }
             Behaviors.same
 
           case ClientOut.RoundFlag(color) =>
@@ -116,16 +112,12 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundBye =>
-            fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundBye(fid))
-            }
+            fullId foreach { fid => lilaIn.round(LilaIn.RoundBye(fid)) }
             Behaviors.same
 
           case ClientOut.ChatSay(msg) =>
             state.player.fold[Option[LilaIn.Round]](
-              req.user map { u =>
-                LilaIn.WatcherChatSay(state.room.id, u.id, msg)
-              }
+              req.user map { u => LilaIn.WatcherChatSay(state.room.id, u.id, msg) }
             ) { p =>
               Some(LilaIn.PlayerChatSay(state.room.id, req.user.map(_.id).toLeft(p.color), msg))
             } foreach lilaIn.round
@@ -145,9 +137,7 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundHold(fid, req.ip, mean, sd))
-            }
+            fullId foreach { fid => lilaIn.round(LilaIn.RoundHold(fid, req.ip, mean, sd)) }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>

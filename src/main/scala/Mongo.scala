@@ -150,9 +150,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   object troll {
 
     def is(user: Option[User]): Future[IsTroll] =
-      user.fold(Future successful IsTroll(false)) { u =>
-        cache.get(u.id).map(IsTroll.apply)(parasitic)
-      }
+      user.fold(Future successful IsTroll(false)) { u => cache.get(u.id).map(IsTroll.apply)(parasitic) }
 
     def set(userId: User.ID, v: IsTroll): Unit =
       cache.put(userId, Future successful v.value)
@@ -201,9 +199,7 @@ object Mongo {
   implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
 
     @inline def readTry(bson: BSONValue): Try[DateTime] =
-      bson.asTry[BSONDateTime] map { dt =>
-        new DateTime(dt.value)
-      }
+      bson.asTry[BSONDateTime] map { dt => new DateTime(dt.value) }
 
     @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
   }

@@ -54,9 +54,7 @@ final class LilaHandler(
     case TellLobbyActive(payload) =>
       publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload) =>
-      sris foreach { sri =>
-        publish(_ sri sri, ClientIn.Payload(payload))
-      }
+      sris foreach { sri => publish(_ sri sri, ClientIn.Payload(payload)) }
     case LobbyPairings(pairings) =>
       pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
 
@@ -120,9 +118,7 @@ final class LilaHandler(
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
-        lila.status.setOnline { () =>
-          lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
-        }
+        lila.status.setOnline { () => lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions)) }
         Impersonations.reset()
       case msg => roomHandler(msg)
     })

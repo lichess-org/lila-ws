@@ -69,11 +69,7 @@ final class SeenAtUpdate(mongo: Mongo)(
       )
     )
 
-    scheduler.scheduleWithFixedDelay(20.seconds, 30.seconds) { () =>
-      fetch foreach { res =>
-        ids = res
-      }
-    }
+    scheduler.scheduleWithFixedDelay(20.seconds, 30.seconds) { () => fetch foreach { res => ids = res } }
   }
 
   private def findAndModify(

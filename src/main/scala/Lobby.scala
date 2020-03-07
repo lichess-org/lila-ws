@@ -16,9 +16,7 @@ final class Lobby(
     lilaIn(LilaIn.ConnectSris(connects))
   }
 
-  val disconnect = groupedWithin[Sri](50, 487.millis) { sris =>
-    lilaIn(LilaIn.DisconnectSris(sris))
-  }
+  val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lilaIn(LilaIn.DisconnectSris(sris)) }
 
   object pong {
 

@@ -165,9 +165,7 @@ object ClientIn {
               )
               .add("opening" -> opening)
               .add("check" -> check)
-              .add("drops" -> drops.map { drops =>
-                JsString(drops.map(_.key).mkString)
-              })
+              .add("drops" -> drops.map { drops => JsString(drops.map(_.key).mkString) })
               .add("crazy" -> crazyData)
           )
           .add("ch" -> chapterId)

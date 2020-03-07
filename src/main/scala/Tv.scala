@@ -18,9 +18,7 @@ object Tv {
   def select(out: LilaOut.TvSelect): Unit = {
     val cliMsg = ClientIn.tvSelect(out.json)
     List(fast, slow) foreach { in =>
-      in.asMap.keys foreach { gameId =>
-        Bus.publish(_ room RoomId(gameId), cliMsg)
-      }
+      in.asMap.keys foreach { gameId => Bus.publish(_ room RoomId(gameId), cliMsg) }
     }
     (if (out.speed <= chess.Speed.Bullet) fast else slow).put(out.gameId.value, true)
   }

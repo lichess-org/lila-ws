@@ -188,9 +188,7 @@ object LilaOut {
       case "room/present" =>
         get(args, 3) {
           case Array(reqIdS, roomId, userId) =>
-            reqIdS.toIntOption map { reqId =>
-              RoomIsPresent(reqId, RoomId(roomId), userId)
-            }
+            reqIdS.toIntOption map { reqId => RoomIsPresent(reqId, RoomId(roomId), userId) }
         }
 
       case "tour/get/waiting" =>
