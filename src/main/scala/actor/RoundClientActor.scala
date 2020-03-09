@@ -145,14 +145,14 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundHold(fid, req.ip, mean, sd))
+            fullId zip req.ip foreach { case (fid, ip) =>
+              lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId foreach { fid =>
-              lilaIn.round(LilaIn.RoundSelfReport(fid, req.ip, req.user.map(_.id), name))
+            fullId zip req.ip foreach { case (fid, ip) =>
+              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
             }
             Behaviors.same
 

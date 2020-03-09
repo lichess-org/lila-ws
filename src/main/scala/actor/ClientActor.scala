@@ -145,7 +145,7 @@ object ClientActor {
 
   case class Req(
       name: String,
-      ip: IpAddress,
+      ip: Option[IpAddress],
       sri: Sri,
       flag: Option[Flag],
       user: Option[User]
