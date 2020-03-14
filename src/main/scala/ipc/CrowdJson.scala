@@ -42,10 +42,12 @@ final class CrowdJson(
       Future.traverse(crowd.users)(lightUserApi.get) map { names =>
         Json.obj(
           "nb"    -> crowd.members,
-          "users" -> names,
+          "users" -> names.filterNot(isBotName),
           "anons" -> crowd.anons
         )
       }
+
+  private def isBotName(str: String) = str startsWith "BOT "
 
   private val isStudyCache: AsyncLoadingCache[String, Boolean] =
     Scaffeine()
