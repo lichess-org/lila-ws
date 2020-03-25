@@ -10,26 +10,34 @@ class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
   logCapacity: Int
 ) {
-  private val slotMask: Int = (1 << logCapacity) - 1
+  private val slotsMask: Int = (1 << logCapacity) - 1
+  private val locksMask: Int = (1 << 10) - 1
 
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
-  private val _lock = new ReentrantLock()
+  private val locks = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
   private val leftFollowingRight = new AdjacenyList()
   private val leftFollowedRight = new AdjacenyList()
 
   private def lockSlot(id: User.ID): Slot = {
-    val lock = lockFor(0) // TODO: More granular locking
     val hash = id.hashCode
-    hash to (hash + SocialGraph.MaxStride) map(_ & slotMask) collectFirst {
-      case slot if slots(slot) == null => NewSlot(slot, lock)
-      case slot if slots(slot).id == id => ExistingSlot(slot, lock)
-    } getOrElse NoSlot
+    val search = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
+      val slot = s & slotsMask
+      val lock = lockFor(slot)
+      if (slots(slot) == null) Some(NewSlot(slot, lock))
+      else if (slots(slot).id == id) Some(ExistingSlot(slot, lock))
+      else {
+        lock.unlock()
+        None
+      }
+    }
+    search.headOption getOrElse NoSlot
   }
 
   private def lockFor(slot: Int): Lock = {
-    _lock.lock()
-    _lock
+    val lock = locks(slot & locksMask)
+    lock.lock()
+    lock
   }
 
   private def readFollowed(leftSlot: Int): List[UserInfo] = {
