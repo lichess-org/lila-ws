@@ -20,7 +20,7 @@ class SocialGraph(
   private val leftFollowedRight = new AdjacenyList()
 
   private def lockSlot(id: User.ID): Slot = {
-    val hash = id.hashCode
+    val hash = id.hashCode & slotsMask
     val search = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
       val slot = s & slotsMask
       val lock = lockFor(slot)
@@ -31,7 +31,17 @@ class SocialGraph(
         None
       }
     }
-    search.headOption getOrElse NoSlot
+    search.headOption getOrElse {
+      val lock = lockFor(hash)
+      leftFollowedRight.read(hash) foreach { rightSlot =>
+        val rightLock = lockFor(rightSlot)
+        slots(rightSlot) = slots(rightSlot).copy(fresh = false)
+        leftFollowedRight.remove(hash, rightSlot)
+        leftFollowingRight.remove(rightSlot, hash)
+        rightLock.unlock()
+      }
+      NewSlot(hash, lock)
+    }
   }
 
   private def lockFor(slot: Int): Lock = {
@@ -73,7 +83,6 @@ class SocialGraph(
           slots(rightSlot) = entry
           rightLock.unlock()
           build += UserInfo(record.id, record.username, entry.meta)
-        case NoSlot => ()
       }
     }
     build.toList
@@ -92,7 +101,6 @@ class SocialGraph(
           val infos = mergeFollowed(leftSlot, followed)
           leftLock.unlock()
           infos
-        case NoSlot => Nil
       }
     }
   }
@@ -111,7 +119,6 @@ class SocialGraph(
           lock.unlock()
           doLoadFollowed(id)
         }
-      case NoSlot => Future successful Nil
     }
   }
 
@@ -125,12 +132,10 @@ class SocialGraph(
             rightLock.unlock()
           case NewSlot(_, rightLock) =>
             rightLock.unlock()
-          case NoSlot =>
         }
         leftLock.unlock()
       case NewSlot(_, leftLock) =>
         leftLock.unlock()
-      case NoSlot =>
     }
   }
 
@@ -148,7 +153,6 @@ class SocialGraph(
         slots(slot) = UserEntry(id, None, Some(meta), false)
         lock.unlock()
         Nil
-      case NoSlot => Nil
     }
   }
 }
@@ -180,7 +184,6 @@ private case class UserEntry(id: User.ID, username: Option[String], meta: Option
 private sealed trait Slot
 private case class NewSlot(slot: Int, lock: Lock) extends Slot
 private case class ExistingSlot(slot: Int, lock: Lock) extends Slot
-private case object NoSlot extends Slot // TODO: Replace old entry
 
 object SocialGraph {
   private val MaxStride: Int = 20
