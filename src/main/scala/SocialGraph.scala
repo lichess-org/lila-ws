@@ -82,6 +82,8 @@ class SocialGraph(
         case ExistingSlot(rightSlot, rightLock) =>
           val entry = slots(rightSlot).copy(username = Some(record.username))
           slots(rightSlot) = entry
+          leftFollowedRight.add(leftSlot, rightSlot)
+          leftFollowingRight.add(rightSlot, leftSlot)
           rightLock.unlock()
           build += UserInfo(record.id, record.username, entry.meta)
       }
