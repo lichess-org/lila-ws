@@ -43,10 +43,10 @@ class SocialGraphTest extends Specification {
       UserInfo("b", "B", None)
     )
 
-    graph.follow("c", "b")
-    graph.follow("a", "c")
-    graph.follow("a", "a_b")
-    graph.follow("a_b", "c")
+    graph.follow("c", UserRecord("b", "B"))
+    graph.follow("a", UserRecord("c", "C"))
+    graph.follow("a", UserRecord("a_b", "A_B"))
+    graph.follow("a_b", UserRecord("c", "C"))
 
     val bOnline = graph.tell("b", UserMeta(online = true))
     bOnline.toSet must_== Set("a_b", "a_b_c", "c")

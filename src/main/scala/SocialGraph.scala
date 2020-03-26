@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock
 //
 // It is guaranteed that users do not receive incorrect updates, but there
 // is a chance that some updates are missed if the number of online
-// users approaches the capacity.
+// users and their followed users approaches the capacity.
 class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
   logCapacity: Int
@@ -25,7 +25,7 @@ class SocialGraph(
   private val rightFollowsLeft = new AdjacenyList()
 
   // A linear probing, open addressing hash table. A custom implementation is
-  // used, so that we know the index of an entry in the hashtable is stable
+  // used, so that we know the index of an entry in the hash table is stable
   // (at least until it is replaced).
   private val slotsMask: Int = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
@@ -154,7 +154,7 @@ class SocialGraph(
   }
 
   // Load users that id follows, either from the cache or from the database,
-  // and subscribes to future updates.
+  // and subscribes to future updates from tell.
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
     lockSlot(id) match {
       case NewSlot(slot, lock) =>
@@ -172,13 +172,14 @@ class SocialGraph(
     }
   }
 
-  private def toggleFollow(on: Boolean)(left: User.ID, right: User.ID): Unit = {
+  // left no longer follows right.
+  def unfollow(left: User.ID, right: User.ID): Unit = {
     lockSlot(left) match {
       case ExistingSlot(leftSlot, leftLock) =>
         lockSlot(right) match {
           case ExistingSlot(rightSlot, rightLock) =>
-            leftFollowsRight.toggle(on)(leftSlot, rightSlot)
-            rightFollowsLeft.toggle(on)(rightSlot, leftSlot)
+            leftFollowsRight.remove(leftSlot, rightSlot)
+            rightFollowsLeft.remove(rightSlot, leftSlot)
             rightLock.unlock()
           case NewSlot(_, rightLock) =>
             rightLock.unlock()
@@ -189,9 +190,28 @@ class SocialGraph(
     }
   }
 
-  // Update cached relations.
-  def follow(left: User.ID, right: User.ID) = toggleFollow(true)(left, right)
-  def unfollow(left: User.ID, right: User.ID) = toggleFollow(false)(left, right)
+  // left now follows right.
+  def follow(left: User.ID, right: UserRecord): Unit = {
+    lockSlot(left) match {
+      case ExistingSlot(leftSlot, leftLock) =>
+        lockSlot(right.id) match {
+          case ExistingSlot(rightSlot, rightLock) =>
+            slots(rightSlot) = slots(rightSlot).copy(username = Some(right.username))
+            leftFollowsRight.add(leftSlot, rightSlot)
+            rightFollowsLeft.add(rightSlot, leftSlot)
+            rightLock.unlock()
+          case NewSlot(rightSlot, rightLock) =>
+            slots(rightSlot) = UserEntry(right.id, Some(right.username), None, false)
+            leftFollowsRight.add(leftSlot, rightSlot)
+            rightFollowsLeft.add(rightSlot, leftSlot)
+            rightLock.unlock()
+        }
+      case NewSlot(_, leftLock) =>
+        // Nothing to update. Next followed will have to hit the database
+        // anyway.
+        leftLock.unlock()
+    }
+  }
 
   // Updates the status of a user. Returns the list of subscribed users that
   // are intrested in this update.
@@ -217,7 +237,6 @@ object SocialGraph {
 private class AdjacenyList {
   private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
 
-  def toggle(on: Boolean) = if (on) add _ else remove _
   def add(a: Int, b: Int): Unit = inner.add(AdjacenyList.makePair(a, b))
   def remove(a: Int, b: Int): Unit = inner.remove(AdjacenyList.makePair(a, b))
   def has(a: Int, b: Int): Boolean = inner.contains(AdjacenyList.makePair(a, b))
