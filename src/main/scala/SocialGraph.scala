@@ -104,8 +104,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   private def readFollowed(leftSlot: Int): List[UserInfo] = {
     leftFollowsRight.read(leftSlot) flatMap { rightSlot =>
-      val entry = slots(rightSlot)
-      entry.data map { UserInfo(entry.id, _, entry.meta) }
+      Option(slots(rightSlot)) flatMap { entry =>
+        entry.data map { UserInfo(entry.id, _, entry.meta) }
+      }
     }
   }
 
