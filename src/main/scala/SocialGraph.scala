@@ -12,9 +12,12 @@ import java.util.concurrent.locks.ReentrantLock
 // adjacency lists. Reserve space for peak online users and all their followed
 // users.
 //
-// It is guaranteed that users do not receive incorrect updates, but there
-// is a chance that some updates are missed if the number of online
-// users and their followed users approaches the capacity.
+// Except thread-safety and no runtime errors, almost nothing is guaranteed.
+// As the number of online users and their followed users approaches the
+// capacity, there is a slight chance that tells are missed.
+// Further, if a user is replaced by one of their followers, there is a small
+// chance that a tell goes to the wrong user. This is unlikely, and its even
+// more unlikely that the wrong user is online to witness it.
 class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
   logCapacity: Int,
