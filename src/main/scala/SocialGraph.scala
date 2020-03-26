@@ -9,7 +9,8 @@ import java.util.concurrent.locks.ReentrantLock
 // Best effort fixed capacity cache for the social graph of online users.
 //
 // Based on a fixed size array with at most 2^logCapacity entries and
-// adjacency lists.
+// adjacency lists. Reserve space for peak online users and all their followed
+// users.
 //
 // It is guaranteed that users do not receive incorrect updates, but there
 // is a chance that some updates are missed if the number of online
@@ -18,14 +19,23 @@ class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
   logCapacity: Int
 ) {
+  // Adjacency lists, each representing a set of tuples
+  // (left slot, right slot).
   private val leftFollowsRight = new AdjacenyList()
   private val rightFollowsLeft = new AdjacenyList()
 
-  private val locksMask: Int = (1 << 10) - 1
-  private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
-
+  // A linear probing, open addressing hash table. A custom implementation is
+  // used, so that we know the index of an entry in the hashtable is stable
+  // (at least until it is replaced).
   private val slotsMask: Int = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
+
+  // An array of locks, where locks[slot & locksMask] is responsible for that
+  // slot. For writes to a slot, hold its lock. For reliable reads from an
+  // adjacency list, hold the lock of the left slot. For writes, hold both
+  // locks.
+  private val locksMask: Int = (1 << 10) - 1
+  private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
   private def lockFor(slot: Int): ReentrantLock = {
     val lock = locks(slot & locksMask)
@@ -60,6 +70,7 @@ class SocialGraph(
         else if (existing.id == id) Some(ExistingSlot(slot, lock))
         else if (!existing.meta.exists(_.online)) {
           leftFollowsRight.read(slot) foreach invalidateRightSlot(slot)
+          slots(slot) = null
           Some(NewSlot(slot, lock))
         }
         else {
@@ -72,6 +83,7 @@ class SocialGraph(
       // The hashtable is full. Overwrite a random entry.
       val lock = lockFor(hash)
       leftFollowsRight.read(hash) foreach invalidateRightSlot(hash)
+      slots(hash) = null
       NewSlot(hash, lock)
     }
   }
