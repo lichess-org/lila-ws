@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DefaultDB, MongoConnection, ReadConcern }
+import reactivemongo.api.{ AsyncDriver, Cursor, DefaultDB, MongoConnection, ReadConcern, ReadPreference }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -32,6 +32,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def studyColl                       = collNamed("study")
   def gameColl                        = collNamed("game5")
   def challengeColl                   = collNamed("challenge")
+  def relationColl                    = collNamed("relation")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
@@ -81,6 +82,8 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
           }(parasitic)
       }
     }
+
+  private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
   def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
     exists(
@@ -145,12 +148,40 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       }
     }
 
-  private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
+  def loadFollowed(userId: User.ID): Future[Iterable[SocialGraph.UserRecord]] =
+    relationColl flatMap {
+      _.distinct[User.ID, List](
+        key = "u2",
+        selector = Some(BSONDocument("u1" -> userId, "r" -> true)),
+        readConcern = ReadConcern.Local,
+        collation = None
+      )
+    } flatMap { ids =>
+      userColl flatMap {
+        _.find(
+          BSONDocument("_id" -> BSONDocument("$in" -> ids)),
+          Some(BSONDocument("username" -> true))
+        ).cursor[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
+          .collect[List](1000, Cursor.ContOnError[List[BSONDocument]]())
+          .map {
+            _.flatMap { doc =>
+              for {
+                id   <- doc.getAsOpt[User.ID]("_id")
+                name <- doc.getAsOpt[String]("username")
+                title  = doc.getAsOpt[String]("title")
+                patron = doc.child("plan").flatMap(_.getAsOpt[Boolean]("active")) getOrElse false
+              } yield SocialGraph.UserRecord(id, SocialGraph.UserData(name, title, patron))
+            }
+          }
+      }
+    }
 
   object troll {
 
     def is(user: Option[User]): Future[IsTroll] =
-      user.fold(Future successful IsTroll(false)) { u => cache.get(u.id).map(IsTroll.apply)(parasitic) }
+      user.fold(Future successful IsTroll(false)) { u =>
+        cache.get(u.id).map(IsTroll.apply)(parasitic)
+      }
 
     def set(userId: User.ID, v: IsTroll): Unit =
       cache.put(userId, Future successful v.value)
@@ -199,7 +230,9 @@ object Mongo {
   implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
 
     @inline def readTry(bson: BSONValue): Try[DateTime] =
-      bson.asTry[BSONDateTime] map { dt => new DateTime(dt.value) }
+      bson.asTry[BSONDateTime] map { dt =>
+        new DateTime(dt.value)
+      }
 
     @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
   }

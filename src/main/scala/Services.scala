@@ -11,7 +11,8 @@ final class Services(
     val roomCrowd: RoomCrowd,
     val roundCrowd: RoundCrowd,
     val keepAlive: KeepAlive,
-    val lobby: Lobby
+    val lobby: Lobby,
+    val friends: FriendList
 ) {
 
   def lila = lilaRedis.emit
@@ -20,7 +21,6 @@ final class Services(
   val notified = groupedWithin[User.ID](40, 1001.millis) { userIds =>
     lila.site(LilaIn.NotifiedBatch(userIds))
   }
-  val friends = groupedWithin[User.ID](10, 521.millis) { userIds => lila.site(LilaIn.FriendsBatch(userIds)) }
   val studyDoor = groupedWithin[ThroughStudyDoor](64, 1931.millis) { throughs =>
     lila.study(LilaIn.StudyDoor {
       throughs.foldLeft(Map.empty[User.ID, Either[RoomId, RoomId]]) {

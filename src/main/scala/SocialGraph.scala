@@ -1,10 +1,11 @@
 package lila.ws
 
-import scala.jdk.CollectionConverters._
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ ExecutionContext, Future }
+import com.typesafe.config.Config
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.locks.ReentrantLock
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.jdk.CollectionConverters._
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -18,11 +19,13 @@ import java.util.concurrent.locks.ReentrantLock
 // Further, if a user is replaced by one of their followers, there is a small
 // chance that a tell goes to the wrong user. This is unlikely, and its even
 // more unlikely that the wrong user is online to witness it.
-class SocialGraph(
-    loadFollowed: User.ID => Future[Iterable[UserRecord]],
-    logCapacity: Int,
-    logNumLocks: Int
-) {
+final class SocialGraph(mongo: Mongo, config: Config) {
+
+  import SocialGraph._
+
+  private val logCapacity = config.getInt("socialGraph.logCapacity")
+  private val logNumLocks = config.getInt("socialGraph.logNumLocks")
+
   // Adjacency lists, each representing a set of tuples
   // (left slot, right slot).
   private val leftFollowsRight = new AdjacencyList()
@@ -102,7 +105,7 @@ class SocialGraph(
   private def readFollowed(leftSlot: Int): List[UserInfo] = {
     leftFollowsRight.read(leftSlot) flatMap { rightSlot =>
       val entry = slots(rightSlot)
-      entry.username map { username => UserInfo(entry.id, username, entry.meta) }
+      entry.data map { UserInfo(entry.id, _, entry.meta) }
     }
   }
 
@@ -129,25 +132,25 @@ class SocialGraph(
     followed foreach { record =>
       lockSlot(record.id) match {
         case NewSlot(rightSlot, rightLock) =>
-          slots(rightSlot) = UserEntry(record.id, Some(record.username), None, false)
+          slots(rightSlot) = UserEntry(record.id, Some(record.data), None, false)
           leftFollowsRight.add(leftSlot, rightSlot)
           rightFollowsLeft.add(rightSlot, leftSlot)
           rightLock.unlock()
-          build += UserInfo(record.id, record.username, None)
+          build += UserInfo(record.id, record.data, None)
         case ExistingSlot(rightSlot, rightLock) =>
-          val entry = slots(rightSlot).copy(username = Some(record.username))
+          val entry = slots(rightSlot).copy(data = Some(record.data))
           slots(rightSlot) = entry
           leftFollowsRight.add(leftSlot, rightSlot)
           rightFollowsLeft.add(rightSlot, leftSlot)
           rightLock.unlock()
-          build += UserInfo(record.id, record.username, entry.meta)
+          build += UserInfo(record.id, record.data, entry.meta)
       }
     }
     build.toList
   }
 
   private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
-    loadFollowed(id) map { followed =>
+    mongo.loadFollowed(id) map { followed =>
       lockSlot(id) match {
         case NewSlot(leftSlot, leftLock) =>
           slots(leftSlot) = UserEntry(id, None, None, true)
@@ -206,12 +209,12 @@ class SocialGraph(
       case ExistingSlot(leftSlot, leftLock) =>
         lockSlot(right.id) match {
           case ExistingSlot(rightSlot, rightLock) =>
-            slots(rightSlot) = slots(rightSlot).copy(username = Some(right.username))
+            slots(rightSlot) = slots(rightSlot).copy(data = Some(right.data))
             leftFollowsRight.add(leftSlot, rightSlot)
             rightFollowsLeft.add(rightSlot, leftSlot)
             rightLock.unlock()
           case NewSlot(rightSlot, rightLock) =>
-            slots(rightSlot) = UserEntry(right.id, Some(right.username), None, false)
+            slots(rightSlot) = UserEntry(right.id, Some(right.data), None, false)
             leftFollowsRight.add(leftSlot, rightSlot)
             rightFollowsLeft.add(rightSlot, leftSlot)
             rightLock.unlock()
@@ -241,34 +244,40 @@ class SocialGraph(
 }
 
 object SocialGraph {
+
   private val MaxStride: Int = 20
+
+  case class UserData(name: String, title: Option[String], patron: Boolean) {
+    def titleName = title.fold(name)(_ + " " + name)
+  }
+  case class UserMeta(online: Boolean)
+  case class UserRecord(id: User.ID, data: UserData)
+  case class UserInfo(id: User.ID, data: UserData, meta: Option[UserMeta])
+
+  private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean)
+
+  sealed private trait Slot
+  private case class NewSlot(slot: Int, lock: ReentrantLock)      extends Slot
+  private case class ExistingSlot(slot: Int, lock: ReentrantLock) extends Slot
+
+  private class AdjacencyList {
+    private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
+
+    def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
+    def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
+    def has(a: Int, b: Int): Boolean = inner.contains(AdjacencyList.makePair(a, b))
+
+    def read(a: Int): List[Int] =
+      inner
+        .subSet(AdjacencyList.makePair(a, 0), AdjacencyList.makePair(a + 1, 0))
+        .asScala
+        .map { entry =>
+          entry.toInt & 0xffffffff
+        }
+        .toList
+  }
+
+  private object AdjacencyList {
+    private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
+  }
 }
-
-private class AdjacencyList {
-  private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
-
-  def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
-  def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
-  def has(a: Int, b: Int): Boolean = inner.contains(AdjacencyList.makePair(a, b))
-
-  def read(a: Int): List[Int] =
-    inner
-      .subSet(AdjacencyList.makePair(a, 0), AdjacencyList.makePair(a + 1, 0))
-      .asScala
-      .map { entry => entry.toInt & 0xffffffff }
-      .toList
-}
-
-private object AdjacencyList {
-  private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
-}
-
-case class UserMeta(online: Boolean)
-case class UserRecord(id: User.ID, username: String)
-case class UserInfo(id: User.ID, username: String, meta: Option[UserMeta])
-
-private case class UserEntry(id: User.ID, username: Option[String], meta: Option[UserMeta], fresh: Boolean)
-
-sealed private trait Slot
-private case class NewSlot(slot: Int, lock: ReentrantLock)      extends Slot
-private case class ExistingSlot(slot: Int, lock: ReentrantLock) extends Slot
