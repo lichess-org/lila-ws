@@ -148,6 +148,15 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       }
     }
 
+  private val userRecordProjection = BSONDocument("username" -> true, "title" -> true, "plan" -> true)
+  private def userRecordReader(doc: BSONDocument) =
+    for {
+      id   <- doc.getAsOpt[User.ID]("_id")
+      name <- doc.getAsOpt[String]("username")
+      title  = doc.getAsOpt[String]("title")
+      patron = doc.child("plan").flatMap(_.getAsOpt[Boolean]("active")) getOrElse false
+    } yield SocialGraph.UserRecord(id, SocialGraph.UserData(name, title, patron))
+
   def loadFollowed(userId: User.ID): Future[Iterable[SocialGraph.UserRecord]] =
     relationColl flatMap {
       _.distinct[User.ID, List](
@@ -160,20 +169,20 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       userColl flatMap {
         _.find(
           BSONDocument("_id" -> BSONDocument("$in" -> ids)),
-          Some(BSONDocument("username" -> true))
+          Some(userRecordProjection)
         ).cursor[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
           .collect[List](1000, Cursor.ContOnError[List[BSONDocument]]())
-          .map {
-            _.flatMap { doc =>
-              for {
-                id   <- doc.getAsOpt[User.ID]("_id")
-                name <- doc.getAsOpt[String]("username")
-                title  = doc.getAsOpt[String]("title")
-                patron = doc.child("plan").flatMap(_.getAsOpt[Boolean]("active")) getOrElse false
-              } yield SocialGraph.UserRecord(id, SocialGraph.UserData(name, title, patron))
-            }
-          }
+          .map { _ flatMap userRecordReader }
       }
+    }
+
+  def userRecord(userId: User.ID): Future[Option[SocialGraph.UserRecord]] =
+    userColl flatMap {
+      _.find(
+        BSONDocument("_id" -> userId),
+        Some(userRecordProjection)
+      ).one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
+        .map { _ flatMap userRecordReader }
     }
 
   object troll {

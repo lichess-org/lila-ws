@@ -42,6 +42,7 @@ object Boot extends App {
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
     handlers: LilaHandler, // must eagerly instanciate!
+    lila: Lila,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
@@ -49,6 +50,11 @@ final class LilaWsServer(
   def start(): Unit = {
 
     monitor.start
+
+    Bus.internal.subscribe("users", {
+      case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
+      case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
+    })
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))

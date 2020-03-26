@@ -28,6 +28,8 @@ object LilaOut {
   case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
   case class SetTroll(user: User.ID, v: IsTroll)                   extends SiteOut
   case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
+  case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
+  case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
 
   // lobby
 
@@ -143,6 +145,16 @@ object LilaOut {
           case Array(user, by) => Some(Impersonate(user, optional(by)))
         }
 
+      case "rel/follow" =>
+        get(args, 2) {
+          case Array(left, right) => Some(Follow(left, right))
+        }
+
+      case "rel/unfollow" =>
+        get(args, 2) {
+          case Array(left, right) => Some(UnFollow(left, right))
+        }
+
       case "tell/sris" =>
         get(args, 2) {
           case Array(sris, payload) =>
@@ -188,7 +200,9 @@ object LilaOut {
       case "room/present" =>
         get(args, 3) {
           case Array(reqIdS, roomId, userId) =>
-            reqIdS.toIntOption map { reqId => RoomIsPresent(reqId, RoomId(roomId), userId) }
+            reqIdS.toIntOption map { reqId =>
+              RoomIsPresent(reqId, RoomId(roomId), userId)
+            }
         }
 
       case "tour/get/waiting" =>
