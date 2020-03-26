@@ -56,7 +56,6 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     val hash = id.hashCode & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
-      println(s"search lossless $slot")
       val lock = lockFor(slot)
       if (slots(slot) == null) return NewSlot(slot, lock)
       else if (slots(slot).id == id) return ExistingSlot(slot, lock)
@@ -69,7 +68,6 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     // is lost.
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot     = s & slotsMask
-      println(s"search decent $slot")
       val lock     = lockFor(slot)
       val existing = slots(slot)
       if (existing == null) return NewSlot(slot, lock)
@@ -145,9 +143,8 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   }
 
   private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
-    mongo.loadFollowed(id pp "doLoadFollowed") map { followed =>
-      println(followed)
-      lockSlot(id pp "lockSlot").pp match {
+    mongo.loadFollowed(id) map { followed =>
+      lockSlot(id) match {
         case NewSlot(leftSlot, leftLock) =>
           slots(leftSlot) = UserEntry(id, None, None, true)
           val infos = updateFollowed(leftSlot, followed)

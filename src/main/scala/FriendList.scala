@@ -11,6 +11,8 @@ final class FriendList(
   def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Unit =
     graph.followed(userId) foreach { all =>
       val online = all.filter(u => users.isOnline(u.id))
+      println(all)
+      println(online)
       emit(ipc.ClientIn.FriendList(online))
     }
 

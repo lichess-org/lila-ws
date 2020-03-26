@@ -58,7 +58,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
 
-  def isOnline(userId: User.ID): Boolean = users contains userId
+  def isOnline(userId: User.ID): Boolean = users containsKey userId
 
   def size = users.size
 }
