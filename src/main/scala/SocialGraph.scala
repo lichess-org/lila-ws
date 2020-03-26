@@ -51,47 +51,41 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   }
 
   private def lockSlot(id: User.ID): Slot = {
+    // Try to find an existing or empty slot between hash and
+    // hash + MaxStride.
     val hash = id.hashCode & slotsMask
-    val searchLossless = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
-      // Try to find an existing or empty slot between hash and
-      // hash + MaxStride.
+    for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
+      println(s"search lossless $slot")
       val lock = lockFor(slot)
-      if (slots(slot) == null) Some(NewSlot(slot, lock))
-      else if (slots(slot).id == id) Some(ExistingSlot(slot, lock))
-      else {
-        lock.unlock()
-        None
-      }
+      if (slots(slot) == null) return NewSlot(slot, lock)
+      else if (slots(slot).id == id) return ExistingSlot(slot, lock)
+      else lock.unlock()
     }
-    val searchDecent = searchLossless.headOption orElse {
-      (hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
-        // If no exisiting or empty slot is available, try to replace an
-        // offline slot. If someone is watching the offline slot, and that
-        // user goes online before the watcher resubscribes, then that update
-        // is lost.
-        val slot     = s & slotsMask
-        val lock     = lockFor(slot)
-        val existing = slots(slot)
-        if (existing == null) Some(NewSlot(slot, lock))
-        else if (existing.id == id) Some(ExistingSlot(slot, lock))
-        else if (!existing.meta.exists(_.online)) {
-          leftFollowsRight.read(slot) foreach invalidateRightSlot(slot)
-          slots(slot) = null
-          Some(NewSlot(slot, lock))
-        } else {
-          lock.unlock()
-          None
-        }
-      }).headOption
+
+    // If no exisiting or empty slot is available, try to replace an
+    // offline slot. If someone is watching the offline slot, and that
+    // user goes online before the watcher resubscribes, then that update
+    // is lost.
+    for (s <- hash to (hash + SocialGraph.MaxStride)) {
+      val slot     = s & slotsMask
+      println(s"search decent $slot")
+      val lock     = lockFor(slot)
+      val existing = slots(slot)
+      if (existing == null) return NewSlot(slot, lock)
+      else if (existing.id == id) return ExistingSlot(slot, lock)
+      else if (!existing.meta.exists(_.online)) {
+        leftFollowsRight.read(slot) foreach invalidateRightSlot(slot)
+        slots(slot) = null
+        return NewSlot(slot, lock)
+      } else lock.unlock()
     }
-    searchDecent.headOption getOrElse {
-      // The hashtable is full. Overwrite a random entry.
-      val lock = lockFor(hash)
-      leftFollowsRight.read(hash) foreach invalidateRightSlot(hash)
-      slots(hash) = null
-      NewSlot(hash, lock)
-    }
+
+    // The hashtable is full. Overwrite a random entry.
+    val lock = lockFor(hash)
+    leftFollowsRight.read(hash) foreach invalidateRightSlot(hash)
+    slots(hash) = null
+    NewSlot(hash, lock)
   }
 
   private def invalidateRightSlot(leftSlot: Int)(rightSlot: Int) = {
@@ -104,8 +98,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   private def readFollowed(leftSlot: Int): List[UserInfo] = {
     leftFollowsRight.read(leftSlot) flatMap { rightSlot =>
-      val entry = slots(rightSlot)
-      entry.data map { UserInfo(entry.id, _, entry.meta) }
+      Option(slots(rightSlot)) flatMap { entry =>
+        entry.data map { UserInfo(entry.id, _, entry.meta) }
+      }
     }
   }
 
@@ -220,6 +215,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
             rightFollowsLeft.add(rightSlot, leftSlot)
             rightLock.unlock()
         }
+        leftLock.unlock()
       case NewSlot(_, leftLock) =>
         // Nothing to update. Next followed will have to hit the database
         // anyway.
