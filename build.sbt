@@ -31,6 +31,7 @@ libraryDependencies += "io.kamon"                   %% "kamon-core"             
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"              % "2.0.1-LILA"
 libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.0.2"
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                      % "2.3.3" % "provided"
+libraryDependencies += "org.specs2"                 %% "specs2-core"                 % "4.8.1" % Test
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"

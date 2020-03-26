@@ -1,0 +1,38 @@
+package lila.ws
+
+import scala.concurrent.{ ExecutionContext, Future, Await }
+import scala.concurrent.duration._
+import java.util.concurrent.Executor
+import org.specs2.mutable._
+
+class SocialGraphTest extends Specification {
+  private def loadFollowed(id: User.ID): Future[List[UserRecord]] = Future successful {
+    id.split("_").map(f => UserRecord(f, f.toUpperCase)).toList
+  }
+
+  "social graph" >> {
+    implicit val ec = ExecutionContext.fromExecutor(new Executor {
+      def execute(runnable: Runnable): Unit = runnable.run()
+    })
+
+    val graph = new SocialGraph(loadFollowed, 10)
+    val abFollowed = Await.result(graph.followed("a_b"), 2 seconds)
+    abFollowed must_== List(UserInfo("a", "A", None), UserInfo("b", "B", None))
+
+    val aOnline = graph.tell("a", UserMeta(online = true))
+    aOnline must_== List("a_b")
+
+    val cOnline = graph.tell("c", UserMeta(online = true))
+    cOnline must_== Nil
+
+    val abcFollowed = Await.result(graph.followed("a_b_c"), 2 seconds)
+    abcFollowed must_== List(
+      UserInfo("a", "A", Some(UserMeta(online = true))),
+      UserInfo("b", "B", None),
+      UserInfo("c", "C", Some(UserMeta(online = true)))
+    )
+
+    val aOffline = graph.tell("a", UserMeta(online = false))
+    aOffline must_== List("a_b", "a_b_c")
+  }
+}
