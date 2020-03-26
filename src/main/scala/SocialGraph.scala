@@ -8,7 +8,7 @@ import java.util.concurrent.locks.{ Lock, ReentrantLock }
 
 class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
-  logCapacity: Int
+  logCapacity: Int // aim for log2(maximum online users) + 1
 ) {
   private val slotsMask: Int = (1 << logCapacity) - 1
   private val locksMask: Int = (1 << 10) - 1
@@ -20,7 +20,6 @@ class SocialGraph(
   private val leftFollowedRight = new AdjacenyList()
 
   private def lockSlot(id: User.ID): Slot = {
-    println(s"lock slot: $id")
     val hash = id.hashCode & slotsMask
     val search = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
       val slot = s & slotsMask
@@ -92,9 +91,7 @@ class SocialGraph(
   }
 
   private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
-    println("do load followed")
     loadFollowed(id) map { followed =>
-      println("followed loaded")
       lockSlot(id) match {
         case NewSlot(leftSlot, leftLock) =>
           slots(leftSlot) = UserEntry(id, None, None, true)
@@ -113,11 +110,9 @@ class SocialGraph(
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
     lockSlot(id) match {
       case NewSlot(slot, lock) =>
-        println("new slot")
         lock.unlock()
         doLoadFollowed(id)
       case ExistingSlot(slot, lock) =>
-        println("existing slot")
         if (slots(slot).fresh) {
           val infos = readFollowed(slot)
           lock.unlock()

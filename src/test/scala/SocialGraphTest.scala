@@ -15,7 +15,7 @@ class SocialGraphTest extends Specification {
       def execute(runnable: Runnable): Unit = runnable.run()
     })
 
-    val graph = new SocialGraph(loadFollowed, 10)
+    val graph = new SocialGraph(loadFollowed, 3 /* 2^3 slots*/)
     val abFollowed = Await.result(graph.followed("a_b"), 2 seconds)
     abFollowed must_== List(UserInfo("a", "A", None), UserInfo("b", "B", None))
 
@@ -33,6 +33,13 @@ class SocialGraphTest extends Specification {
     )
 
     val aOffline = graph.tell("a", UserMeta(online = false))
-    aOffline must_== List("a_b", "a_b_c")
+    aOffline.toSet must_== Set("a_b", "a_b_c")
+
+    val abcFollowedAgain = Await.result(graph.followed("a_b_c"), 2 seconds)
+    abcFollowedAgain must_== List(
+      UserInfo("a", "A", Some(UserMeta(online = false))),
+      UserInfo("b", "B", None),
+      UserInfo("c", "C", Some(UserMeta(online = true)))
+    )
   }
 }
