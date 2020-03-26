@@ -35,11 +35,20 @@ class SocialGraphTest extends Specification {
     val aOffline = graph.tell("a", UserMeta(online = false))
     aOffline.toSet must_== Set("a_b", "a_b_c")
 
+    graph.unfollow("a_b_c", "c")
+
     val abcFollowedAgain = Await.result(graph.followed("a_b_c"), 2 seconds)
     abcFollowedAgain must_== List(
       UserInfo("a", "A", Some(UserMeta(online = false))),
-      UserInfo("b", "B", None),
-      UserInfo("c", "C", Some(UserMeta(online = true)))
+      UserInfo("b", "B", None)
     )
+
+    graph.follow("c", "b")
+    graph.follow("a", "c")
+    graph.follow("a", "a_b")
+    graph.follow("a_b", "c")
+
+    val bOnline = graph.tell("b", UserMeta(online = true))
+    bOnline.toSet must_== Set("a_b", "a_b_c", "c")
   }
 }

@@ -4,24 +4,40 @@ import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ ExecutionContext, Future }
 import java.util.concurrent.ConcurrentSkipListSet
-import java.util.concurrent.locks.{ Lock, ReentrantLock }
+import java.util.concurrent.locks.ReentrantLock
 
+// Best effort fixed capacity cache for the social graph of online users.
+//
+// Based on a fixed size array with at most 2^logCapacity entries and
+// adjacency lists.
+//
+// It is guaranteed that users do not receive incorrect updates, but there
+// is a chance that some updates are missed if the number of online
+// users approaches the capacity.
 class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
-  logCapacity: Int // aim for log2(maximum online users) + 1
+  logCapacity: Int
 ) {
-  private val slotsMask: Int = (1 << logCapacity) - 1
+  private val leftFollowsRight = new AdjacenyList()
+  private val rightFollowsLeft = new AdjacenyList()
+
   private val locksMask: Int = (1 << 10) - 1
+  private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
+  private val slotsMask: Int = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
-  private val locks = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
-  private val leftFollowingRight = new AdjacenyList()
-  private val leftFollowedRight = new AdjacenyList()
+  private def lockFor(slot: Int): ReentrantLock = {
+    val lock = locks(slot & locksMask)
+    lock.lock()
+    lock
+  }
 
   private def lockSlot(id: User.ID): Slot = {
     val hash = id.hashCode & slotsMask
-    val search = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
+    val searchLossless = hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
+      // Try to find an existing or empty slot between hash and
+      // hash + MaxStride.
       val slot = s & slotsMask
       val lock = lockFor(slot)
       if (slots(slot) == null) Some(NewSlot(slot, lock))
@@ -31,37 +47,55 @@ class SocialGraph(
         None
       }
     }
-    search.headOption getOrElse {
+    val searchDecent = searchLossless.headOption orElse {
+      (hash to (hash + SocialGraph.MaxStride) flatMap { s: Int =>
+        // If no exisiting or empty slot is available, try to replace an
+        // offline slot. If someone is watching the offline slot, and that
+        // user goes online before the watcher resubscribes, then that update
+        // is lost.
+        val slot = s & slotsMask
+        val lock = lockFor(slot)
+        val existing = slots(slot)
+        if (existing == null) Some(NewSlot(slot, lock))
+        else if (existing.id == id) Some(ExistingSlot(slot, lock))
+        else if (!existing.meta.exists(_.online)) {
+          leftFollowsRight.read(slot) foreach invalidateRightSlot(slot)
+          Some(NewSlot(slot, lock))
+        }
+        else {
+          lock.unlock()
+          None
+        }
+      }).headOption
+    }
+    searchDecent.headOption getOrElse {
+      // The hashtable is full. Overwrite a random entry.
       val lock = lockFor(hash)
-      leftFollowedRight.read(hash) foreach { rightSlot =>
-        val rightLock = lockFor(rightSlot)
-        slots(rightSlot) = slots(rightSlot).copy(fresh = false)
-        leftFollowedRight.remove(hash, rightSlot)
-        leftFollowingRight.remove(rightSlot, hash)
-        rightLock.unlock()
-      }
+      leftFollowsRight.read(hash) foreach invalidateRightSlot(hash)
       NewSlot(hash, lock)
     }
   }
 
-  private def lockFor(slot: Int): Lock = {
-    val lock = locks(slot & locksMask)
-    lock.lock()
-    lock
+  private def invalidateRightSlot(leftSlot: Int)(rightSlot: Int) = {
+    val rightLock = lockFor(rightSlot)
+    slots(rightSlot) = slots(rightSlot).copy(fresh = false)
+    leftFollowsRight.remove(leftSlot, rightSlot)
+    rightFollowsLeft.remove(rightSlot, leftSlot)
+    rightLock.unlock()
   }
 
   private def readFollowed(leftSlot: Int): List[UserInfo] = {
-    leftFollowedRight.read(leftSlot) flatMap { rightSlot =>
+    leftFollowsRight.read(leftSlot) flatMap { rightSlot =>
       val entry = slots(rightSlot)
       entry.username map { username => UserInfo(entry.id, username, entry.meta) }
     }
   }
 
   private def readFollowing(leftSlot: Int): List[User.ID] = {
-    leftFollowingRight.read(leftSlot) flatMap { rightSlot =>
+    rightFollowsLeft.read(leftSlot) flatMap { rightSlot =>
       val rightLock = lockFor(rightSlot)
       val id =
-        if (leftFollowedRight.has(rightSlot, leftSlot)) Some(slots(rightSlot).id)
+        if (leftFollowsRight.has(rightSlot, leftSlot)) Some(slots(rightSlot).id)
         else None
       rightLock.unlock()
       id
@@ -74,15 +108,15 @@ class SocialGraph(
       lockSlot(record.id) match {
         case NewSlot(rightSlot, rightLock) =>
           slots(rightSlot) = UserEntry(record.id, Some(record.username), None, false)
-          leftFollowedRight.add(leftSlot, rightSlot)
-          leftFollowingRight.add(rightSlot, leftSlot)
+          leftFollowsRight.add(leftSlot, rightSlot)
+          rightFollowsLeft.add(rightSlot, leftSlot)
           rightLock.unlock()
           build += UserInfo(record.id, record.username, None)
         case ExistingSlot(rightSlot, rightLock) =>
           val entry = slots(rightSlot).copy(username = Some(record.username))
           slots(rightSlot) = entry
-          leftFollowedRight.add(leftSlot, rightSlot)
-          leftFollowingRight.add(rightSlot, leftSlot)
+          leftFollowsRight.add(leftSlot, rightSlot)
+          rightFollowsLeft.add(rightSlot, leftSlot)
           rightLock.unlock()
           build += UserInfo(record.id, record.username, entry.meta)
       }
@@ -107,6 +141,8 @@ class SocialGraph(
     }
   }
 
+  // Load users that id follows, either from the cache or from the database,
+  // and subscribes to future updates.
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
     lockSlot(id) match {
       case NewSlot(slot, lock) =>
@@ -129,8 +165,8 @@ class SocialGraph(
       case ExistingSlot(leftSlot, leftLock) =>
         lockSlot(right) match {
           case ExistingSlot(rightSlot, rightLock) =>
-            leftFollowingRight.toggle(on)(leftSlot, rightSlot)
-            leftFollowedRight.toggle(on)(rightSlot, leftSlot)
+            leftFollowsRight.toggle(on)(leftSlot, rightSlot)
+            rightFollowsLeft.toggle(on)(rightSlot, leftSlot)
             rightLock.unlock()
           case NewSlot(_, rightLock) =>
             rightLock.unlock()
@@ -141,9 +177,12 @@ class SocialGraph(
     }
   }
 
+  // Update cached relations.
   def follow(left: User.ID, right: User.ID) = toggleFollow(true)(left, right)
   def unfollow(left: User.ID, right: User.ID) = toggleFollow(false)(left, right)
 
+  // Updates the status of a user. Returns the list of subscribed users that
+  // are intrested in this update.
   def tell(id: User.ID, meta: UserMeta): List[User.ID] = {
     lockSlot(id) match {
       case ExistingSlot(slot, lock) =>
@@ -159,7 +198,11 @@ class SocialGraph(
   }
 }
 
-class AdjacenyList {
+object SocialGraph {
+  private val MaxStride: Int = 20
+}
+
+private class AdjacenyList {
   private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
 
   def toggle(on: Boolean) = if (on) add _ else remove _
@@ -173,7 +216,7 @@ class AdjacenyList {
     }.toList
 }
 
-object AdjacenyList {
+private object AdjacenyList {
   private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
 }
 
@@ -184,9 +227,5 @@ case class UserInfo(id: User.ID, username: String, meta: Option[UserMeta])
 private case class UserEntry(id: User.ID, username: Option[String], meta: Option[UserMeta], fresh: Boolean)
 
 private sealed trait Slot
-private case class NewSlot(slot: Int, lock: Lock) extends Slot
-private case class ExistingSlot(slot: Int, lock: Lock) extends Slot
-
-object SocialGraph {
-  private val MaxStride: Int = 20
-}
+private case class NewSlot(slot: Int, lock: ReentrantLock) extends Slot
+private case class ExistingSlot(slot: Int, lock: ReentrantLock) extends Slot
