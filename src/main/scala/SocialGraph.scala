@@ -25,8 +25,8 @@ class SocialGraph(
 ) {
   // Adjacency lists, each representing a set of tuples
   // (left slot, right slot).
-  private val leftFollowsRight = new AdjacenyList()
-  private val rightFollowsLeft = new AdjacenyList()
+  private val leftFollowsRight = new AdjacencyList()
+  private val rightFollowsLeft = new AdjacencyList()
 
   // A linear probing, open addressing hash table. A custom implementation is
   // used, so that we know the index of an entry in the hash table is stable
@@ -244,22 +244,22 @@ object SocialGraph {
   private val MaxStride: Int = 20
 }
 
-private class AdjacenyList {
+private class AdjacencyList {
   private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
 
-  def add(a: Int, b: Int): Unit    = inner.add(AdjacenyList.makePair(a, b))
-  def remove(a: Int, b: Int): Unit = inner.remove(AdjacenyList.makePair(a, b))
-  def has(a: Int, b: Int): Boolean = inner.contains(AdjacenyList.makePair(a, b))
+  def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
+  def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
+  def has(a: Int, b: Int): Boolean = inner.contains(AdjacencyList.makePair(a, b))
 
   def read(a: Int): List[Int] =
     inner
-      .subSet(AdjacenyList.makePair(a, 0), AdjacenyList.makePair(a + 1, 0))
+      .subSet(AdjacencyList.makePair(a, 0), AdjacencyList.makePair(a + 1, 0))
       .asScala
       .map { entry => entry.toInt & 0xffffffff }
       .toList
 }
 
-private object AdjacenyList {
+private object AdjacencyList {
   private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
 }
 
