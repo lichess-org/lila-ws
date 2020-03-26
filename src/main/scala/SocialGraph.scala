@@ -221,6 +221,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
             rightFollowsLeft.add(rightSlot, leftSlot)
             rightLock.unlock()
         }
+        leftLock.unlock()
       case NewSlot(_, leftLock) =>
         // Nothing to update. Next followed will have to hit the database
         // anyway.
