@@ -19,9 +19,9 @@ import java.util.concurrent.locks.ReentrantLock
 // chance that a tell goes to the wrong user. This is unlikely, and its even
 // more unlikely that the wrong user is online to witness it.
 class SocialGraph(
-  loadFollowed: User.ID => Future[Iterable[UserRecord]],
-  logCapacity: Int,
-  logNumLocks: Int
+    loadFollowed: User.ID => Future[Iterable[UserRecord]],
+    logCapacity: Int,
+    logNumLocks: Int
 ) {
   // Adjacency lists, each representing a set of tuples
   // (left slot, right slot).
@@ -31,14 +31,14 @@ class SocialGraph(
   // A linear probing, open addressing hash table. A custom implementation is
   // used, so that we know the index of an entry in the hash table is stable
   // (at least until it is replaced).
-  private val slotsMask: Int = (1 << logCapacity) - 1
+  private val slotsMask: Int          = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
 
   // An array of locks, where locks[slot & locksMask] is responsible for that
   // slot. For writes to a slot, hold its lock. For reliable reads from an
   // adjacency list, hold the lock of the left slot. For writes, hold both
   // locks.
-  private val locksMask: Int = (1 << logNumLocks) - 1
+  private val locksMask: Int              = (1 << logNumLocks) - 1
   private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
   private def lockFor(slot: Int): ReentrantLock = {
@@ -67,8 +67,8 @@ class SocialGraph(
         // offline slot. If someone is watching the offline slot, and that
         // user goes online before the watcher resubscribes, then that update
         // is lost.
-        val slot = s & slotsMask
-        val lock = lockFor(slot)
+        val slot     = s & slotsMask
+        val lock     = lockFor(slot)
         val existing = slots(slot)
         if (existing == null) Some(NewSlot(slot, lock))
         else if (existing.id == id) Some(ExistingSlot(slot, lock))
@@ -76,8 +76,7 @@ class SocialGraph(
           leftFollowsRight.read(slot) foreach invalidateRightSlot(slot)
           slots(slot) = null
           Some(NewSlot(slot, lock))
-        }
-        else {
+        } else {
           lock.unlock()
           None
         }
@@ -248,14 +247,16 @@ object SocialGraph {
 private class AdjacenyList {
   private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
 
-  def add(a: Int, b: Int): Unit = inner.add(AdjacenyList.makePair(a, b))
+  def add(a: Int, b: Int): Unit    = inner.add(AdjacenyList.makePair(a, b))
   def remove(a: Int, b: Int): Unit = inner.remove(AdjacenyList.makePair(a, b))
   def has(a: Int, b: Int): Boolean = inner.contains(AdjacenyList.makePair(a, b))
 
   def read(a: Int): List[Int] =
-    inner.subSet(AdjacenyList.makePair(a, 0), AdjacenyList.makePair(a + 1, 0)).asScala.map { entry =>
-      entry.toInt & 0xffffffff
-    }.toList
+    inner
+      .subSet(AdjacenyList.makePair(a, 0), AdjacenyList.makePair(a + 1, 0))
+      .asScala
+      .map { entry => entry.toInt & 0xffffffff }
+      .toList
 }
 
 private object AdjacenyList {
@@ -268,6 +269,6 @@ case class UserInfo(id: User.ID, username: String, meta: Option[UserMeta])
 
 private case class UserEntry(id: User.ID, username: Option[String], meta: Option[UserMeta], fresh: Boolean)
 
-private sealed trait Slot
-private case class NewSlot(slot: Int, lock: ReentrantLock) extends Slot
+sealed private trait Slot
+private case class NewSlot(slot: Int, lock: ReentrantLock)      extends Slot
 private case class ExistingSlot(slot: Int, lock: ReentrantLock) extends Slot
