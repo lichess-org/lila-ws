@@ -118,7 +118,14 @@ class SocialGraph(
     }
   }
 
-  private def mergeFollowed(leftSlot: Int, followed: Iterable[UserRecord]): List[UserInfo] = {
+  private def updateFollowed(leftSlot: Int, followed: Iterable[UserRecord]): List[UserInfo] = {
+    leftFollowsRight.read(leftSlot) foreach { rightSlot =>
+      val rightLock = lockFor(rightSlot)
+      leftFollowsRight.remove(leftSlot, rightSlot)
+      rightFollowsLeft.remove(rightSlot, leftSlot)
+      rightLock.unlock()
+    }
+
     val build: ListBuffer[UserInfo] = new ListBuffer()
     followed foreach { record =>
       lockSlot(record.id) match {
@@ -145,12 +152,12 @@ class SocialGraph(
       lockSlot(id) match {
         case NewSlot(leftSlot, leftLock) =>
           slots(leftSlot) = UserEntry(id, None, None, true)
-          val infos = mergeFollowed(leftSlot, followed)
+          val infos = updateFollowed(leftSlot, followed)
           leftLock.unlock()
           infos
         case ExistingSlot(leftSlot, leftLock) =>
           slots(leftSlot) = slots(leftSlot).copy(fresh = true)
-          val infos = mergeFollowed(leftSlot, followed)
+          val infos = updateFollowed(leftSlot, followed)
           leftLock.unlock()
           infos
       }
