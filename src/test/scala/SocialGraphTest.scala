@@ -15,7 +15,7 @@ class SocialGraphTest extends Specification {
       def execute(runnable: Runnable): Unit = runnable.run()
     })
 
-    val graph = new SocialGraph(loadFollowed, 3 /* 2^3 slots*/)
+    val graph = new SocialGraph(loadFollowed, 3 /* 2^3 slots*/, 0 /* 2^0 locks */)
     val abFollowed = Await.result(graph.followed("a_b"), 2 seconds)
     abFollowed must_== List(UserInfo("a", "A", None), UserInfo("b", "B", None))
 

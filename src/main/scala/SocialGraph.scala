@@ -17,7 +17,8 @@ import java.util.concurrent.locks.ReentrantLock
 // users and their followed users approaches the capacity.
 class SocialGraph(
   loadFollowed: User.ID => Future[Iterable[UserRecord]],
-  logCapacity: Int
+  logCapacity: Int,
+  logNumLocks: Int
 ) {
   // Adjacency lists, each representing a set of tuples
   // (left slot, right slot).
@@ -34,7 +35,7 @@ class SocialGraph(
   // slot. For writes to a slot, hold its lock. For reliable reads from an
   // adjacency list, hold the lock of the left slot. For writes, hold both
   // locks.
-  private val locksMask: Int = (1 << 10) - 1
+  private val locksMask: Int = (1 << logNumLocks) - 1
   private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
 
   private def lockFor(slot: Int): ReentrantLock = {
