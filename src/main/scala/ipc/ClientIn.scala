@@ -165,7 +165,9 @@ object ClientIn {
               )
               .add("opening" -> opening)
               .add("check" -> check)
-              .add("drops" -> drops.map { drops => JsString(drops.map(_.key).mkString) })
+              .add("drops" -> drops.map { drops =>
+                JsString(drops.map(_.key).mkString)
+              })
               .add("crazy" -> crazyData)
           )
           .add("ch" -> chapterId)
@@ -222,6 +224,16 @@ object ClientIn {
 
   case class MsgType(orig: User.ID) extends ClientIn {
     def write = cliMsg("msgType", orig)
+  }
+
+  case class FriendList(users: List[SocialGraph.UserInfo]) extends ClientIn {
+    def write = Json stringify Json.obj(
+      "t"        -> "following_onlines",
+      "d"        -> users.map(_.data.titleName),
+      "playing"  -> Json.arr(),
+      "studying" -> Json.arr(),
+      "patrons"  -> users.collect { case u if u.data.patron => u.id }
+    )
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r

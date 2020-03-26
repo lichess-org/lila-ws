@@ -76,7 +76,7 @@ object ClientActor {
         state
 
       case ClientOut.FollowingOnline =>
-        req.userId foreach services.friends.start
+        req.userId foreach { services.friends.start(_, clientIn) }
         state
 
       case opening: ClientOut.Opening =>
