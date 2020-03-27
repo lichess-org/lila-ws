@@ -25,7 +25,11 @@ final class FriendList(
 
   def stopPlaying(userId: User.ID) = graph.tell(userId, _.copy(playing = false))
 
-  private def onConnect(userId: User.ID) = graph.tell(userId, _.copy(online = true))
+  private def onConnect(userId: User.ID): Unit =
+    graph.tell(userId, _.copy(online = true)) foreach {
+      case (subject, subs) =>
+        users.tellMany(subs, ipc.ClientIn.FollowingEnters(subject))
+    }
 
   private def onDisconnect(userId: User.ID) = graph.tell(userId, _.copy(online = false))
 

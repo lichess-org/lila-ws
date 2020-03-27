@@ -223,15 +223,16 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   // Updates the status of a user. Returns the current user info and a list of
   // subscribed users that are interested in this update (if any).
-  def tell(id: User.ID, meta: UserMeta): Option[(SocialGraph.UserInfo, List[User.ID])] = {
+  def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserInfo, List[User.ID])] = {
     val (result, lock) = lockSlot(id, -1) match {
       case ExistingSlot(slot, lock, entry) =>
-        write(slot, lock, entry.copy(meta = Some(meta)))
+        val newEntry = entry.updateMeta(meta)
+        write(slot, lock, newEntry)
         (entry.data map { data =>
-          UserInfo(entry.id, data, Some(meta)) -> readFollowing(slot, lock)
+          UserInfo(entry.id, data, newEntry.meta) -> readFollowing(slot, lock)
         }) -> lock
       case NewSlot(slot, lock) =>
-        write(slot, lock, UserEntry(id, None, Some(meta), false))
+        write(slot, lock, UserEntry(id, None, None, false).updateMeta(meta))
         None -> lock
     }
     lock.unlock()
