@@ -45,6 +45,17 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     lock
   }
 
+  @inline
+  private def read(slot: Int, _lock: ReentrantLock): Option[UserEntry] = Option(slots(slot))
+
+  @inline
+  private def staleRead(slot: Int): Option[UserEntry] = Option(slots(slot))
+
+  @inline
+  private def write(slot: Int, _lock: ReentrantLock, entry: UserEntry): Unit = {
+    slots(slot) = entry
+  }
+
   private def lockSlot(id: User.ID, exceptSlot: Int): Slot = {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
@@ -53,13 +64,16 @@ final class SocialGraph(mongo: Mongo, config: Config) {
       val slot = s & slotsMask
       if (slot != exceptSlot) {
         val lock = lockFor(slot)
-        if (slots(slot) == null) return NewSlot(slot, lock)
-        else if (slots(slot).id == id) return ExistingSlot(slot, lock)
-        else lock.unlock()
+        read(slot, lock) match {
+          case None => return NewSlot(slot, lock)
+          case Some(existing) if existing.id == id =>
+            return ExistingSlot(slot, lock, existing)
+          case _ => lock.unlock()
+        }
       }
     }
 
-    // If no exisiting or empty slot is available, try to replace an
+    // If no existing or empty slot is available, try to replace an
     // offline slot. If someone is watching the offline slot, and that
     // user goes online before the watcher resubscribes, then that update
     // is lost.
@@ -68,12 +82,15 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       if (slot != exceptSlot) {
-        val lock     = lockFor(slot)
-        val existing = slots(slot)
-        if (existing == null) return NewSlot(slot, lock)
-        else if (existing.id == id) return ExistingSlot(slot, lock)
-        else if (!existing.meta.exists(_.online)) return freeSlot(slot, lock)
-        else lock.unlock()
+        val lock = lockFor(slot)
+        read(slot, lock) match {
+          case None => return NewSlot(slot, lock)
+          case Some(existing) if existing.id == id =>
+            return ExistingSlot(slot, lock, existing)
+          case Some(existing) if !existing.meta.exists(_.online) =>
+            return freeSlot(slot, lock)
+          case _ => lock.unlock()
+        }
       }
     }
 
@@ -88,20 +105,21 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
     // Clear all incoming edges and mark everyone who followed this slot stale.
     graph.readIncompleteIncoming(leftSlot, leftLock) foreach { rightSlot =>
-      val rightLock  = lockFor(rightSlot)
-      val rightEntry = slots(rightSlot)
-      if (rightEntry != null) slots(rightSlot) = rightEntry.copy(fresh = false)
+      val rightLock = lockFor(rightSlot)
+      read(rightSlot, rightLock) foreach { rightEntry =>
+        write(rightSlot, rightLock, rightEntry.copy(fresh = false))
+      }
       graph.remove(rightSlot, rightLock, leftSlot)
       rightLock.unlock()
     }
 
-    slots(leftSlot) = null
+    write(leftSlot, leftLock, null)
     NewSlot(leftSlot, leftLock)
   }
 
   private def readFollowed(leftSlot: Int, leftLock: ReentrantLock): List[UserInfo] = {
     graph.readOutgoing(leftSlot, leftLock) flatMap { rightSlot =>
-      Option(slots(rightSlot)) flatMap { entry =>
+      staleRead(rightSlot) flatMap { entry =>
         entry.data map { UserInfo(entry.id, _, entry.meta) }
       }
     }
@@ -109,21 +127,26 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   private def readFollowing(leftSlot: Int, leftLock: ReentrantLock): List[User.ID] = {
     graph.readIncompleteIncoming(leftSlot, leftLock) flatMap { rightSlot =>
-      Option(slots(rightSlot)) map { entry => entry.id }
+      staleRead(rightSlot) map { entry =>
+        entry.id
+      }
     }
   }
 
-  private def updateFollowed(leftSlot: Int, leftLock: ReentrantLock, followed: Iterable[UserRecord]): List[UserInfo] = {
+  private def updateFollowed(
+      leftSlot: Int,
+      leftLock: ReentrantLock,
+      followed: Iterable[UserRecord]
+  ): List[UserInfo] = {
     graph.readOutgoing(leftSlot, leftLock) foreach { graph.remove(leftSlot, leftLock, _) }
 
     (followed map { record =>
       val ((rightSlot, rightLock), info) = lockSlot(record.id, leftSlot) match {
         case NewSlot(rightSlot, rightLock) =>
-          slots(rightSlot) = UserEntry(record.id, Some(record.data), None, false)
+          write(rightSlot, rightLock, UserEntry(record.id, Some(record.data), None, false))
           rightSlot -> rightLock -> UserInfo(record.id, record.data, None)
-        case ExistingSlot(rightSlot, rightLock) =>
-          val entry = slots(rightSlot).copy(data = Some(record.data))
-          slots(rightSlot) = entry
+        case ExistingSlot(rightSlot, rightLock, entry) =>
+          write(rightSlot, rightLock, entry.copy(data = Some(record.data)))
           rightSlot -> rightLock -> UserInfo(record.id, record.data, entry.meta)
       }
       graph.add(leftSlot, leftLock, rightSlot, rightLock)
@@ -136,10 +159,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     mongo.loadFollowed(id) map { followed =>
       val (leftSlot, leftLock) = lockSlot(id, -1) match {
         case NewSlot(leftSlot, leftLock) =>
-          slots(leftSlot) = UserEntry(id, None, None, true)
+          write(leftSlot, leftLock, UserEntry(id, None, None, true))
           leftSlot -> leftLock
-        case ExistingSlot(leftSlot, leftLock) =>
-          slots(leftSlot) = slots(leftSlot).copy(fresh = true)
+        case ExistingSlot(leftSlot, leftLock, entry) =>
+          write(leftSlot, leftLock, entry.copy(fresh = true))
           leftSlot -> leftLock
       }
       val infos = updateFollowed(leftSlot, leftLock, followed)
@@ -154,9 +177,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     val (infos, lock) = lockSlot(id, -1) match {
       case NewSlot(slot, lock) =>
         None -> lock
-      case ExistingSlot(slot, lock) =>
-        if (!slots(slot).fresh) None        -> lock
-        else Some(readFollowed(slot, lock)) -> lock
+      case ExistingSlot(slot, lock, entry) =>
+        if (entry.fresh) Some(readFollowed(slot, lock)) -> lock
+        else None                                       -> lock
     }
     lock.unlock()
     infos.fold(doLoadFollowed(id))(Future.successful _)
@@ -165,9 +188,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // left no longer follows right.
   def unfollow(left: User.ID, right: User.ID): Unit = {
     (lockSlot(left, -1) match {
-      case ExistingSlot(leftSlot, leftLock) =>
+      case ExistingSlot(leftSlot, leftLock, _) =>
         (lockSlot(right, leftSlot) match {
-          case ExistingSlot(rightSlot, rightLock) =>
+          case ExistingSlot(rightSlot, rightLock, _) =>
             graph.remove(leftSlot, leftLock, rightSlot)
             rightLock
           case NewSlot(_, rightLock) => rightLock
@@ -180,13 +203,13 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // left now follows right.
   def follow(left: User.ID, right: UserRecord): Unit = {
     (lockSlot(left, -1) match {
-      case ExistingSlot(leftSlot, leftLock) =>
+      case ExistingSlot(leftSlot, leftLock, _) =>
         val (rightSlot, rightLock) = lockSlot(right.id, leftSlot) match {
-          case ExistingSlot(rightSlot, rightLock) =>
-            slots(rightSlot) = slots(rightSlot).copy(data = Some(right.data))
+          case ExistingSlot(rightSlot, rightLock, rightEntry) =>
+            write(rightSlot, rightLock, rightEntry.copy(data = Some(right.data)))
             rightSlot -> rightLock
           case NewSlot(rightSlot, rightLock) =>
-            slots(rightSlot) = UserEntry(right.id, Some(right.data), None, false)
+            write(rightSlot, rightLock, UserEntry(right.id, Some(right.data), None, false))
             rightSlot -> rightLock
         }
         graph.add(leftSlot, leftLock, rightSlot, rightLock)
@@ -202,11 +225,11 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // are interested in this update.
   def tell(id: User.ID, meta: UserMeta): List[User.ID] = {
     val (following, lock) = lockSlot(id, -1) match {
-      case ExistingSlot(slot, lock) =>
-        slots(slot) = slots(slot).copy(meta = Some(meta))
+      case ExistingSlot(slot, lock, entry) =>
+        write(slot, lock, entry.copy(meta = Some(meta)))
         readFollowing(slot, lock) -> lock
       case NewSlot(slot, lock) =>
-        slots(slot) = UserEntry(id, None, Some(meta), false)
+        write(slot, lock, UserEntry(id, None, Some(meta), false))
         Nil -> lock
     }
     lock.unlock()
@@ -228,8 +251,8 @@ object SocialGraph {
   private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean)
 
   sealed private trait Slot
-  private case class NewSlot(slot: Int, lock: ReentrantLock)      extends Slot
-  private case class ExistingSlot(slot: Int, lock: ReentrantLock) extends Slot
+  private case class NewSlot(slot: Int, lock: ReentrantLock)                        extends Slot
+  private case class ExistingSlot(slot: Int, lock: ReentrantLock, entry: UserEntry) extends Slot
 
   private class AdjacencyList {
     private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
