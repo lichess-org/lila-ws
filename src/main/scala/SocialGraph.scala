@@ -83,7 +83,9 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     leftFollowsRight.read(leftSlot) foreach { rightSlot =>
       val rightLock = lockFor(rightSlot)
       slots(rightSlot) = slots(rightSlot).copy(fresh = false)
+      leftFollowsRight.remove(rightSlot, leftSlot)
       leftFollowsRight.remove(leftSlot, rightSlot)
+      rightFollowsLeft.remove(leftSlot, rightSlot)
       rightFollowsLeft.remove(rightSlot, leftSlot)
       rightLock.unlock()
     }
