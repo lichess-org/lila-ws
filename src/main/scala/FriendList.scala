@@ -1,5 +1,7 @@
 package lila.ws
 
+import SocialGraph.{ UserInfo, UserMeta }
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 final class FriendList(
@@ -20,17 +22,24 @@ final class FriendList(
 
   def unFollow(left: User.ID, right: User.ID) = graph.unfollow(left, right)
 
-  def startPlaying(userId: User.ID) = graph.tell(userId, _.copy(playing = true))
+  def startPlaying(userId: User.ID) =
+    update(userId, ipc.ClientIn.FollowingPlaying.apply)(_.copy(playing = true))
 
-  def stopPlaying(userId: User.ID) = graph.tell(userId, _.copy(playing = false))
+  def stopPlaying(userId: User.ID) =
+    update(userId, ipc.ClientIn.FollowingStoppedPlaying.apply)(_.copy(playing = false))
 
   private def onConnect(userId: User.ID): Unit =
-    graph.tell(userId, _.copy(online = true)) foreach {
-      case (subject, subs) =>
-        users.tellMany(subs, ipc.ClientIn.FollowingEnters(subject))
-    }
+    update(userId, ipc.ClientIn.FollowingEnters.apply)(_.copy(online = true))
 
-  private def onDisconnect(userId: User.ID) = graph.tell(userId, _.copy(online = false))
+  private def onDisconnect(userId: User.ID) =
+    update(userId, ipc.ClientIn.FollowingLeaves.apply)(_.copy(online = false))
+
+  private def update(userId: User.ID, msg: UserInfo => ipc.ClientIn)(update: UserMeta => UserMeta) =
+    graph.tell(userId, update) foreach {
+      case (subject, subs) =>
+        val online = subs.filter(users.isOnline)
+        if (online.nonEmpty) users.tellMany(online, msg(subject))
+    }
 
   Bus.internal.subscribe("users", {
     case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user.id)

@@ -235,7 +235,6 @@ object ClientIn {
       "patrons"  -> users.collect { case u if u.data.patron => u.id }
     )
   }
-
   case class FollowingEnters(user: SocialGraph.UserInfo) extends ClientIn {
     // We use 'd' for backward compatibility with the mobile client
     def write =
@@ -248,9 +247,14 @@ object ClientIn {
       }
 
   }
-
-  case class FollowingEvent[A: Writes](typ: String, data: A) extends ClientIn {
-    def write = cliMsg(typ, data)
+  case class FollowingLeaves(user: SocialGraph.UserInfo) extends ClientIn {
+    def write = cliMsg("following_leaves", user.data.titleName)
+  }
+  case class FollowingPlaying(user: SocialGraph.UserInfo) extends ClientIn {
+    def write = cliMsg("following_playing", user.data.titleName)
+  }
+  case class FollowingStoppedPlaying(user: SocialGraph.UserInfo) extends ClientIn {
+    def write = cliMsg("following_stopped_playing", user.data.titleName)
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
