@@ -10,8 +10,7 @@ final class FriendList(
 
   def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Future[Unit] =
     graph.followed(userId) map { all =>
-      val online = all.filter(u => users.isOnline(u.id))
-      emit(ipc.ClientIn.FriendList(online))
+      emit(ipc.ClientIn.FriendList(all.filter(u => u.meta.exists(_.online))))
     }
 
   def follow(left: User.ID, right: User.ID): Future[Unit] =
