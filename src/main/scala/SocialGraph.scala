@@ -125,10 +125,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }
   }
 
-  private def readFollowing(leftSlot: Int, leftLock: ReentrantLock): List[User.ID] = {
+  private def readOnlineFollowing(leftSlot: Int, leftLock: ReentrantLock): List[User.ID] = {
     graph.readIncompleteIncoming(leftSlot, leftLock) flatMap { rightSlot =>
-      staleRead(rightSlot) map { entry =>
-        entry.id
+      staleRead(rightSlot) collect {
+        case entry if entry.meta.exists(_.online) => entry.id
       }
     }
   }
@@ -229,7 +229,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
         val newEntry = entry.updateMeta(meta)
         write(slot, lock, newEntry)
         (entry.data map { data =>
-          UserInfo(entry.id, data, newEntry.meta) -> readFollowing(slot, lock)
+          UserInfo(entry.id, data, newEntry.meta) -> readOnlineFollowing(slot, lock)
         }) -> lock
       case NewSlot(slot, lock) =>
         write(slot, lock, UserEntry(id, None, None, false).updateMeta(meta))
