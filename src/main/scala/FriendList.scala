@@ -12,7 +12,7 @@ final class FriendList(
 
   def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Future[Unit] =
     graph.followed(userId) map { all =>
-      emit(ipc.ClientIn.FriendList(all.filter(u => u.meta.exists(_.online))))
+      emit(ipc.ClientIn.FriendList(all.filter(u => u.meta.online)))
     }
 
   def follow(left: User.ID, right: User.ID): Future[Unit] =
@@ -23,16 +23,16 @@ final class FriendList(
   def unFollow(left: User.ID, right: User.ID) = graph.unfollow(left, right)
 
   def startPlaying(userId: User.ID) =
-    update(userId, ipc.ClientIn.FollowingPlaying.apply)(_.copy(playing = true))
+    update(userId, ipc.ClientIn.FollowingPlaying.apply)(_.withPlaying(true))
 
   def stopPlaying(userId: User.ID) =
-    update(userId, ipc.ClientIn.FollowingStoppedPlaying.apply)(_.copy(playing = false))
+    update(userId, ipc.ClientIn.FollowingStoppedPlaying.apply)(_.withPlaying(false))
 
   private def onConnect(userId: User.ID): Unit =
-    update(userId, ipc.ClientIn.FollowingEnters.apply)(_.copy(online = true))
+    update(userId, ipc.ClientIn.FollowingEnters.apply)(_.withOnline(true))
 
   private def onDisconnect(userId: User.ID) =
-    update(userId, ipc.ClientIn.FollowingLeaves.apply)(_.copy(online = false))
+    update(userId, ipc.ClientIn.FollowingLeaves.apply)(_.withOnline(false))
 
   private def update(userId: User.ID, msg: UserInfo => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach {
