@@ -122,6 +122,8 @@ final class LilaHandler(
         History.round.stop(roomId)
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
+      case GameStart(users)                 => users foreach friendList.startPlaying
+      case GameFinish(users)                => users foreach friendList.stopPlaying
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>

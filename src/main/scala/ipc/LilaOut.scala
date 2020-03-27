@@ -79,6 +79,8 @@ object LilaOut {
   case class RoundGoneIn(fullId: Game.FullId, seconds: Int)            extends RoundOut
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
   case class UserTvNewGame(gameId: Game.Id, userId: User.ID)           extends RoundOut
+  case class GameStart(users: List[User.ID])                           extends RoundOut
+  case class GameFinish(users: List[User.ID])                          extends RoundOut
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
@@ -261,6 +263,9 @@ object LilaOut {
           case Array(gameId, color, v) =>
             Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
+
+      case "r/start"  => Some(GameStart(commas(args).toList))
+      case "r/finish" => Some(GameFinish(commas(args).toList))
 
       // tv
 

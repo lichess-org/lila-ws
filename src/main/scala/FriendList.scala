@@ -1,6 +1,6 @@
 package lila.ws
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 final class FriendList(
     users: Users,
@@ -8,23 +8,26 @@ final class FriendList(
     mongo: Mongo
 )(implicit ec: ExecutionContext) {
 
-  def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Unit =
-    graph.followed(userId) foreach { all =>
+  def start(userId: User.ID, emit: Emit[ipc.ClientIn]): Future[Unit] =
+    graph.followed(userId) map { all =>
       val online = all.filter(u => users.isOnline(u.id))
-      println(all)
-      println(online)
       emit(ipc.ClientIn.FriendList(online))
     }
 
-  def follow(left: User.ID, right: User.ID) = mongo.userRecord(right) map {
-    _ foreach { graph.follow(left, _) }
-  }
+  def follow(left: User.ID, right: User.ID): Future[Unit] =
+    mongo.userRecord(right) map {
+      _ foreach { graph.follow(left, _) }
+    }
 
   def unFollow(left: User.ID, right: User.ID) = graph.unfollow(left, right)
 
-  private def onConnect(userId: User.ID) = graph.tell(userId, SocialGraph.UserMeta(online = true))
+  def startPlaying(userId: User.ID) = graph.tell(userId, _.copy(playing = true))
 
-  private def onDisconnect(userId: User.ID) = graph.tell(userId, SocialGraph.UserMeta(online = false))
+  def stopPlaying(userId: User.ID) = graph.tell(userId, _.copy(playing = false))
+
+  private def onConnect(userId: User.ID) = graph.tell(userId, _.copy(online = true))
+
+  private def onDisconnect(userId: User.ID) = graph.tell(userId, _.copy(online = false))
 
   Bus.internal.subscribe("users", {
     case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user.id)

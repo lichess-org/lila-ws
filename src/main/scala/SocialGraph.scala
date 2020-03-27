@@ -162,7 +162,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
-    lockSlot(id).pp("slot") match {
+    lockSlot(id) match {
       case NewSlot(slot, lock) =>
         lock.unlock()
         doLoadFollowed(id)
@@ -222,15 +222,15 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   // Updates the status of a user. Returns the list of subscribed users that
   // are intrested in this update.
-  def tell(id: User.ID, meta: UserMeta): List[User.ID] = {
+  def tell(id: User.ID, meta: UserMeta => UserMeta): List[User.ID] = {
     lockSlot(id) match {
       case ExistingSlot(slot, lock) =>
-        slots(slot) = slots(slot).copy(meta = Some(meta))
+        slots(slot) = slots(slot).updateMeta(meta)
         val followed = readFollowing(slot)
         lock.unlock()
         followed
       case NewSlot(slot, lock) =>
-        slots(slot) = UserEntry(id, None, Some(meta), false)
+        slots(slot) = UserEntry(id, None, Some(meta(defaultMeta)), false)
         lock.unlock()
         Nil
     }
@@ -244,11 +244,15 @@ object SocialGraph {
   case class UserData(name: String, title: Option[String], patron: Boolean) {
     def titleName = title.fold(name)(_ + " " + name)
   }
-  case class UserMeta(online: Boolean)
+  case class UserMeta(online: Boolean, playing: Boolean)
   case class UserRecord(id: User.ID, data: UserData)
   case class UserInfo(id: User.ID, data: UserData, meta: Option[UserMeta])
 
-  private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean)
+  private val defaultMeta = UserMeta(online = false, playing = false)
+
+  private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean) {
+    def updateMeta(f: UserMeta => UserMeta) = copy(meta = Some(f(meta getOrElse defaultMeta)))
+  }
 
   sealed private trait Slot
   private case class NewSlot(slot: Int, lock: ReentrantLock)      extends Slot

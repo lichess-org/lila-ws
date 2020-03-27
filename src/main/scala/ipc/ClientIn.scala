@@ -236,6 +236,23 @@ object ClientIn {
     )
   }
 
+  case class FollowingEnters(user: SocialGraph.UserInfo) extends ClientIn {
+    // We use 'd' for backward compatibility with the mobile client
+    def write =
+      Json stringify Json.obj(
+        "t" -> "following_enters",
+        "d" -> user.data.titleName
+      ) ++ {
+        if (user.data.patron) Json.obj("patron" -> true)
+        else Json.obj()
+      }
+
+  }
+
+  case class FollowingEvent[A: Writes](typ: String, data: A) extends ClientIn {
+    def write = cliMsg(typ, data)
+  }
+
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
