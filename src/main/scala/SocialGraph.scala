@@ -247,11 +247,11 @@ object SocialGraph {
   case class UserData(name: String, title: Option[String], patron: Boolean) {
     def titleName = title.fold(name)(_ + " " + name)
   }
-  case class UserMeta(online: Boolean, playing: Boolean)
+  case class UserMeta(online: Boolean, playing: Boolean, studying: Boolean)
   case class UserRecord(id: User.ID, data: UserData)
   case class UserInfo(id: User.ID, data: UserData, meta: Option[UserMeta])
 
-  private val defaultMeta = UserMeta(online = false, playing = false)
+  private val defaultMeta = UserMeta(online = false, playing = false, studying = false)
 
   private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean) {
     def updateMeta(f: UserMeta => UserMeta) = copy(meta = Some(f(meta getOrElse defaultMeta)))

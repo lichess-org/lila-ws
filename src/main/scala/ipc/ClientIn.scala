@@ -226,35 +226,39 @@ object ClientIn {
     def write = cliMsg("msgType", orig)
   }
 
-  case class FriendList(users: List[SocialGraph.UserInfo]) extends ClientIn {
-    def write = Json stringify Json.obj(
-      "t"        -> "following_onlines",
-      "d"        -> users.map(_.data.titleName),
-      "playing"  -> Json.arr(),
-      "studying" -> Json.arr(),
-      "patrons"  -> users.collect { case u if u.data.patron => u.id }
-    )
-  }
-  case class FollowingEnters(user: SocialGraph.UserInfo) extends ClientIn {
-    // We use 'd' for backward compatibility with the mobile client
-    def write =
-      Json stringify Json.obj(
-        "t" -> "following_enters",
-        "d" -> user.data.titleName
-      ) ++ {
-        if (user.data.patron) Json.obj("patron" -> true)
-        else Json.obj()
-      }
+  object following {
+    import SocialGraph.UserInfo
 
-  }
-  case class FollowingLeaves(user: SocialGraph.UserInfo) extends ClientIn {
-    def write = cliMsg("following_leaves", user.data.titleName)
-  }
-  case class FollowingPlaying(user: SocialGraph.UserInfo) extends ClientIn {
-    def write = cliMsg("following_playing", user.data.titleName)
-  }
-  case class FollowingStoppedPlaying(user: SocialGraph.UserInfo) extends ClientIn {
-    def write = cliMsg("following_stopped_playing", user.data.titleName)
+    case class FriendList(users: List[SocialGraph.UserInfo]) extends ClientIn {
+      def write = Json stringify Json.obj(
+        "t"        -> "following_onlines",
+        "d"        -> users.map(_.data.titleName),
+        "playing"  -> Json.arr(),
+        "studying" -> Json.arr(),
+        "patrons"  -> users.collect { case u if u.data.patron => u.id }
+      )
+    }
+    case class Enters(user: UserInfo) extends ClientIn {
+      // We use 'd' for backward compatibility with the mobile client
+      def write =
+        Json stringify Json.obj(
+          "t" -> "following_enters",
+          "d" -> user.data.titleName
+        ) ++ {
+          if (user.data.patron) Json.obj("patron" -> true)
+          else Json.obj()
+        }
+
+    }
+    abstract class Event(key: String) extends ClientIn {
+      def user: SocialGraph.UserInfo
+      def write = cliMsg(s"following_$key", user.data.titleName)
+    }
+    case class Leaves(user: UserInfo)         extends Event("leaves")
+    case class Playing(user: UserInfo)        extends Event("playing")
+    case class StoppedPlaying(user: UserInfo) extends Event("stopped_playing")
+    case class JoinedStudy(user: UserInfo)    extends Event("joined_study")
+    case class LeftStudy(user: UserInfo)      extends Event("joined_study")
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
