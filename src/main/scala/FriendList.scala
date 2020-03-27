@@ -37,8 +37,7 @@ final class FriendList(
   private def update(userId: User.ID, msg: UserInfo => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach {
       case (subject, subs) =>
-        val online = subs.filter(users.isOnline)
-        if (online.nonEmpty) users.tellMany(online, msg(subject))
+        if (subs.nonEmpty) users.tellMany(subs, msg(subject))
     }
 
   Bus.internal.subscribe("users", {
