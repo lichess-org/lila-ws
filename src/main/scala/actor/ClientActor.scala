@@ -1,7 +1,7 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 
 import ipc._
@@ -23,9 +23,12 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     LilaWsServer.connections.decrementAndGet
-    req.user foreach { users.disconnect(_, ctx.self) }
     if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
+    req.user foreach { user =>
+      users.disconnect(user, ctx.self)
+      deps.services.friends.onClientStop(user.id)
+    }
   }
 
   def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] = msg match {

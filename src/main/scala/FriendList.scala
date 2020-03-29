@@ -35,9 +35,15 @@ final class FriendList(
   def leaveStudy(userId: User.ID) =
     update(userId, LeftStudy.apply)(_.withStudying(false))
 
+  // a user WS closes
+  def onClientStop(userId: User.ID) =
+    graph.unsubscribe(userId)
+
+  // user logs in
   private def onConnect(userId: User.ID): Unit =
     update(userId, Enters.apply)(_.withOnline(true))
 
+  // user logs off
   private def onDisconnect(userId: User.ID) =
     update(userId, Leaves.apply)(_.withOnline(false))
 
