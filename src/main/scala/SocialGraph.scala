@@ -117,10 +117,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     NewSlot(leftSlot, leftLock)
   }
 
-  private def readFollowed(leftSlot: Int, leftLock: ReentrantLock): List[UserInfo] = {
+  private def readFollowed(leftSlot: Int, leftLock: ReentrantLock): List[UserEntry] = {
     graph.readOutgoing(leftSlot, leftLock) flatMap { rightSlot =>
-      staleRead(rightSlot) flatMap { entry =>
-        entry.data map { UserInfo(entry.id, _, entry.meta) }
+      staleRead(rightSlot) map { entry =>
+        UserEntry(entry.id, entry.meta)
       }
     }
   }
@@ -136,18 +136,18 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   private def updateFollowed(
       leftSlot: Int,
       leftLock: ReentrantLock,
-      followed: Iterable[UserRecord]
-  ): List[UserInfo] = {
+      followed: Iterable[User.ID]
+  ): List[UserEntry] = {
     graph.readOutgoing(leftSlot, leftLock) foreach { graph.remove(leftSlot, leftLock, _) }
 
-    (followed map { record =>
-      val ((rightSlot, rightLock), info) = lockSlot(record.id, leftSlot) match {
+    (followed map { userId =>
+      val ((rightSlot, rightLock), info) = lockSlot(userId, leftSlot) match {
         case NewSlot(rightSlot, rightLock) =>
-          write(rightSlot, rightLock, UserEntry(record.id, Some(record.data), UserMeta.stale))
-          rightSlot -> rightLock -> UserInfo(record.id, record.data, UserMeta.stale)
+          write(rightSlot, rightLock, UserEntry(userId, UserMeta.stale))
+          rightSlot -> rightLock -> UserEntry(userId, UserMeta.stale)
         case ExistingSlot(rightSlot, rightLock, entry) =>
-          write(rightSlot, rightLock, entry.copy(data = Some(record.data)))
-          rightSlot -> rightLock -> UserInfo(record.id, record.data, entry.meta)
+          write(rightSlot, rightLock, entry)
+          rightSlot -> rightLock -> UserEntry(userId, entry.meta)
       }
       graph.add(leftSlot, leftLock, rightSlot, rightLock)
       rightLock.unlock()
@@ -155,11 +155,11 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }).toList
   }
 
-  private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
+  private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
     mongo.loadFollowed(id) map { followed =>
       val (leftSlot, leftLock) = lockSlot(id, -1) match {
         case NewSlot(leftSlot, leftLock) =>
-          write(leftSlot, leftLock, UserEntry(id, None, UserMeta.freshSubscribed))
+          write(leftSlot, leftLock, UserEntry(id, UserMeta.freshSubscribed))
           leftSlot -> leftLock
         case ExistingSlot(leftSlot, leftLock, entry) =>
           write(leftSlot, leftLock, entry.update(_.withFresh(true).withSubscribed(true)))
@@ -173,7 +173,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
-  def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserInfo]] = {
+  def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
     val (infos, lock) = lockSlot(id, -1) match {
       case NewSlot(slot, lock) =>
         None -> lock
@@ -181,8 +181,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
         if (entry.meta.fresh) {
           write(slot, lock, entry.update(_.withSubscribed(true)))
           Some(readFollowed(slot, lock)) -> lock
-        }
-        else None -> lock
+        } else None -> lock
     }
     lock.unlock()
     infos.fold(doLoadFollowed(id))(Future.successful _)
@@ -213,15 +212,15 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   }
 
   // left now follows right.
-  def follow(left: User.ID, right: UserRecord): Unit = {
+  def follow(left: User.ID, right: User.ID): Unit = {
     (lockSlot(left, -1) match {
       case ExistingSlot(leftSlot, leftLock, _) =>
-        val (rightSlot, rightLock) = lockSlot(right.id, leftSlot) match {
+        val (rightSlot, rightLock) = lockSlot(right, leftSlot) match {
           case ExistingSlot(rightSlot, rightLock, rightEntry) =>
-            write(rightSlot, rightLock, rightEntry.copy(data = Some(right.data)))
+            write(rightSlot, rightLock, rightEntry)
             rightSlot -> rightLock
           case NewSlot(rightSlot, rightLock) =>
-            write(rightSlot, rightLock, UserEntry(right.id, Some(right.data), UserMeta.stale))
+            write(rightSlot, rightLock, UserEntry(right, UserMeta.stale))
             rightSlot -> rightLock
         }
         graph.add(leftSlot, leftLock, rightSlot, rightLock)
@@ -235,16 +234,15 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
   // Updates the status of a user. Returns the current user info and a list of
   // subscribed users that are interested in this update (if any).
-  def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserInfo, List[User.ID])] = {
+  def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserEntry, List[User.ID])] = {
     val (result, lock) = lockSlot(id, -1) match {
       case ExistingSlot(slot, lock, entry) =>
         val newEntry = entry.update(meta)
         write(slot, lock, newEntry)
-        (entry.data map { data =>
-          UserInfo(entry.id, data, newEntry.meta) -> readOnlineFollowing(slot, lock)
-        }) -> lock
+        val result = UserEntry(entry.id, newEntry.meta) -> readOnlineFollowing(slot, lock)
+        Some(result) -> lock
       case NewSlot(slot, lock) =>
-        write(slot, lock, UserEntry(id, None, meta(UserMeta.stale)))
+        write(slot, lock, UserEntry(id, meta(UserMeta.stale)))
         None -> lock
     }
     lock.unlock()
@@ -256,41 +254,35 @@ object SocialGraph {
 
   private val MaxStride: Int = 20
 
-  case class UserMeta private(flags: Int) extends AnyVal {
+  case class UserMeta private (flags: Int) extends AnyVal {
     @inline
     private def toggle(flag: Int, on: Boolean) = UserMeta(if (on) flags | flag else flags & ~flag)
     @inline
     private def has(flag: Int): Boolean = (flags & flag) != 0
 
-    def fresh = has(UserMeta.FRESH)
+    def fresh      = has(UserMeta.FRESH)
     def subscribed = has(UserMeta.SUBSCRIBED)
-    def online = has(UserMeta.ONLINE)
-    def playing = has(UserMeta.PLAYING)
-    def studying = has(UserMeta.STUDYING)
+    def online     = has(UserMeta.ONLINE)
+    def playing    = has(UserMeta.PLAYING)
+    def studying   = has(UserMeta.STUDYING)
 
-    def withFresh(fresh: Boolean) = toggle(UserMeta.FRESH, fresh)
+    def withFresh(fresh: Boolean)           = toggle(UserMeta.FRESH, fresh)
     def withSubscribed(subscribed: Boolean) = toggle(UserMeta.SUBSCRIBED, subscribed)
-    def withOnline(online: Boolean) = toggle(UserMeta.ONLINE, online)
-    def withPlaying(playing: Boolean) = toggle(UserMeta.PLAYING, playing)
-    def withStudying(studying: Boolean) = toggle(UserMeta.STUDYING, studying)
+    def withOnline(online: Boolean)         = toggle(UserMeta.ONLINE, online)
+    def withPlaying(playing: Boolean)       = toggle(UserMeta.PLAYING, playing)
+    def withStudying(studying: Boolean)     = toggle(UserMeta.STUDYING, studying)
   }
   object UserMeta {
-    private val FRESH = 1
+    private val FRESH      = 1
     private val SUBSCRIBED = 2
-    private val ONLINE = 4
-    private val PLAYING = 8
-    private val STUDYING = 16
-    val stale = UserMeta(0)
-    val freshSubscribed = UserMeta(FRESH | SUBSCRIBED)
+    private val ONLINE     = 4
+    private val PLAYING    = 8
+    private val STUDYING   = 16
+    val stale              = UserMeta(0)
+    val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
   }
 
-  case class UserData(name: String, title: Option[String], patron: Boolean) {
-    def titleName = title.fold(name)(_ + " " + name)
-  }
-  case class UserRecord(id: User.ID, data: UserData)
-  case class UserInfo(id: User.ID, data: UserData, meta: UserMeta)
-
-  private case class UserEntry(id: User.ID, data: Option[UserData], meta: UserMeta) {
+  case class UserEntry(id: User.ID, meta: UserMeta) {
     def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
   }
 

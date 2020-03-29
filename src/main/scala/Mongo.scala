@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, Cursor, DefaultDB, MongoConnection, ReadConcern, ReadPreference }
+import reactivemongo.api.{ AsyncDriver, DefaultDB, MongoConnection, ReadConcern, ReadPreference }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -148,16 +148,16 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       }
     }
 
-  private val userRecordProjection = BSONDocument("username" -> true, "title" -> true, "plan" -> true)
-  private def userRecordReader(doc: BSONDocument) =
+  private val userDataProjection =
+    BSONDocument("username" -> true, "title" -> true, "plan" -> true, "_id" -> false)
+  private def userDataReader(doc: BSONDocument) =
     for {
-      id   <- doc.getAsOpt[User.ID]("_id")
       name <- doc.getAsOpt[String]("username")
       title  = doc.getAsOpt[String]("title")
       patron = doc.child("plan").flatMap(_.getAsOpt[Boolean]("active")) getOrElse false
-    } yield SocialGraph.UserRecord(id, SocialGraph.UserData(name, title, patron))
+    } yield FriendList.UserData(name, title, patron)
 
-  def loadFollowed(userId: User.ID): Future[Iterable[SocialGraph.UserRecord]] =
+  def loadFollowed(userId: User.ID): Future[Iterable[User.ID]] =
     relationColl flatMap {
       _.distinct[User.ID, List](
         key = "u2",
@@ -165,24 +165,15 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         readConcern = ReadConcern.Local,
         collation = None
       )
-    } flatMap { ids =>
-      userColl flatMap {
-        _.find(
-          BSONDocument("_id" -> BSONDocument("$in" -> ids)),
-          Some(userRecordProjection)
-        ).cursor[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
-          .collect[List](1000, Cursor.ContOnError[List[BSONDocument]]())
-          .map { _ flatMap userRecordReader }
-      }
     }
 
-  def userRecord(userId: User.ID): Future[Option[SocialGraph.UserRecord]] =
+  def userData(userId: User.ID): Future[Option[FriendList.UserData]] =
     userColl flatMap {
       _.find(
         BSONDocument("_id" -> userId),
-        Some(userRecordProjection)
+        Some(userDataProjection)
       ).one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
-        .map { _ flatMap userRecordReader }
+        .map { _ flatMap userDataReader }
     }
 
   object troll {

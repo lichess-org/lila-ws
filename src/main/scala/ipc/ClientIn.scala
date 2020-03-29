@@ -227,18 +227,17 @@ object ClientIn {
   }
 
   object following {
-    import SocialGraph.UserInfo
 
-    case class FriendList(users: List[SocialGraph.UserInfo]) extends ClientIn {
+    case class Onlines(users: List[FriendList.UserView]) extends ClientIn {
       def write = Json stringify Json.obj(
         "t"        -> "following_onlines",
         "d"        -> users.map(_.data.titleName),
-        "playing"  -> Json.arr(),
-        "studying" -> Json.arr(),
+        "playing"  -> users.collect { case u if u.meta.playing => u.id },
+        "studying" -> users.collect { case u if u.meta.studying => u.id },
         "patrons"  -> users.collect { case u if u.data.patron => u.id }
       )
     }
-    case class Enters(user: UserInfo) extends ClientIn {
+    case class Enters(user: FriendList.UserView) extends ClientIn {
       // We use 'd' for backward compatibility with the mobile client
       def write =
         Json stringify Json.obj(
@@ -251,14 +250,14 @@ object ClientIn {
 
     }
     abstract class Event(key: String) extends ClientIn {
-      def user: SocialGraph.UserInfo
-      def write = cliMsg(s"following_$key", user.data.titleName)
+      def user: User.ID
+      def write = cliMsg(s"following_$key", user)
     }
-    case class Leaves(user: UserInfo)         extends Event("leaves")
-    case class Playing(user: UserInfo)        extends Event("playing")
-    case class StoppedPlaying(user: UserInfo) extends Event("stopped_playing")
-    case class JoinedStudy(user: UserInfo)    extends Event("joined_study")
-    case class LeftStudy(user: UserInfo)      extends Event("joined_study")
+    case class Leaves(user: User.ID)         extends Event("leaves")
+    case class Playing(user: User.ID)        extends Event("playing")
+    case class StoppedPlaying(user: User.ID) extends Event("stopped_playing")
+    case class JoinedStudy(user: User.ID)    extends Event("joined_study")
+    case class LeftStudy(user: User.ID)      extends Event("joined_study")
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
