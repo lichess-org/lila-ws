@@ -47,12 +47,6 @@ final class FriendList(
   def stopPlaying(userId: User.ID) =
     update(userId, StoppedPlaying.apply)(_.withPlaying(false))
 
-  def joinStudy(userId: User.ID) =
-    update(userId, JoinedStudy.apply)(_.withStudying(true))
-
-  def leaveStudy(userId: User.ID) =
-    update(userId, LeftStudy.apply)(_.withStudying(false))
-
   // a user WS closes
   def onClientStop(userId: User.ID) =
     graph.unsubscribe(userId)

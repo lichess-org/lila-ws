@@ -264,20 +264,17 @@ object SocialGraph {
     def subscribed = has(UserMeta.SUBSCRIBED)
     def online     = has(UserMeta.ONLINE)
     def playing    = has(UserMeta.PLAYING)
-    def studying   = has(UserMeta.STUDYING)
 
     def withFresh(fresh: Boolean)           = toggle(UserMeta.FRESH, fresh)
     def withSubscribed(subscribed: Boolean) = toggle(UserMeta.SUBSCRIBED, subscribed)
     def withOnline(online: Boolean)         = toggle(UserMeta.ONLINE, online)
     def withPlaying(playing: Boolean)       = toggle(UserMeta.PLAYING, playing)
-    def withStudying(studying: Boolean)     = toggle(UserMeta.STUDYING, studying)
   }
   object UserMeta {
     private val FRESH      = 1
     private val SUBSCRIBED = 2
     private val ONLINE     = 4
     private val PLAYING    = 8
-    private val STUDYING   = 16
     val stale              = UserMeta(0)
     val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
   }

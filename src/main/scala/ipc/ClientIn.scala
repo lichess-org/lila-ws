@@ -233,7 +233,7 @@ object ClientIn {
         "t"        -> "following_onlines",
         "d"        -> users.map(_.data.titleName),
         "playing"  -> users.collect { case u if u.meta.playing => u.id },
-        "studying" -> users.collect { case u if u.meta.studying => u.id },
+        "studying" -> Json.arr(),
         "patrons"  -> users.collect { case u if u.data.patron => u.id }
       )
     }
@@ -256,8 +256,6 @@ object ClientIn {
     case class Leaves(user: User.ID)         extends Event("leaves")
     case class Playing(user: User.ID)        extends Event("playing")
     case class StoppedPlaying(user: User.ID) extends Event("stopped_playing")
-    case class JoinedStudy(user: User.ID)    extends Event("joined_study")
-    case class LeftStudy(user: User.ID)      extends Event("joined_study")
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
