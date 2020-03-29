@@ -87,7 +87,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
           case None => return NewSlot(slot, lock)
           case Some(existing) if existing.id == id =>
             return ExistingSlot(slot, lock, existing)
-          case Some(existing) if !existing.meta.exists(_.online) =>
+          case Some(existing) if !existing.meta.online =>
             return freeSlot(slot, lock)
           case _ => lock.unlock()
         }
@@ -107,7 +107,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     graph.readIncompleteIncoming(leftSlot, leftLock) foreach { rightSlot =>
       val rightLock = lockFor(rightSlot)
       read(rightSlot, rightLock) foreach { rightEntry =>
-        write(rightSlot, rightLock, rightEntry.copy(fresh = false))
+        write(rightSlot, rightLock, rightEntry.update(_.withFresh(false)))
       }
       graph.remove(rightSlot, rightLock, leftSlot)
       rightLock.unlock()
@@ -128,7 +128,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   private def readOnlineFollowing(leftSlot: Int, leftLock: ReentrantLock): List[User.ID] = {
     graph.readIncompleteIncoming(leftSlot, leftLock) flatMap { rightSlot =>
       staleRead(rightSlot) collect {
-        case entry if entry.meta.exists(_.online) => entry.id
+        case entry if entry.meta.online && entry.meta.subscribed => entry.id
       }
     }
   }
@@ -143,8 +143,8 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     (followed map { record =>
       val ((rightSlot, rightLock), info) = lockSlot(record.id, leftSlot) match {
         case NewSlot(rightSlot, rightLock) =>
-          write(rightSlot, rightLock, UserEntry(record.id, Some(record.data), None, false))
-          rightSlot -> rightLock -> UserInfo(record.id, record.data, None)
+          write(rightSlot, rightLock, UserEntry(record.id, Some(record.data), UserMeta.stale))
+          rightSlot -> rightLock -> UserInfo(record.id, record.data, UserMeta.stale)
         case ExistingSlot(rightSlot, rightLock, entry) =>
           write(rightSlot, rightLock, entry.copy(data = Some(record.data)))
           rightSlot -> rightLock -> UserInfo(record.id, record.data, entry.meta)
@@ -159,10 +159,10 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     mongo.loadFollowed(id) map { followed =>
       val (leftSlot, leftLock) = lockSlot(id, -1) match {
         case NewSlot(leftSlot, leftLock) =>
-          write(leftSlot, leftLock, UserEntry(id, None, None, true))
+          write(leftSlot, leftLock, UserEntry(id, None, UserMeta.freshSubscribed))
           leftSlot -> leftLock
         case ExistingSlot(leftSlot, leftLock, entry) =>
-          write(leftSlot, leftLock, entry.copy(fresh = true))
+          write(leftSlot, leftLock, entry.update(_.withFresh(true).withSubscribed(true)))
           leftSlot -> leftLock
       }
       val infos = updateFollowed(leftSlot, leftLock, followed)
@@ -178,11 +178,23 @@ final class SocialGraph(mongo: Mongo, config: Config) {
       case NewSlot(slot, lock) =>
         None -> lock
       case ExistingSlot(slot, lock, entry) =>
-        if (entry.fresh) Some(readFollowed(slot, lock)) -> lock
-        else None                                       -> lock
+        if (entry.meta.fresh) {
+          write(slot, lock, entry.update(_.withSubscribed(true)))
+          Some(readFollowed(slot, lock)) -> lock
+        }
+        else None -> lock
     }
     lock.unlock()
     infos.fold(doLoadFollowed(id))(Future.successful _)
+  }
+
+  def unsubscribe(id: User.ID): Unit = {
+    (lockSlot(id, -1) match {
+      case NewSlot(slot, lock) => lock
+      case ExistingSlot(slot, lock, entry) =>
+        write(slot, lock, entry.update(_.withSubscribed(false)))
+        lock
+    }).unlock()
   }
 
   // left no longer follows right.
@@ -209,7 +221,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
             write(rightSlot, rightLock, rightEntry.copy(data = Some(right.data)))
             rightSlot -> rightLock
           case NewSlot(rightSlot, rightLock) =>
-            write(rightSlot, rightLock, UserEntry(right.id, Some(right.data), None, false))
+            write(rightSlot, rightLock, UserEntry(right.id, Some(right.data), UserMeta.stale))
             rightSlot -> rightLock
         }
         graph.add(leftSlot, leftLock, rightSlot, rightLock)
@@ -226,13 +238,13 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserInfo, List[User.ID])] = {
     val (result, lock) = lockSlot(id, -1) match {
       case ExistingSlot(slot, lock, entry) =>
-        val newEntry = entry.updateMeta(meta)
+        val newEntry = entry.update(meta)
         write(slot, lock, newEntry)
         (entry.data map { data =>
           UserInfo(entry.id, data, newEntry.meta) -> readOnlineFollowing(slot, lock)
         }) -> lock
       case NewSlot(slot, lock) =>
-        write(slot, lock, UserEntry(id, None, None, false).updateMeta(meta))
+        write(slot, lock, UserEntry(id, None, meta(UserMeta.stale)))
         None -> lock
     }
     lock.unlock()
@@ -244,17 +256,42 @@ object SocialGraph {
 
   private val MaxStride: Int = 20
 
+  case class UserMeta private(flags: Int) extends AnyVal {
+    @inline
+    private def toggle(flag: Int, on: Boolean) = UserMeta(if (on) flags | flag else flags & ~flag)
+    @inline
+    private def has(flag: Int): Boolean = (flags & flag) != 0
+
+    def fresh = has(UserMeta.FRESH)
+    def subscribed = has(UserMeta.SUBSCRIBED)
+    def online = has(UserMeta.ONLINE)
+    def playing = has(UserMeta.PLAYING)
+    def studying = has(UserMeta.STUDYING)
+
+    def withFresh(fresh: Boolean) = toggle(UserMeta.FRESH, fresh)
+    def withSubscribed(subscribed: Boolean) = toggle(UserMeta.SUBSCRIBED, subscribed)
+    def withOnline(online: Boolean) = toggle(UserMeta.ONLINE, online)
+    def withPlaying(playing: Boolean) = toggle(UserMeta.PLAYING, playing)
+    def withStudying(studying: Boolean) = toggle(UserMeta.STUDYING, studying)
+  }
+  object UserMeta {
+    private val FRESH = 1
+    private val SUBSCRIBED = 2
+    private val ONLINE = 4
+    private val PLAYING = 8
+    private val STUDYING = 16
+    val stale = UserMeta(0)
+    val freshSubscribed = UserMeta(FRESH | SUBSCRIBED)
+  }
+
   case class UserData(name: String, title: Option[String], patron: Boolean) {
     def titleName = title.fold(name)(_ + " " + name)
   }
-  case class UserMeta(online: Boolean, playing: Boolean, studying: Boolean)
   case class UserRecord(id: User.ID, data: UserData)
-  case class UserInfo(id: User.ID, data: UserData, meta: Option[UserMeta])
+  case class UserInfo(id: User.ID, data: UserData, meta: UserMeta)
 
-  private val defaultMeta = UserMeta(online = false, playing = false, studying = false)
-
-  private case class UserEntry(id: User.ID, data: Option[UserData], meta: Option[UserMeta], fresh: Boolean) {
-    def updateMeta(f: UserMeta => UserMeta) = copy(meta = Some(f(meta getOrElse defaultMeta)))
+  private case class UserEntry(id: User.ID, data: Option[UserData], meta: UserMeta) {
+    def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
   }
 
   sealed private trait Slot
