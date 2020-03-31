@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.locks.ReentrantLock
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
+import scala.util.Random
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -56,10 +57,17 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     slots(slot) = entry
   }
 
+  // The impact of hash collision based attacks is minimal (kicking a
+  // particular slot from the graph, as if they were offline). So instead of
+  // using a cryptographically secure and randomized hash, just make it
+  // slightly more inconvenient to exploit than String.hashCode().
+  private val seed = Random.nextInt
+  private def obscureHash(id: User.ID): Int = (seed ^ id.hashCode) * 0x9e3779b9
+
   private def lockSlot(id: User.ID, exceptSlot: Int): Slot = {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
-    val hash = id.hashCode & slotsMask
+    val hash = obscureHash(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       if (slot != exceptSlot) {
