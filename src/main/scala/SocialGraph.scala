@@ -62,12 +62,17 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // using a cryptographically secure and randomized hash, just make it
   // slightly more inconvenient to exploit than String.hashCode().
   private val seed = Random.nextInt
-  private def obscureHash(id: User.ID): Int = (seed ^ id.hashCode) * 0x9e3779b9
+  private def fxhash32(id: User.ID): Int = {
+    id.foldLeft(seed) {
+      case (state, ch) =>
+        (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
+    }
+  }
 
   private def lockSlot(id: User.ID, exceptSlot: Int): Slot = {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
-    val hash = obscureHash(id) & slotsMask
+    val hash = fxhash32(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
       val lock = lockFor(slot)
