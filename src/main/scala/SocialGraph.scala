@@ -70,14 +70,12 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     val hash = obscureHash(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
-      if (slot != exceptSlot) {
-        val lock = lockFor(slot)
-        read(slot, lock) match {
-          case None => return NewSlot(slot, lock)
-          case Some(existing) if existing.id == id =>
-            return ExistingSlot(slot, lock, existing)
-          case _ => lock.unlock()
-        }
+      val lock = lockFor(slot)
+      read(slot, lock) match {
+        case None => return NewSlot(slot, lock)
+        case Some(existing) if existing.id == id =>
+          return ExistingSlot(slot, lock, existing)
+        case _ => lock.unlock()
       }
     }
 
@@ -89,16 +87,14 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     // does not replace its follower.
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
-      if (slot != exceptSlot) {
-        val lock = lockFor(slot)
-        read(slot, lock) match {
-          case None => return NewSlot(slot, lock)
-          case Some(existing) if existing.id == id =>
-            return ExistingSlot(slot, lock, existing)
-          case Some(existing) if !existing.meta.online =>
-            return freeSlot(slot, lock)
-          case _ => lock.unlock()
-        }
+      val lock = lockFor(slot)
+      read(slot, lock) match {
+        case None => return NewSlot(slot, lock)
+        case Some(existing) if existing.id == id =>
+          return ExistingSlot(slot, lock, existing)
+        case Some(existing) if !existing.meta.online && slot != exceptSlot =>
+          return freeSlot(slot, lock)
+        case _ => lock.unlock()
       }
     }
 
