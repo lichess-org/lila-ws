@@ -40,6 +40,10 @@ object ClientActor {
     case ClientCtrl.Disconnect =>
       deps.clientIn(ClientIn.Disconnect)
       Behaviors.stopped
+
+    case ClientCtrl.ApiDisconnect =>
+      // handled by ApiActor only
+      Behaviors.same
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {

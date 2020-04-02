@@ -1,7 +1,8 @@
 package lila.ws
 
+import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Promise }
 
 import ipc._
 
@@ -11,7 +12,9 @@ final class LilaHandler(
     friendList: FriendList,
     roomCrowd: RoomCrowd,
     roundCrowd: RoundCrowd,
-    mongo: Mongo
+    mongo: Mongo,
+    clients: ActorRef[Clients.Control],
+    services: Services
 )(implicit ec: ExecutionContext) {
 
   import LilaOut._
@@ -38,6 +41,13 @@ final class LilaHandler(
 
     case Follow(left, right)   => friendList.follow(left, right)
     case UnFollow(left, right) => friendList.unFollow(left, right)
+
+    case ApiUserOnline(user, true) =>
+      clients ! Clients.Start(
+        ApiActor start ApiActor.Deps(User(user), services),
+        Promise[_root_.lila.ws.Client]
+      )
+    case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
     case Impersonate(user, by) => Impersonations(user, by)
 

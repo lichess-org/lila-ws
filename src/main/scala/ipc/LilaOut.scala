@@ -84,8 +84,9 @@ object LilaOut {
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
-  case object LilaBoot            extends AnyRoomOut
-  case class LilaStop(reqId: Int) extends AnyRoomOut
+  case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
+  case object LilaBoot                                       extends AnyRoomOut
+  case class LilaStop(reqId: Int)                            extends AnyRoomOut
 
   // impl
 
@@ -275,6 +276,13 @@ object LilaOut {
             speedS.toIntOption flatMap chess.Speed.apply map { speed =>
               TvSelect(Game.Id(gameId), speed, JsonString(data))
             }
+        }
+
+      // misc
+
+      case "api/online" =>
+        get(args, 2) {
+          case Array(userId, online) => Some(ApiUserOnline(userId, boolean(online)))
         }
 
       case "boot" => Some(LilaBoot)

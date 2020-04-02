@@ -101,6 +101,7 @@ object ClientIn {
   }
   object OnlyFor {
     sealed trait Endpoint
+    case object Api             extends Endpoint
     case object Lobby           extends Endpoint
     case class Room(id: RoomId) extends Endpoint
   }
