@@ -261,7 +261,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
 
 object SocialGraph {
 
-  private val MaxStride: Int = 20
+  private val MaxStride: Int = 16
 
   case class UserMeta private (flags: Int) extends AnyVal {
     @inline
