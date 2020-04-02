@@ -28,6 +28,8 @@ object LilaOut {
   case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
   case class SetTroll(user: User.ID, v: IsTroll)                   extends SiteOut
   case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
+  case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
+  case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
 
   // lobby
 
@@ -77,11 +79,14 @@ object LilaOut {
   case class RoundGoneIn(fullId: Game.FullId, seconds: Int)            extends RoundOut
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
   case class UserTvNewGame(gameId: Game.Id, userId: User.ID)           extends RoundOut
+  case class GameStart(users: List[User.ID])                           extends RoundOut
+  case class GameFinish(users: List[User.ID])                          extends RoundOut
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
-  case object LilaBoot            extends AnyRoomOut
-  case class LilaStop(reqId: Int) extends AnyRoomOut
+  case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
+  case object LilaBoot                                       extends AnyRoomOut
+  case class LilaStop(reqId: Int)                            extends AnyRoomOut
 
   // impl
 
@@ -143,6 +148,16 @@ object LilaOut {
           case Array(user, by) => Some(Impersonate(user, optional(by)))
         }
 
+      case "rel/follow" =>
+        get(args, 2) {
+          case Array(left, right) => Some(Follow(left, right))
+        }
+
+      case "rel/unfollow" =>
+        get(args, 2) {
+          case Array(left, right) => Some(UnFollow(left, right))
+        }
+
       case "tell/sris" =>
         get(args, 2) {
           case Array(sris, payload) =>
@@ -188,7 +203,9 @@ object LilaOut {
       case "room/present" =>
         get(args, 3) {
           case Array(reqIdS, roomId, userId) =>
-            reqIdS.toIntOption map { reqId => RoomIsPresent(reqId, RoomId(roomId), userId) }
+            reqIdS.toIntOption map { reqId =>
+              RoomIsPresent(reqId, RoomId(roomId), userId)
+            }
         }
 
       case "tour/get/waiting" =>
@@ -248,6 +265,9 @@ object LilaOut {
             Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
+      case "r/start"  => Some(GameStart(commas(args).toList))
+      case "r/finish" => Some(GameFinish(commas(args).toList))
+
       // tv
 
       case "tv/select" =>
@@ -256,6 +276,13 @@ object LilaOut {
             speedS.toIntOption flatMap chess.Speed.apply map { speed =>
               TvSelect(Game.Id(gameId), speed, JsonString(data))
             }
+        }
+
+      // misc
+
+      case "api/online" =>
+        get(args, 2) {
+          case Array(userId, online) => Some(ApiUserOnline(userId, boolean(online)))
         }
 
       case "boot" => Some(LilaBoot)

@@ -1,7 +1,7 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 
 import ipc._
@@ -23,9 +23,12 @@ object ClientActor {
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
     import deps._
     LilaWsServer.connections.decrementAndGet
-    req.user foreach { users.disconnect(_, ctx.self) }
     if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
+    req.user foreach { user =>
+      users.disconnect(user, ctx.self)
+      deps.services.friends.onClientStop(user.id)
+    }
   }
 
   def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] = msg match {
@@ -37,6 +40,10 @@ object ClientActor {
     case ClientCtrl.Disconnect =>
       deps.clientIn(ClientIn.Disconnect)
       Behaviors.stopped
+
+    case ClientCtrl.ApiDisconnect =>
+      // handled by ApiActor only
+      Behaviors.same
   }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
@@ -76,7 +83,7 @@ object ClientActor {
         state
 
       case ClientOut.FollowingOnline =>
-        req.userId foreach services.friends.apply
+        req.userId foreach { services.friends.start(_, clientIn) }
         state
 
       case opening: ClientOut.Opening =>
@@ -96,7 +103,9 @@ object ClientActor {
         state
 
       case ClientOut.MsgType(dest) =>
-        req.user foreach { orig => deps.users.tellOne(dest, ClientIn.MsgType(orig.id)) }
+        req.user foreach { orig =>
+          deps.users.tellOne(dest, ClientIn.MsgType(orig.id))
+        }
         state
 
       case ClientOut.SiteForward(payload) =>
@@ -104,7 +113,9 @@ object ClientActor {
         state
 
       case ClientOut.UserForward(payload) =>
-        req.user foreach { user => lilaIn.site(LilaIn.TellUser(user.id, payload)) }
+        req.user foreach { user =>
+          lilaIn.site(LilaIn.TellUser(user.id, payload))
+        }
         state
 
       case ClientOut.Ignore =>

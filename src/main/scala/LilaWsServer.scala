@@ -15,6 +15,7 @@ object Boot extends App {
   implicit def scheduler: Scheduler               = clientSystem.scheduler
   implicit def executionContext: ExecutionContext = clientSystem.executionContext
 
+  lazy val mongo         = wire[Mongo]
   lazy val groupedWithin = wire[util.GroupedWithin]
   lazy val lightUserApi  = wire[LightUserApi]
   lazy val lilaRedis     = wire[Lila]
@@ -25,10 +26,11 @@ object Boot extends App {
   lazy val users         = wire[Users]
   lazy val keepAlive     = wire[KeepAlive]
   lazy val lobby         = wire[Lobby]
+  lazy val socialGraph   = wire[SocialGraph]
+  lazy val friendList    = wire[FriendList]
   lazy val services      = wire[Services]
   lazy val controller    = wire[Controller]
   lazy val router        = wire[Router]
-  lazy val mongo         = wire[Mongo]
   lazy val seenAt        = wire[SeenAtUpdate]
   lazy val auth          = wire[Auth]
   lazy val nettyServer   = wire[netty.NettyServer]
@@ -40,6 +42,7 @@ object Boot extends App {
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
     handlers: LilaHandler, // must eagerly instanciate!
+    lila: Lila,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
@@ -47,6 +50,11 @@ final class LilaWsServer(
   def start(): Unit = {
 
     monitor.start
+
+    Bus.internal.subscribe("users", {
+      case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
+      case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
+    })
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))

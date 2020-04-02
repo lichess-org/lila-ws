@@ -45,4 +45,10 @@ object Bus {
 
   def size                     = impl.size
   def sizeOf(chan: ChanSelect) = impl sizeOf chan(channel)
+
+  // distinct bus for internal events
+  val internal = new util.EventBus[Any, Chan, PartialFunction[Any, Unit]](
+    initialCapacity = 16,
+    publish = (listener, event) => listener lift event
+  )
 }

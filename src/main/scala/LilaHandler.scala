@@ -1,16 +1,20 @@
 package lila.ws
 
+import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Promise }
 
 import ipc._
 
 final class LilaHandler(
     lila: Lila,
     users: Users,
+    friendList: FriendList,
     roomCrowd: RoomCrowd,
     roundCrowd: RoundCrowd,
-    mongo: Mongo
+    mongo: Mongo,
+    clients: ActorRef[Clients.Control],
+    services: Services
 )(implicit ec: ExecutionContext) {
 
   import LilaOut._
@@ -35,6 +39,16 @@ final class LilaHandler(
       users.setTroll(user, v)
       mongo.troll.set(user, v)
 
+    case Follow(left, right)   => friendList.follow(left, right)
+    case UnFollow(left, right) => friendList.unFollow(left, right)
+
+    case ApiUserOnline(user, true) =>
+      clients ! Clients.Start(
+        ApiActor start ApiActor.Deps(User(user), services),
+        Promise[_root_.lila.ws.Client]
+      )
+    case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
+
     case Impersonate(user, by) => Impersonations(user, by)
 
     case LilaStop(reqId) =>
@@ -54,7 +68,9 @@ final class LilaHandler(
     case TellLobbyActive(payload) =>
       publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload) =>
-      sris foreach { sri => publish(_ sri sri, ClientIn.Payload(payload)) }
+      sris foreach { sri =>
+        publish(_ sri sri, ClientIn.Payload(payload))
+      }
     case LobbyPairings(pairings) =>
       pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
 
@@ -116,9 +132,13 @@ final class LilaHandler(
         History.round.stop(roomId)
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
+      case GameStart(users)                 => users foreach friendList.startPlaying
+      case GameFinish(users)                => users foreach friendList.stopPlaying
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
-        lila.status.setOnline { () => lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions)) }
+        lila.status.setOnline { () =>
+          lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+        }
         Impersonations.reset()
       case msg => roomHandler(msg)
     })
