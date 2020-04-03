@@ -1,7 +1,7 @@
 package lila.ws
 
 import com.typesafe.config.Config
-import java.util.concurrent.ConcurrentSkipListSet
+import java.util.TreeSet
 import java.util.concurrent.locks.ReentrantLock
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
@@ -25,7 +25,6 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   import SocialGraph._
 
   private val logCapacity = config.getInt("socialGraph.logCapacity")
-  private val logNumLocks = config.getInt("socialGraph.logNumLocks")
 
   private val graph = new Graph()
 
@@ -35,25 +34,14 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   private val slotsMask: Int          = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
 
-  // An array of locks, where holding locks[slot & locksMask] means exclusive
-  // access to that slot.
-  private val locksMask: Int              = (1 << logNumLocks) - 1
-  private val locks: Array[ReentrantLock] = Array.tabulate(locksMask + 1)(_ => new ReentrantLock())
-
-  private def lockFor(slot: Int): ReentrantLock = {
-    val lock = locks(slot & locksMask)
-    lock.lock()
-    lock
-  }
+  // Hold this while reading, writing and modifying edge sets.
+  private val lock = new ReentrantLock();
 
   @inline
-  private def read(slot: Int, _lock: ReentrantLock): Option[UserEntry] = Option(slots(slot))
+  private def read(slot: Int): Option[UserEntry] = Option(slots(slot))
 
   @inline
-  private def staleRead(slot: Int): Option[UserEntry] = Option(slots(slot))
-
-  @inline
-  private def write(slot: Int, _lock: ReentrantLock, entry: UserEntry): Unit = {
+  private def write(slot: Int, entry: UserEntry): Unit = {
     slots(slot) = entry
   }
 
@@ -69,18 +57,17 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     }
   }
 
-  private def lockSlot(id: User.ID, exceptSlot: Int): Slot = {
+  private def findSlot(id: User.ID, exceptSlot: Int): Slot = {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
-      val lock = lockFor(slot)
-      read(slot, lock) match {
-        case None => return NewSlot(slot, lock)
+      read(slot) match {
+        case None => return NewSlot(slot)
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, lock, existing)
-        case _ => lock.unlock()
+          return ExistingSlot(slot, existing)
+        case _ =>
       }
     }
 
@@ -92,170 +79,181 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     // does not replace its follower.
     for (s <- hash to (hash + SocialGraph.MaxStride)) {
       val slot = s & slotsMask
-      val lock = lockFor(slot)
-      read(slot, lock) match {
-        case None => return NewSlot(slot, lock)
+      read(slot) match {
+        case None => return NewSlot(slot)
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, lock, existing)
+          return ExistingSlot(slot, existing)
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
-          return freeSlot(slot, lock)
-        case _ => lock.unlock()
+          return freeSlot(slot)
+        case _ =>
       }
     }
 
     // The hashtable is full. Overwrite a random entry.
     val slot = if (hash != exceptSlot) hash else (hash + 1) & slotsMask
-    freeSlot(slot, lockFor(slot))
+    freeSlot(slot)
   }
 
-  private def freeSlot(leftSlot: Int, leftLock: ReentrantLock): NewSlot = {
+  private def freeSlot(leftSlot: Int): NewSlot = {
     // Clear all outgoing edges: A freed slot does not follow anyone.
-    graph.readOutgoing(leftSlot, leftLock) foreach { graph.remove(leftSlot, leftLock, _) }
+    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
 
     // Clear all incoming edges and mark everyone who followed this slot stale.
-    graph.readIncompleteIncoming(leftSlot, leftLock) foreach { rightSlot =>
-      val rightLock = lockFor(rightSlot)
-      read(rightSlot, rightLock) foreach { rightEntry =>
-        write(rightSlot, rightLock, rightEntry.update(_.withFresh(false)))
+    graph.readIncompleteIncoming(leftSlot) foreach { rightSlot =>
+      read(rightSlot) foreach { rightEntry =>
+        write(rightSlot, rightEntry.update(_.withFresh(false)))
       }
-      graph.remove(rightSlot, rightLock, leftSlot)
-      rightLock.unlock()
+      graph.remove(rightSlot, leftSlot)
     }
 
-    write(leftSlot, leftLock, null)
-    NewSlot(leftSlot, leftLock)
+    write(leftSlot, null)
+    NewSlot(leftSlot)
   }
 
-  private def readFollowed(leftSlot: Int, leftLock: ReentrantLock): List[UserEntry] = {
-    graph.readOutgoing(leftSlot, leftLock) flatMap { rightSlot =>
-      staleRead(rightSlot) map { entry =>
+  private def readFollowed(leftSlot: Int): List[UserEntry] = {
+    graph.readOutgoing(leftSlot) flatMap { rightSlot =>
+      read(rightSlot) map { entry =>
         UserEntry(entry.id, entry.meta)
       }
     }
   }
 
-  private def readOnlineFollowing(leftSlot: Int, leftLock: ReentrantLock): List[User.ID] = {
-    graph.readIncompleteIncoming(leftSlot, leftLock) flatMap { rightSlot =>
-      staleRead(rightSlot) collect {
+  private def readOnlineFollowing(leftSlot: Int): List[User.ID] = {
+    graph.readIncompleteIncoming(leftSlot) flatMap { rightSlot =>
+      read(rightSlot) collect {
         case entry if entry.meta.online && entry.meta.subscribed => entry.id
       }
     }
   }
 
-  private def updateFollowed(
-      leftSlot: Int,
-      leftLock: ReentrantLock,
-      followed: Iterable[User.ID]
-  ): List[UserEntry] = {
-    graph.readOutgoing(leftSlot, leftLock) foreach { graph.remove(leftSlot, leftLock, _) }
+  private def updateFollowed(leftSlot: Int, followed: Iterable[User.ID]): List[UserEntry] = {
+    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
 
     (followed map { userId =>
-      val ((rightSlot, rightLock), info) = lockSlot(userId, leftSlot) match {
-        case NewSlot(rightSlot, rightLock) =>
-          write(rightSlot, rightLock, UserEntry(userId, UserMeta.stale))
-          rightSlot -> rightLock -> UserEntry(userId, UserMeta.stale)
-        case ExistingSlot(rightSlot, rightLock, entry) =>
-          write(rightSlot, rightLock, entry)
-          rightSlot -> rightLock -> UserEntry(userId, entry.meta)
+      val (rightSlot, info) = findSlot(userId, leftSlot) match {
+        case NewSlot(rightSlot) =>
+          write(rightSlot, UserEntry(userId, UserMeta.stale))
+          rightSlot -> UserEntry(userId, UserMeta.stale)
+        case ExistingSlot(rightSlot, entry) =>
+          write(rightSlot, entry)
+          rightSlot -> UserEntry(userId, entry.meta)
       }
-      graph.add(leftSlot, leftLock, rightSlot, rightLock)
-      rightLock.unlock()
+      graph.add(leftSlot, rightSlot)
       info
     }).toList
   }
 
   private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
     mongo.loadFollowed(id) map { followed =>
-      val (leftSlot, leftLock) = lockSlot(id, -1) match {
-        case NewSlot(leftSlot, leftLock) =>
-          write(leftSlot, leftLock, UserEntry(id, UserMeta.freshSubscribed))
-          leftSlot -> leftLock
-        case ExistingSlot(leftSlot, leftLock, entry) =>
-          write(leftSlot, leftLock, entry.update(_.withFresh(true).withSubscribed(true)))
-          leftSlot -> leftLock
+      lock.lock()
+      try {
+        val leftSlot = findSlot(id, -1) match {
+          case NewSlot(leftSlot) =>
+            write(leftSlot, UserEntry(id, UserMeta.freshSubscribed))
+            leftSlot
+          case ExistingSlot(leftSlot, entry) =>
+            write(leftSlot, entry.update(_.withFresh(true).withSubscribed(true)))
+            leftSlot
+        }
+        updateFollowed(leftSlot, followed)
+      } finally {
+        lock.unlock()
       }
-      val infos = updateFollowed(leftSlot, leftLock, followed)
-      leftLock.unlock()
-      infos
     }
   }
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
   def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] = {
-    val (infos, lock) = lockSlot(id, -1) match {
-      case NewSlot(slot, lock) =>
-        None -> lock
-      case ExistingSlot(slot, lock, entry) =>
-        if (entry.meta.fresh) {
-          write(slot, lock, entry.update(_.withSubscribed(true)))
-          Some(readFollowed(slot, lock)) -> lock
-        } else None -> lock
-    }
-    lock.unlock()
+    lock.lock()
+    val infos =
+      try {
+        findSlot(id, -1) match {
+          case NewSlot(slot) =>
+            None
+          case ExistingSlot(slot, entry) =>
+            if (entry.meta.fresh) {
+              write(slot, entry.update(_.withSubscribed(true)))
+              Some(readFollowed(slot))
+            } else None
+        }
+      } finally {
+        lock.unlock()
+      }
     infos.fold(doLoadFollowed(id))(Future.successful _)
   }
 
   def unsubscribe(id: User.ID): Unit = {
-    (lockSlot(id, -1) match {
-      case NewSlot(slot, lock) => lock
-      case ExistingSlot(slot, lock, entry) =>
-        write(slot, lock, entry.update(_.withSubscribed(false)))
-        lock
-    }).unlock()
+    lock.lock()
+    try {
+      findSlot(id, -1) match {
+        case ExistingSlot(slot, entry) =>
+          write(slot, entry.update(_.withSubscribed(false)))
+        case NewSlot(slot) =>
+      }
+    } finally {
+      lock.unlock()
+    }
   }
 
   // left no longer follows right.
   def unfollow(left: User.ID, right: User.ID): Unit = {
-    (lockSlot(left, -1) match {
-      case ExistingSlot(leftSlot, leftLock, _) =>
-        (lockSlot(right, leftSlot) match {
-          case ExistingSlot(rightSlot, rightLock, _) =>
-            graph.remove(leftSlot, leftLock, rightSlot)
-            rightLock
-          case NewSlot(_, rightLock) => rightLock
-        }).unlock()
-        leftLock
-      case NewSlot(_, leftLock) => leftLock
-    }).unlock()
+    lock.lock()
+    try {
+      findSlot(left, -1) match {
+        case ExistingSlot(leftSlot, _) =>
+          findSlot(right, leftSlot) match {
+            case ExistingSlot(rightSlot, _) =>
+              graph.remove(leftSlot, rightSlot)
+            case NewSlot(_) =>
+          }
+        case NewSlot(_) =>
+      }
+    } finally {
+      lock.unlock()
+    }
   }
 
   // left now follows right.
   def follow(left: User.ID, right: User.ID): Unit = {
-    (lockSlot(left, -1) match {
-      case ExistingSlot(leftSlot, leftLock, _) =>
-        val (rightSlot, rightLock) = lockSlot(right, leftSlot) match {
-          case ExistingSlot(rightSlot, rightLock, rightEntry) =>
-            write(rightSlot, rightLock, rightEntry)
-            rightSlot -> rightLock
-          case NewSlot(rightSlot, rightLock) =>
-            write(rightSlot, rightLock, UserEntry(right, UserMeta.stale))
-            rightSlot -> rightLock
-        }
-        graph.add(leftSlot, leftLock, rightSlot, rightLock)
-        rightLock.unlock()
-        leftLock
-      case NewSlot(_, leftLock) =>
-        // Do nothing. Next followed will have to hit the database anyway.
-        leftLock
-    }).unlock()
+    lock.lock()
+    try {
+      findSlot(left, -1) match {
+        case ExistingSlot(leftSlot, _) =>
+          val rightSlot = findSlot(right, leftSlot) match {
+            case ExistingSlot(rightSlot, rightEntry) =>
+              write(rightSlot, rightEntry)
+              rightSlot
+            case NewSlot(rightSlot) =>
+              write(rightSlot, UserEntry(right, UserMeta.stale))
+              rightSlot
+          }
+          graph.add(leftSlot, rightSlot)
+        case NewSlot(_) => // next followed will have to hit the database anyway
+      }
+    } finally {
+      lock.unlock()
+    }
   }
 
   // Updates the status of a user. Returns the current user info and a list of
   // subscribed users that are interested in this update (if any).
   def tell(id: User.ID, meta: UserMeta => UserMeta): Option[(SocialGraph.UserEntry, List[User.ID])] = {
-    val (result, lock) = lockSlot(id, -1) match {
-      case ExistingSlot(slot, lock, entry) =>
-        val newEntry = entry.update(meta)
-        write(slot, lock, newEntry)
-        val result = UserEntry(entry.id, newEntry.meta) -> readOnlineFollowing(slot, lock)
-        Some(result) -> lock
-      case NewSlot(slot, lock) =>
-        write(slot, lock, UserEntry(id, meta(UserMeta.stale)))
-        None -> lock
+    lock.lock()
+    try {
+      findSlot(id, -1) match {
+        case ExistingSlot(slot, entry) =>
+          val newEntry = entry.update(meta)
+          write(slot, newEntry)
+          val result = UserEntry(entry.id, newEntry.meta) -> readOnlineFollowing(slot)
+          Some(result)
+        case NewSlot(slot) =>
+          write(slot, UserEntry(id, meta(UserMeta.stale)))
+          None
+      }
+    } finally {
+      lock.unlock()
     }
-    lock.unlock()
-    result
   }
 }
 
@@ -293,11 +291,11 @@ object SocialGraph {
   }
 
   sealed private trait Slot
-  private case class NewSlot(slot: Int, lock: ReentrantLock)                        extends Slot
-  private case class ExistingSlot(slot: Int, lock: ReentrantLock, entry: UserEntry) extends Slot
+  private case class NewSlot(slot: Int)                        extends Slot
+  private case class ExistingSlot(slot: Int, entry: UserEntry) extends Slot
 
   private class AdjacencyList {
-    private val inner: ConcurrentSkipListSet[Long] = new ConcurrentSkipListSet()
+    private val inner: TreeSet[Long] = new TreeSet()
 
     def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
     def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
@@ -317,16 +315,16 @@ object SocialGraph {
     private val outgoing = new AdjacencyList()
     private val incoming = new AdjacencyList()
 
-    def readOutgoing(a: Int, lockA: ReentrantLock): List[Int] = outgoing.read(a)
+    def readOutgoing(a: Int): List[Int] = outgoing.read(a)
 
-    def readIncompleteIncoming(a: Int, _lockA: ReentrantLock): List[Int] = incoming.read(a)
+    def readIncompleteIncoming(a: Int): List[Int] = incoming.read(a)
 
-    def add(a: Int, _lockA: ReentrantLock, b: Int, _lockB: ReentrantLock): Unit = {
+    def add(a: Int, b: Int): Unit = {
       outgoing.add(a, b)
       incoming.add(b, a)
     }
 
-    def remove(a: Int, _lockA: ReentrantLock, b: Int): Unit = {
+    def remove(a: Int, b: Int): Unit = {
       outgoing.remove(a, b)
       incoming.remove(b, a)
     }
