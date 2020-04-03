@@ -19,7 +19,6 @@ object StudyClientActor {
       deps: Deps
   ): Behavior[ClientMsg] = Behaviors.setup { ctx =>
     RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    deps.req.user foreach { user => deps.services.studyDoor(ThroughStudyDoor(user, Right(roomState.id))) }
     apply(State(roomState), deps)
   }
 
@@ -92,9 +91,6 @@ object StudyClientActor {
         case (ctx, PostStop) =>
           onStop(state.site, deps, ctx)
           RoomActor.onStop(state.room, deps, ctx)
-          deps.req.user foreach { user =>
-            deps.services.studyDoor(ThroughStudyDoor(user, Left(state.room.id)))
-          }
           Behaviors.same
       }
 }

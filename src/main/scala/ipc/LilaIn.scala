@@ -96,14 +96,6 @@ object LilaIn {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
   }
 
-  case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {
-    def write =
-      s"study/door ${commas(users.map {
-        case (u, Right(s)) => s"$u:$s:+"
-        case (u, Left(s))  => s"$u:$s:-"
-      })}"
-  }
-
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
     def write = s"r/do $fullId ${Json.stringify(payload)}"
   }
