@@ -101,6 +101,7 @@ object ClientIn {
   }
   object OnlyFor {
     sealed trait Endpoint
+    case object Api             extends Endpoint
     case object Lobby           extends Endpoint
     case class Room(id: RoomId) extends Endpoint
   }
@@ -165,7 +166,9 @@ object ClientIn {
               )
               .add("opening" -> opening)
               .add("check" -> check)
-              .add("drops" -> drops.map { drops => JsString(drops.map(_.key).mkString) })
+              .add("drops" -> drops.map { drops =>
+                JsString(drops.map(_.key).mkString)
+              })
               .add("crazy" -> crazyData)
           )
           .add("ch" -> chapterId)
@@ -222,6 +225,38 @@ object ClientIn {
 
   case class MsgType(orig: User.ID) extends ClientIn {
     def write = cliMsg("msgType", orig)
+  }
+
+  object following {
+
+    case class Onlines(users: List[FriendList.UserView]) extends ClientIn {
+      def write = Json stringify Json.obj(
+        "t"        -> "following_onlines",
+        "d"        -> users.map(_.data.titleName),
+        "playing"  -> users.collect { case u if u.meta.playing => u.id },
+        "studying" -> Json.arr(),
+        "patrons"  -> users.collect { case u if u.data.patron => u.id }
+      )
+    }
+    case class Enters(user: FriendList.UserView) extends ClientIn {
+      // We use 'd' for backward compatibility with the mobile client
+      def write =
+        Json stringify Json.obj(
+          "t" -> "following_enters",
+          "d" -> user.data.titleName
+        ) ++ {
+          if (user.data.patron) Json.obj("patron" -> true)
+          else Json.obj()
+        }
+
+    }
+    abstract class Event(key: String) extends ClientIn {
+      def user: User.ID
+      def write = cliMsg(s"following_$key", user)
+    }
+    case class Leaves(user: User.ID)         extends Event("leaves")
+    case class Playing(user: User.ID)        extends Event("playing")
+    case class StoppedPlaying(user: User.ID) extends Event("stopped_playing")
   }
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r

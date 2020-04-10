@@ -6,8 +6,8 @@ lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.4"
-val kamonVersion         = "2.0.5"
-val nettyVersion         = "4.1.47.Final"
+val kamonVersion         = "2.1.0"
+val nettyVersion         = "4.1.48.Final"
 val reactivemongoVersion = "0.20.3"
 
 scalaVersion := "2.13.1"
@@ -24,12 +24,12 @@ libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"       
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                  % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"               % "3.9.2"
 libraryDependencies += "joda-time"                  % "joda-time"                    % "2.10.5"
-libraryDependencies += "com.github.blemale"         %% "scaffeine"                   % "3.1.0" % "compile"
+libraryDependencies += "com.github.blemale"         %% "scaffeine"                   % "4.0.0" % "compile"
 libraryDependencies += "ch.qos.logback"             % "logback-classic"              % "1.2.3"
 libraryDependencies += "com.typesafe.play"          %% "play-json"                   % "2.8.1"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                  % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-influxdb"              % "2.0.1-LILA"
-libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.0.2"
+libraryDependencies += "io.kamon"                   %% "kamon-influxdb"              % "2.1.0"
+libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"        % "2.1.0"
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                      % "2.3.3" % "provided"
 
 resolvers += Resolver.sonatypeRepo("snapshots")

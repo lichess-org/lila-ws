@@ -8,26 +8,28 @@ import scala.jdk.CollectionConverters._
 
 import ipc._
 
-final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContext) {
+final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
 
-  private val lilaIn = lila.emit.site
+  private def publish(msg: Any) = Bus.internal.publish("users", msg)
 
   scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
-    lilaIn(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
+    publish(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
     disconnects.clear()
   }
 
   def connect(user: User, client: Client, silently: Boolean = false): Unit =
-    users.compute(user.id, {
-      case (_, null) =>
-        if (!disconnects.remove(user.id) && !silently) lilaIn(LilaIn.ConnectUser(user))
-        Set(client)
-      case (_, clients) =>
-        clients + client
-    })
+    users.compute(
+      user.id, {
+        case (_, null) =>
+          if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
+          Set(client)
+        case (_, clients) =>
+          clients + client
+      }
+    )
 
   def disconnect(user: User, client: Client): Unit =
     users.computeIfPresent(user.id, (_, clients) => {
@@ -55,6 +57,8 @@ final class Users(lila: Lila)(implicit scheduler: Scheduler, ec: ExecutionContex
     Option(users get userId) foreach {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
+
+  def isOnline(userId: User.ID): Boolean = users containsKey userId
 
   def size = users.size
 }

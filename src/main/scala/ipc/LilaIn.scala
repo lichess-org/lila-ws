@@ -37,15 +37,11 @@ object LilaIn {
     def write = s"notified/batch ${commas(userIds)}"
   }
 
-  case class FriendsBatch(userIds: Iterable[User.ID]) extends Site {
-    def write = s"friends/batch ${commas(userIds)}"
-  }
-
   case class Lags(value: Map[User.ID, Int]) extends Site {
     def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
   }
 
-  case class ConnectUser(user: User) extends Site {
+  case class ConnectUser(user: User, silently: Boolean) extends Site {
     def write = s"connect/user ${user.id}"
   }
 
@@ -98,14 +94,6 @@ object LilaIn {
       standby: Set[User.ID]
   ) extends Tour {
     def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
-  }
-
-  case class StudyDoor(users: Map[User.ID, Either[RoomId, RoomId]]) extends Study {
-    def write =
-      s"study/door ${commas(users.map {
-        case (u, Right(s)) => s"$u:$s:+"
-        case (u, Left(s))  => s"$u:$s:-"
-      })}"
   }
 
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {
