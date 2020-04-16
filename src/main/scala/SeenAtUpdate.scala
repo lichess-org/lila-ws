@@ -38,8 +38,7 @@ final class SeenAtUpdate(mongo: Mongo)(
           )
         )
       else Future successful (())
-      isStreamer = userDoc.isDefined && streamers.contains(user)
-      _ <- if (isStreamer)
+      _ <- if (userDoc.isDefined && streamers.contains(user))
         mongo.streamer(
           _.update(ordered = false).one(
             BSONDocument("_id"  -> user.id),
@@ -69,7 +68,11 @@ final class SeenAtUpdate(mongo: Mongo)(
       )
     )
 
-    scheduler.scheduleWithFixedDelay(20.seconds, 30.seconds) { () => fetch foreach { res => ids = res } }
+    scheduler.scheduleWithFixedDelay(30.seconds, 60.seconds) { () =>
+      fetch foreach { res =>
+        ids = res
+      }
+    }
   }
 
   private def findAndModify(
