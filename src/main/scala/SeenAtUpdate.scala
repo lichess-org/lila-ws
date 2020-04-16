@@ -1,9 +1,10 @@
 package lila.ws
 
+import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import org.joda.time.DateTime
+import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import reactivemongo.api.bson._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -15,38 +16,48 @@ final class SeenAtUpdate(mongo: Mongo)(
 
   import Mongo._
 
+  private val everyMinutes = 3
+
+  private val done: Cache[User.ID, Boolean] = Scaffeine()
+    .expireAfterWrite(everyMinutes.minutes)
+    .build[String, Boolean]
+
   def apply(user: User): Future[Unit] =
-    for {
-      userColl <- mongo.userColl
-      now = DateTime.now
-      userDoc <- findAndModify(
-        coll = userColl,
-        selector = BSONDocument(
-          "_id"     -> user.id,
-          "enabled" -> true,
-          "seenAt"  -> BSONDocument("$lt" -> now.minusMinutes(2))
-        ),
-        modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
-        fields = BSONDocument("roles"  -> true, "_id" -> false)
-      )
-      isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
-      _ <- if (isCoach)
-        mongo.coach(
-          _.update(ordered = false).one(
-            BSONDocument("_id"  -> user.id),
-            BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
-          )
+    if (done.getIfPresent(user.id).isDefined) Future successful ({})
+    else {
+      done.put(user.id, true)
+      for {
+        userColl <- mongo.userColl
+        now = DateTime.now
+        userDoc <- findAndModify(
+          coll = userColl,
+          selector = BSONDocument(
+            "_id"     -> user.id,
+            "enabled" -> true,
+            "seenAt"  -> BSONDocument("$lt" -> now.minusMinutes(everyMinutes))
+          ),
+          modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
+          fields = BSONDocument("roles"  -> true, "_id" -> false)
         )
-      else Future successful (())
-      _ <- if (userDoc.isDefined && streamers.contains(user))
-        mongo.streamer(
-          _.update(ordered = false).one(
-            BSONDocument("_id"  -> user.id),
-            BSONDocument("$set" -> BSONDocument("seenAt" -> now))
+        isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
+        _ <- if (isCoach)
+          mongo.coach(
+            _.update(ordered = false).one(
+              BSONDocument("_id"  -> user.id),
+              BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
+            )
           )
-        )
-      else Future successful (())
-    } yield ()
+        else Future successful ({})
+        _ <- if (userDoc.isDefined && streamers.contains(user))
+          mongo.streamer(
+            _.update(ordered = false).one(
+              BSONDocument("_id"  -> user.id),
+              BSONDocument("$set" -> BSONDocument("seenAt" -> now))
+            )
+          )
+        else Future successful (())
+      } yield ()
+    }
 
   object streamers {
 
