@@ -16,10 +16,8 @@ final class SeenAtUpdate(mongo: Mongo)(
 
   import Mongo._
 
-  private val everyMinutes = 3
-
   private val done: Cache[User.ID, Boolean] = Scaffeine()
-    .expireAfterWrite(everyMinutes.minutes)
+    .expireAfterWrite(3.minutes)
     .build[String, Boolean]
 
   def apply(user: User): Future[Unit] =
@@ -31,11 +29,7 @@ final class SeenAtUpdate(mongo: Mongo)(
         now = DateTime.now
         userDoc <- findAndModify(
           coll = userColl,
-          selector = BSONDocument(
-            "_id"     -> user.id,
-            "enabled" -> true,
-            "seenAt"  -> BSONDocument("$lt" -> now.minusMinutes(everyMinutes))
-          ),
+          selector = BSONDocument("_id"  -> user.id),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
           fields = BSONDocument("roles"  -> true, "_id" -> false)
         )
