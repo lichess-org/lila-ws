@@ -11,7 +11,7 @@ final class RateLimit(
 
   private def makeClearAt: Long = nowMillis + intervalMillis
 
-  private var credits: Long   = maxCredits
+  private var credits: Int    = maxCredits
   private var clearAt: Long   = makeClearAt
   private var logged: Boolean = false
 
