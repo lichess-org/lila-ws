@@ -49,7 +49,7 @@ final class LilaWsServer(
 
   def start(): Unit = {
 
-    monitor.start
+    monitor.start()
 
     Bus.internal.subscribe("users", {
       case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
@@ -60,7 +60,7 @@ final class LilaWsServer(
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
     }
 
-    nettyServer.start // blocks
+    nettyServer.start() // blocks
   }
 }
 
