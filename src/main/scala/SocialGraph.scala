@@ -35,7 +35,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
 
   // Hold this while reading, writing and modifying edge sets.
-  private val lock = new ReentrantLock();
+  private val lock = new ReentrantLock()
 
   @inline
   private def read(slot: Int): Option[UserEntry] = Option(slots(slot))
@@ -99,7 +99,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
     graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
 
     // Clear all incoming edges and mark everyone who followed this slot stale.
-    graph.readIncompleteIncoming(leftSlot) foreach { rightSlot =>
+    graph.readIncoming(leftSlot) foreach { rightSlot =>
       read(rightSlot) foreach { rightEntry =>
         write(rightSlot, rightEntry.update(_.withFresh(false)))
       }
@@ -119,7 +119,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   }
 
   private def readOnlineFollowing(leftSlot: Int): List[User.ID] = {
-    graph.readIncompleteIncoming(leftSlot) flatMap { rightSlot =>
+    graph.readIncoming(leftSlot) flatMap { rightSlot =>
       read(rightSlot) collect {
         case entry if entry.meta.online && entry.meta.subscribed => entry.id
       }
@@ -317,7 +317,7 @@ object SocialGraph {
 
     def readOutgoing(a: Int): List[Int] = outgoing.read(a)
 
-    def readIncompleteIncoming(a: Int): List[Int] = incoming.read(a)
+    def readIncoming(a: Int): List[Int] = incoming.read(a)
 
     def add(a: Int, b: Int): Unit = {
       outgoing.add(a, b)
