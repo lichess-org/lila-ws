@@ -145,13 +145,12 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
-            state.player foreach { p =>
-              deps.req.user foreach { u =>
-                def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
+            deps.req.user foreach { u =>
+              def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
+              state.player flatMap { p =>
                 p.tourId.map(msg).map(lilaIn.tour) orElse
-                  p.simulId.map(msg).map(lilaIn.simul) getOrElse
-                  lilaIn.round(msg(state.room.id.value))
-              }
+                  p.simulId.map(msg).map(lilaIn.simul)
+              } getOrElse lilaIn.round(msg(state.room.id.value))
             }
             Behaviors.same
 
