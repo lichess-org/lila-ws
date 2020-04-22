@@ -54,6 +54,13 @@ object LilaOut {
       extends AnyRoomOut
       with SiteOut
 
+  case class TellRoomChat(
+      roomId: RoomId,
+      version: SocketVersion,
+      troll: IsTroll,
+      json: JsonString
+  ) extends AnyRoomOut
+
   case class RoomStop(roomId: RoomId) extends AnyRoomOut
 
   // study
@@ -205,6 +212,19 @@ object LilaOut {
           case Array(reqIdS, roomId, userId) =>
             reqIdS.toIntOption map { reqId =>
               RoomIsPresent(reqId, RoomId(roomId), userId)
+            }
+        }
+
+      case "tell/room/chat" =>
+        get(args, 4) {
+          case Array(roomId, version, troll, payload) =>
+            version.toIntOption map { sv =>
+              TellRoomChat(
+                RoomId(roomId),
+                SocketVersion(sv),
+                IsTroll(boolean(troll)),
+                JsonString(payload)
+              )
             }
         }
 

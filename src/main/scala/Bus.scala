@@ -38,6 +38,7 @@ object Bus {
     val tv                        = "tv"
     def room(id: RoomId)          = s"room/$id"
     def tourStanding(id: Tour.ID) = s"tour-standing/$id"
+    def externalChat(id: RoomId)  = s"external-chat/$id"
   }
 
   def msg(event: ClientMsg, chan: ChanSelect) =

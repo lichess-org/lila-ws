@@ -145,14 +145,23 @@ final class LilaHandler(
   }
 
   private val roomHandler: Emit[LilaOut] = {
-    case TellRoomVersion(roomId, version, troll, payload) =>
-      History.room.add(roomId, ClientIn.Versioned(payload, version, troll))
-      publish(_ room roomId, ClientIn.Versioned(payload, version, troll))
-    case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
-    case RoomStop(roomId)          => History.room.stop(roomId)
+    def tellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) = {
+      val versioned = ClientIn.Versioned(payload, version, troll)
+      History.room.add(roomId, versioned)
+      publish(_ room roomId, versioned)
+    }
+    {
+      case TellRoomVersion(roomId, version, troll, payload) =>
+        tellVersion(roomId, version, troll, payload)
+      case TellRoomChat(roomId, version, troll, payload) =>
+        tellVersion(roomId, version, troll, payload)
+        publish(_ externalChat roomId, ClientIn.Payload(payload))
+      case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
+      case RoomStop(roomId)          => History.room.stop(roomId)
 
-    case site: SiteOut => siteHandler(site)
-    case msg           => logger.warn(s"Unhandled room: $msg")
+      case site: SiteOut => siteHandler(site)
+      case msg           => logger.warn(s"Unhandled room: $msg")
+    }
   }
 
   private def roomBoot(

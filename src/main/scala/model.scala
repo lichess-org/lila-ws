@@ -31,14 +31,14 @@ object Game {
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Id, players: Color.Map[Player], tourId: Option[Tour.ID]) {
+  case class Round(id: Id, players: Color.Map[Player], tourId: Option[Tour.ID], simulId: Option[Simul.ID]) {
     def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
       Color.all.collectFirst {
-        case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, tourId)
+        case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, tourId, simulId)
       }
   }
 
-  case class RoundPlayer(id: PlayerId, color: Color, tourId: Option[Tour.ID])
+  case class RoundPlayer(id: PlayerId, color: Color, tourId: Option[Tour.ID], simulId: Option[Simul.ID])
 }
 
 object Simul {

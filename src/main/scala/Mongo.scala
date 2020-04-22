@@ -66,7 +66,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       gameColl flatMap {
         _.find(
           selector = BSONDocument("_id" -> id.value),
-          projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true))
+          projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true))
         ).one[BSONDocument]
           .map { docOpt =>
             for {
@@ -77,8 +77,9 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
-              tourId = doc.getAsOpt[Tour.ID]("tid")
-            } yield Game.Round(id, players, tourId)
+              tourId  = doc.getAsOpt[Tour.ID]("tid")
+              simulId = doc.getAsOpt[Simul.ID]("sid")
+            } yield Game.Round(id, players, tourId, simulId)
           }(parasitic)
       }
     }

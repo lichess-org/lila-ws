@@ -16,7 +16,16 @@ object RoundClientActor {
       site: ClientActor.State = ClientActor.State()
   ) {
     def busChans: List[Bus.Chan] =
-      Bus.channel.room(room.id) :: player.flatMap(_.tourId).map(Bus.channel.tourStanding).toList
+      Bus.channel.room(room.id) ::
+        player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
+          List(
+            Bus.channel.tourStanding(tourId),
+            Bus.channel.externalChat(RoomId(tourId))
+          )
+        } :::
+        player.flatMap(_.simulId).fold(List.empty[Bus.Chan]) { simulId =>
+          List(Bus.channel.externalChat(RoomId(simulId)))
+        }
   }
 
   def start(
@@ -52,7 +61,9 @@ object RoundClientActor {
         import deps._
 
         def gameId = Game.Id(state.room.id.value)
-        def fullId = state.player map { p => gameId full p.id }
+        def fullId = state.player map { p =>
+          gameId full p.id
+        }
 
         msg match {
 
@@ -104,7 +115,9 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundPlayerForward(payload) =>
-            fullId foreach { fid => lilaIn.round(LilaIn.RoundPlayerDo(fid, payload)) }
+            fullId foreach { fid =>
+              lilaIn.round(LilaIn.RoundPlayerDo(fid, payload))
+            }
             Behaviors.same
 
           case ClientOut.RoundFlag(color) =>
@@ -112,20 +125,33 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundBye =>
-            fullId foreach { fid => lilaIn.round(LilaIn.RoundBye(fid)) }
+            fullId foreach { fid =>
+              lilaIn.round(LilaIn.RoundBye(fid))
+            }
             Behaviors.same
 
           case ClientOut.ChatSay(msg) =>
-            state.player.fold[Option[LilaIn.Round]](
-              req.user map { u => LilaIn.WatcherChatSay(state.room.id, u.id, msg) }
-            ) { p =>
-              Some(LilaIn.PlayerChatSay(state.room.id, req.user.map(_.id).toLeft(p.color), msg))
-            } foreach lilaIn.round
+            state.player match {
+              case None =>
+                req.userId foreach {
+                  lilaIn round LilaIn.WatcherChatSay(state.room.id, _, msg)
+                }
+              case Some(p) =>
+                def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
+                p.tourId.flatMap(extMsg).map(lilaIn.tour) orElse
+                  p.simulId.flatMap(extMsg).map(lilaIn.simul) getOrElse
+                  lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+            }
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
-            deps.req.user foreach { u =>
-              lilaIn.round(LilaIn.ChatTimeout(state.room.id, u.id, suspect, reason, text))
+            state.player foreach { p =>
+              deps.req.user foreach { u =>
+                def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
+                p.tourId.map(msg).map(lilaIn.tour) orElse
+                  p.simulId.map(msg).map(lilaIn.simul) getOrElse
+                  lilaIn.round(msg(state.room.id.value))
+              }
             }
             Behaviors.same
 
@@ -137,14 +163,16 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId zip req.ip foreach { case (fid, ip) =>
-              lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
+            fullId zip req.ip foreach {
+              case (fid, ip) =>
+                lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId zip req.ip foreach { case (fid, ip) =>
-              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
+            fullId zip req.ip foreach {
+              case (fid, ip) =>
+                lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
             }
             Behaviors.same
 
