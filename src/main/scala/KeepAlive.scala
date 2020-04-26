@@ -14,12 +14,14 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
   val tour      = new AliveRooms
   val simul     = new AliveRooms
   val challenge = new AliveRooms
+  val team      = new AliveRooms
 
   scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
     lila.emit.study(study.getAndClear)
     lila.emit.tour(tour.getAndClear)
     lila.emit.simul(simul.getAndClear)
     lila.emit.challenge(challenge.getAndClear)
+    lila.emit.team(team.getAndClear)
   }
 }
 

@@ -16,6 +16,7 @@ final class Router(controller: Controller) {
       case Array("lobby", "socket")             => controller.lobby(req, emit)
       case Array("lobby", "socket", _)          => controller.lobby(req, emit)
       case Array("simul", id, "socket", _)      => controller.simul(id, req, emit)
+      case Array("team", id, "socket", _)       => controller.team(id, req, emit)
       case Array("tournament", id, "socket", _) => controller.tournament(id, req, emit)
       case Array("study", id, "socket", _)      => controller.study(id, req, emit)
       case Array("watch", id, _, _)             => controller.roundWatch(Game.Id(id), req, emit)

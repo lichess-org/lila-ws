@@ -93,7 +93,9 @@ final class Controller(
     mongo.gameExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) =>
         val userTv = req queryParameter "userTv" map UserTv.apply
-        userTv foreach { tv => dedupUserTv(ipc.LilaIn.UserTv(id, tv.value)) }
+        userTv foreach { tv =>
+          dedupUserTv(ipc.LilaIn.UserTv(id, tv.value))
+        }
         endpoint(
           name = "round/watch",
           behavior = RoundClientActor
@@ -146,6 +148,21 @@ final class Controller(
     }
   }
 
+  def team(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
+    mongo.teamExists(id) zip mongo.troll.is(user) map {
+      case (true, isTroll) =>
+        endpoint(
+          name = "team",
+          behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 30,
+          interval = 20.seconds
+        )
+      case _ => notFound
+    }
+  }
+
   def api(req: RequestHeader, emit: ClientEmit) = Future successful {
     endpoint(
       name = "api",
@@ -159,7 +176,9 @@ final class Controller(
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User] => Response): Response =
     CSRF.check(req) {
-      ValidSri(req) { sri => auth(req) flatMap f(sri) }
+      ValidSri(req) { sri =>
+        auth(req) flatMap f(sri)
+      }
     }
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response = req.sri match {

@@ -33,6 +33,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def gameColl                        = collNamed("game5")
   def challengeColl                   = collNamed("challenge")
   def relationColl                    = collNamed("relation")
+  def teamColl                        = collNamed("team")
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
@@ -40,6 +41,8 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def user[A](f: BSONCollection => Future[A]): Future[A]     = userColl flatMap f
 
   def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
+
+  def teamExists(id: Simul.ID): Future[Boolean] = teamColl flatMap idExists(id)
 
   def tourExists(id: Simul.ID): Future[Boolean] = tourColl flatMap idExists(id)
 
