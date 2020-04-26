@@ -84,7 +84,7 @@ final class LilaHandler(
   }
 
   private val teamHandler: Emit[LilaOut] = {
-    case LilaBoot => roomBoot(_.idFilter.team, lila.emit.simul)
+    case LilaBoot => roomBoot(_.idFilter.team, lila.emit.team)
     case msg      => roomHandler(msg)
   }
 
