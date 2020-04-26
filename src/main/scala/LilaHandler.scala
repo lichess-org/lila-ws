@@ -83,6 +83,11 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
   }
 
+  private val teamHandler: Emit[LilaOut] = {
+    case LilaBoot => roomBoot(_.idFilter.team, lila.emit.simul)
+    case msg      => roomHandler(msg)
+  }
+
   private val tourHandler: Emit[LilaOut] = {
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
@@ -177,10 +182,11 @@ final class LilaHandler(
   lila.setHandlers({
     case Lila.chans.round.out     => roundHandler
     case Lila.chans.site.out      => siteHandler
-    case Lila.chans.study.out     => studyHandler
     case Lila.chans.lobby.out     => lobbyHandler
-    case Lila.chans.simul.out     => simulHandler
     case Lila.chans.tour.out      => tourHandler
+    case Lila.chans.simul.out     => simulHandler
+    case Lila.chans.study.out     => studyHandler
+    case Lila.chans.team.out      => teamHandler
     case Lila.chans.challenge.out => roomHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
   })
