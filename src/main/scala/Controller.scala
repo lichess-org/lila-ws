@@ -132,6 +132,7 @@ final class Controller(
       _ map {
         case Challenge.Anon(secret) => auth sidFromReq req contains secret
         case Challenge.User(userId) => user.exists(_.id == userId)
+        case Challenge.Open         => false
       }
     } map {
       case None => notFound

@@ -68,6 +68,7 @@ object Challenge {
   sealed trait Challenger
   case class Anon(secret: String) extends Challenger
   case class User(userId: String) extends Challenger
+  case object Open                extends Challenger
 }
 
 case class Chat(id: Chat.ID) extends AnyVal

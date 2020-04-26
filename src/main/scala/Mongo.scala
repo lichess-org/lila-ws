@@ -141,14 +141,14 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       _.find(
         selector = BSONDocument("_id" -> challengeId.value),
         projection = Some(BSONDocument("challenger" -> true))
-      ).one[BSONDocument] map { docOpt =>
-        for {
-          doc <- docOpt
-          c   <- doc.getAsOpt[BSONDocument]("challenger")
-          anon = c.getAsOpt[String]("s") map Challenge.Anon.apply
-          user = c.getAsOpt[String]("id") map Challenge.User.apply
-          challenger <- anon orElse user
-        } yield challenger
+      ).one[BSONDocument] map {
+        _.flatMap {
+          _.getAsOpt[BSONDocument]("challenger")
+        } map { c =>
+          val anon = c.getAsOpt[String]("s") map Challenge.Anon.apply
+          val user = c.getAsOpt[String]("id") map Challenge.User.apply
+          anon orElse user getOrElse Challenge.Open
+        }
       }
     }
 
