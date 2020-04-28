@@ -36,6 +36,7 @@ object Bus {
     val all                       = "all"
     val lobby                     = "lobby"
     val tv                        = "tv"
+    def userTv(userId: User.ID)   = s"userTv/$userId"
     def room(id: RoomId)          = s"room/$id"
     def tourStanding(id: Tour.ID) = s"tour-standing/$id"
     def externalChat(id: RoomId)  = s"external-chat/$id"

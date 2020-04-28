@@ -85,7 +85,6 @@ object LilaOut {
   case class RoundGone(fullId: Game.FullId, v: Boolean)                extends RoundOut
   case class RoundGoneIn(fullId: Game.FullId, seconds: Int)            extends RoundOut
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
-  case class UserTvNewGame(gameId: Game.Id, userId: User.ID)           extends RoundOut
   case class GameStart(users: List[User.ID])                           extends RoundOut
   case class GameFinish(users: List[User.ID])                          extends RoundOut
 
@@ -272,11 +271,6 @@ object LilaOut {
             secS.toIntOption map {
               RoundGoneIn(Game.FullId(fullId), _)
             }
-        }
-
-      case "r/tv/user" =>
-        get(args, 2) {
-          case Array(gameId, userId) => Some(UserTvNewGame(Game.Id(gameId), userId))
         }
 
       case "r/bot/online" =>
