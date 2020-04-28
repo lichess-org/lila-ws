@@ -25,7 +25,8 @@ object RoundClientActor {
         } :::
         player.flatMap(_.simulId).fold(List.empty[Bus.Chan]) { simulId =>
           List(Bus.channel.externalChat(RoomId(simulId)))
-        }
+        } :::
+        userTv.map(tv => Bus.channel.userTv(tv.value)).toList
   }
 
   def start(
@@ -177,10 +178,6 @@ object RoundClientActor {
 
           case ClientOut.PalantirPing =>
             deps.req.user map { Palantir.respondToPing(state.room.id, _) } foreach clientIn
-            Behaviors.same
-
-          case RoundUserTvNewGame(userId) =>
-            if (state.userTv.exists(_.value == userId)) clientIn(ClientIn.Resync)
             Behaviors.same
 
           // default receive (site)

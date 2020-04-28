@@ -131,14 +131,17 @@ final class LilaHandler(
         publish(_ room RoomId(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
       case RoundTourStanding(tourId, data) =>
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
-      case UserTvNewGame(gameId, userId) => publish(_ room gameId, RoundUserTvNewGame(userId))
-      case o: TvSelect                   => Tv select o
+      case o: TvSelect => Tv select o
       case RoomStop(roomId) =>
         History.round.stop(roomId)
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
-      case GameStart(users)                 => users foreach friendList.startPlaying
-      case GameFinish(users)                => users foreach friendList.stopPlaying
+      case GameStart(users) =>
+        users.foreach { u =>
+          friendList.startPlaying(u)
+          publish(_ userTv u, ClientIn.Resync)
+        }
+      case GameFinish(users) => users foreach friendList.stopPlaying
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>

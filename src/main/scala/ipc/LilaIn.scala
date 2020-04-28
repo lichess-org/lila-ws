@@ -147,11 +147,6 @@ object LilaIn {
     def write = s"r/ons ${commas(many map one)}"
   }
 
-  case class UserTv(gameId: Game.Id, userId: User.ID) extends Round {
-    def write             = s"r/tv/user $gameId $userId"
-    override def critical = true
-  }
-
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge {
     def write = s"challenge/pings ${commas(ids)}"
   }

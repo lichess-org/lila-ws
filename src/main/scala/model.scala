@@ -125,4 +125,4 @@ case class RoundEventFlags(
     troll: Boolean
 )
 
-case class UserTv(value: String) extends AnyVal with StringValue
+case class UserTv(value: User.ID) extends AnyVal with StringValue
