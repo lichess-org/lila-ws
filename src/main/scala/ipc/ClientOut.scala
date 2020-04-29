@@ -159,15 +159,15 @@ object ClientOut {
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
-            case "join" | "cancel" | "joinSeek" | "cancelSeek" | "idle" | "poolIn" | "poolOut" | "hookIn" |
+            case "join" | "cancel" | "joinSeek" | "cancelSeek" | "poolIn" | "poolOut" | "hookIn" |
                 "hookOut" =>
               Some(LobbyForward(o))
             // study
-            case "like" | "setPath" | "anaMove" | "anaDrop" | "deleteNode" | "promote" | "forceVariation" |
-                "setRole" | "kick" | "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" |
-                "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" |
-                "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" |
-                "explorerGame" | "requestAnalysis" | "invite" | "relaySync" | "setTopics" =>
+            case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |
+                "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
+                "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
+                "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
+                "requestAnalysis" | "invite" | "relaySync" | "setTopics" =>
               Some(StudyForward(o))
             // round
             case "move" =>
@@ -230,6 +230,8 @@ object ClientOut {
 
   private def parseLag(d: JsObject) = MoveMetrics(
     d.int("l") orElse d.int("lag") map Centis.ofMillis,
-    d.str("s") flatMap { v => Try(Centis(Integer.parseInt(v, 36))).toOption }
+    d.str("s") flatMap { v =>
+      Try(Centis(Integer.parseInt(v, 36))).toOption
+    }
   )
 }

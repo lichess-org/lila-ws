@@ -23,7 +23,7 @@ object Palantir {
   def respondToPing(roomId: RoomId, user: User): ipc.ClientIn.Palantir = {
     val channel = channels.get(roomId, _ => new Channel)
     channel.add(user.id)
-    Monitor.palantirChannels.update(channels.estimatedSize)
+    Monitor.palantirChannels.update(channels.estimatedSize.toInt)
     ipc.ClientIn.Palantir(channel.userIds.filter(user.id.!=))
   }
 }
