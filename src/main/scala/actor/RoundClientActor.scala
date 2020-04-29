@@ -15,7 +15,7 @@ object RoundClientActor {
       userTv: Option[UserTv],
       site: ClientActor.State = ClientActor.State()
   ) {
-    def busChans: List[Bus.Chan] =
+    val busChans: List[Bus.Chan] =
       Bus.channel.room(room.id) ::
         player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
           List(
