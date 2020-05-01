@@ -63,6 +63,14 @@ object Chat {
   type ID = String
 }
 
+object Team {
+  type ID = String
+}
+
+object Swiss {
+  type ID = String
+}
+
 object Challenge {
   case class Id(value: String) extends AnyVal with StringValue
   sealed trait Challenger
