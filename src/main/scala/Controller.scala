@@ -144,12 +144,27 @@ final class Controller(
     }
   }
 
-  def team(id: Simul.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
+  def team(id: Team.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
     mongo.teamExists(id) zip mongo.troll.is(user) map {
       case (true, isTroll) =>
         endpoint(
           name = "team",
           behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+            Deps(emit, Req(req, sri, user), services)
+          },
+          credits = 30,
+          interval = 20.seconds
+        )
+      case _ => notFound
+    }
+  }
+
+  def swiss(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) = WebSocket(req) { sri => user =>
+    mongo.swissExists(id) zip mongo.troll.is(user) map {
+      case (true, isTroll) =>
+        endpoint(
+          name = "swiss",
+          behavior = SwissClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
             Deps(emit, Req(req, sri, user), services)
           },
           credits = 30,

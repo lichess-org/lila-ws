@@ -19,12 +19,13 @@ object LilaIn {
   sealed trait Room      extends LilaIn
   sealed trait Simul     extends Room
   sealed trait Team      extends Room
+  sealed trait Swiss     extends Room
   sealed trait Tour      extends Room
   sealed trait Study     extends Room
   sealed trait Round     extends Room
   sealed trait Challenge extends Room
 
-  sealed trait AnyRoom extends Simul with Team with Tour with Study with Round with Challenge
+  sealed trait AnyRoom extends Simul with Team with Swiss with Tour with Study with Round with Challenge
 
   case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby {
     def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
