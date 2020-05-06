@@ -23,8 +23,8 @@ object RoundClientActor {
             Bus.channel.externalChat(RoomId(tourId))
           )
         } :::
-        player.flatMap(_.simulId).fold(List.empty[Bus.Chan]) { simulId =>
-          List(Bus.channel.externalChat(RoomId(simulId)))
+        player.flatMap(p => p.simulId orElse p.swissId).fold(List.empty[Bus.Chan]) { extId =>
+          List(Bus.channel.externalChat(RoomId(extId)))
         } :::
         userTv.map(tv => Bus.channel.userTv(tv.value)).toList
   }
