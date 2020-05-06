@@ -206,6 +206,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
     val tour: IdFilter  = ids => tourColl flatMap filterIds(ids)
     val simul: IdFilter = ids => simulColl flatMap filterIds(ids)
     val team: IdFilter  = ids => teamColl flatMap filterIds(ids)
+    val swiss: IdFilter = ids => swissColl flatMap filterIds(ids)
   }
 
   private def idExists(id: String)(coll: BSONCollection): Future[Boolean] =

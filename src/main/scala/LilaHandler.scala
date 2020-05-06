@@ -88,6 +88,11 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
   }
 
+  private val swissHandler: Emit[LilaOut] = {
+    case LilaBoot => roomBoot(_.idFilter.swiss, lila.emit.swiss)
+    case msg      => roomHandler(msg)
+  }
+
   private val tourHandler: Emit[LilaOut] = {
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
@@ -187,6 +192,7 @@ final class LilaHandler(
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
     case Lila.chans.tour.out      => tourHandler
+    case Lila.chans.swiss.out     => swissHandler
     case Lila.chans.simul.out     => simulHandler
     case Lila.chans.study.out     => studyHandler
     case Lila.chans.team.out      => teamHandler
