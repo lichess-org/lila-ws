@@ -15,14 +15,15 @@ object LobbyClientActor {
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    import deps._
-    onStart(deps, ctx)
-    req.user foreach { users.connect(_, ctx.self, silently = true) }
-    services.lobby.connect(req.sri -> req.user.map(_.id))
-    Bus.subscribe(Bus.channel.lobby, ctx.self)
-    apply(State(), deps)
-  }
+  def start(deps: Deps): Behavior[ClientMsg] =
+    Behaviors.setup { ctx =>
+      import deps._
+      onStart(deps, ctx)
+      req.user foreach { users.connect(_, ctx.self, silently = true) }
+      services.lobby.connect(req.sri -> req.user.map(_.id))
+      Bus.subscribe(Bus.channel.lobby, ctx.self)
+      apply(State(), deps)
+    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors

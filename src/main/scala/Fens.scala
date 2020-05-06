@@ -18,10 +18,13 @@ object Fens {
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =
     gameIds foreach { gameId =>
       games
-        .compute(gameId, {
-          case (_, null)                  => Watched(None, Set(client))
-          case (_, Watched(pos, clients)) => Watched(pos, clients + client)
-        })
+        .compute(
+          gameId,
+          {
+            case (_, null)                  => Watched(None, Set(client))
+            case (_, Watched(pos, clients)) => Watched(pos, clients + client)
+          }
+        )
         .position foreach {
         case Position(lastUci, fen) => client ! ClientIn.Fen(gameId, lastUci, fen)
       }
@@ -30,11 +33,14 @@ object Fens {
   // when a client disconnects
   def unwatch(gameIds: Iterable[Game.Id], client: Client): Unit =
     gameIds foreach { gameId =>
-      games.computeIfPresent(gameId, (_, watched) => {
-        val newClients = watched.clients - client
-        if (newClients.isEmpty) null
-        else watched.copy(clients = newClients)
-      })
+      games.computeIfPresent(
+        gameId,
+        (_, watched) => {
+          val newClients = watched.clients - client
+          if (newClients.isEmpty) null
+          else watched.copy(clients = newClients)
+        }
+      )
     }
 
   // move coming from the server

@@ -34,25 +34,28 @@ object RoundClientActor {
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
       fromVersion: Option[SocketVersion]
-  )(deps: Deps): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    import deps._
-    val state = State(roomState, player, userTv)
-    onStart(deps, ctx)
-    req.user foreach { users.connect(_, ctx.self) }
-    state.busChans foreach { Bus.subscribe(_, ctx.self) }
-    roundCrowd.connect(roomState.id, req.user, player.map(_.color))
-    History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
-      case None         => clientIn(ClientIn.Resync)
-      case Some(events) => events map { versionFor(state, _) } foreach clientIn
+  )(deps: Deps): Behavior[ClientMsg] =
+    Behaviors.setup { ctx =>
+      import deps._
+      val state = State(roomState, player, userTv)
+      onStart(deps, ctx)
+      req.user foreach { users.connect(_, ctx.self) }
+      state.busChans foreach { Bus.subscribe(_, ctx.self) }
+      roundCrowd.connect(roomState.id, req.user, player.map(_.color))
+      History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
+        case None         => clientIn(ClientIn.Resync)
+        case Some(events) => events map { versionFor(state, _) } foreach clientIn
+      }
+      apply(state, deps)
     }
-    apply(state, deps)
-  }
 
   def versionFor(state: State, msg: ClientIn.RoundVersioned): ClientIn.Payload =
-    if ((msg.flags.troll && !state.room.isTroll.value) ||
-        (msg.flags.owner && state.player.isEmpty) ||
-        (msg.flags.watcher && state.player.isDefined) ||
-        msg.flags.player.exists(c => state.player.fold(true)(_.color != c))) msg.skip
+    if (
+      (msg.flags.troll && !state.room.isTroll.value) ||
+      (msg.flags.owner && state.player.isEmpty) ||
+      (msg.flags.watcher && state.player.isDefined) ||
+      msg.flags.player.exists(c => state.player.fold(true)(_.color != c))
+    ) msg.skip
     else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c))) msg.noDests
     else msg.full
 
@@ -62,9 +65,10 @@ object RoundClientActor {
         import deps._
 
         def gameId = Game.Id(state.room.id.value)
-        def fullId = state.player map { p =>
-          gameId full p.id
-        }
+        def fullId =
+          state.player map { p =>
+            gameId full p.id
+          }
 
         msg match {
 

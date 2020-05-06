@@ -31,20 +31,21 @@ object ClientActor {
     }
   }
 
-  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] = msg match {
+  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] =
+    msg match {
 
-    case ClientCtrl.Broom(oldSeconds) =>
-      if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
-      else Behaviors.same
+      case ClientCtrl.Broom(oldSeconds) =>
+        if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
+        else Behaviors.same
 
-    case ClientCtrl.Disconnect =>
-      deps.clientIn(ClientIn.Disconnect)
-      Behaviors.stopped
+      case ClientCtrl.Disconnect =>
+        deps.clientIn(ClientIn.Disconnect)
+        Behaviors.stopped
 
-    case ClientCtrl.ApiDisconnect =>
-      // handled by ApiActor only
-      Behaviors.same
-  }
+      case ClientCtrl.ApiDisconnect =>
+        // handled by ApiActor only
+        Behaviors.same
+    }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
     for { l <- msg.lag; u <- deps.req.user } deps.services.lag(u.id -> l)
@@ -123,32 +124,34 @@ object ClientActor {
     }
   }
 
-  def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] = msg match {
+  def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] =
+    msg match {
 
-    case msg: ClientIn.TourReminder =>
-      if (state.tourReminded) None
-      else {
-        deps clientIn msg
-        Some(state.copy(tourReminded = true))
-      }
+      case msg: ClientIn.TourReminder =>
+        if (state.tourReminded) None
+        else {
+          deps clientIn msg
+          Some(state.copy(tourReminded = true))
+        }
 
-    case in: ClientIn =>
-      deps clientIn in
-      None
-  }
+      case in: ClientIn =>
+        deps clientIn in
+        None
+    }
 
   private val logger = Logger("ClientActor")
 
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
-  def Req(req: util.RequestHeader, sri: Sri, user: Option[User]): Req = Req(
-    name = req.name,
-    ip = req.ip,
-    sri = sri,
-    user = user,
-    flag = req.flag
-  )
+  def Req(req: util.RequestHeader, sri: Sri, user: Option[User]): Req =
+    Req(
+      name = req.name,
+      ip = req.ip,
+      sri = sri,
+      user = user,
+      flag = req.flag
+    )
 
   case class Req(
       name: String,

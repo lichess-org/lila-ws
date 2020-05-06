@@ -9,14 +9,15 @@ object Clients {
   final case class Start(behavior: ClientBehavior, promise: Promise[Client]) extends Control
   final case class Stop(client: Client)                                      extends Control
 
-  def behavior = Behaviors.receive[Control] { (ctx, msg) =>
-    msg match {
-      case Start(behavior, promise) =>
-        promise success ctx.spawnAnonymous(behavior)
-        Behaviors.same
-      case Stop(client) =>
-        ctx.stop(client)
-        Behaviors.same
+  def behavior =
+    Behaviors.receive[Control] { (ctx, msg) =>
+      msg match {
+        case Start(behavior, promise) =>
+          promise success ctx.spawnAnonymous(behavior)
+          Behaviors.same
+        case Stop(client) =>
+          ctx.stop(client)
+          Behaviors.same
+      }
     }
-  }
 }

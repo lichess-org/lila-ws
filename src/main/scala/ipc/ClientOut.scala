@@ -228,10 +228,11 @@ object ClientOut {
       move <- Uci.Move.fromStrings(orig, dest, prom)
     } yield move
 
-  private def parseLag(d: JsObject) = MoveMetrics(
-    d.int("l") orElse d.int("lag") map Centis.ofMillis,
-    d.str("s") flatMap { v =>
-      Try(Centis(Integer.parseInt(v, 36))).toOption
-    }
-  )
+  private def parseLag(d: JsObject) =
+    MoveMetrics(
+      d.int("l") orElse d.int("lag") map Centis.ofMillis,
+      d.str("s") flatMap { v =>
+        Try(Centis(Integer.parseInt(v, 36))).toOption
+      }
+    )
 }

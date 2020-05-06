@@ -8,8 +8,7 @@ import reactivemongo.api.{ ReadConcern, WriteConcern }
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-final class SeenAtUpdate(mongo: Mongo)(
-    implicit
+final class SeenAtUpdate(mongo: Mongo)(implicit
     context: ExecutionContext,
     scheduler: akka.actor.typed.Scheduler
 ) {
@@ -29,27 +28,29 @@ final class SeenAtUpdate(mongo: Mongo)(
         now = DateTime.now
         userDoc <- findAndModify(
           coll = userColl,
-          selector = BSONDocument("_id"  -> user.id),
+          selector = BSONDocument("_id" -> user.id),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
-          fields = BSONDocument("roles"  -> true, "_id" -> false)
+          fields = BSONDocument("roles" -> true, "_id" -> false)
         )
         isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
-        _ <- if (isCoach)
-          mongo.coach(
-            _.update(ordered = false).one(
-              BSONDocument("_id"  -> user.id),
-              BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
+        _ <-
+          if (isCoach)
+            mongo.coach(
+              _.update(ordered = false).one(
+                BSONDocument("_id"  -> user.id),
+                BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
+              )
             )
-          )
-        else Future successful ({})
-        _ <- if (userDoc.isDefined && streamers.contains(user))
-          mongo.streamer(
-            _.update(ordered = false).one(
-              BSONDocument("_id"  -> user.id),
-              BSONDocument("$set" -> BSONDocument("seenAt" -> now))
+          else Future successful ({})
+        _ <-
+          if (userDoc.isDefined && streamers.contains(user))
+            mongo.streamer(
+              _.update(ordered = false).one(
+                BSONDocument("_id"  -> user.id),
+                BSONDocument("$set" -> BSONDocument("seenAt" -> now))
+              )
             )
-          )
-        else Future successful (())
+          else Future successful ()
       } yield ()
     }
 
@@ -59,19 +60,20 @@ final class SeenAtUpdate(mongo: Mongo)(
 
     private var ids = Set.empty[User.ID]
 
-    private def fetch: Future[Set[User.ID]] = mongo.streamer(
-      _.distinct[User.ID, Set](
-        key = "_id",
-        selector = Some(
-          BSONDocument(
-            "listed"           -> true,
-            "approval.granted" -> true
-          )
-        ),
-        readConcern = ReadConcern.Local,
-        collation = None
+    private def fetch: Future[Set[User.ID]] =
+      mongo.streamer(
+        _.distinct[User.ID, Set](
+          key = "_id",
+          selector = Some(
+            BSONDocument(
+              "listed"           -> true,
+              "approval.granted" -> true
+            )
+          ),
+          readConcern = ReadConcern.Local,
+          collation = None
+        )
       )
-    )
 
     scheduler.scheduleWithFixedDelay(30.seconds, 60.seconds) { () =>
       fetch foreach { res =>

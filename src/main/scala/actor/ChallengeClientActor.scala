@@ -17,10 +17,11 @@ object ChallengeClientActor {
 
   def start(roomState: RoomActor.State, owner: Boolean, fromVersion: Option[SocketVersion])(
       deps: Deps
-  ): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    apply(State(owner, roomState), deps)
-  }
+  ): Behavior[ClientMsg] =
+    Behaviors.setup { ctx =>
+      RoomActor.onStart(roomState, fromVersion, deps, ctx)
+      apply(State(owner, roomState), deps)
+    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors

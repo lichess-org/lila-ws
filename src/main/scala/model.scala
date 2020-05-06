@@ -94,10 +94,11 @@ object Sri {
 case class Flag private (value: String) extends AnyVal with StringValue
 
 object Flag {
-  def make(value: String) = value match {
-    case "simul" | "tournament" | "api" => Some(Flag(value))
-    case _                              => None
-  }
+  def make(value: String) =
+    value match {
+      case "simul" | "tournament" | "api" => Some(Flag(value))
+      case _                              => None
+    }
   val api = Flag("api")
 }
 

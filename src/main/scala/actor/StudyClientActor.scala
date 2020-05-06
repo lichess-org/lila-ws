@@ -17,10 +17,11 @@ object StudyClientActor {
 
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
       deps: Deps
-  ): Behavior[ClientMsg] = Behaviors.setup { ctx =>
-    RoomActor.onStart(roomState, fromVersion, deps, ctx)
-    apply(State(roomState), deps)
-  }
+  ): Behavior[ClientMsg] =
+    Behaviors.setup { ctx =>
+      RoomActor.onStart(roomState, fromVersion, deps, ctx)
+      apply(State(roomState), deps)
+    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors

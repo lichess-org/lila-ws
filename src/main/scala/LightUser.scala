@@ -17,17 +17,18 @@ final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionConte
       .expireAfterWrite(15.minutes)
       .buildAsyncFuture(fetch)
 
-  private def fetch(id: User.ID): Future[TitleName] = mongo.user {
-    _.find(
-      BSONDocument("_id" -> id),
-      Some(BSONDocument("username" -> true, "title" -> true))
-    ).one[BSONDocument] map { docOpt =>
-      {
-        for {
-          doc  <- docOpt
-          name <- doc.getAsOpt[String]("username")
-        } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
-      } getOrElse id
+  private def fetch(id: User.ID): Future[TitleName] =
+    mongo.user {
+      _.find(
+        BSONDocument("_id" -> id),
+        Some(BSONDocument("username" -> true, "title" -> true))
+      ).one[BSONDocument] map { docOpt =>
+        {
+          for {
+            doc  <- docOpt
+            name <- doc.getAsOpt[String]("username")
+          } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
+        } getOrElse id
+      }
     }
-  }
 }

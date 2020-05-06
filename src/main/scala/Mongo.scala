@@ -92,52 +92,56 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
-  def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] = studyColl flatMap {
-    exists(
-      _,
-      BSONDocument(
-        "_id" -> id,
-        user.fold(visibilityNotPrivate) { u =>
-          BSONDocument(
-            "$or" -> BSONArray(
-              visibilityNotPrivate,
-              BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
+  def studyExistsFor(id: Simul.ID, user: Option[User]): Future[Boolean] =
+    studyColl flatMap {
+      exists(
+        _,
+        BSONDocument(
+          "_id" -> id,
+          user.fold(visibilityNotPrivate) { u =>
+            BSONDocument(
+              "$or" -> BSONArray(
+                visibilityNotPrivate,
+                BSONDocument(s"members.${u.id}" -> BSONDocument("$exists" -> true))
+              )
             )
-          )
-        }
+          }
+        )
       )
-    )
-  }
+    }
 
-  def studyMembers(id: Study.ID): Future[Set[User.ID]] = studyColl flatMap {
-    _.find(
-      selector = BSONDocument("_id" -> id),
-      projection = Some(BSONDocument("members" -> true))
-    ).one[BSONDocument] map { docOpt =>
-      for {
-        doc     <- docOpt
-        members <- doc.getAsOpt[BSONDocument]("members")
-      } yield members.elements.map { case BSONElement(key, _) => key }.toSet
-    } map (_ getOrElse Set.empty)
-  }
+  def studyMembers(id: Study.ID): Future[Set[User.ID]] =
+    studyColl flatMap {
+      _.find(
+        selector = BSONDocument("_id" -> id),
+        projection = Some(BSONDocument("members" -> true))
+      ).one[BSONDocument] map { docOpt =>
+        for {
+          doc     <- docOpt
+          members <- doc.getAsOpt[BSONDocument]("members")
+        } yield members.elements.map { case BSONElement(key, _) => key }.toSet
+      } map (_ getOrElse Set.empty)
+    }
 
-  def tournamentActiveUsers(tourId: Tour.ID): Future[Set[User.ID]] = tourPlayerColl flatMap {
-    _.distinct[User.ID, Set](
-      key = "uid",
-      selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
-      readConcern = ReadConcern.Local,
-      collation = None
-    )
-  }
+  def tournamentActiveUsers(tourId: Tour.ID): Future[Set[User.ID]] =
+    tourPlayerColl flatMap {
+      _.distinct[User.ID, Set](
+        key = "uid",
+        selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
+        readConcern = ReadConcern.Local,
+        collation = None
+      )
+    }
 
-  def tournamentPlayingUsers(tourId: Tour.ID): Future[Set[User.ID]] = tourPairingColl flatMap {
-    _.distinct[User.ID, Set](
-      key = "u",
-      selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
-      readConcern = ReadConcern.Local,
-      collation = None
-    )
-  }
+  def tournamentPlayingUsers(tourId: Tour.ID): Future[Set[User.ID]] =
+    tourPairingColl flatMap {
+      _.distinct[User.ID, Set](
+        key = "u",
+        selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
+        readConcern = ReadConcern.Local,
+        collation = None
+      )
+    }
 
   def challenger(challengeId: Challenge.Id): Future[Option[Challenge.Challenger]] =
     challengeColl flatMap {

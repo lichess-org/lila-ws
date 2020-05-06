@@ -14,56 +14,59 @@ object Chess {
 
   private val logger = Logger(getClass)
 
-  def apply(req: ClientOut.AnaMove): ClientIn = Monitor.time(_.chessMoveTime) {
-    try {
-      chess
-        .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
-        .toOption flatMap {
-        case (game, move) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
-          }
-      } getOrElse ClientIn.StepFailure
-    } catch {
-      case e: java.lang.ArrayIndexOutOfBoundsException =>
-        logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
-        ClientIn.StepFailure
+  def apply(req: ClientOut.AnaMove): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        chess
+          .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
+          .toOption flatMap {
+          case (game, move) =>
+            game.pgnMoves.lastOption map { san =>
+              makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
+            }
+        } getOrElse ClientIn.StepFailure
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
+          ClientIn.StepFailure
+      }
     }
-  }
 
-  def apply(req: ClientOut.AnaDrop): ClientIn = Monitor.time(_.chessMoveTime) {
-    try {
-      chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
-        case (game, drop) =>
-          game.pgnMoves.lastOption map { san =>
-            makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
-          }
-      } getOrElse ClientIn.StepFailure
-    } catch {
-      case e: java.lang.ArrayIndexOutOfBoundsException =>
-        logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
-        ClientIn.StepFailure
+  def apply(req: ClientOut.AnaDrop): ClientIn =
+    Monitor.time(_.chessMoveTime) {
+      try {
+        chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
+          case (game, drop) =>
+            game.pgnMoves.lastOption map { san =>
+              makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
+            }
+        } getOrElse ClientIn.StepFailure
+      } catch {
+        case e: java.lang.ArrayIndexOutOfBoundsException =>
+          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
+          ClientIn.StepFailure
+      }
     }
-  }
 
-  def apply(req: ClientOut.AnaDests): ClientIn.Dests = Monitor.time(_.chessDestTime) {
-    ClientIn.Dests(
-      path = req.path,
-      dests = {
-        if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty)
-          initialDests
-        else {
-          val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
-          if (sit.playable(false)) json.destString(sit.destinations) else ""
-        }
-      },
-      opening = {
-        if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
-        else None
-      },
-      chapterId = req.chapterId
-    )
-  }
+  def apply(req: ClientOut.AnaDests): ClientIn.Dests =
+    Monitor.time(_.chessDestTime) {
+      ClientIn.Dests(
+        path = req.path,
+        dests = {
+          if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty)
+            initialDests
+          else {
+            val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
+            if (sit.playable(false)) json.destString(sit.destinations) else ""
+          }
+        },
+        opening = {
+          if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
+          else None
+        },
+        chapterId = req.chapterId
+      )
+    }
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(req.variant))

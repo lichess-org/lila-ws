@@ -230,13 +230,14 @@ object ClientIn {
   object following {
 
     case class Onlines(users: List[FriendList.UserView]) extends ClientIn {
-      def write = Json stringify Json.obj(
-        "t"        -> "following_onlines",
-        "d"        -> users.map(_.data.titleName),
-        "playing"  -> users.collect { case u if u.meta.playing => u.id },
-        "studying" -> Json.arr(),
-        "patrons"  -> users.collect { case u if u.data.patron => u.id }
-      )
+      def write =
+        Json stringify Json.obj(
+          "t"        -> "following_onlines",
+          "d"        -> users.map(_.data.titleName),
+          "playing"  -> users.collect { case u if u.meta.playing => u.id },
+          "studying" -> Json.arr(),
+          "patrons"  -> users.collect { case u if u.data.patron => u.id }
+        )
     }
     case class Enters(user: FriendList.UserView) extends ClientIn {
       // We use 'd' for backward compatibility with the mobile client
@@ -261,10 +262,11 @@ object ClientIn {
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
-  private def cliMsg[A: Writes](t: String, data: A): String = Json stringify Json.obj(
-    "t" -> t,
-    "d" -> data
-  )
+  private def cliMsg[A: Writes](t: String, data: A): String =
+    Json stringify Json.obj(
+      "t" -> t,
+      "d" -> data
+    )
   private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
     s"""{"t":"$t","v":$version,"d":${data.value}}"""

@@ -22,7 +22,8 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
 
   def connect(user: User, client: Client, silently: Boolean = false): Unit =
     users.compute(
-      user.id, {
+      user.id,
+      {
         case (_, null) =>
           if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
           Set(client)
@@ -32,13 +33,16 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext) {
     )
 
   def disconnect(user: User, client: Client): Unit =
-    users.computeIfPresent(user.id, (_, clients) => {
-      val newClients = clients - client
-      if (newClients.isEmpty) {
-        disconnects add user.id
-        null
-      } else newClients
-    })
+    users.computeIfPresent(
+      user.id,
+      (_, clients) => {
+        val newClients = clients - client
+        if (newClients.isEmpty) {
+          disconnects add user.id
+          null
+        } else newClients
+      }
+    )
 
   def tellOne(userId: User.ID, payload: ClientMsg): Unit =
     Option(users get userId) foreach {

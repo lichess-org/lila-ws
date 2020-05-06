@@ -51,10 +51,13 @@ final class LilaWsServer(
 
     monitor.start()
 
-    Bus.internal.subscribe("users", {
-      case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
-      case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
-    })
+    Bus.internal.subscribe(
+      "users",
+      {
+        case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
+        case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
+      }
+    )
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))

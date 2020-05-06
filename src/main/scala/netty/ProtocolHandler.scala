@@ -66,10 +66,11 @@ final private class ProtocolHandler(
     })
   }
 
-  private def emitToChannel(channel: Channel): ClientEmit = in => {
-    if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-    else channel.writeAndFlush(new TextWebSocketFrame(in.write))
-  }
+  private def emitToChannel(channel: Channel): ClientEmit =
+    in => {
+      if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
+      else channel.writeAndFlush(new TextWebSocketFrame(in.write))
+    }
 
   // cancel before the handshake was completed
   private def sendSimpleErrorResponse(
@@ -88,31 +89,32 @@ final private class ProtocolHandler(
   private def terminateConnection(channel: Channel): ChannelFuture =
     channel.writeAndFlush(new CloseWebSocketFrame).addListener(ChannelFutureListener.CLOSE)
 
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = cause match {
-    // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
-    // sending/receiving the response.
-    case _: IOException =>
-      Monitor.websocketError("io")
-      ctx.channel.close()
-    case _: WebSocketHandshakeException =>
-      Monitor.websocketError("handshake")
-      ctx.channel.close()
-    case e: CorruptedWebSocketFrameException
-        if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
-      Monitor.websocketError("frameLength")
-    case _: CorruptedWebSocketFrameException =>
-      Monitor.websocketError("corrupted")
-    case _: TooLongFrameException =>
-      Monitor.websocketError("uriTooLong")
-      sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
-    case e: IllegalArgumentException
-        if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
-      Monitor.websocketError("headerIllegalChar")
-      sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
-    case _ =>
-      Monitor.websocketError("other")
-      super.exceptionCaught(ctx, cause)
-  }
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit =
+    cause match {
+      // IO exceptions happen all the time, it usually just means that the client has closed the connection before fully
+      // sending/receiving the response.
+      case _: IOException =>
+        Monitor.websocketError("io")
+        ctx.channel.close()
+      case _: WebSocketHandshakeException =>
+        Monitor.websocketError("handshake")
+        ctx.channel.close()
+      case e: CorruptedWebSocketFrameException
+          if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
+        Monitor.websocketError("frameLength")
+      case _: CorruptedWebSocketFrameException =>
+        Monitor.websocketError("corrupted")
+      case _: TooLongFrameException =>
+        Monitor.websocketError("uriTooLong")
+        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
+      case e: IllegalArgumentException
+          if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+        Monitor.websocketError("headerIllegalChar")
+        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
+      case _ =>
+        Monitor.websocketError("other")
+        super.exceptionCaught(ctx, cause)
+    }
 }
 
 private object ProtocolHandler {
