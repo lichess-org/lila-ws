@@ -66,13 +66,16 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         }
       }(parasitic)
 
+  private val gameCacheProjection =
+    BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
+
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
     .expireAfterWrite(10.minutes)
     .buildAsyncFuture { id =>
       gameColl flatMap {
         _.find(
           selector = BSONDocument("_id" -> id.value),
-          projection = Some(BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true))
+          projection = Some(gameCacheProjection)
         ).one[BSONDocument]
           .map { docOpt =>
             for {
@@ -83,9 +86,11 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
-              tourId  = doc.getAsOpt[Tour.ID]("tid")
-              simulId = doc.getAsOpt[Simul.ID]("sid")
-            } yield Game.Round(id, players, tourId, simulId)
+              ext =
+                doc.getAsOpt[Tour.ID]("tid").map(Game.RoundExt.Tour.apply) orElse
+                  doc.getAsOpt[Swiss.ID]("iid").map(Game.RoundExt.Swiss.apply) orElse
+                  doc.getAsOpt[Simul.ID]("sid").map(Game.RoundExt.Simul.apply)
+            } yield Game.Round(id, players, ext)
           }(parasitic)
       }
     }

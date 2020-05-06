@@ -142,10 +142,15 @@ object RoundClientActor {
                   lilaIn round LilaIn.WatcherChatSay(state.room.id, _, msg)
                 }
               case Some(p) =>
+                import Game.RoundExt._
                 def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
-                p.tourId.flatMap(extMsg).map(lilaIn.tour) orElse
-                  p.simulId.flatMap(extMsg).map(lilaIn.simul) getOrElse
-                  lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+                p.ext match {
+                  case None =>
+                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+                  case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
+                  case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
+                  case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
+                }
             }
             Behaviors.same
 
