@@ -17,7 +17,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   object status {
     private var value: Status = Online
-    def setOffline()          = { value = Offline }
+    def setOffline() = { value = Offline }
     def setOnline(init: () => Unit) = {
       value = Online
       init()
