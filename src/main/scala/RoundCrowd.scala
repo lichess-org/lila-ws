@@ -42,7 +42,7 @@ final class RoundCrowd(
           case None => cur
           case Some(round) =>
             publish(roomId, round)
-            round
+            if (round.isEmpty) null else round
         }
       }
     )
