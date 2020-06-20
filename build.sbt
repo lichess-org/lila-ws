@@ -6,7 +6,7 @@ lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.5"
-val kamonVersion         = "2.1.0"
+val kamonVersion         = "2.1.1"
 val nettyVersion         = "4.1.50.Final"
 val reactivemongoVersion = "0.20.10"
 
@@ -28,8 +28,8 @@ libraryDependencies += "com.github.blemale"         %% "scaffeine"              
 libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.3"
 libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.9.0"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % "2.1.1"
-libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % "2.1.1"
+libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
+libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.3.6" % "provided"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
