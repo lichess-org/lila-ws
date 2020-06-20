@@ -61,7 +61,7 @@ object Chess {
           }
         },
         opening = {
-          if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen.value
+          if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen
           else None
         },
         chapterId = req.chapterId
@@ -70,7 +70,7 @@ object Chess {
 
   def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
     if (Variant.openingSensibleVariants(req.variant))
-      FullOpeningDB findByFen req.fen.value map {
+      FullOpeningDB findByFen req.fen map {
         ClientIn.Opening(req.path, _)
       }
     else None
@@ -82,13 +82,13 @@ object Chess {
       chapterId: Option[ChapterId]
   ): ClientIn.Node = {
     val movable = game.situation playable false
-    val fen     = chess.format.Forsyth >> game
+    val fen     = FEN(chess.format.Forsyth >> game)
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
       ply = game.turns,
       move = move,
-      fen = FEN(fen),
+      fen = fen,
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
