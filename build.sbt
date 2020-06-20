@@ -5,10 +5,10 @@ version := "2.0"
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
-val akkaVersion          = "2.6.5"
+val akkaVersion          = "2.6.6"
 val kamonVersion         = "2.1.1"
 val nettyVersion         = "4.1.50.Final"
-val reactivemongoVersion = "0.20.10"
+val reactivemongoVersion = "0.20.11"
 
 scalaVersion := "2.13.2"
 
