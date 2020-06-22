@@ -30,7 +30,7 @@ libraryDependencies += "com.typesafe.play"          %% "play-json"              
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.3.6" % "provided"
+libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.3.7" % "provided"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
