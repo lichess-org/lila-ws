@@ -10,7 +10,10 @@ import scala.concurrent.ExecutionContext
 final class Monitor(
     config: Config,
     services: Services
-)(implicit scheduler: akka.actor.typed.Scheduler, ec: ExecutionContext) {
+)(implicit
+    scheduler: akka.actor.typed.Scheduler,
+    ec: ExecutionContext
+) {
 
   import Monitor._
 

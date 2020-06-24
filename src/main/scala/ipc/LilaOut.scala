@@ -48,7 +48,7 @@ object LilaOut {
       version: SocketVersion,
       troll: IsTroll,
       json: JsonString
-  ) extends AnyRoomOut
+  )                                                                        extends AnyRoomOut
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
   case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString)
       extends AnyRoomOut
@@ -79,7 +79,7 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  ) extends RoundOut
+  )                                                                    extends RoundOut
   case class RoundTourStanding(tourId: Tour.ID, data: JsonString)      extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                    extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                extends RoundOut

@@ -17,7 +17,10 @@ final class GroupedWithinStage[A](
     nb: Int,
     interval: FiniteDuration,
     emit: Emit[Vector[A]]
-)(implicit scheduler: Scheduler, ec: ExecutionContext) {
+)(implicit
+    scheduler: Scheduler,
+    ec: ExecutionContext
+) {
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 
