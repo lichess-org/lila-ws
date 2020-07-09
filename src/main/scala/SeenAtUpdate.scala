@@ -17,7 +17,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
 
   private val done: Cache[User.ID, Boolean] = Scaffeine()
     .expireAfterWrite(3.minutes)
-    .build[String, Boolean]
+    .build[String, Boolean]()
 
   def apply(user: User): Future[Unit] =
     if (done.getIfPresent(user.id).isDefined) Future successful ({})

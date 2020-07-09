@@ -47,7 +47,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   private val connIn  = redis.connectPubSub
   private val connOut = redis.connectPubSub
 
-  private val handlersPromise                  = Promise[Handlers]
+  private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
   private var handlers: Handlers               = chan => out => futureHandlers foreach { _(chan)(out) }
   def setHandlers(hs: Handlers) = {
@@ -103,7 +103,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       }
     }
 
-    val promise = Promise[Emit[In]]
+    val promise = Promise[Emit[In]]()
 
     connOut.async.subscribe(chan.out) thenRun { () =>
       connIn.async.publish(chan.in, LilaIn.WsBoot.write)

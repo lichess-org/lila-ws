@@ -38,15 +38,15 @@ final class Monitor(
     val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
 
-    connection.current update members
-    historyRoomSize.update(History.room.size)
-    historyRoundSize.update(History.round.size)
-    crowdRoomSize.update(services.roomCrowd.size)
-    crowdRoundSize.update(rounds)
-    usersSize.update(services.users.size)
-    watchSize.update(Fens.size)
-    busSize.update(Bus.size)
-    busAllSize.update(Bus.sizeOf(_.all))
+    connection.current update members.toDouble
+    historyRoomSize.update(History.room.size.toDouble)
+    historyRoundSize.update(History.round.size.toDouble)
+    crowdRoomSize.update(services.roomCrowd.size.toDouble)
+    crowdRoundSize.update(rounds.toDouble)
+    usersSize.update(services.users.size.toDouble)
+    watchSize.update(Fens.size.toDouble)
+    busSize.update(Bus.size.toDouble)
+    busAllSize.update(Bus.sizeOf(_.all).toDouble)
   }
 }
 
@@ -55,34 +55,34 @@ object Monitor {
   private val logger = Logger(getClass)
 
   object connection {
-    val current = Kamon.gauge("connection.current").withoutTags
+    val current = Kamon.gauge("connection.current").withoutTags()
     def open(endpoint: String) =
       Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
   }
 
-  def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags
-  def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags
+  def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags()
+  def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags()
   def clientOutUnhandled(name: String) =
     Kamon
       .counter("client.out.unhandled")
       .withTag("name", name)
       .increment()
 
-  val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags
-  val historyRoundSize = Kamon.gauge("history.round.size").withoutTags
+  val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags()
+  val historyRoundSize = Kamon.gauge("history.round.size").withoutTags()
 
-  val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags
-  val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags
-  val usersSize      = Kamon.gauge("users.size").withoutTags
-  val watchSize      = Kamon.gauge("watch.size").withoutTags
+  val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags()
+  val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags()
+  val usersSize      = Kamon.gauge("users.size").withoutTags()
+  val watchSize      = Kamon.gauge("watch.size").withoutTags()
 
-  val palantirChannels = Kamon.gauge("palantir.channels.size").withoutTags
+  val palantirChannels = Kamon.gauge("palantir.channels.size").withoutTags()
 
-  val busSize    = Kamon.gauge("bus.size").withoutTags
-  val busAllSize = Kamon.gauge("bus.all.size").withoutTags
+  val busSize    = Kamon.gauge("bus.size").withoutTags()
+  val busAllSize = Kamon.gauge("bus.all.size").withoutTags()
 
-  val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags
-  val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags
+  val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags()
+  val chessDestTime = Kamon.timer("chess.analysis.dest.time").withoutTags()
 
   def websocketError(name: String) =
     Kamon.counter("websocket.error").withTag("name", name).increment()
@@ -94,7 +94,7 @@ object Monitor {
       .increment()
 
   object redis {
-    val publishTime      = Kamon.timer("redis.publish.time").withoutTags
+    val publishTime      = Kamon.timer("redis.publish.time").withoutTags()
     private val countIn  = Kamon.counter("redis.in")
     private val countOut = Kamon.counter("redis.out")
     def in(chan: String, path: String) =
@@ -120,7 +120,7 @@ object Monitor {
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
     val timer = metric(Monitor).start()
     val res   = f
-    timer.stop
+    timer.stop()
     res
   }
 }

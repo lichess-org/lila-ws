@@ -23,7 +23,7 @@ object ApiActor {
 
   private def apply(deps: Deps): Behavior[ClientMsg] =
     Behaviors
-      .receive[ClientMsg] { (ctx, msg) =>
+      .receive[ClientMsg] { (_, msg) =>
         msg match {
 
           case ClientCtrl.ApiDisconnect => Behaviors.stopped

@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire._
 import com.typesafe.config.{ Config, ConfigFactory }
+import scala.annotation.nowarn
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -36,12 +37,12 @@ object Boot extends App {
   lazy val nettyServer   = wire[netty.NettyServer]
   lazy val monitor       = wire[Monitor]
 
-  wire[LilaWsServer].start
+  wire[LilaWsServer].start()
 }
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
-    handlers: LilaHandler, // must eagerly instanciate!
+    @nowarn("cat=unused") handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
     monitor: Monitor,
     scheduler: Scheduler

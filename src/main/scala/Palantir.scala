@@ -9,21 +9,21 @@ object Palantir {
 
     private val members: Cache[User.ID, Unit] = Scaffeine()
       .expireAfterWrite(7.seconds)
-      .build[User.ID, Unit]
+      .build[User.ID, Unit]()
 
     def add(userId: User.ID) = members.put(userId, ())
 
-    def userIds = members.asMap.keys
+    def userIds = members.asMap().keys
   }
 
   private val channels: Cache[RoomId, Channel] = Scaffeine()
     .expireAfterWrite(1.minute)
-    .build[RoomId, Channel]
+    .build[RoomId, Channel]()
 
   def respondToPing(roomId: RoomId, user: User): ipc.ClientIn.Palantir = {
     val channel = channels.get(roomId, _ => new Channel)
     channel.add(user.id)
-    Monitor.palantirChannels.update(channels.estimatedSize.toInt)
+    Monitor.palantirChannels.update(channels.estimatedSize().toDouble)
     ipc.ClientIn.Palantir(channel.userIds.filter(user.id.!=))
   }
 }

@@ -45,7 +45,7 @@ final class LilaHandler(
     case ApiUserOnline(user, true) =>
       clients ! Clients.Start(
         ApiActor start ApiActor.Deps(User(user), services),
-        Promise[_root_.lila.ws.Client]
+        Promise[_root_.lila.ws.Client]()
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 

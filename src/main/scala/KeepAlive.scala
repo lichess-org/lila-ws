@@ -39,7 +39,7 @@ object KeepAlive {
 
     def getAndClear: LilaIn.KeepAlives = {
       val ret = LilaIn.KeepAlives(rooms.toSet)
-      rooms.clear
+      rooms.clear()
       ret
     }
   }

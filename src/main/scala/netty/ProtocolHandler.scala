@@ -33,7 +33,7 @@ final private class ProtocolHandler(
     evt match {
       case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
-        val promise = Promise[Client]
+        val promise = Promise[Client]()
         ctx.channel.attr(key.client).set(promise.future)
         router(
           new util.RequestHeader(hs.requestUri, hs.requestHeaders),
