@@ -1,0 +1,8 @@
+Dockerfile
+
+.github/
+.git/
+.idea/
+target/
+
+/project/project

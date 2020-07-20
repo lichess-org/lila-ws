@@ -1,3 +1,7 @@
 logs/
 target/
 RUNNING_PID
+nohup.out
+.idea/
+
+/project/project/
