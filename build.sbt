@@ -6,7 +6,7 @@ lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.8"
-val kamonVersion         = "2.1.3"
+val kamonVersion         = "2.1.4"
 val nettyVersion         = "4.1.51.Final"
 val reactivemongoVersion = "0.20.11"
 
@@ -15,7 +15,7 @@ scalaVersion := "2.13.3"
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "5.3.1.RELEASE"
+libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "5.3.2.RELEASE"
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
