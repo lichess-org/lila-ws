@@ -36,8 +36,6 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 scalacOptions ++= Seq(
-    "-encoding",
-    "utf-8",
     "-explaintypes",
     "-feature",
     "-language:higherKinds",
