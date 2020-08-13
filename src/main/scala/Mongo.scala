@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson._
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DefaultDB, MongoConnection, ReadConcern, ReadPreference }
+import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -14,12 +14,19 @@ import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val uri        = config.getString("mongo.uri")
-  private val driver     = new AsyncDriver(Some(config.getConfig("reactivemongo")))
-  private val parsedUri  = MongoConnection.fromString(uri)
-  private val connection = parsedUri.flatMap(driver.connect)
+  private val uri = config.getString("mongo.uri")
 
-  private def db: Future[DefaultDB]   = connection.flatMap(_ database "lichess")
+  private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
+
+  private val connection =
+    MongoConnection.fromString(uri) flatMap { parsedUri =>
+      driver.connect(parsedUri).map(_ -> parsedUri.db)
+    }
+  private def db: Future[DB] =
+    connection flatMap {
+      case (conn, dbName) => conn database dbName.getOrElse("lichess")
+    }
+
   private def collNamed(name: String) = db.map(_ collection name)(parasitic)
   def securityColl                    = collNamed("security")
   def userColl                        = collNamed("user4")

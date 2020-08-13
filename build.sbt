@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
 val akkaVersion          = "2.6.8"
 val kamonVersion         = "2.1.4"
 val nettyVersion         = "4.1.51.Final"
-val reactivemongoVersion = "0.20.11"
+val reactivemongoVersion = "1.0.0-rc.2"
 
 scalaVersion := "2.13.3"
 
