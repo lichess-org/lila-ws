@@ -1,12 +1,12 @@
 package lila.ws
 
 import play.api.libs.json._
-
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
+import cats.syntax.option._
 
 import ipc._
 
