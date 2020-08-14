@@ -1,12 +1,12 @@
 package lila.ws
 package ipc
 
-import chess.format.{ FEN, Uci, UciCharPair }
+import chess.format.UciCharPair
 import chess.opening.FullOpening
 import chess.variant.Crazyhouse
-import play.api.libs.json._
-
+import lila.ws.Position
 import lila.ws.util.LilaJsObject.augment
+import play.api.libs.json._
 
 sealed trait ClientIn extends ClientMsg {
   def write: String
@@ -37,15 +37,18 @@ object ClientIn {
     )
   }
 
-  case class Fen(gameId: Game.Id, lastUci: Uci, fen: FEN) extends ClientIn {
+  case class Fen(gameId: Game.Id, position: Position) extends ClientIn {
     def write =
       cliMsg(
         "fen",
-        Json.obj(
-          "id"  -> gameId.value,
-          "lm"  -> lastUci,
-          "fen" -> fen
-        )
+        Json
+          .obj(
+            "id"  -> gameId.value,
+            "lm"  -> position.lastUci,
+            "fen" -> position.fen
+          )
+          .add("wc" -> position.clock.map(_.white))
+          .add("bc" -> position.clock.map(_.black))
       )
   }
 

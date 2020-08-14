@@ -1,6 +1,7 @@
 package lila.ws
 
 import chess.Color
+import chess.format.{ FEN, Uci }
 
 trait StringValue extends Any {
   def value: String
@@ -150,3 +151,6 @@ case class RoundEventFlags(
 )
 
 case class UserTv(value: User.ID) extends AnyVal with StringValue
+
+case class Clock(white: Int, black: Int)
+case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock])
