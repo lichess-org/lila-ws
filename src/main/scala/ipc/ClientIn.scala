@@ -45,7 +45,7 @@ object ClientIn {
           .obj(
             "id"  -> gameId.value,
             "lm"  -> position.lastUci,
-            "fen" -> position.fen
+            "fen" -> position.fenWithColor
           )
           .add("wc" -> position.clock.map(_.white))
           .add("bc" -> position.clock.map(_.black))

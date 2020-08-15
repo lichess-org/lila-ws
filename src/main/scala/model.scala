@@ -153,4 +153,6 @@ case class RoundEventFlags(
 case class UserTv(value: User.ID) extends AnyVal with StringValue
 
 case class Clock(white: Int, black: Int)
-case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock])
+case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color) {
+  def fenWithColor = s"$fen ${turnColor.letter}"
+}

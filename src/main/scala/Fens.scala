@@ -5,6 +5,7 @@ import chess.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
 import lila.ws.{ Clock, Position }
+import chess.Color
 
 /* Manages subscriptions to FEN updates */
 object Fens {
@@ -43,7 +44,8 @@ object Fens {
     }
 
   // move coming from the server
-  def move(gameId: Game.Id, json: JsonString): Unit = {
+  def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit = {
+    val turnColor = moveBy.fold(Color.white)(c => !c)
     games.computeIfPresent(
       gameId,
       (_, watched) =>
@@ -53,8 +55,8 @@ object Fens {
               uci <- Uci(uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(fenS), Some(Clock(wc, bc)))
-          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, FEN(fenS), None) }
+            } yield Position(uci, FEN(fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, FEN(fenS), None, turnColor) }
           case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)
