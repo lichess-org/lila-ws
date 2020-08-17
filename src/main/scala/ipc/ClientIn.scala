@@ -61,14 +61,6 @@ object ClientIn {
     lazy val write = cliMsg("mlat", millis)
   }
 
-  case class NbMembers(value: Int) extends ClientIn {
-    lazy val write = cliMsg("member/nb", value)
-  }
-
-  case class NbRounds(value: Int) extends ClientIn {
-    lazy val write = cliMsg("round/nb", value)
-  }
-
   sealed trait HasVersion extends ClientMsg {
     val version: SocketVersion
   }

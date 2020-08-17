@@ -22,7 +22,7 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
         if (allEvents.headOption.fold(true)(_.version <= since)) Some(Nil)
         else {
           val events = allEvents.takeWhile(_.version > since)
-          if (events.size == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
+          if (events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
           else None
         }
       }

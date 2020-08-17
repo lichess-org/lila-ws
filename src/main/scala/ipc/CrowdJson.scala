@@ -14,7 +14,7 @@ final class CrowdJson(
 )(implicit ec: ExecutionContext) {
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
-    if (crowd.users.size > 20) keepOnlyStudyMembers(crowd) map { users =>
+    if (crowd.users.sizeIs > 20) keepOnlyStudyMembers(crowd) map { users =>
       crowd.copy(users = users, anons = 0)
     }
     else Future successful crowd
@@ -23,7 +23,7 @@ final class CrowdJson(
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
     spectatorsOf(
       crowd.room.copy(
-        users = if (crowd.room.users.size > 20) Nil else crowd.room.users
+        users = if (crowd.room.users.sizeIs > 20) Nil else crowd.room.users
       )
     ) map { spectators =>
       ClientIn.Crowd(
