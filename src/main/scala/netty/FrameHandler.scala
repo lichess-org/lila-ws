@@ -46,7 +46,7 @@ final private class FrameHandler(implicit ec: ExecutionContext)
           }
         }
       case frame =>
-        logger.info("unsupported frame type: " + frame.getClass().getName())
+        logger.info("unsupported frame type: " + frame.getClass.getName)
     }
 }
 

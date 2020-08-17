@@ -20,7 +20,7 @@ final class Monitor(
   def start(): Unit = {
 
     val version  = System.getProperty("java.version")
-    val memory   = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    val memory   = Runtime.getRuntime.maxMemory() / 1024 / 1024
     val useEpoll = config.getBoolean("netty.useEpoll")
     val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
 

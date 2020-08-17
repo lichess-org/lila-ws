@@ -36,7 +36,7 @@ final class RequestHeader(uri: String, req: HttpHeaders) {
 
   def ip: Option[IpAddress] = header("X-Forwarded-For") map IpAddress
 
-  def name: String = s"${uri} UA: ${userAgent}"
+  def name: String = s"$uri UA: $userAgent"
 
   def sri = queryParameter("sri") flatMap Sri.from
 }

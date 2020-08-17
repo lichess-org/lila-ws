@@ -104,7 +104,7 @@ final class LilaHandler(
           val absent = {
             if (allAbsent.size > 100) scala.util.Random.shuffle(allAbsent) take 80
             else allAbsent
-          }.toSet
+          }
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)

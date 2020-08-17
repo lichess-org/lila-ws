@@ -20,7 +20,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
     .build[String, Boolean]()
 
   def apply(user: User): Future[Unit] =
-    if (done.getIfPresent(user.id).isDefined) Future successful ({})
+    if (done.getIfPresent(user.id).isDefined) Future successful {}
     else {
       done.put(user.id, true)
       for {
@@ -41,7 +41,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
                 BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
               )
             )
-          else Future successful ({})
+          else Future successful {}
         _ <-
           if (userDoc.isDefined && streamers.contains(user))
             mongo.streamer(

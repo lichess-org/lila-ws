@@ -1,7 +1,6 @@
 package lila.ws
 
 import com.typesafe.config.Config
-import java.util.TreeSet
 import java.util.concurrent.locks.ReentrantLock
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
@@ -180,7 +179,7 @@ final class SocialGraph(mongo: Mongo, config: Config) {
       } finally {
         lock.unlock()
       }
-    infos.fold(doLoadFollowed(id))(Future.successful _)
+    infos.fold(doLoadFollowed(id))(Future.successful)
   }
 
   def unsubscribe(id: User.ID): Unit = {
@@ -295,11 +294,10 @@ object SocialGraph {
   private case class ExistingSlot(slot: Int, entry: UserEntry) extends Slot
 
   private class AdjacencyList {
-    private val inner: TreeSet[Long] = new TreeSet()
+    private val inner: java.util.TreeSet[Long] = new java.util.TreeSet()
 
     def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
     def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
-    def has(a: Int, b: Int): Boolean = inner.contains(AdjacencyList.makePair(a, b))
 
     def read(a: Int): List[Int] =
       inner

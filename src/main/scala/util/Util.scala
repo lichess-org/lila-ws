@@ -10,7 +10,7 @@ object Util {
   object random {
     private val secureRandom     = new SecureRandom()
     private val chars            = (('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')).mkString
-    private val nbChars          = chars.size
+    private val nbChars          = chars.length
     def char: Char               = chars(secureRandom nextInt nbChars)
     def string(len: Int): String = new String(Array.fill(len)(char))
   }
