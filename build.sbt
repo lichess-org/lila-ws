@@ -1,6 +1,6 @@
 name := "lila-ws"
 
-version := "2.0"
+version := "2.1"
 
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging)
