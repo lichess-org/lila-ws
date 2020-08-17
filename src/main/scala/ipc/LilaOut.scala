@@ -79,14 +79,14 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  )                                                                    extends RoundOut
-  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)      extends RoundOut
-  case class RoundResyncPlayer(fullId: Game.FullId)                    extends RoundOut
-  case class RoundGone(fullId: Game.FullId, v: Boolean)                extends RoundOut
-  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)            extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
-  case class GameStart(users: List[User.ID])                           extends RoundOut
-  case class GameFinish(users: List[User.ID])                          extends RoundOut
+  )                                                                                   extends RoundOut
+  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                     extends RoundOut
+  case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                           extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)                extends RoundOut
+  case class GameStart(users: List[User.ID])                                          extends RoundOut
+  case class GameFinish(gameId: Game.Id, winner: Option[Color], users: List[User.ID]) extends RoundOut
 
   case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
@@ -279,8 +279,12 @@ object LilaOut {
             Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
-      case "r/start"  => Some(GameStart(commas(args).toList))
-      case "r/finish" => Some(GameFinish(commas(args).toList))
+      case "r/start" => Some(GameStart(commas(args).toList))
+      case "r/finish" =>
+        get(args, 3) {
+          case Array(gameId, winner, users) =>
+            Some(GameFinish(Game.Id(gameId), readOptionalColor(winner), commas(users).toList))
+        }
 
       // tv
 
@@ -307,8 +311,9 @@ object LilaOut {
     }
   }
 
-  def commas(str: String): Array[String]    = if (str == "-") Array.empty else str split ','
-  def boolean(str: String): Boolean         = str == "+"
-  def readColor(str: String): Color         = Color(str == "w")
-  def optional(str: String): Option[String] = if (str == "-") None else Some(str)
+  def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
+  def boolean(str: String): Boolean                 = str == "+"
+  def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
+  def readColor(str: String): Color                 = Color(str == "w")
+  def readOptionalColor(str: String): Option[Color] = optional(str) map readColor
 }

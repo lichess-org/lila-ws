@@ -1,6 +1,7 @@
 package lila.ws
 package ipc
 
+import chess.Color
 import chess.format.UciCharPair
 import chess.opening.FullOpening
 import chess.variant.Crazyhouse
@@ -50,6 +51,10 @@ object ClientIn {
           .add("wc" -> position.clock.map(_.white))
           .add("bc" -> position.clock.map(_.black))
       )
+  }
+
+  case class Finish(gameId: Game.Id, winner: Option[Color]) extends ClientIn {
+    def write = cliMsg("finish", Json.obj("id" -> gameId.value, "win" -> winner.map(_.letter.toString)))
   }
 
   case class Mlat(millis: Double) extends ClientIn {

@@ -146,7 +146,9 @@ final class LilaHandler(
           friendList.startPlaying(u)
           publish(_ userTv u, ClientIn.Resync)
         }
-      case GameFinish(users) => users foreach friendList.stopPlaying
+      case GameFinish(gameId, winner, users) =>
+        users foreach friendList.stopPlaying
+        Fens.finish(gameId, winner)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>

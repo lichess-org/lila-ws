@@ -1,11 +1,11 @@
 package lila.ws
 
 import akka.actor.typed.ActorRef
+import chess.Color
 import chess.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc._
 import lila.ws.{ Clock, Position }
-import chess.Color
 
 /* Manages subscriptions to FEN updates */
 object Fens {
@@ -43,12 +43,22 @@ object Fens {
       )
     }
 
-  // move coming from the server
-  def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit = {
-    val turnColor = moveBy.fold(Color.white)(c => !c)
+  // a game finishes
+  def finish(gameId: Game.Id, winner: Option[Color]) =
     games.computeIfPresent(
       gameId,
-      (_, watched) =>
+      (_, watched) => {
+        watched.clients foreach { _ ! ClientIn.Finish(gameId, winner) }
+        null
+      }
+    )
+
+  // move coming from the server
+  def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
+    games.computeIfPresent(
+      gameId,
+      (_, watched) => {
+        val turnColor = moveBy.fold(Color.white)(c => !c)
         (json.value match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for {
@@ -63,8 +73,8 @@ object Fens {
           watched.clients foreach { _ ! msg }
           watched.copy(position = Some(position))
         }
+      }
     )
-  }
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"clock":{"white":121.88,"black":120.94}
   private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
