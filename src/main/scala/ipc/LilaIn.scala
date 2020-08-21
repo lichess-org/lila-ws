@@ -152,7 +152,7 @@ object LilaIn {
     def write = s"challenge/pings ${commas(ids)}"
   }
 
-  case class ReqResponse(reqId: Int, value: String) extends Study with Site {
+  case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site {
     def write = s"req/response $reqId $value"
   }
 

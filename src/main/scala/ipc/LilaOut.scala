@@ -67,6 +67,10 @@ object LilaOut {
 
   case class RoomIsPresent(reqId: Int, roomId: RoomId, userId: User.ID) extends StudyOut
 
+  // simul
+
+  case class RoomFilterPresent(reqId: Int, roomId: RoomId, userIds: Set[User.ID]) extends SimulOut
+
   // tour
 
   case class GetWaitingUsers(roomId: RoomId, name: String) extends TourOut
@@ -211,6 +215,14 @@ object LilaOut {
           case Array(reqIdS, roomId, userId) =>
             reqIdS.toIntOption map { reqId =>
               RoomIsPresent(reqId, RoomId(roomId), userId)
+            }
+        }
+
+      case "room/filter-present" =>
+        get(args, 3) {
+          case Array(reqIdS, roomId, userIds) =>
+            reqIdS.toIntOption map { reqId =>
+              RoomFilterPresent(reqId, RoomId(roomId), commas(userIds).toSet)
             }
         }
 

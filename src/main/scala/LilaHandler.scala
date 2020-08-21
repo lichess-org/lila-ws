@@ -79,6 +79,8 @@ final class LilaHandler(
   }
 
   private val simulHandler: Emit[LilaOut] = {
+    case LilaOut.RoomFilterPresent(reqId, roomId, userIds) =>
+      lila.emit.simul(LilaIn.ReqResponse(reqId, roomCrowd.filterPresent(roomId, userIds).mkString(",")))
     case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
     case msg      => roomHandler(msg)
   }
