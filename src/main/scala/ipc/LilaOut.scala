@@ -326,6 +326,6 @@ object LilaOut {
   def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
   def boolean(str: String): Boolean                 = str == "+"
   def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
-  def readColor(str: String): Color                 = Color(str == "w")
+  def readColor(str: String): Color                 = Color.fromWhite(str == "w")
   def readOptionalColor(str: String): Option[Color] = optional(str) map readColor
 }

@@ -128,8 +128,8 @@ object ClientOut {
             case "anaMove" =>
               for {
                 d    <- o obj "d"
-                orig <- d str "orig" flatMap Pos.posAt
-                dest <- d str "dest" flatMap Pos.posAt
+                orig <- d str "orig" flatMap Pos.fromKey
+                dest <- d str "dest" flatMap Pos.fromKey
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
@@ -140,7 +140,7 @@ object ClientOut {
               for {
                 d    <- o obj "d"
                 role <- d str "role" flatMap chess.Role.allByName.get
-                pos  <- d str "pos" flatMap Pos.posAt
+                pos  <- d str "pos" flatMap Pos.fromKey
                 path <- d str "path"
                 fen  <- d str "fen"
                 variant   = dataVariant(d)
@@ -194,7 +194,7 @@ object ClientOut {
               } yield RoundHold(mean, sd)
             case "berserk"      => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
             case "rep"          => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
-            case "flag"         => o str "d" flatMap Color.apply map RoundFlag.apply
+            case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
             case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
