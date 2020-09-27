@@ -29,10 +29,10 @@ final class Monitor(
 
     if (useKamon) kamon.Kamon.loadModules()
 
-    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics }
+    scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
   }
 
-  private def periodicMetrics = {
+  private def periodicMetrics() = {
 
     val members = LilaWsServer.connections.get
     val rounds  = services.roundCrowd.size

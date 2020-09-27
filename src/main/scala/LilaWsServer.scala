@@ -44,6 +44,7 @@ final class LilaWsServer(
     nettyServer: netty.NettyServer,
     @nowarn("cat=unused") handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
+    lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
 )(implicit ec: ExecutionContext) {
@@ -62,6 +63,11 @@ final class LilaWsServer(
 
     scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
+    }
+
+    scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis) { () =>
+      val counters = lobby.pong.get
+      lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
     }
 
     nettyServer.start() // blocks
