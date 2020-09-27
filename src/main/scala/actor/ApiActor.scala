@@ -34,10 +34,9 @@ object ApiActor {
         }
 
       }
-      .receiveSignal {
-        case (ctx, PostStop) =>
-          onStop(deps, ctx)
-          Behaviors.same
+      .receiveSignal { case (ctx, PostStop) =>
+        onStop(deps, ctx)
+        Behaviors.same
       }
 
   case class Deps(user: User, services: Services)

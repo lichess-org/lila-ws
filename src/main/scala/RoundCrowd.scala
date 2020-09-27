@@ -58,8 +58,8 @@ final class RoundCrowd(
 
   private val outputBatch = groupedWithin[Output](256, 500.millis) { outputs =>
     val aggregated = outputs
-      .foldLeft(Map.empty[RoomId, Output]) {
-        case (crowds, crowd) => crowds.updated(crowd.room.roomId, crowd)
+      .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
+        crowds.updated(crowd.room.roomId, crowd)
       }
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))

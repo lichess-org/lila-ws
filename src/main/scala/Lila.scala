@@ -73,19 +73,19 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Study](chans.study) zip
       connect[LilaIn.Round](chans.round) zip
       connect[LilaIn.Challenge](chans.challenge) map {
-      case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge =>
-        new Emits(
-          site,
-          tour,
-          lobby,
-          simul,
-          team,
-          swiss,
-          study,
-          round,
-          challenge
-        )
-    }
+        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge =>
+          new Emits(
+            site,
+            tour,
+            lobby,
+            simul,
+            team,
+            swiss,
+            study,
+            round,
+            challenge
+          )
+      }
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 

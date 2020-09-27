@@ -60,19 +60,17 @@ final class FriendList(
     update(userId, Leaves.apply)(_.withOnline(false))
 
   private def update(userId: User.ID, msg: User.ID => ipc.ClientIn)(update: UserMeta => UserMeta) =
-    graph.tell(userId, update) foreach {
-      case (subject, subs) =>
-        if (subs.nonEmpty) users.tellMany(subs, msg(subject.id))
+    graph.tell(userId, update) foreach { case (subject, subs) =>
+      if (subs.nonEmpty) users.tellMany(subs, msg(subject.id))
     }
 
   private def updateView(userId: User.ID, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
-    graph.tell(userId, update) foreach {
-      case (subject, subs) =>
-        if (subs.nonEmpty) userDatas.get(subject.id) foreach {
-          _ foreach { data =>
-            users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
-          }
+    graph.tell(userId, update) foreach { case (subject, subs) =>
+      if (subs.nonEmpty) userDatas.get(subject.id) foreach {
+        _ foreach { data =>
+          users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
         }
+      }
     }
 
   Bus.internal.subscribe(

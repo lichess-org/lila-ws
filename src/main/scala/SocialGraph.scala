@@ -50,9 +50,8 @@ final class SocialGraph(mongo: Mongo, config: Config) {
   // slightly more inconvenient to exploit than String.hashCode().
   private val seed = Random.nextInt()
   private def fxhash32(id: User.ID): Int = {
-    id.foldLeft(seed) {
-      case (state, ch) =>
-        (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
+    id.foldLeft(seed) { case (state, ch) =>
+      (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
   }
 

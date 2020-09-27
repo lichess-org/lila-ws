@@ -172,16 +172,14 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId zip req.ip foreach {
-              case (fid, ip) =>
-                lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
+            fullId zip req.ip foreach { case (fid, ip) =>
+              lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId zip req.ip foreach {
-              case (fid, ip) =>
-                lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
+            fullId zip req.ip foreach { case (fid, ip) =>
+              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
             }
             Behaviors.same
 
@@ -201,11 +199,10 @@ object RoundClientActor {
         }
 
       }
-      .receiveSignal {
-        case (ctx, PostStop) =>
-          onStop(state.site, deps, ctx)
-          state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
-          deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
-          Behaviors.same
+      .receiveSignal { case (ctx, PostStop) =>
+        onStop(state.site, deps, ctx)
+        state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
+        deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
+        Behaviors.same
       }
 }

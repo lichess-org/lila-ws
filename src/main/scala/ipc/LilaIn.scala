@@ -84,8 +84,8 @@ object LilaIn {
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom {
     def write =
-      s"room/versions ${commas(versions.map {
-        case (r, v) => s"$r:$v"
+      s"room/versions ${commas(versions.map { case (r, v) =>
+        s"$r:$v"
       })}"
   }
 

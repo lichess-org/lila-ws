@@ -23,8 +23,8 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def db: Future[DB] =
-    connection flatMap {
-      case (conn, dbName) => conn database dbName.getOrElse("lichess")
+    connection flatMap { case (conn, dbName) =>
+      conn database dbName.getOrElse("lichess")
     }
 
   private def collNamed(name: String) = db.map(_ collection name)(parasitic)

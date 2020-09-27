@@ -55,19 +55,17 @@ object TourClientActor {
             Behaviors.same
         }
 
-        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) {
-          case (newState, emit) =>
-            emit foreach lilaIn.tour
-            newState.fold(Behaviors.same[ClientMsg]) { roomState =>
-              apply(state.copy(room = roomState), deps)
-            }
+        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
+          emit foreach lilaIn.tour
+          newState.fold(Behaviors.same[ClientMsg]) { roomState =>
+            apply(state.copy(room = roomState), deps)
+          }
         }
 
       }
-      .receiveSignal {
-        case (ctx, PostStop) =>
-          onStop(state.site, deps, ctx)
-          RoomActor.onStop(state.room, deps, ctx)
-          Behaviors.same
+      .receiveSignal { case (ctx, PostStop) =>
+        onStop(state.site, deps, ctx)
+        RoomActor.onStop(state.room, deps, ctx)
+        Behaviors.same
       }
 }

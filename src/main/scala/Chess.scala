@@ -19,11 +19,10 @@ object Chess {
       try {
         chess
           .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
-          .toOption flatMap {
-          case (game, move) =>
-            game.pgnMoves.lastOption map { san =>
-              makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
-            }
+          .toOption flatMap { case (game, move) =>
+          game.pgnMoves.lastOption map { san =>
+            makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
+          }
         } getOrElse ClientIn.StepFailure
       } catch {
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -122,12 +121,11 @@ object Chess {
     def destString(dests: Map[Pos, List[Pos]]): String = {
       val sb    = new java.lang.StringBuilder(80)
       var first = true
-      dests foreach {
-        case (orig, dests) =>
-          if (first) first = false
-          else sb append " "
-          sb append orig.piotr
-          dests foreach { sb append _.piotr }
+      dests foreach { case (orig, dests) =>
+        if (first) first = false
+        else sb append " "
+        sb append orig.piotr
+        dests foreach { sb append _.piotr }
       }
       sb.toString
     }
