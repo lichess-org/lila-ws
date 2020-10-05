@@ -206,7 +206,7 @@ final class Controller(
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response =
     req.sri match {
       case Some(validSri) => f(validSri)
-      case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST) // f(Sri.random)
+      case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST)
     }
 
   private object CSRF {
