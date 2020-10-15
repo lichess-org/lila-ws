@@ -17,7 +17,7 @@ final private class ProtocolHandler(
     router: Router
 )(implicit ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
-      "/",   // path
+      "",    // path
       null,  // subprotocols (?)
       false, // allowExtensions (?)
       8192,  // max frame size - /inbox allows sending 8000 chars
