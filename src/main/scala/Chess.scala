@@ -18,7 +18,7 @@ object Chess {
     Monitor.time(_.chessMoveTime) {
       try {
         chess
-          .Game(req.variant.some, Some(req.fen.value))(req.orig, req.dest, req.promotion)
+          .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
           .toOption flatMap { case (game, move) =>
           game.pgnMoves.lastOption map { san =>
             makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
@@ -34,7 +34,7 @@ object Chess {
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
       try {
-        chess.Game(req.variant.some, Some(req.fen.value)).drop(req.role, req.pos).toOption flatMap {
+        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.pos).toOption flatMap {
           case (game, drop) =>
             game.pgnMoves.lastOption map { san =>
               makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
@@ -52,10 +52,10 @@ object Chess {
       ClientIn.Dests(
         path = req.path,
         dests = {
-          if (req.variant.standard && req.fen.value == chess.format.Forsyth.initial && req.path.value.isEmpty)
+          if (req.variant.standard && req.fen == chess.format.Forsyth.initial && req.path.value.isEmpty)
             initialDests
           else {
-            val sit = chess.Game(req.variant.some, Some(req.fen.value)).situation
+            val sit = chess.Game(req.variant.some, Some(req.fen)).situation
             if (sit.playable(false)) json.destString(sit.destinations) else ""
           }
         },
@@ -81,7 +81,7 @@ object Chess {
       chapterId: Option[ChapterId]
   ): ClientIn.Node = {
     val movable = game.situation playable false
-    val fen     = FEN(chess.format.Forsyth >> game)
+    val fen     = chess.format.Forsyth >> game
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
