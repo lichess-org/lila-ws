@@ -1,3 +1,4 @@
 logs/
 target/
-RUNNING_PID
+project/metals.sbt
+project/project
