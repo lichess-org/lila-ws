@@ -131,7 +131,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         for {
           doc     <- docOpt
           members <- doc.getAsOpt[BSONDocument]("members")
-        } yield members.elements.map { case BSONElement(key, _) => key }.toSet
+        } yield members.elements.collect { case BSONElement(key, _) => key }.toSet
       } map (_ getOrElse Set.empty)
     }
 
