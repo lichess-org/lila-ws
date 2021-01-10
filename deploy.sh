@@ -36,7 +36,7 @@ echo "rsync complete"
 read -n 1 -p "Press [Enter] to continue."
 
 echo "Restart lila-ws"
-ssh $REMOTE "systemctl restart lila-ws"
+ssh $REMOTE "chown -R lila-ws:lila-ws /home/lila-ws && systemctl restart lila-ws"
 
 echo "Deploy complete"
 
