@@ -24,7 +24,6 @@ RSYNC_OPTIONS=" \
   --compress \
   --checksum \
   --verbose \
-  --exclude RUNNING_PID \
   --exclude '.git/'"
 
 include="$stage/bin $stage/lib"
