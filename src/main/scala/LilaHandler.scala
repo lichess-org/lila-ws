@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.{ ExecutionContext, Promise }
 
 import ipc._
+import java.util.concurrent.TimeUnit
 
 final class LilaHandler(
     lila: Lila,
@@ -50,6 +51,9 @@ final class LilaHandler(
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
     case Impersonate(user, by) => Impersonations(user, by)
+
+    case Pong(pingAt) =>
+      Monitor.ping("site").record(pingAt.toNow, TimeUnit.MILLISECONDS)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")

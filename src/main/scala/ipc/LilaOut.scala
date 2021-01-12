@@ -30,6 +30,7 @@ object LilaOut {
   case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
   case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
   case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
+  case class Pong(pingAt: PingAt)                                  extends SiteOut
 
   // lobby
 
@@ -302,6 +303,8 @@ object LilaOut {
         get(args, 2) { case Array(userId, online) =>
           Some(ApiUserOnline(userId, boolean(online)))
         }
+
+      case "pong" => args.toLongOption map PingAt.apply map Pong
 
       case "boot" => Some(LilaBoot)
 

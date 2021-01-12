@@ -56,6 +56,10 @@ object LilaIn {
     override def critical = true
   }
 
+  case class Ping(at: PingAt) extends Site {
+    def write = s"ping ${at.millis}"
+  }
+
   type SriUserId = (Sri, Option[User.ID])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby {
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"

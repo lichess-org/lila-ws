@@ -70,6 +70,10 @@ final class LilaWsServer(
       lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
     }
 
+    scheduler.scheduleWithFixedDelay(1.seconds, 859.millis) { () =>
+      lila.emit.site(ipc.LilaIn.Ping(PingAt.make))
+    }
+
     nettyServer.start() // blocks
   }
 }

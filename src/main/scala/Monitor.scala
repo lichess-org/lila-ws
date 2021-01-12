@@ -117,6 +117,12 @@ object Monitor {
         .increment()
   }
 
+  object ping {
+
+    def apply(chan: String) =
+      Kamon.timer("ping").withTag("chan", chan)
+  }
+
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
     val timer = metric(Monitor).start()
     val res   = f

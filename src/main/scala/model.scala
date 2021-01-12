@@ -140,6 +140,14 @@ object RoomId {
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 
+case class PingAt(millis: Long) extends AnyVal {
+  def toNow: Long = util.Util.uptimeMillis - millis
+}
+
+object PingAt {
+  def make = PingAt(util.Util.uptimeMillis)
+}
+
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
 
 case class RoundEventFlags(
