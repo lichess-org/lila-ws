@@ -30,7 +30,7 @@ object LilaOut {
   case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
   case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
   case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
-  case class Pong(pingAt: PingAt)                                  extends SiteOut
+  case class Pong(pingAt: PingAt)                                  extends SiteOut with RoundOut
 
   // lobby
 

@@ -72,6 +72,7 @@ final class LilaWsServer(
 
     scheduler.scheduleWithFixedDelay(1.seconds, 859.millis) { () =>
       lila.emit.site(ipc.LilaIn.Ping(PingAt.make))
+      lila.emit.round(ipc.LilaIn.Ping(PingAt.make))
     }
 
     nettyServer.start() // blocks

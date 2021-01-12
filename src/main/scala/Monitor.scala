@@ -6,6 +6,7 @@ import kamon.Kamon
 import kamon.tag.TagSet
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import java.util.concurrent.TimeUnit
 
 final class Monitor(
     config: Config,
@@ -119,8 +120,9 @@ object Monitor {
 
   object ping {
 
-    def apply(chan: String) =
-      Kamon.timer("ping").withTag("chan", chan)
+    def apply(chan: String) = Kamon.timer("ping").withTag("chan", chan)
+
+    def record(chan: String, at: PingAt) = apply(chan).record(at.toNow, TimeUnit.MILLISECONDS)
   }
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {

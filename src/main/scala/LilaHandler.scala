@@ -2,10 +2,8 @@ package lila.ws
 
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import scala.concurrent.{ ExecutionContext, Promise }
-
 import ipc._
-import java.util.concurrent.TimeUnit
+import scala.concurrent.{ ExecutionContext, Promise }
 
 final class LilaHandler(
     lila: Lila,
@@ -52,8 +50,7 @@ final class LilaHandler(
 
     case Impersonate(user, by) => Impersonations(user, by)
 
-    case Pong(pingAt) =>
-      Monitor.ping("site").record(pingAt.toNow, TimeUnit.MILLISECONDS)
+    case Pong(pingAt) => Monitor.ping.record("site", pingAt)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")
@@ -155,6 +152,7 @@ final class LilaHandler(
       case GameFinish(gameId, winner, users) =>
         users foreach friendList.stopPlaying
         Fens.finish(gameId, winner)
+      case Pong(pingAt) => Monitor.ping.record("round", pingAt)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.status.setOnline { () =>
