@@ -8,7 +8,7 @@ object Util {
 
   def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
 
-  object random {
+  object secureRandom {
 
     private val secureRandom = new SecureRandom()
     private val chars        = (('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')).mkString
@@ -21,4 +21,31 @@ object Util {
     def shuffle[T, C](xs: IterableOnce[T])(implicit bf: scala.collection.BuildFrom[xs.type, T, C]): C =
       new scala.util.Random(local).shuffle(xs)
   }
+
+  object threadLocalRandom {
+
+    import java.util.concurrent.ThreadLocalRandom.current
+
+    def nextInt(): Int       = current.nextInt()
+    def nextInt(n: Int): Int = current.nextInt(n)
+    def nextChar(): Char = {
+      val i = nextInt(62)
+      if (i < 26) i + 65
+      else if (i < 52) i + 71
+      else i - 4
+    }.toChar
+
+    def nextString(len: Int): String = {
+      val sb = new StringBuilder(len)
+      for (_ <- 0 until len) sb += nextChar()
+      sb.result()
+    }
+
+    def shuffle[T, C](xs: IterableOnce[T])(implicit bf: scala.collection.BuildFrom[xs.type, T, C]): C =
+      new scala.util.Random(current).shuffle(xs)
+  }
+
+  val startedAtMillis = System.currentTimeMillis()
+
+  def uptimeMillis: Long = System.currentTimeMillis() - startedAtMillis
 }
