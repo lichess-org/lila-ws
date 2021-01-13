@@ -56,7 +56,7 @@ object LilaIn {
     override def critical = true
   }
 
-  case class Ping(at: PingAt) extends Site with Round {
+  case class Ping(at: UptimeMillis) extends Site with Round {
     def write = s"ping ${at.millis}"
   }
 

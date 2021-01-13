@@ -46,6 +46,4 @@ object Util {
   }
 
   val startedAtMillis = System.currentTimeMillis()
-
-  def uptimeMillis: Long = System.currentTimeMillis() - startedAtMillis
 }

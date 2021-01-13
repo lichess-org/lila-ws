@@ -140,12 +140,12 @@ object RoomId {
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 
-case class PingAt(millis: Long) extends AnyVal {
-  def toNow: Long = util.Util.uptimeMillis - millis
+case class UptimeMillis(millis: Long) extends AnyVal {
+  def toNow: Long = System.currentTimeMillis() - millis
 }
 
-object PingAt {
-  def make = PingAt(util.Util.uptimeMillis)
+object UptimeMillis {
+  def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
 }
 
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])

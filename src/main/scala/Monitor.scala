@@ -122,7 +122,7 @@ object Monitor {
 
     def apply(chan: String) = Kamon.timer("ping").withTag("chan", chan)
 
-    def record(chan: String, at: PingAt) = apply(chan).record(at.toNow, TimeUnit.MILLISECONDS)
+    def record(chan: String, at: UptimeMillis) = apply(chan).record(at.toNow, TimeUnit.MILLISECONDS)
   }
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
