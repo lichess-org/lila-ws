@@ -7,7 +7,7 @@ lazy val `lila-ws` = (project in file("."))
 
 val akkaVersion          = "2.6.10"
 val kamonVersion         = "2.1.9"
-val nettyVersion         = "4.1.57.Final"
+val nettyVersion         = "4.1.56.Final" // 4.1.57 breaks prod! doesn't bind the port when epoll is used
 val reactivemongoVersion = "1.0.2"
 
 scalaVersion := "2.13.4"
