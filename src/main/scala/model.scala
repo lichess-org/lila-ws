@@ -141,7 +141,7 @@ object RoomId {
 case class ReqId(value: Int) extends AnyVal with IntValue
 
 case class UptimeMillis(millis: Long) extends AnyVal {
-  def toNow: Long = System.currentTimeMillis() - millis
+  def toNow: Long = UptimeMillis.make.millis - millis
 }
 
 object UptimeMillis {
