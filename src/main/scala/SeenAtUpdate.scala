@@ -16,7 +16,7 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
   import Mongo._
 
   private val done: Cache[User.ID, Boolean] = Scaffeine()
-    .expireAfterWrite(3.minutes)
+    .expireAfterWrite(10.minutes)
     .build[String, Boolean]()
 
   def apply(user: User): Future[Unit] =
