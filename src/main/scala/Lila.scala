@@ -92,21 +92,23 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     val emit: Emit[In] = in => {
       val msg  = in.write
       val path = msg.takeWhile(' '.!=)
+      val chanIn = chan in msg
       if (status.isOnline) {
-        connIn.async.publish(chan.in, msg)
-        Monitor.redis.in(chan.in, path)
+        connIn.async.publish(chanIn, msg)
+        Monitor.redis.in(chanIn, path)
       } else if (in.critical) {
-        buffer.enqueue(chan.in, msg)
-        Monitor.redis.queue(chan.in, path)
+        buffer.enqueue(chanIn, msg)
+        Monitor.redis.queue(chanIn, path)
       } else {
-        Monitor.redis.drop(chan.in, path)
+        Monitor.redis.drop(chanIn, path)
       }
     }
 
     val promise = Promise[Emit[In]]()
 
     connOut.async.subscribe(chan.out) thenRun { () =>
-      connIn.async.publish(chan.in, LilaIn.WsBoot.write)
+      val msg = LilaIn.WsBoot.write
+      connIn.async.publish(chan in msg, msg)
       promise success emit
     }
 
@@ -137,21 +139,31 @@ object Lila {
 
   type Handlers = String => Emit[LilaOut]
 
-  sealed abstract class Chan(value: String) {
-    val in  = s"$value-in"
+  sealed trait Chan {
+    def in(msg: String): String
+    val out: String
+  }
+
+  sealed abstract class SingleLaneChan(value: String) extends Chan {
+    def in(_msg: String)  = s"$value-in"
+    val out = s"$value-out"
+  }
+
+  sealed abstract class ParallelChan(value: String, parallelism: Int) extends Chan {
+    def in(msg: String)  = s"$value-in:${msg.hashCode.abs % parallelism}"
     val out = s"$value-out"
   }
 
   object chans {
-    object site      extends Chan("site")
-    object tour      extends Chan("tour")
-    object lobby     extends Chan("lobby")
-    object simul     extends Chan("simul")
-    object team      extends Chan("team")
-    object swiss     extends Chan("swiss")
-    object study     extends Chan("study")
-    object round     extends Chan("r")
-    object challenge extends Chan("chal")
+    object site      extends SingleLaneChan("site")
+    object tour      extends SingleLaneChan("tour")
+    object lobby     extends SingleLaneChan("lobby")
+    object simul     extends SingleLaneChan("simul")
+    object team      extends SingleLaneChan("team")
+    object swiss     extends SingleLaneChan("swiss")
+    object study     extends SingleLaneChan("study")
+    object round     extends ParallelChan("r", 8)
+    object challenge extends SingleLaneChan("chal")
   }
 
   final class Emits(
