@@ -90,8 +90,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
     val emit: Emit[In] = in => {
-      val msg  = in.write
-      val path = msg.takeWhile(' '.!=)
+      val msg    = in.write
+      val path   = msg.takeWhile(' '.!=)
       val chanIn = chan in msg
       if (status.isOnline) {
         connIn.async.publish(chanIn, msg)
@@ -145,13 +145,13 @@ object Lila {
   }
 
   sealed abstract class SingleLaneChan(value: String) extends Chan {
-    def in(_msg: String)  = s"$value-in"
-    val out = s"$value-out"
+    def in(_msg: String) = s"$value-in"
+    val out              = s"$value-out"
   }
 
-  sealed abstract class ParallelChan(value: String, parallelism: Int) extends Chan {
-    def in(msg: String)  = s"$value-in:${msg.hashCode.abs % parallelism}"
-    val out = s"$value-out"
+  sealed abstract class RoundRobinChan(name: String, parallelism: Int) extends Chan {
+    def in(msg: String) = s"$name-in:${msg.hashCode.abs % parallelism}"
+    val out             = s"$name-out"
   }
 
   object chans {
@@ -162,7 +162,7 @@ object Lila {
     object team      extends SingleLaneChan("team")
     object swiss     extends SingleLaneChan("swiss")
     object study     extends SingleLaneChan("study")
-    object round     extends ParallelChan("r", 8)
+    object round     extends RoundRobinChan("r", 8)
     object challenge extends SingleLaneChan("chal")
   }
 
