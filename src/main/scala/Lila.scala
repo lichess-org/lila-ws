@@ -4,12 +4,11 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core._
 import io.lettuce.core.pubsub._
+import ipc._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
-
-import ipc._
 
 final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
@@ -28,11 +27,11 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   private object buffer {
     case class Buffered(chan: String, msg: String)
-    private val queue = new ConcurrentLinkedQueue[Buffered]()
+    private val queue       = new ConcurrentLinkedQueue[Buffered]()
+    private lazy val connIn = redis.connectPubSub
 
-    def enqueue(chan: String, msg: String) = {
-      queue offer Buffered(chan, msg)
-    }
+    def enqueue(chan: String, msg: String) = queue offer Buffered(chan, msg)
+
     @tailrec def flush(): Unit = {
       val next = queue.poll()
       if (next != null) {
@@ -42,10 +41,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
     }
   }
 
-  private val logger  = Logger(getClass)
-  private val redis   = RedisClient create RedisURI.create(config.getString("redis.uri"))
-  private val connIn  = redis.connectPubSub
-  private val connOut = redis.connectPubSub
+  private val logger = Logger(getClass)
+  private val redis  = RedisClient create RedisURI.create(config.getString("redis.uri"))
 
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
@@ -89,6 +86,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] = {
 
+    val connIn = redis.connectPubSub
+
     val emit: Emit[In] = in => {
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
@@ -104,30 +103,39 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       }
     }
 
-    val promise = Promise[Emit[In]]()
-
-    connOut.async.subscribe(chan.out) thenRun { () =>
+    (chan match {
+      case s: SingleLaneChan => connectAndSubscribe(s.out, s.out) map { _ => emit }
+      case r: RoundRobinChan =>
+        connectAndSubscribe(r.out, r.out) zip Future.sequence {
+          (0 to r.parallelism).map { index =>
+            connectAndSubscribe(s"${r.out}:$index", r.out)
+          }
+        }
+    }) map { _ =>
       val msg = LilaIn.WsBoot.write
       connIn.async.publish(chan in msg, msg)
-      promise success emit
+      emit
+    }
+  }
+
+  private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] = {
+    val connOut = redis.connectPubSub
+    connOut.addListener(new RedisPubSubAdapter[String, String] {
+      override def message(_chan: String, msg: String): Unit = {
+        Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
+        LilaOut read msg match {
+          case Some(out) => handlers(handlerName)(out)
+          case None      => logger.warn(s"Can't parse $msg on $chanName")
+        }
+      }
+    })
+    val promise = Promise[Unit]()
+
+    connOut.async.subscribe(chanName) thenRun { () =>
+      promise success ()
     }
 
     promise.future
-  }
-
-  connOut.addListener(new RedisPubSubAdapter[String, String] {
-    override def message(chan: String, msg: String): Unit = {
-      Monitor.redis.out(chan, msg.takeWhile(' '.!=))
-      LilaOut read msg match {
-        case Some(out) => handlers(chan)(out)
-        case None      => logger.warn(s"Can't parse $msg on $chan")
-      }
-    }
-  })
-
-  def close(): Unit = {
-    connIn.close()
-    connOut.close()
   }
 }
 
@@ -144,12 +152,12 @@ object Lila {
     val out: String
   }
 
-  sealed abstract class SingleLaneChan(value: String) extends Chan {
-    def in(_msg: String) = s"$value-in"
-    val out              = s"$value-out"
+  sealed abstract class SingleLaneChan(name: String) extends Chan {
+    def in(_msg: String) = s"$name-in"
+    val out              = s"$name-out"
   }
 
-  sealed abstract class RoundRobinChan(name: String, parallelism: Int) extends Chan {
+  sealed abstract class RoundRobinChan(name: String, val parallelism: Int) extends Chan {
     def in(msg: String) = s"$name-in:${msg.hashCode.abs % parallelism}"
     val out             = s"$name-out"
   }

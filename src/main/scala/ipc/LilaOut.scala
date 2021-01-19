@@ -30,7 +30,7 @@ object LilaOut {
   case class Impersonate(user: User.ID, by: Option[User.ID])       extends SiteOut
   case class Follow(left: User.ID, right: User.ID)                 extends SiteOut
   case class UnFollow(left: User.ID, right: User.ID)               extends SiteOut
-  case class Pong(pingAt: UptimeMillis)                                  extends SiteOut with RoundOut
+  case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
 
   // lobby
 
@@ -112,6 +112,26 @@ object LilaOut {
     parts(0) match {
 
       case "mlat" => args.toDoubleOption map Mlat.apply
+
+      case "r/ver" =>
+        get(args, 5) { case Array(roomId, version, f, tpe, data) =>
+          version.toIntOption map { sv =>
+            val flags = RoundEventFlags(
+              watcher = f contains 's',
+              owner = f contains 'p',
+              player =
+                if (f contains 'w') Some(chess.White)
+                else if (f contains 'b') Some(chess.Black)
+                else None,
+              moveBy =
+                if (f contains 'B') Some(chess.Black)
+                else if (f contains 'W') Some(chess.White)
+                else None,
+              troll = f contains 't'
+            )
+            RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
+          }
+        }
 
       case "tell/flag" =>
         get(args, 2) { case Array(flag, payload) =>
@@ -236,26 +256,6 @@ object LilaOut {
       case "tour/get/waiting" =>
         get(args, 2) { case Array(roomId, name) =>
           Some(GetWaitingUsers(RoomId(roomId), name))
-        }
-
-      case "r/ver" =>
-        get(args, 5) { case Array(roomId, version, f, tpe, data) =>
-          version.toIntOption map { sv =>
-            val flags = RoundEventFlags(
-              watcher = f contains 's',
-              owner = f contains 'p',
-              player =
-                if (f contains 'w') Some(chess.White)
-                else if (f contains 'b') Some(chess.Black)
-                else None,
-              moveBy =
-                if (f contains 'B') Some(chess.Black)
-                else if (f contains 'W') Some(chess.White)
-                else None,
-              troll = f contains 't'
-            )
-            RoundVersion(Game.Id(roomId), SocketVersion(sv), flags, tpe, JsonString(data))
-          }
         }
 
       case "r/tour/standing" =>
