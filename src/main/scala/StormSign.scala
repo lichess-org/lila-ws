@@ -9,6 +9,6 @@ final class StormSign(config: Config) {
 
   def apply(key: String, pad: String): String = xor(signer sha1 key, pad)
 
-  def xor(msg: String, pad: String): String =
+  private def xor(msg: String, pad: String): String =
     msg.zip(pad).map { case (x, y) => x ^ y }.map(_.toChar).mkString
 }

@@ -215,7 +215,7 @@ object ClientOut {
             case "ping" => Some(ChallengePing)
             case "sk1" =>
               o str "d" flatMap { s =>
-                s split ':' match {
+                s split '!' match {
                   case Array(key, pad) => Some(StormKey(key, pad))
                   case _               => None
                 }
