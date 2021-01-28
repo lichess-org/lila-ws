@@ -102,6 +102,10 @@ object ClientOut {
 
   case object PalantirPing extends ClientOut
 
+  // storm
+
+  case class StormKey(key: String) extends ClientOutSite
+
   // impl
 
   def parse(str: String): Try[ClientOut] =
@@ -210,6 +214,7 @@ object ClientOut {
                 text   <- data str "text"
               } yield ChatTimeout(userId, reason, text)
             case "ping"      => Some(ChallengePing)
+            case "sk1"       => o str "d" map StormKey
             case "wrongHole" => Some(WrongHole)
             case _           => None
           } getOrElse Unexpected(o)

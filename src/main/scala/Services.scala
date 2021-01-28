@@ -12,7 +12,8 @@ final class Services(
     val roundCrowd: RoundCrowd,
     val keepAlive: KeepAlive,
     val lobby: Lobby,
-    val friends: FriendList
+    val friends: FriendList,
+    val stormSign: StormSign
 ) {
 
   def lila = lilaRedis.emit

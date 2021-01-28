@@ -259,6 +259,10 @@ object ClientIn {
     case class StoppedPlaying(user: User.ID) extends Event("stopped_playing")
   }
 
+  case class StormKey(signed: String) extends ClientIn {
+    def write = cliMsg("sk1", signed)
+  }
+
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String =

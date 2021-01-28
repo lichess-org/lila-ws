@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
-
 import ipc._
 import util.Util.nowSeconds
 
@@ -116,6 +115,12 @@ object ClientActor {
       case ClientOut.UserForward(payload) =>
         req.user foreach { user =>
           lilaIn.site(LilaIn.TellUser(user.id, payload))
+        }
+        state
+
+      case ClientOut.StormKey(key) =>
+        req.user foreach { user =>
+          clientIn(ClientIn.StormKey(deps.services.stormSign(key, user)))
         }
         state
 
