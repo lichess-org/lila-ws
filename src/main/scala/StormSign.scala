@@ -7,5 +7,5 @@ final class StormSign(config: Config) {
 
   private val signer = Algo hmac config.getString("storm.secret")
 
-  def apply(key: String, user: User): String = signer sha1 s"$key:${user.id}"
+  def apply(key: String): String = signer sha1 key
 }

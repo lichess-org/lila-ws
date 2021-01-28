@@ -119,9 +119,7 @@ object ClientActor {
         state
 
       case ClientOut.StormKey(key) =>
-        req.user foreach { user =>
-          clientIn(ClientIn.StormKey(deps.services.stormSign(key, user)))
-        }
+        clientIn(ClientIn.StormKey(deps.services.stormSign(key)))
         state
 
       case ClientOut.Ignore =>
