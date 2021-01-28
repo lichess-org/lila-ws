@@ -4,10 +4,9 @@ package ipc
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
 import chess.{ Centis, Color, MoveMetrics, Pos }
+import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
-
-import lila.ws.util.LilaJsObject.augment
 
 sealed trait ClientOut extends ClientMsg
 
@@ -104,7 +103,7 @@ object ClientOut {
 
   // storm
 
-  case class StormKey(key: String) extends ClientOutSite
+  case class StormKey(key: String, pad: String) extends ClientOutSite
 
   // impl
 
@@ -213,8 +212,14 @@ object ClientOut {
                 reason <- data str "reason"
                 text   <- data str "text"
               } yield ChatTimeout(userId, reason, text)
-            case "ping"      => Some(ChallengePing)
-            case "sk1"       => o str "d" map StormKey
+            case "ping" => Some(ChallengePing)
+            case "sk1" =>
+              o str "d" flatMap { s =>
+                s split ':' match {
+                  case Array(key, pad) => Some(StormKey(key, pad))
+                  case _               => None
+                }
+              }
             case "wrongHole" => Some(WrongHole)
             case _           => None
           } getOrElse Unexpected(o)

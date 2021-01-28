@@ -7,5 +7,8 @@ final class StormSign(config: Config) {
 
   private val signer = Algo hmac config.getString("storm.secret")
 
-  def apply(key: String): String = signer sha1 key
+  def apply(key: String, pad: String): String = xor(signer sha1 key, pad)
+
+  def xor(msg: String, pad: String): String =
+    msg.zip(pad).map { case (x, y) => x ^ y }.map(_.toChar).mkString
 }
