@@ -17,9 +17,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
   object status {
     private var value: Status = Online
     def setOffline() = { value = Offline }
-    def setOnline(init: () => Unit) = {
+    def setOnline() = {
       value = Online
-      init()
       buffer.flush()
     }
     def isOnline: Boolean = value == Online
@@ -98,6 +97,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       } else if (in.critical) {
         buffer.enqueue(chanIn, msg)
         Monitor.redis.queue(chanIn, path)
+      } else if (in.isInstanceOf[LilaIn.RoomSetVersions]) {
+        connIn.async.publish(chanIn, msg)
       } else {
         Monitor.redis.drop(chanIn, path)
       }
