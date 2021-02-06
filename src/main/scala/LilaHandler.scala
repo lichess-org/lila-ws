@@ -155,9 +155,10 @@ final class LilaHandler(
       case Pong(pingAt) => Monitor.ping.record("round", pingAt)
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
-        lila.status.setOnline { () =>
-          lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
-        }
+        lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+      case VersioningReady =>
+        logger.info("#################### LILA VERSIONING READY ####################")
+        lila.status.setOnline()
         Impersonations.reset()
       case msg => roomHandler(msg)
     })

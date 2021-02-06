@@ -14,20 +14,27 @@ import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
-  private val uri = config.getString("mongo.uri")
-
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
-  private val connection =
-    MongoConnection.fromString(uri) flatMap { parsedUri =>
+  private val mainConnection =
+    MongoConnection.fromString(config.getString("mongo.uri")) flatMap { parsedUri =>
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
-  private def db: Future[DB] =
-    connection flatMap { case (conn, dbName) =>
+  private def mainDb: Future[DB] =
+    mainConnection flatMap { case (conn, dbName) =>
       conn database dbName.getOrElse("lichess")
     }
 
-  private def collNamed(name: String) = db.map(_ collection name)(parasitic)
+  private val studyConnection =
+    MongoConnection.fromString(config.getString("study.mongo.uri")) flatMap { parsedUri =>
+      driver.connect(parsedUri).map(_ -> parsedUri.db)
+    }
+  private def studyDb: Future[DB] =
+    studyConnection flatMap { case (conn, dbName) =>
+      conn database dbName.getOrElse("lichess")
+    }
+
+  private def collNamed(name: String) = mainDb.map(_ collection name)(parasitic)
   def securityColl                    = collNamed("security")
   def userColl                        = collNamed("user4")
   def coachColl                       = collNamed("coach")
@@ -36,12 +43,12 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def tourColl                        = collNamed("tournament2")
   def tourPlayerColl                  = collNamed("tournament_player")
   def tourPairingColl                 = collNamed("tournament_pairing")
-  def studyColl                       = collNamed("study")
   def gameColl                        = collNamed("game5")
   def challengeColl                   = collNamed("challenge")
   def relationColl                    = collNamed("relation")
   def teamColl                        = collNamed("team")
   def swissColl                       = collNamed("swiss")
+  def studyColl                       = studyDb.map(_ collection "study")(parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
