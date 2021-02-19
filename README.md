@@ -24,6 +24,8 @@ mongo.uri = "mongodb://localhost:27017/lichess"
 redis.uri = "redis://127.0.0.1"
 ```
 
+Trusts `X-Forwarded-For`. Use only behind a reverse proxy!
+
 Code formatting
 ###
 
