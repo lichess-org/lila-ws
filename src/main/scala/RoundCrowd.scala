@@ -56,7 +56,7 @@ final class RoundCrowd(
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
 
-  private val outputBatch = groupedWithin[Output](256, 500.millis) { outputs =>
+  private val outputBatch = groupedWithin[Output](512, 700.millis) { outputs =>
     val aggregated = outputs
       .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
         crowds.updated(crowd.room.roomId, crowd)
