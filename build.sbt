@@ -10,7 +10,7 @@ val kamonVersion         = "2.1.12"
 val nettyVersion         = "4.1.59.Final"
 val reactivemongoVersion = "1.0.3"
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.5"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
