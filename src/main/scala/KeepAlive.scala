@@ -16,6 +16,7 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
   val challenge = new AliveRooms
   val team      = new AliveRooms
   val swiss     = new AliveRooms
+  val racer     = new AliveRooms
 
   scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
     lila.emit.study(study.getAndClear)
@@ -24,6 +25,7 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
     lila.emit.challenge(challenge.getAndClear)
     lila.emit.team(team.getAndClear)
     lila.emit.swiss(swiss.getAndClear)
+    lila.emit.racer(racer.getAndClear)
   }
 }
 

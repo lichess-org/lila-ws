@@ -204,6 +204,7 @@ final class LilaHandler(
     case Lila.chans.study.out     => studyHandler
     case Lila.chans.team.out      => teamHandler
     case Lila.chans.challenge.out => roomHandler
+    case Lila.chans.racer.out     => roomHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
   })
 }

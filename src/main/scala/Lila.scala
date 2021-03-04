@@ -68,8 +68,9 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
       connect[LilaIn.Swiss](chans.swiss) zip
       connect[LilaIn.Study](chans.study) zip
       connect[LilaIn.Round](chans.round) zip
-      connect[LilaIn.Challenge](chans.challenge) map {
-        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge =>
+      connect[LilaIn.Challenge](chans.challenge) zip
+      connect[LilaIn.Racer](chans.racer) map {
+        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge ~ racer =>
           new Emits(
             site,
             tour,
@@ -79,7 +80,8 @@ final class Lila(config: Config)(implicit ec: ExecutionContext) {
             swiss,
             study,
             round,
-            challenge
+            challenge,
+            racer
           )
       }
 
@@ -173,6 +175,7 @@ object Lila {
     object study     extends SingleLaneChan("study")
     object round     extends RoundRobinChan("r", 8)
     object challenge extends SingleLaneChan("chal")
+    object racer     extends SingleLaneChan("racer")
   }
 
   final class Emits(
@@ -184,7 +187,8 @@ object Lila {
       val swiss: Emit[LilaIn.Swiss],
       val study: Emit[LilaIn.Study],
       val round: Emit[LilaIn.Round],
-      val challenge: Emit[LilaIn.Challenge]
+      val challenge: Emit[LilaIn.Challenge],
+      val racer: Emit[LilaIn.Racer]
   ) {
 
     def apply[In](select: Emits => Emit[In], in: In) = select(this)(in)

@@ -184,17 +184,27 @@ final class Controller(
       }
     }
 
-  def api(req: RequestHeader, emit: ClientEmit) =
-    Future successful {
-      endpoint(
-        name = "api",
-        behavior = SiteClientActor.start {
-          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+  def racer(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
+    WebSocket(req) { sri => user =>
+      Future successful endpoint(
+        name = "racer",
+        behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), fromVersion(req)) {
+          Deps(emit, Req(req, sri, user), services)
         },
-        credits = 50,
-        interval = 20.seconds
+        credits = 30,
+        interval = 15.seconds
       )
     }
+
+  def api(req: RequestHeader, emit: ClientEmit) =
+    Future successful endpoint(
+      name = "api",
+      behavior = SiteClientActor.start {
+        Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+      },
+      credits = 50,
+      interval = 20.seconds
+    )
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User] => Response): Response =
     CSRF.check(req) {

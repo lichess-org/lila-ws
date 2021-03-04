@@ -23,6 +23,7 @@ final class Router(controller: Controller) {
       case Array("challenge", id, "socket", _)  => controller.challenge(Challenge.Id(id), req, emit)
       case Array("team", id)                    => controller.team(id, req, emit)
       case Array("swiss", id)                   => controller.swiss(id, req, emit)
+      case Array("racer", id)                   => controller.racer(id, req, emit)
       case _                                    => Future successful Left(HttpResponseStatus.NOT_FOUND)
     }
 }
