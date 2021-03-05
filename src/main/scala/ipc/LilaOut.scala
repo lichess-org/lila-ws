@@ -5,16 +5,16 @@ import chess.Color
 
 sealed trait LilaOut
 
-sealed trait SiteOut      extends LilaOut
-sealed trait LobbyOut     extends LilaOut
-sealed trait RoomOut      extends LilaOut
-sealed trait SimulOut     extends RoomOut
-sealed trait TourOut      extends RoomOut
-sealed trait StudyOut     extends RoomOut
-sealed trait RoundOut     extends RoomOut
-sealed trait ChallengeOut extends RoomOut
+sealed trait SiteOut  extends LilaOut
+sealed trait LobbyOut extends LilaOut
+sealed trait RoomOut  extends LilaOut
+sealed trait SimulOut extends RoomOut
+sealed trait TourOut  extends RoomOut
+sealed trait StudyOut extends RoomOut
+sealed trait RoundOut extends RoomOut
+sealed trait RacerOut extends RoomOut
 
-sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with ChallengeOut
+sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with RacerOut
 
 object LilaOut {
 
@@ -92,8 +92,11 @@ object LilaOut {
   case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)                extends RoundOut
   case class GameStart(users: List[User.ID])                                          extends RoundOut
   case class GameFinish(gameId: Game.Id, winner: Option[Color], users: List[User.ID]) extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString)          extends RoundOut
 
-  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
+  // racer
+
+  case class RacerState(raceId: Racer.RaceId, state: JsonString) extends TourOut
 
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
@@ -296,6 +299,13 @@ object LilaOut {
           speedS.toIntOption flatMap chess.Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
+        }
+
+      // racer
+
+      case "racer/state" =>
+        get(args, 2) { case Array(raceId, data) =>
+          Some(RacerState(raceId, JsonString(data)))
         }
 
       // misc

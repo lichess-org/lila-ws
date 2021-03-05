@@ -169,6 +169,10 @@ object LilaIn {
     def write = s"challenge/pings ${commas(ids)}"
   }
 
+  case class RacerMoves(raceId: Racer.RaceId, playerId: Racer.PlayerId, moves: Int) extends Racer {
+    def write = s"racer/moves $raceId $playerId $moves"
+  }
+
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site {
     def write = s"req/response $reqId $value"
   }

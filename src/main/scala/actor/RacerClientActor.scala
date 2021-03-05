@@ -8,18 +8,20 @@ import ipc._
 object RacerClientActor {
 
   import ClientActor._
+  import Racer._
 
   case class State(
+      playerId: PlayerId,
       room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
   )
 
-  def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
+  def start(roomState: RoomActor.State, playerId: PlayerId)(
       deps: Deps
   ): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
-      RoomActor.onStart(roomState, fromVersion, deps, ctx)
-      apply(State(roomState), deps)
+      RoomActor.onStart(roomState, None, deps, ctx)
+      apply(State(playerId, roomState), deps)
     }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
@@ -43,6 +45,10 @@ object RacerClientActor {
             }
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
+
+          case ClientOut.RacerMoves(moves) =>
+            services.lila.racer(LilaIn.RacerMoves(state.room.id.value, state.playerId, moves))
+            Behaviors.same
 
           // default receive (site)
           case msg: ClientOutSite =>

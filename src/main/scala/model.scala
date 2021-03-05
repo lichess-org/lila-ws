@@ -95,6 +95,15 @@ object Challenge {
   case object Open                extends Challenger
 }
 
+object Racer {
+  type RaceId = String
+  sealed trait PlayerId
+  object PlayerId {
+    case class User(uid: String) extends PlayerId { override def toString = uid      }
+    case class Anon(sid: String) extends PlayerId { override def toString = s"@$sid" }
+  }
+}
+
 case class Chat(id: Chat.ID) extends AnyVal
 
 case class Sri(value: String) extends AnyVal with StringValue

@@ -164,6 +164,11 @@ final class LilaHandler(
     })
   }
 
+  private val racerHandler: Emit[LilaOut] = {
+    case RacerState(raceId, data) => publish(_ room RoomId(raceId), ClientIn.racerState(data))
+    case msg                      => roomHandler(msg)
+  }
+
   private val roomHandler: Emit[LilaOut] = {
     def tellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) = {
       val versioned = ClientIn.Versioned(payload, version, troll)
@@ -204,7 +209,7 @@ final class LilaHandler(
     case Lila.chans.study.out     => studyHandler
     case Lila.chans.team.out      => teamHandler
     case Lila.chans.challenge.out => roomHandler
-    case Lila.chans.racer.out     => roomHandler
+    case Lila.chans.racer.out     => racerHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
   })
 }

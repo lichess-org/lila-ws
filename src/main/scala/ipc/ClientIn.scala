@@ -263,6 +263,8 @@ object ClientIn {
     def write = cliMsg("sk1", signed)
   }
 
+  def racerState(data: JsonString) = payload("racerState", data)
+
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String =

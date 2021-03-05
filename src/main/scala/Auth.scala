@@ -7,6 +7,8 @@ import util.RequestHeader
 
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
 
+  import Auth._
+
   def apply(req: RequestHeader): Future[Option[User]] =
     if (req.flag contains Flag.api) Future successful None
     else
@@ -33,7 +35,9 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
           }
         case None => Future successful None
       }
+}
 
+object Auth {
   private val cookieName     = "lila2"
   private val sessionIdKey   = "sessionId"
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored

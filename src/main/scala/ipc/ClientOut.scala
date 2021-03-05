@@ -14,6 +14,7 @@ sealed trait ClientOutSite  extends ClientOut
 sealed trait ClientOutLobby extends ClientOut
 sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutRound extends ClientOut
+sealed trait ClientOutRacer extends ClientOut
 
 object ClientOut {
 
@@ -104,6 +105,10 @@ object ClientOut {
   // storm
 
   case class StormKey(key: String, pad: String) extends ClientOutSite
+
+  // racer
+
+  case class RacerMoves(moves: Int) extends ClientOutRacer
 
   // impl
 
@@ -213,6 +218,7 @@ object ClientOut {
                 text   <- data str "text"
               } yield ChatTimeout(userId, reason, text)
             case "ping" => Some(ChallengePing)
+            // storm
             case "sk1" =>
               o str "d" flatMap { s =>
                 s split '!' match {
@@ -220,8 +226,10 @@ object ClientOut {
                   case _               => None
                 }
               }
-            case "wrongHole" => Some(WrongHole)
-            case _           => None
+            // racer
+            case "racerMoves" => o int "d" map RacerMoves.apply
+            case "wrongHole"  => Some(WrongHole)
+            case _            => None
           } getOrElse Unexpected(o)
         case js => Unexpected(js)
       }

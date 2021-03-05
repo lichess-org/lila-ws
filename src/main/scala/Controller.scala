@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
-
 import util.RequestHeader
 
 final class Controller(
@@ -133,7 +132,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       mongo challenger id map {
         _ map {
-          case Challenge.Anon(secret) => auth sidFromReq req contains secret
+          case Challenge.Anon(secret) => Auth sidFromReq req contains secret
           case Challenge.User(userId) => user.exists(_.id == userId)
           case Challenge.Open         => false
         }
@@ -186,14 +185,23 @@ final class Controller(
 
   def racer(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      Future successful endpoint(
-        name = "racer",
-        behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), fromVersion(req)) {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 30,
-        interval = 15.seconds
-      )
+      Future successful {
+        (user match {
+          case Some(u) => Some(Racer.PlayerId.User(u.id))
+          case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
+        }) match {
+          case None => notFound
+          case Some(pid) =>
+            endpoint(
+              name = "racer",
+              behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {
+                Deps(emit, Req(req, sri, user), services)
+              },
+              credits = 30,
+              interval = 15.seconds
+            )
+        }
+      }
     }
 
   def api(req: RequestHeader, emit: ClientEmit) =
