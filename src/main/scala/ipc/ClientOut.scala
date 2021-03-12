@@ -109,6 +109,7 @@ object ClientOut {
   // racer
 
   case class RacerMoves(moves: Int) extends ClientOutRacer
+  case object RacerJoin             extends ClientOutRacer
 
   // impl
 
@@ -228,8 +229,10 @@ object ClientOut {
               }
             // racer
             case "racerMoves" => o int "d" map RacerMoves.apply
-            case "wrongHole"  => Some(WrongHole)
-            case _            => None
+            case "racerJoin"  => Some(RacerJoin)
+
+            case "wrongHole" => Some(WrongHole)
+            case _           => None
           } getOrElse Unexpected(o)
         case js => Unexpected(js)
       }

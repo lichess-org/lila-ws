@@ -50,6 +50,10 @@ object RacerClientActor {
             services.lila.racer(LilaIn.RacerMoves(state.room.id.value, state.playerId, moves))
             Behaviors.same
 
+          case ClientOut.RacerJoin =>
+            services.lila.racer(LilaIn.RacerJoin(state.room.id.value, state.playerId))
+            Behaviors.same
+
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
