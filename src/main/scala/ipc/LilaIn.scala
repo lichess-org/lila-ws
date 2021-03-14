@@ -170,7 +170,7 @@ object LilaIn {
   }
 
   case class RacerScore(raceId: Racer.RaceId, playerId: Racer.PlayerId, score: Int) extends Racer {
-    def write = s"racer/moves $raceId $playerId $score"
+    def write = s"racer/score $raceId $playerId $score"
   }
 
   case class RacerJoin(raceId: Racer.RaceId, playerId: Racer.PlayerId) extends Racer {
