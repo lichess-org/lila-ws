@@ -108,7 +108,7 @@ object ClientOut {
 
   // racer
 
-  case class RacerMoves(moves: Int) extends ClientOutRacer
+  case class RacerScore(score: Int) extends ClientOutRacer
   case object RacerJoin             extends ClientOutRacer
   case object RacerEnd              extends ClientOutRacer
 
@@ -229,7 +229,7 @@ object ClientOut {
                 }
               }
             // racer
-            case "racerMoves" => o int "d" map RacerMoves.apply
+            case "racerScore" => o int "d" map RacerScore.apply
             case "racerJoin"  => Some(RacerJoin)
             case "racerEnd"   => Some(RacerEnd)
 

@@ -50,8 +50,8 @@ object RacerClientActor {
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
-          case ClientOut.RacerMoves(moves) =>
-            services.lila.racer(LilaIn.RacerMoves(state.room.id.value, state.playerId, moves))
+          case ClientOut.RacerScore(score) =>
+            services.lila.racer(LilaIn.RacerScore(state.room.id.value, state.playerId, score))
             Behaviors.same
 
           case ClientOut.RacerJoin =>

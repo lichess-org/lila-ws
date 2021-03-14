@@ -169,8 +169,8 @@ object LilaIn {
     def write = s"challenge/pings ${commas(ids)}"
   }
 
-  case class RacerMoves(raceId: Racer.RaceId, playerId: Racer.PlayerId, moves: Int) extends Racer {
-    def write = s"racer/moves $raceId $playerId $moves"
+  case class RacerScore(raceId: Racer.RaceId, playerId: Racer.PlayerId, score: Int) extends Racer {
+    def write = s"racer/moves $raceId $playerId $score"
   }
 
   case class RacerJoin(raceId: Racer.RaceId, playerId: Racer.PlayerId) extends Racer {
