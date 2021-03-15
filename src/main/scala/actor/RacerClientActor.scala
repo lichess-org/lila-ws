@@ -29,8 +29,6 @@ object RacerClientActor {
       .receive[ClientMsg] { (ctx, msg) =>
         import deps._
 
-        def sendEnd() = services.lila.racer(LilaIn.RacerEnd(state.room.id.value, state.playerId))
-
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
 
           case in: ClientIn =>
@@ -41,7 +39,6 @@ object RacerClientActor {
 
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) {
-              sendEnd()
               Behaviors.stopped
             } else {
               keepAlive.racer(state.room.id)
@@ -56,10 +53,6 @@ object RacerClientActor {
 
           case ClientOut.RacerJoin =>
             services.lila.racer(LilaIn.RacerJoin(state.room.id.value, state.playerId))
-            Behaviors.same
-
-          case ClientOut.RacerEnd =>
-            sendEnd()
             Behaviors.same
 
           // default receive (site)
