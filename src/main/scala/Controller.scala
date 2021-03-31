@@ -235,8 +235,7 @@ final class Controller(
       "capacitor://localhost", // capacitor (ios next)
       "http://localhost",      // android
       "http://localhost:8080", // local dev
-      "http://localhost:9663", // lila dev
-      "http://l.org"           // lila dev
+      "http://localhost:9663"  // lila dev
     )
 
     def check(req: RequestHeader)(f: => Response): Response =
