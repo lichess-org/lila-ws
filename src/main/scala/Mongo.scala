@@ -48,6 +48,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def relationColl                    = collNamed("relation")
   def teamColl                        = collNamed("team")
   def swissColl                       = collNamed("swiss")
+  def reportColl                      = collNamed("report2")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
@@ -176,6 +177,16 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
           anon orElse user getOrElse Challenge.Open
         }
       }
+    }
+
+  def inquirers: Future[Set[User.ID]] =
+    reportColl flatMap {
+      _.distinct[User.ID, Set](
+        key = "inquiry.mod",
+        selector = Some(BSONDocument("inquiry.mod" -> BSONDocument("$exists" -> true))),
+        readConcern = ReadConcern.Local,
+        collation = None
+      )
     }
 
   private val userDataProjection =

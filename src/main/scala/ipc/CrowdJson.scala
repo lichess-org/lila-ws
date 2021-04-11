@@ -21,11 +21,13 @@ final class CrowdJson(
   } flatMap spectatorsOf map ClientIn.Crowd.apply
 
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
-    spectatorsOf(
-      crowd.room.copy(
-        users = if (crowd.room.users.sizeIs > 20) Nil else crowd.room.users
+    inquirersCache.get {} flatMap { inquirers =>
+      spectatorsOf(
+        crowd.room.copy(
+          users = if (crowd.room.users.sizeIs > 20) Nil else crowd.room.users.filterNot(inquirers.contains)
+        )
       )
-    ) map { spectators =>
+    } map { spectators =>
       ClientIn.Crowd(
         Json
           .obj(
@@ -48,6 +50,11 @@ final class CrowdJson(
       }
 
   private def isBotName(str: String) = str startsWith "BOT "
+
+  private val inquirersCache: AsyncLoadingCache[Unit, Set[User.ID]] =
+    Scaffeine()
+      .expireAfterWrite(1.second)
+      .buildAsyncFuture(_ => mongo.inquirers)
 
   private val isStudyCache: AsyncLoadingCache[String, Boolean] =
     Scaffeine()
