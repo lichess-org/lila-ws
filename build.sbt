@@ -76,8 +76,8 @@ scalacOptions ++= Seq(
 
 javaOptions ++= Seq("-Xms32m", "-Xmx128m")
 
-sources in (Compile, doc) := Seq.empty
+Compile / doc / sources := Seq.empty
 
-publishArtifact in (Compile, packageDoc) := false
+Compile / packageDoc / publishArtifact := false
 
 /* scalafmtOnCompile := true */
