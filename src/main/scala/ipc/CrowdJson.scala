@@ -34,7 +34,7 @@ final class CrowdJson(
             "white" -> (crowd.players.white > 0),
             "black" -> (crowd.players.black > 0)
           )
-          .add("watchers" -> (if (crowd.room.users.nonEmpty) Some(spectators) else None))
+          .add("watchers" -> Some(spectators))
       )
     }
 
