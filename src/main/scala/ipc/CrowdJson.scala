@@ -31,10 +31,10 @@ final class CrowdJson(
       ClientIn.Crowd(
         Json
           .obj(
-            "white" -> (crowd.players.white > 0),
-            "black" -> (crowd.players.black > 0)
+            "white"   -> (crowd.players.white > 0),
+            "black"   -> (crowd.players.black > 0),
+            "watcher" -> spectators
           )
-          .add("watchers" -> Some(spectators))
       )
     }
 
