@@ -6,8 +6,6 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
-import lila.ws.util.LilaJsObject.augment
-
 final class CrowdJson(
     mongo: Mongo,
     lightUserApi: LightUserApi
