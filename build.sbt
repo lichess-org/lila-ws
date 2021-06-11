@@ -5,8 +5,8 @@ version := "2.1"
 lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
-val akkaVersion          = "2.6.14"
-val kamonVersion         = "2.2.0"
+val akkaVersion          = "2.6.15"
+val kamonVersion         = "2.1.21"
 val nettyVersion         = "4.1.65.Final"
 val reactivemongoVersion = "1.0.4"
 
@@ -24,7 +24,7 @@ libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"       
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.3"
 libraryDependencies += "joda-time"                   % "joda-time"                    % "2.10.10"
-libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "4.0.2" % "compile"
+libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "4.1.0" % "compile"
 libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.3"
 libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.9.2"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
