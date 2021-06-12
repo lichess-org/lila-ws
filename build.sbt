@@ -5,17 +5,17 @@ version := "2.1"
 lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
-val akkaVersion          = "2.6.13"
-val kamonVersion         = "2.1.13"
-val nettyVersion         = "4.1.60.Final"
-val reactivemongoVersion = "1.0.3"
+val akkaVersion          = "2.6.15"
+val kamonVersion         = "2.2.0"
+val nettyVersion         = "4.1.65.Final"
+val reactivemongoVersion = "1.0.4"
 
-scalaVersion := "2.13.5"
+scalaVersion := "2.13.6"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.0.RELEASE"
+libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.2.RELEASE"
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
@@ -76,8 +76,8 @@ scalacOptions ++= Seq(
 
 javaOptions ++= Seq("-Xms32m", "-Xmx128m")
 
-sources in (Compile, doc) := Seq.empty
+Compile / doc / sources := Seq.empty
 
-publishArtifact in (Compile, packageDoc) := false
+Compile / packageDoc / publishArtifact := false
 
 /* scalafmtOnCompile := true */

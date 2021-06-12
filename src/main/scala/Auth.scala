@@ -13,6 +13,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
     if (req.flag contains Flag.api) Future successful None
     else
       sessionIdFromReq(req) match {
+        case Some(sid) if sid startsWith appealPrefix => Future successful None
         case Some(sid) =>
           mongo.security {
             _.find(
@@ -43,6 +44,7 @@ object Auth {
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
   private val sidKey         = "sid"
   private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
+  private val appealPrefix   = "appeal:"
 
   def sessionIdFromReq(req: RequestHeader): Option[String] =
     req cookie cookieName flatMap {
