@@ -177,6 +177,10 @@ object LilaIn {
     def write = s"racer/join $raceId $playerId"
   }
 
+  case class RacerStart(raceId: Racer.RaceId, playerId: Racer.PlayerId) extends Racer {
+    def write = s"racer/start $raceId $playerId"
+  }
+
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site {
     def write = s"req/response $reqId $value"
   }
