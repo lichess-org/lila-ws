@@ -7,7 +7,7 @@ lazy val `lila-ws` = (project in file("."))
 
 val akkaVersion          = "2.6.15"
 val kamonVersion         = "2.2.2"
-val nettyVersion         = "4.1.65.Final"
+val nettyVersion         = "4.1.66.Final"
 val reactivemongoVersion = "1.0.5"
 
 scalaVersion := "2.13.6"
@@ -15,7 +15,7 @@ scalaVersion := "2.13.6"
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.3.RELEASE"
+libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.4.RELEASE"
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
