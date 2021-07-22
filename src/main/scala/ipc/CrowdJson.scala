@@ -19,13 +19,11 @@ final class CrowdJson(
   } flatMap spectatorsOf map ClientIn.Crowd.apply
 
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
-    inquirersCache.get {} flatMap { inquirers =>
-      spectatorsOf(
-        crowd.room.copy(
-          users = if (crowd.room.users.sizeIs > 20) Nil else crowd.room.users.filterNot(inquirers.contains)
-        )
+    spectatorsOf(
+      crowd.room.copy(
+        users = if (crowd.room.users.sizeIs > 20) Nil else crowd.room.users
       )
-    } map { spectators =>
+    ) map { spectators =>
       ClientIn.Crowd(
         Json
           .obj(
@@ -39,12 +37,14 @@ final class CrowdJson(
   private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
     if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
     else
-      Future.traverse(crowd.users)(lightUserApi.get) map { names =>
-        Json.obj(
-          "nb"    -> crowd.members,
-          "users" -> names.filterNot(isBotName),
-          "anons" -> crowd.anons
-        )
+      inquirersCache.get {} flatMap { inquirers =>
+        Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get) map { names =>
+          Json.obj(
+            "nb"    -> crowd.members,
+            "users" -> names.filterNot(isBotName),
+            "anons" -> crowd.anons
+          )
+        }
       }
 
   private def isBotName(str: String) = str startsWith "BOT "
