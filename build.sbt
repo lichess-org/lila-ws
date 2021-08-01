@@ -8,7 +8,7 @@ lazy val `lila-ws` = (project in file("."))
 val akkaVersion          = "2.6.15"
 val kamonVersion         = "2.2.3"
 val nettyVersion         = "4.1.66.Final"
-val reactivemongoVersion = "1.0.5"
+val reactivemongoVersion = "1.0.6"
 
 scalaVersion := "2.13.6"
 
