@@ -101,7 +101,7 @@ object LilaOut {
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
   case class LilaStop(reqId: Int)                            extends AnyRoomOut
-  case object VersioningReady                                extends RoundOut // lila is ready to receive versioned round events
+  case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
   // impl
 

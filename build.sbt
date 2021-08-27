@@ -12,31 +12,31 @@ val reactivemongoVersion = "1.0.6"
 
 val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
-  case _ => "linux"
+  case _                                                    => "linux"
 }
 
 scalaVersion := "2.13.6"
 
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-$os-x86-64"
-libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.4.RELEASE"
-libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
-libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.lichess"                %% "scalachess"                   % "10.2.0"
-libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
-libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.4"
-libraryDependencies += "joda-time"                   % "joda-time"                    % "2.10.10"
-libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "5.1.0" % "compile"
-libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.5"
-libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.9.2"
-libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
-libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire"   %% "macros"                       % "2.3.7" % "provided"
-libraryDependencies += "com.roundeights"            %% "hasher"                       % "1.2.1"
+libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
+libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
+libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64"
+libraryDependencies += "io.lettuce" % "lettuce-core"                 % "6.1.4.RELEASE"
+libraryDependencies += "io.netty"   % "netty-handler"                % nettyVersion
+libraryDependencies += "io.netty"   % "netty-codec-http"             % nettyVersion
+libraryDependencies += "io.netty"   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
+libraryDependencies += "org.lichess"                %% "scalachess"           % "10.2.0"
+libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"     % akkaVersion
+libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"           % akkaVersion
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.4"
+libraryDependencies += "joda-time"                   % "joda-time"            % "2.10.10"
+libraryDependencies += "com.github.blemale"         %% "scaffeine"            % "5.1.0" % "compile"
+libraryDependencies += "ch.qos.logback"              % "logback-classic"      % "1.2.5"
+libraryDependencies += "com.typesafe.play"          %% "play-json"            % "2.9.2"
+libraryDependencies += "io.kamon"                   %% "kamon-core"           % kamonVersion
+libraryDependencies += "io.kamon"                   %% "kamon-influxdb"       % kamonVersion
+libraryDependencies += "io.kamon"                   %% "kamon-system-metrics" % kamonVersion
+libraryDependencies += "com.softwaremill.macwire"   %% "macros"               % "2.3.7" % "provided"
+libraryDependencies += "com.roundeights"            %% "hasher"               % "1.2.1"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
