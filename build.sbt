@@ -10,11 +10,16 @@ val kamonVersion         = "2.2.3"
 val nettyVersion         = "4.1.67.Final"
 val reactivemongoVersion = "1.0.6"
 
+val os = sys.props.get("os.name") match {
+  case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
+  case _ => "linux"
+}
+
 scalaVersion := "2.13.6"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
-libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-linux-x86-64"
+libraryDependencies += "org.reactivemongo"           % "reactivemongo-shaded-native"  % s"$reactivemongoVersion-$os-x86-64"
 libraryDependencies += "io.lettuce"                  % "lettuce-core"                 % "6.1.4.RELEASE"
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
