@@ -239,7 +239,7 @@ final class Controller(
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match {
-        case None                                                       => f // for exotic clients and acid ape chess
+        case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
