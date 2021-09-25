@@ -124,7 +124,7 @@ final class LilaHandler(
   private val roundHandler: Emit[LilaOut] = {
     implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
     implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
-    ({
+    {
       case RoundVersion(gameId, version, flags, tpe, data) =>
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
@@ -161,7 +161,7 @@ final class LilaHandler(
         lila.status.setOnline()
         Impersonations.reset()
       case msg => roomHandler(msg)
-    })
+    }
   }
 
   private val racerHandler: Emit[LilaOut] = {
@@ -199,7 +199,7 @@ final class LilaHandler(
     }
   }
 
-  lila.setHandlers({
+  lila.setHandlers {
     case Lila.chans.round.out     => roundHandler
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
@@ -211,5 +211,5 @@ final class LilaHandler(
     case Lila.chans.challenge.out => roomHandler
     case Lila.chans.racer.out     => racerHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
-  })
+  }
 }
