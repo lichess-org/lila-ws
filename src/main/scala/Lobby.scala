@@ -28,4 +28,6 @@ final class Lobby(
       value = LobbyPong(members, rounds)
     }
   }
+
+  val anonJoinByIpRateLimit = new RateLimitMap("lobby.join.ip", 300, 1.day, enforce = true)
 }

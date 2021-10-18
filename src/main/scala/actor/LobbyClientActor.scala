@@ -55,6 +55,13 @@ object LobbyClientActor {
             clientIn(services.lobby.pong.get)
             apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
+          case ClientOut.LobbyJoin(payload) =>
+            if (
+              deps.req.user.isDefined ||
+              deps.req.ip.exists(ip => deps.services.lobby.anonJoinByIpRateLimit(ip.value))
+            ) forward(payload)
+            Behaviors.same
+
           case ClientOut.LobbyForward(payload) =>
             forward(payload)
             Behaviors.same

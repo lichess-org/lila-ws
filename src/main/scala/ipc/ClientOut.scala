@@ -73,6 +73,7 @@ object ClientOut {
   // lobby
 
   case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
+  case class LobbyJoin(payload: JsValue)            extends ClientOutLobby
   case class LobbyForward(payload: JsValue)         extends ClientOutLobby
 
   // study
@@ -169,8 +170,8 @@ object ClientOut {
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
-            case "join" | "cancel" | "joinSeek" | "cancelSeek" | "poolIn" | "poolOut" | "hookIn" |
-                "hookOut" =>
+            case "join" => Some(LobbyJoin(o))
+            case "cancel" | "joinSeek" | "cancelSeek" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
               Some(LobbyForward(o))
             // study
             case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |

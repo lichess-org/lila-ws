@@ -38,7 +38,7 @@ object RateLimit {
   type Charge = Cost => Unit
   type Cost   = Int
 
-  private def nowMillis = System.currentTimeMillis()
+  def nowMillis = System.currentTimeMillis()
 
-  private val logger = Logger(getClass)
+  val logger = Logger(getClass)
 }
