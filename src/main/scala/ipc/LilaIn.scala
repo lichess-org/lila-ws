@@ -165,6 +165,10 @@ object LilaIn {
     def write = s"r/ons ${commas(many map one)}"
   }
 
+  case class RoundLatency(millis: Int) extends Round {
+    def write = s"r/latency $millis"
+  }
+
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge {
     def write = s"challenge/pings ${commas(ids)}"
   }

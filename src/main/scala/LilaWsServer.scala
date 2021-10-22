@@ -71,7 +71,7 @@ final class LilaWsServer(
       lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
     }
 
-    scheduler.scheduleWithFixedDelay(1.seconds, 859.millis) { () =>
+    scheduler.scheduleWithFixedDelay(1.seconds, 1879.millis) { () =>
       lila.emit.site(ipc.LilaIn.Ping(UptimeMillis.make))
       lila.emit.round(ipc.LilaIn.Ping(UptimeMillis.make))
     }

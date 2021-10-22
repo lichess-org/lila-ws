@@ -152,7 +152,9 @@ final class LilaHandler(
       case GameFinish(gameId, winner, users) =>
         users foreach friendList.stopPlaying
         Fens.finish(gameId, winner)
-      case Pong(pingAt) => Monitor.ping.record("round", pingAt)
+      case Pong(pingAt) =>
+        val millis = Monitor.ping.record("round", pingAt)
+        lila.emit.round(LilaIn.RoundLatency(millis))
       case LilaBoot =>
         logger.info("#################### LILA BOOT ####################")
         lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
