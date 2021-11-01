@@ -12,10 +12,10 @@ val reactivemongoVersion = "1.0.7"
 
 val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
-  case _ => "linux"
+  case _                                                    => "linux"
 }
 
-scalaVersion := "2.13.6"
+scalaVersion := "2.13.7"
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
