@@ -28,7 +28,7 @@ final class Monitor(
     logger.info(s"lila-ws netty epoll=$useEpoll kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
-    if (useKamon) kamon.Kamon.loadModules()
+    if (useKamon) kamon.Kamon.init()
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
   }
