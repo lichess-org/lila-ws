@@ -7,8 +7,8 @@ lazy val `lila-ws` = (project in file("."))
 
 val akkaVersion          = "2.6.17"
 val kamonVersion         = "2.4.2"
-val nettyVersion         = "4.1.71.Final"
-val reactivemongoVersion = "1.0.7"
+val nettyVersion         = "4.1.72.Final"
+val reactivemongoVersion = "1.0.8"
 
 val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
@@ -30,7 +30,7 @@ libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"             
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.4"
 libraryDependencies += "joda-time"                   % "joda-time"                    % "2.10.13"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"                    % "5.1.1" % "compile"
-libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.7"
+libraryDependencies += "ch.qos.logback"              % "logback-classic"              % "1.2.8"
 libraryDependencies += "com.typesafe.play"          %% "play-json"                    % "2.9.2"
 libraryDependencies += "io.kamon"                   %% "kamon-core"                   % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"               % kamonVersion
