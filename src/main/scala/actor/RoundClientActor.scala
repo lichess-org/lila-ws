@@ -72,6 +72,15 @@ object RoundClientActor {
 
         msg match {
 
+          case msg: ClientOut.Ping =>
+            clientIn(ClientIn.Pong)
+            if (state.player.isDefined) clientIn(ClientIn.RoundPingFrame)
+            apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
+
+          case ClientOut.RoundPongFrame(lagMillis) =>
+            println(s"${state.player} frame lag: $lagMillis")
+            Behaviors.same
+
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else Behaviors.same
