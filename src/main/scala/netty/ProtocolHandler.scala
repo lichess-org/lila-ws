@@ -70,11 +70,13 @@ final private class ProtocolHandler(
   private def emitToChannel(channel: Channel): ClientEmit =
     in => {
       if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
+      else if (in == ipc.ClientIn.RoundPingFrameNoFlush)
+        channel.write {
+          new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
+        }
       else
         channel.writeAndFlush {
-          if (in == ipc.ClientIn.RoundPingFrame)
-            new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
-          else new TextWebSocketFrame(in.write)
+          new TextWebSocketFrame(in.write)
         }
     }
 

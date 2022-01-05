@@ -13,14 +13,12 @@ final class Services(
     val keepAlive: KeepAlive,
     val lobby: Lobby,
     val friends: FriendList,
-    val stormSign: StormSign
+    val stormSign: StormSign,
+    val lag: Lag
 ) {
 
   def lila = lilaRedis.emit
 
-  val lag = groupedWithin[(User.ID, Int)](128, 947.millis) { lags =>
-    lila.site(LilaIn.Lags(lags.toMap))
-  }
   val notified = groupedWithin[User.ID](40, 1001.millis) { userIds =>
     lila.site(LilaIn.NotifiedBatch(userIds))
   }
