@@ -1,3 +1,5 @@
+[![Test](https://github.com/ornicar/lila-ws/actions/workflows/test.yml/badge.svg)](https://github.com/ornicar/lila-ws/actions/workflows/test.yml)
+
 Handle incoming websocket traffic for [lichess.org](https://lichess.org).
 
 ```
