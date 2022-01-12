@@ -9,6 +9,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame
 import scala.concurrent.ExecutionContext
 
 import ipc.ClientOut
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame
 
 final private class FrameHandler(implicit ec: ExecutionContext)
     extends SimpleChannelInboundHandler[WebSocketFrame] {
@@ -45,6 +46,10 @@ final private class FrameHandler(implicit ec: ExecutionContext)
               }
           }
         }
+      case frame: PongWebSocketFrame =>
+        val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
+        val pong      = ClientOut.RoundPongFrame(lagMillis)
+        Option(ctx.channel.attr(key.client).get) foreach { _.value foreach { _ foreach (_ ! pong) } }
       case frame =>
         logger.info("unsupported frame type: " + frame.getClass.getName)
     }

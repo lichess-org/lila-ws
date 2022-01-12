@@ -129,6 +129,13 @@ object Monitor {
     }
   }
 
+  object lag {
+
+    def roundFrameLag(userId: User.ID, millis: Int) =
+      if (millis > 1 && millis < 99999)
+        Kamon.timer("round.lag.frame").withTag("user", userId).record(millis.toLong, TimeUnit.MILLISECONDS)
+  }
+
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
     val timer = metric(Monitor).start()
     val res   = f

@@ -106,13 +106,8 @@ object LilaIn {
       })}"
   }
 
-  case class WaitingUsers(
-      roomId: RoomId,
-      name: String,
-      present: Set[User.ID],
-      standby: Set[User.ID]
-  ) extends Tour {
-    def write = s"tour/waiting $roomId ${commas(present intersect standby)}"
+  case class WaitingUsers(roomId: RoomId, waiting: Set[User.ID]) extends Tour {
+    def write = s"tour/waiting $roomId ${commas(waiting)}"
   }
 
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round {

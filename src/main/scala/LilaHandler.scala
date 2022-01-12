@@ -103,7 +103,7 @@ final class LilaHandler(
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
           val allAbsent = standby diff present
-          lila.emit.tour(LilaIn.WaitingUsers(roomId, name, present, standby))
+          lila.emit.tour(LilaIn.WaitingUsers(roomId, present intersect standby))
           val absent = {
             if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
