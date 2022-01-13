@@ -14,11 +14,5 @@ final class Lag(
 
   def siteClientReport = clientReports.apply _
 
-  def trustedLag(userId: Option[User.ID], millis: Int) =
-    userId.filter(monitorUserId) foreach {
-      Monitor.lag.roundFrameLag(_, millis)
-    }
-
-  def monitorUserId(userId: User.ID) =
-    userId == "thibault" || userId.hashCode % 3500 == 0 // same on lila
+  def trustedLag(millis: Int) = Monitor.lag.roundFrameLag(millis)
 }
