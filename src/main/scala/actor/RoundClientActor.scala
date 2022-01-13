@@ -2,7 +2,6 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
-
 import ipc._
 
 object RoundClientActor {
@@ -72,6 +71,10 @@ object RoundClientActor {
 
         msg match {
 
+          case ClientOut.RoundPongFrame(lagMillis) =>
+            services.lag.trustedLag(lagMillis)
+            Behaviors.same
+
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else Behaviors.same
@@ -114,6 +117,7 @@ object RoundClientActor {
 
           case ClientOut.RoundMove(uci, blur, lag, ackId) =>
             fullId foreach { fid =>
+              // clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             }

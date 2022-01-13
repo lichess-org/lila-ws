@@ -11,6 +11,7 @@ import akka.actor.typed.ActorRef
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.util.concurrent.{ Future => NettyFuture, GenericFutureListener }
 import scala.concurrent.{ ExecutionContext, Future, Promise }
+import io.netty.buffer.Unpooled
 
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
@@ -23,7 +24,7 @@ final private class ProtocolHandler(
       8192,  // max frame size - /inbox allows sending 8000 chars
       false, // allowMaskMismatch (?)
       true,  // checkStartsWith
-      true   // dropPongFrames
+      false  // dropPongFrames
     ) {
 
   import ProtocolHandler._
@@ -69,7 +70,14 @@ final private class ProtocolHandler(
   private def emitToChannel(channel: Channel): ClientEmit =
     in => {
       if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-      else channel.writeAndFlush(new TextWebSocketFrame(in.write))
+      else if (in == ipc.ClientIn.RoundPingFrameNoFlush)
+        channel.write {
+          new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
+        }
+      else
+        channel.writeAndFlush {
+          new TextWebSocketFrame(in.write)
+        }
     }
 
   // cancel before the handshake was completed

@@ -30,6 +30,7 @@ object Boot extends App {
   lazy val socialGraph   = wire[SocialGraph]
   lazy val friendList    = wire[FriendList]
   lazy val stormSign     = wire[StormSign]
+  lazy val lag           = wire[Lag]
   lazy val services      = wire[Services]
   lazy val controller    = wire[Controller]
   lazy val router        = wire[Router]

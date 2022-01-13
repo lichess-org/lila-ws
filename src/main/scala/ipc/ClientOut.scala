@@ -89,6 +89,7 @@ object ClientOut {
   case class RoundSelfReport(name: String)                                            extends ClientOutRound
   case class RoundFlag(color: Color)                                                  extends ClientOutRound
   case object RoundBye                                                                extends ClientOutRound
+  case class RoundPongFrame(lagMillis: Int)                                           extends ClientOutRound
 
   // chat
 
