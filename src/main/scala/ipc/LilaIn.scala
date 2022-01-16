@@ -1,4 +1,5 @@
 package lila.ws
+
 package ipc
 
 import chess.format.Uci
@@ -117,7 +118,7 @@ object LilaIn {
   case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round {
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
     def write =
-      s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)}"
+      s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)} ${centis(lag.frameLag)}"
     override def critical = true
   }
 

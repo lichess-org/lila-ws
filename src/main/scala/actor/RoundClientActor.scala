@@ -3,6 +3,7 @@ package lila.ws
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import ipc._
+import chess.Centis
 
 object RoundClientActor {
 
@@ -72,7 +73,7 @@ object RoundClientActor {
         msg match {
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.trustedLag(lagMillis, req.userId)
+            services.lag.recordTrustedLag(lagMillis, req.userId)
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
@@ -115,10 +116,12 @@ object RoundClientActor {
             clientIn(in)
             Behaviors.same
 
-          case ClientOut.RoundMove(uci, blur, lag, ackId) =>
+          case ClientOut.RoundMove(uci, blur, clientLag, ackId) =>
             fullId foreach { fid =>
-              // clientIn(ClientIn.RoundPingFrameNoFlush)
+              clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
+              val frameLagCentis = req.userId.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis)
+              val lag            = clientLag withFrameLag frameLagCentis
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             }
             Behaviors.same

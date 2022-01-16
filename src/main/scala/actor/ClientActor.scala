@@ -47,7 +47,7 @@ object ClientActor {
     }
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
-    for { l <- msg.lag; u <- deps.req.user } deps.services.lag.siteClientReport(u.id, l)
+    for { l <- msg.lag; u <- deps.req.user } deps.services.lag.recordClientLag(u.id -> l)
     state.copy(lastPing = nowSeconds)
   }
 
