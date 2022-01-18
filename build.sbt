@@ -24,7 +24,7 @@ libraryDependencies += "io.lettuce"                  % "lettuce-core"           
 libraryDependencies += "io.netty"                    % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-codec-http"             % nettyVersion
 libraryDependencies += "io.netty"                    % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
-libraryDependencies += "org.lichess"                %% "scalachess"                   % "10.4.2"
+libraryDependencies += "org.lichess"                %% "scalachess"                   % "10.4.3"
 libraryDependencies += "com.typesafe.akka"          %% "akka-actor-typed"             % akkaVersion
 libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"                   % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"                % "3.9.4"
@@ -79,7 +79,7 @@ scalacOptions ++= Seq(
   /* "-Wvalue-discard" */
 )
 
-javaOptions ++= Seq("-Xms32m", "-Xmx128m")
+javaOptions ++= Seq("-Xms32m", "-Xmx256m")
 
 Compile / doc / sources := Seq.empty
 
