@@ -81,6 +81,12 @@ object Chat {
 
 object Team {
   type ID = String
+  case class View(hasChat: Boolean)
+  object Access {
+    val NONE    = 0
+    val LEADERS = 10
+    val MEMBERS = 20
+  }
 }
 
 object Swiss {

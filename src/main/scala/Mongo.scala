@@ -47,6 +47,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def challengeColl                   = collNamed("challenge")
   def relationColl                    = collNamed("relation")
   def teamColl                        = collNamed("team")
+  def teamMemberColl                  = collNamed("team_member")
   def swissColl                       = collNamed("swiss")
   def reportColl                      = collNamed("report2")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
@@ -58,11 +59,35 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
 
   def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
 
-  def teamExists(id: Simul.ID): Future[Boolean] = teamColl flatMap idExists(id)
+  private def isTeamMember(teamId: Team.ID, user: User): Future[Boolean] =
+    teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.id}@$teamId")) }
 
-  def swissExists(id: Simul.ID): Future[Boolean] = swissColl flatMap idExists(id)
+  def teamView(id: Team.ID, me: Option[User]): Future[Option[Team.View]] = {
+    teamColl flatMap {
+      _.find(
+        selector = BSONDocument("_id" -> id),
+        projection = Some(BSONDocument("chat" -> true, "leaders" -> true))
+      ).one[BSONDocument]
+    } zip me.fold(Future successful false) { isTeamMember(id, _) }
+  } map {
+    case (None, _)  => None
+    case (_, false) => Some(Team.View(hasChat = false))
+    case (Some(teamDoc), true) =>
+      Some(
+        Team.View(
+          hasChat = teamDoc.int("chat").fold(false) { chat =>
+            chat == Team.Access.MEMBERS ||
+            (chat == Team.Access.LEADERS && me.fold(false) { me =>
+              teamDoc.getAsOpt[Set[User.ID]]("leaders").exists(_ contains me.id)
+            })
+          }
+        )
+      )
+  }
 
-  def tourExists(id: Simul.ID): Future[Boolean] = tourColl flatMap idExists(id)
+  def swissExists(id: Swiss.ID): Future[Boolean] = swissColl flatMap idExists(id)
+
+  def tourExists(id: Tour.ID): Future[Boolean] = tourColl flatMap idExists(id)
 
   def studyExists(id: Study.ID): Future[Boolean] = studyColl flatMap idExists(id)
 

@@ -21,15 +21,18 @@ final class Controller(
 
   def site(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      Future successful endpoint(
-        name = "site",
-        behavior = SiteClientActor start {
-          Deps(emit, Req(req, sri, user), services)
-        },
-        credits = 50,
-        interval = 20.seconds
-      )
+      Future successful siteEndpoint(req, emit, sri, user)
     }
+
+  private def siteEndpoint(req: RequestHeader, emit: ClientEmit, sri: Sri, user: Option[User]) =
+    endpoint(
+      name = "site",
+      behavior = SiteClientActor start {
+        Deps(emit, Req(req, sri, user), services)
+      },
+      credits = 50,
+      interval = 20.seconds
+    )
 
   def lobby(req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
@@ -153,8 +156,8 @@ final class Controller(
 
   def team(id: Team.ID, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
-      mongo.teamExists(id) zip mongo.troll.is(user) map {
-        case (true, isTroll) =>
+      mongo.teamView(id, user) zip mongo.troll.is(user) map { case (view, isTroll) =>
+        if (view.exists(_.hasChat))
           endpoint(
             name = "team",
             behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
@@ -163,7 +166,7 @@ final class Controller(
             credits = 30,
             interval = 20.seconds
           )
-        case _ => notFound
+        else siteEndpoint(req, emit, sri, user)
       }
     }
 
