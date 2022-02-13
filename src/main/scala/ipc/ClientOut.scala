@@ -180,7 +180,7 @@ object ClientOut {
                 "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
                 "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
                 "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "relaySync" | "setTopics" =>
+                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "clearSidelines" =>
               Some(StudyForward(o))
             // round
             case "move" =>
