@@ -3,7 +3,7 @@ package ipc
 
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
-import chess.{ Centis, Color, MoveMetrics, Pos }
+import chess.{ Centis, Color, Pos }
 import lila.ws.util.LilaJsObject.augment
 import play.api.libs.json._
 import scala.util.{ Success, Try }
