@@ -6,7 +6,7 @@ lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.19"
-val kamonVersion         = "2.5.0"
+val kamonVersion         = "2.5.1"
 val nettyVersion         = "4.1.75.Final"
 val reactivemongoVersion = "1.0.10"
 
