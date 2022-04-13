@@ -15,7 +15,8 @@ val os = sys.props.get("os.name") match {
   case _                                                    => "linux"
 }
 
-scalaVersion := "2.13.8"
+scalaVersion := "3.1.1"
+// semanticdbEnabled := true
 
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo"                % reactivemongoVersion
 libraryDependencies += "org.reactivemongo"          %% "reactivemongo-bson-api"       % reactivemongoVersion
