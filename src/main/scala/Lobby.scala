@@ -1,6 +1,6 @@
 package lila.ws
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import ipc.ClientIn.LobbyPong
 import ipc.LilaIn
@@ -8,7 +8,7 @@ import ipc.LilaIn
 final class Lobby(
     lila: Lila,
     groupedWithin: util.GroupedWithin
-) {
+):
 
   private val lilaIn = lila.emit.lobby
 
@@ -18,16 +18,13 @@ final class Lobby(
 
   val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lilaIn(LilaIn.DisconnectSris(sris)) }
 
-  object pong {
+  object pong:
 
     private var value = LobbyPong(0, 0)
 
     def get = value
 
-    def update(members: Int, rounds: Int): Unit = {
+    def update(members: Int, rounds: Int): Unit =
       value = LobbyPong(members, rounds)
-    }
-  }
 
   val anonJoinByIpRateLimit = new RateLimitMap("lobby.join.ip", 300, 1.day, enforce = true)
-}

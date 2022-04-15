@@ -1,18 +1,18 @@
 package lila.ws
 
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 import scala.concurrent.{ ExecutionContext, Future }
 
 import util.RequestHeader
 
-final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext) {
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: ExecutionContext):
 
-  import Auth._
+  import Auth.*
 
   def apply(req: RequestHeader): Future[Option[User]] =
     if (req.flag contains Flag.api) Future successful None
     else
-      sessionIdFromReq(req) match {
+      sessionIdFromReq(req) match
         case Some(sid) if sid startsWith appealPrefix => Future successful None
         case Some(sid) =>
           mongo.security {
@@ -26,19 +26,16 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(implicit executionContext: 
             }
           } map {
             _ map { user =>
-              Impersonations.get(user.id) match {
+              Impersonations.get(user.id) match
                 case None =>
                   seenAt(user)
                   user
                 case Some(impersonatedId) => User(impersonatedId)
-              }
             }
           }
         case None => Future successful None
-      }
-}
 
-object Auth {
+object Auth:
   private val cookieName     = "lila2"
   private val sessionIdKey   = "sessionId"
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
@@ -58,4 +55,3 @@ object Auth {
       case sidRegex(id) => Some(id)
       case _            => None
     }
-}

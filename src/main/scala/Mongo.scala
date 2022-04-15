@@ -4,15 +4,15 @@ import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import org.joda.time.DateTime
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference }
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
+final class Mongo(config: Config)(implicit executionContext: ExecutionContext) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
@@ -92,10 +92,9 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
   def studyExists(id: Study.ID): Future[Boolean] = studyColl flatMap idExists(id)
 
   def gameExists(id: Game.Id): Future[Boolean] =
-    gameCache getIfPresent id match {
+    gameCache getIfPresent id match
       case None        => gameColl flatMap idExists(id.value)
       case Some(entry) => entry.map(_.isDefined)(parasitic)
-    }
 
   def player(fullId: Game.FullId, user: Option[User]): Future[Option[Game.RoundPlayer]] =
     gameCache
@@ -242,7 +241,7 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
         .map { _ flatMap userDataReader }
     }
 
-  object troll {
+  object troll:
 
     def is(user: Option[User]): Future[IsTroll] =
       user.fold(Future successful IsTroll(false)) { u =>
@@ -257,16 +256,13 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       .buildAsyncFuture { id =>
         userColl flatMap { exists(_, BSONDocument("_id" -> id, "marks" -> "troll")) }
       }
-  }
 
-  object idFilter {
-    import Mongo._
+  object idFilter:
     val study: IdFilter = ids => studyColl flatMap filterIds(ids)
     val tour: IdFilter  = ids => tourColl flatMap filterIds(ids)
     val simul: IdFilter = ids => simulColl flatMap filterIds(ids)
     val team: IdFilter  = ids => teamColl flatMap filterIds(ids)
     val swiss: IdFilter = ids => swissColl flatMap filterIds(ids)
-  }
 
   private def idExists(id: String)(coll: BSONCollection): Future[Boolean] =
     exists(coll, BSONDocument("_id" -> id))
@@ -289,19 +285,16 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) {
       readConcern = ReadConcern.Local,
       collation = None
     )
-}
 
-object Mongo {
+trait MongoHandlers:
 
   type IdFilter = Iterable[String] => Future[Set[String]]
 
-  implicit val BSONDateTimeHandler = new BSONHandler[DateTime] {
-
+  given dateHandler: BSONHandler[DateTime] with
     @inline def readTry(bson: BSONValue): Try[DateTime] =
       bson.asTry[BSONDateTime] map { dt =>
         new DateTime(dt.value)
       }
-
     @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
-  }
-}
+
+object Mongo extends MongoHandlers

@@ -5,10 +5,10 @@ import scala.concurrent.Future
 
 import util.RequestHeader
 
-final class Router(controller: Controller) {
+final class Router(controller: Controller):
 
   def apply(req: RequestHeader, emit: ClientEmit): Controller.Response =
-    req.path drop 1 split '/' match {
+    req.path drop 1 split '/' match
       case Array("socket") | Array("socket", _) => controller.site(req, emit)
       case Array("analysis", "socket")          => controller.site(req, emit)
       case Array("analysis", "socket", _)       => controller.site(req, emit)
@@ -25,5 +25,3 @@ final class Router(controller: Controller) {
       case Array("swiss", id)                   => controller.swiss(id, req, emit)
       case Array("racer", id)                   => controller.racer(id, req, emit)
       case _                                    => Future successful Left(HttpResponseStatus.NOT_FOUND)
-    }
-}

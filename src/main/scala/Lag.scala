@@ -2,12 +2,12 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import lila.ws.ipc.LilaIn
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 final class Lag(
     lilaRedis: Lila,
     groupedWithin: util.GroupedWithin
-) {
+):
 
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f
@@ -22,9 +22,9 @@ final class Lag(
 
   def sessionLag(userId: User.ID) = trustedStats getIfPresent userId
 
-  def recordClientLag = clientReports.apply _
+  def recordClientLag = clientReports.apply
 
-  def recordTrustedLag(millis: Int, userId: Option[User.ID]) = {
+  def recordTrustedLag(millis: Int, userId: Option[User.ID]) =
     Monitor.lag.roundFrameLag(millis)
     userId foreach { uid =>
       trustedStats.put(
@@ -35,5 +35,3 @@ final class Lag(
           }
       )
     }
-  }
-}

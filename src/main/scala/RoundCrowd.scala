@@ -2,18 +2,18 @@ package lila.ws
 
 import chess.Color
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
-import ipc._
+import ipc.*
 
 final class RoundCrowd(
     lila: Lila,
     json: CrowdJson,
     groupedWithin: util.GroupedWithin
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  import RoundCrowd._
+  import RoundCrowd.*
 
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
@@ -23,7 +23,7 @@ final class RoundCrowd(
       rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
     )
 
-  def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit = {
+  def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
     rounds.computeIfPresent(
       roomId,
       (_, round) => {
@@ -32,7 +32,6 @@ final class RoundCrowd(
         if (newRound.isEmpty) null else newRound
       }
     )
-  }
 
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
     rounds.compute(
@@ -71,13 +70,11 @@ final class RoundCrowd(
   }
 
   def size = rounds.size
-}
 
-object RoundCrowd {
+object RoundCrowd:
 
-  case class Output(room: RoomCrowd.Output, players: Color.Map[Int]) {
+  case class Output(room: RoomCrowd.Output, players: Color.Map[Int]):
     def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
-  }
 
   def outputOf(roomId: RoomId, round: RoundState) =
     Output(
@@ -88,7 +85,7 @@ object RoundCrowd {
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
       players: Color.Map[Int] = Color.Map(0, 0)
-  ) {
+  ):
     def connect(user: Option[User], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room connect user,
@@ -105,5 +102,3 @@ object RoundCrowd {
     }
 
     def isEmpty = room.isEmpty && players.forall(1 > _)
-  }
-}

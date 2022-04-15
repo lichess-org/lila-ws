@@ -4,11 +4,11 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import play.api.libs.json.JsValue
 
-import ipc._
+import ipc.*
 
-object StudyClientActor {
+object StudyClientActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   case class State(
       room: RoomActor.State,
@@ -26,27 +26,25 @@ object StudyClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
-        import deps._
+        import deps.*
 
         def forward(payload: JsValue): Unit =
           lilaIn.study(
             LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
           )
 
-        def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
+        def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] =
 
           case in: ClientIn =>
-            clientInReceive(state.site, deps, in) match {
+            clientInReceive(state.site, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
-            }
 
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
-            else {
+            else
               keepAlive study state.room.id
               Behaviors.same
-            }
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
@@ -77,7 +75,6 @@ object StudyClientActor {
           case _ =>
             Monitor.clientOutUnhandled("study").increment()
             Behaviors.same
-        }
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
           emit foreach lilaIn.study
@@ -92,4 +89,3 @@ object StudyClientActor {
         RoomActor.onStop(state.room, deps, ctx)
         Behaviors.same
       }
-}

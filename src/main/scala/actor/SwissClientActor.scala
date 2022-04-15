@@ -3,11 +3,11 @@ package lila.ws
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 
-import ipc._
+import ipc.*
 
-object SwissClientActor {
+object SwissClientActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   case class State(
       room: RoomActor.State,
@@ -25,22 +25,20 @@ object SwissClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
-        import deps._
+        import deps.*
 
-        def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] = {
+        def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] =
 
           case in: ClientIn =>
-            clientInReceive(state.site, deps, in) match {
+            clientInReceive(state.site, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
-            }
 
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
-            else {
+            else
               keepAlive.swiss(state.room.id)
               Behaviors.same
-            }
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
@@ -53,7 +51,6 @@ object SwissClientActor {
           case _ =>
             Monitor.clientOutUnhandled("swiss").increment()
             Behaviors.same
-        }
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
           emit foreach lilaIn.swiss
@@ -68,4 +65,3 @@ object SwissClientActor {
         RoomActor.onStop(state.room, deps, ctx)
         Behaviors.same
       }
-}

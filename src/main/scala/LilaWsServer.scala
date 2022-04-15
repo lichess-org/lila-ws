@@ -1,15 +1,15 @@
 package lila.ws
 
 import akka.actor.typed.{ ActorSystem, Scheduler }
-import com.softwaremill.macwire._
+import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
 import scala.annotation.nowarn
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
 import util.Util.nowSeconds
 
-object Boot extends App {
+object Boot extends App:
 
   lazy val config: Config                         = ConfigFactory.load
   lazy val clientSystem: ClientSystem             = ActorSystem(Clients.behavior, "clients")
@@ -40,18 +40,17 @@ object Boot extends App {
   lazy val monitor       = wire[Monitor]
 
   wire[LilaWsServer].start()
-}
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
-    @nowarn("cat=unused") handlers: LilaHandler, // must eagerly instanciate!
+    handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
     lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  def start(): Unit = {
+  def start(): Unit =
 
     monitor.start()
 
@@ -78,10 +77,7 @@ final class LilaWsServer(
     }
 
     nettyServer.start() // blocks
-  }
-}
 
-object LilaWsServer {
+object LilaWsServer:
 
   val connections = new java.util.concurrent.atomic.AtomicInteger
-}

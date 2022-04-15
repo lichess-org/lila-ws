@@ -1,14 +1,14 @@
 package lila.ws
 
 import akka.actor.typed.Scheduler
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
-import ipc._
+import ipc.*
 
-final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext) {
+final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext):
 
-  import KeepAlive._
+  import KeepAlive.*
 
   val study     = new AliveRooms
   val tour      = new AliveRooms
@@ -27,22 +27,18 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionCo
     lila.emit.swiss(swiss.getAndClear)
     lila.emit.racer(racer.getAndClear)
   }
-}
 
-object KeepAlive {
+object KeepAlive:
 
   type Seconds = Int
 
-  final class AliveRooms {
+  final class AliveRooms:
 
     private val rooms = collection.mutable.Set[RoomId]()
 
     def apply(roomId: RoomId) = rooms += roomId
 
-    def getAndClear: LilaIn.KeepAlives = {
+    def getAndClear: LilaIn.KeepAlives =
       val ret = LilaIn.KeepAlives(rooms.toSet)
       rooms.clear()
       ret
-    }
-  }
-}

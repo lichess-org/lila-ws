@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 final class EventBus[Event, Channel, Subscriber](
     initialCapacity: Int,
     publish: (Subscriber, Event) => Unit
-) {
+):
 
   private val entries = new ConcurrentHashMap[Channel, Set[Subscriber]](initialCapacity)
 
@@ -36,4 +36,3 @@ final class EventBus[Event, Channel, Subscriber](
 
   def size                     = entries.size
   def sizeOf(channel: Channel) = Option(entries get channel).fold(0)(_.size)
-}

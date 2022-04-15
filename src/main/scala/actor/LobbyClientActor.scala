@@ -4,11 +4,11 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import play.api.libs.json.JsValue
 
-import ipc._
+import ipc.*
 
-object LobbyClientActor {
+object LobbyClientActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   case class State(
       idle: Boolean = false,
@@ -17,7 +17,7 @@ object LobbyClientActor {
 
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
-      import deps._
+      import deps.*
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user.map(_.id))
@@ -28,12 +28,12 @@ object LobbyClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
-        import deps._
+        import deps.*
 
         def forward(payload: JsValue): Unit =
           lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
 
-        msg match {
+        msg match
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
@@ -46,10 +46,9 @@ object LobbyClientActor {
             Behaviors.same
 
           case in: ClientIn =>
-            clientInReceive(state.site, deps, in) match {
+            clientInReceive(state.site, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
-            }
 
           case msg: ClientOut.Ping =>
             clientIn(services.lobby.pong.get)
@@ -79,7 +78,6 @@ object LobbyClientActor {
           case _ =>
             Monitor.clientOutUnhandled("lobby").increment()
             Behaviors.same
-        }
 
       }
       .receiveSignal { case (ctx, PostStop) =>
@@ -88,4 +86,3 @@ object LobbyClientActor {
         deps.services.lobby.disconnect(deps.req.sri)
         Behaviors.same
       }
-}

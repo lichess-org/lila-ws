@@ -1,17 +1,17 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
-import ipc._
+import ipc.*
 
 final class RoomCrowd(
     json: CrowdJson,
     groupedWithin: util.GroupedWithin
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  import RoomCrowd._
+  import RoomCrowd.*
 
   private val rooms = new ConcurrentHashMap[RoomId, RoomState](1024)
 
@@ -21,7 +21,7 @@ final class RoomCrowd(
       rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
     )
 
-  def disconnect(roomId: RoomId, user: Option[User]): Unit = {
+  def disconnect(roomId: RoomId, user: Option[User]): Unit =
     val room = rooms.computeIfPresent(
       roomId,
       (_, room) => {
@@ -30,7 +30,6 @@ final class RoomCrowd(
       }
     )
     if (room != null) publish(roomId, room)
-  }
 
   def getUsers(roomId: RoomId): Set[User.ID] =
     Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet)
@@ -57,9 +56,8 @@ final class RoomCrowd(
   }
 
   def size = rooms.size
-}
 
-object RoomCrowd {
+object RoomCrowd:
 
   case class Output(
       roomId: RoomId,
@@ -79,7 +77,7 @@ object RoomCrowd {
   case class RoomState(
       anons: Int = 0,
       users: Map[User.ID, Int] = Map.empty
-  ) {
+  ):
     def nbUsers   = users.size
     def nbMembers = anons + nbUsers
     def isEmpty   = nbMembers < 1
@@ -92,5 +90,3 @@ object RoomCrowd {
       user.fold(copy(anons = anons - 1)) { u =>
         copy(users = users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0)))
       }
-  }
-}

@@ -2,28 +2,28 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import org.joda.time.DateTime
-import reactivemongo.api.bson._
+import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
+import scala.util.Success
 
 final class SeenAtUpdate(mongo: Mongo)(implicit
     context: ExecutionContext,
     scheduler: akka.actor.typed.Scheduler
-) {
-
-  import Mongo._
+) extends MongoHandlers:
 
   private val done: Cache[User.ID, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
     .build[User.ID, Boolean]()
 
   def apply(user: User): Future[Unit] =
-    if (done.getIfPresent(user.id).isDefined) Future successful {}
-    else {
+    if done.getIfPresent(user.id).isDefined then Future successful {}
+    else
       done.put(user.id, true)
-      for {
+      for
         userColl <- mongo.userColl
         now = DateTime.now
         userDoc <- findAndModify(
@@ -51,10 +51,9 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
               )
             )
           else Future successful ()
-      } yield ()
-    }
+      yield ()
 
-  object streamers {
+  object streamers:
 
     def contains(user: User) = ids contains user.id
 
@@ -80,7 +79,6 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
         ids = res
       }
     }
-  }
 
   private def findAndModify(
       coll: BSONCollection,
@@ -99,4 +97,3 @@ final class SeenAtUpdate(mongo: Mongo)(implicit
       collation = None,
       arrayFilters = Seq.empty
     ) map (_.result[BSONDocument])
-}

@@ -8,18 +8,18 @@ import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.*
 import scala.concurrent.ExecutionContext
 
 final class NettyServer(
     clients: ClientSystem,
     router: Router,
     config: Config
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
   private val logger = Logger(getClass)
 
-  def start(): Unit = {
+  def start(): Unit =
 
     logger.info("Start")
 
@@ -37,7 +37,7 @@ final class NettyServer(
       if (useEpoll) classOf[EpollServerSocketChannel]
       else classOf[NioServerSocketChannel]
 
-    try {
+    try
       val boot = new ServerBootstrap
       boot
         .group(bossGroup, workerGroup)
@@ -59,10 +59,7 @@ final class NettyServer(
       server.closeFuture().sync()
 
       logger.info(s"Closed $port")
-    } finally {
+    finally
       bossGroup.shutdownGracefully()
       workerGroup.shutdownGracefully()
-    }
 
-  }
-}

@@ -2,13 +2,13 @@ package lila.ws
 package util
 
 import java.security.SecureRandom
-import java.util.concurrent.ThreadLocalRandom.{ current => local }
+import java.util.concurrent.ThreadLocalRandom.{ current as local }
 
-object Util {
+object Util:
 
   def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
 
-  object secureRandom {
+  object secureRandom:
 
     private val secureRandom = new SecureRandom()
     private val chars        = (('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')).mkString
@@ -20,9 +20,8 @@ object Util {
 
     def shuffle[T, C](xs: IterableOnce[T])(implicit bf: scala.collection.BuildFrom[xs.type, T, C]): C =
       new scala.util.Random(local).shuffle(xs)
-  }
 
-  object threadLocalRandom {
+  object threadLocalRandom:
 
     import java.util.concurrent.ThreadLocalRandom.current
 
@@ -35,15 +34,12 @@ object Util {
       else i - 4
     }.toChar
 
-    def nextString(len: Int): String = {
+    def nextString(len: Int): String =
       val sb = new StringBuilder(len)
       for (_ <- 0 until len) sb += nextChar()
       sb.result()
-    }
 
     def shuffle[T, C](xs: IterableOnce[T])(implicit bf: scala.collection.BuildFrom[xs.type, T, C]): C =
       new scala.util.Random(current).shuffle(xs)
-  }
 
   val startedAtMillis = System.currentTimeMillis()
-}
