@@ -54,16 +54,16 @@ final class SocialGraph(mongo: Mongo, config: Config):
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
 
-  private def findSlot(id: User.ID, exceptSlot: Int): Slot = returning {
+  private def findSlot(id: User.ID, exceptSlot: Int): Slot = returning[Slot] {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
     for (s <- hash to (hash + SocialGraph.MaxStride))
       val slot = s & slotsMask
       read(slot) match
-        case None => return NewSlot(slot)
+        case None => throwReturn[Slot](NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, existing)
+          throwReturn[Slot](ExistingSlot(slot, existing))
         case _ =>
 
     // If no existing or empty slot is available, try to replace an
@@ -75,11 +75,11 @@ final class SocialGraph(mongo: Mongo, config: Config):
     for (s <- hash to (hash + SocialGraph.MaxStride))
       val slot = s & slotsMask
       read(slot) match
-        case None => return NewSlot(slot)
+        case None => throwReturn[Slot](NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          return ExistingSlot(slot, existing)
+          throwReturn[Slot](ExistingSlot(slot, existing))
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
-          return freeSlot(slot)
+          throwReturn[Slot](freeSlot(slot))
         case _ =>
 
     // The hashtable is full. Overwrite a random entry.
