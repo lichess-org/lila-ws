@@ -13,7 +13,7 @@ final class Users(implicit scheduler: Scheduler, ec: ExecutionContext):
   private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
 
-  private def publish(msg: Any) = Bus.internal.publish("users", msg)
+  private def publish(msg: Matchable) = Bus.internal.publish("users", msg)
 
   scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
     publish(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))

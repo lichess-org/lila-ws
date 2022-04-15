@@ -114,6 +114,7 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
 
   private val roundHandler: Emit[LilaOut] =
+    import scala.language.implicitConversions
     given Conversion[Game.Id, RoomId] with
       def apply(str: Game.Id): RoomId = RoomId(str)
     given Conversion[RoomId, Game.Id] with

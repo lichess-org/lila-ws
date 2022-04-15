@@ -43,7 +43,7 @@ object Boot extends App:
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
-    @nowarn("cat=unused") handlers: LilaHandler, // must eagerly instanciate!
+    handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
     lobby: Lobby,
     monitor: Monitor,

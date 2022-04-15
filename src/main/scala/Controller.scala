@@ -189,12 +189,12 @@ final class Controller(
   def racer(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
     WebSocket(req) { sri => user =>
       Future successful {
-        (user match {
-          case Some(u) => Some(Racer.PlayerId.User(u.id))
+        user.match {
+          case Some(u) => Option(Racer.PlayerId.User(u.id))
           case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
-        }) match
+        }.match
           case None => notFound
-          case Some(pid: Racer.PlayerId) =>
+          case Some(pid) =>
             endpoint(
               name = "racer",
               behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {

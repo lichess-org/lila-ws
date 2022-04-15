@@ -6,7 +6,7 @@ import chess.format.Uci
 import chess.{ Centis, Color, MoveMetrics }
 import play.api.libs.json.*
 
-sealed trait LilaIn:
+sealed trait LilaIn extends Matchable:
   def write: String
   def critical: Boolean = false // will be buffered and resent after lila reboots
 
@@ -87,8 +87,8 @@ object LilaIn:
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom:
     def write =
       s"room/versions ${commas(versions.map { case (r, v) =>
-        s"$r:$v"
-      })}"
+          s"$r:$v"
+        })}"
 
   case class WaitingUsers(roomId: RoomId, waiting: Set[User.ID]) extends Tour:
     def write = s"tour/waiting $roomId ${commas(waiting)}"

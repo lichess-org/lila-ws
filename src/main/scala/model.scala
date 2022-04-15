@@ -86,10 +86,9 @@ object Challenge:
 
 object Racer:
   type RaceId = String
-  sealed trait PlayerId
-  object PlayerId:
-    case class User(uid: String) extends PlayerId { override def toString = uid      }
-    case class Anon(sid: String) extends PlayerId { override def toString = s"@$sid" }
+  enum PlayerId:
+    case User(uid: String)
+    case Anon(sid: String)
 
 case class Chat(id: Chat.ID) extends AnyVal
 
