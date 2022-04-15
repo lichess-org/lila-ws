@@ -2,14 +2,14 @@ package lila.ws
 package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import play.api.libs.json._
-import scala.concurrent.duration._
+import play.api.libs.json.*
+import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
 final class CrowdJson(
     mongo: Mongo,
     lightUserApi: LightUserApi
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if (crowd.users.sizeIs > 20) keepOnlyStudyMembers(crowd) map { users =>
@@ -64,4 +64,3 @@ final class CrowdJson(
       case false => Future successful Nil
       case true  => mongo.studyMembers(crowd.roomId.value) map crowd.users.toSet.intersect
     }
-}

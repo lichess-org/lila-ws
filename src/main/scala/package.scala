@@ -1,8 +1,9 @@
 package lila
 
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import ornicar.scalalib.ScalalibExtensions
 
-package object ws {
+package object ws extends ScalalibExtensions:
 
   type Emit[A] = Function[A, Unit]
 
@@ -12,21 +13,6 @@ package object ws {
   type ClientEmit     = Emit[ipc.ClientIn]
 
   type ~[+A, +B] = Tuple2[A, B]
-  object ~ {
+  object ~ :
     def apply[A, B](x: A, y: B)                              = Tuple2(x, y)
     def unapply[A, B](x: Tuple2[A, B]): Option[Tuple2[A, B]] = Some(x)
-  }
-
-  @inline implicit def toOrnicarAddKcombinator[A](any: A) =
-    new ornicarAddKcombinator(any)
-}
-
-final class ornicarAddKcombinator[A](private val any: A) extends AnyVal {
-  def kCombinator(sideEffect: A => Unit): A = {
-    sideEffect(any)
-    any
-  }
-  def ~(sideEffect: A => Unit): A = kCombinator(sideEffect)
-  def pp: A                       = kCombinator(println)
-  def pp(msg: String): A          = kCombinator(a => println(s"[$msg] $a"))
-}

@@ -3,7 +3,7 @@ package lila.ws
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 import util.RequestHeader
 
@@ -12,9 +12,9 @@ final class Controller(
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  import Controller._
+  import Controller.*
   import ClientActor.{ Deps, Req }
 
   private val logger = Logger(getClass)
@@ -192,9 +192,9 @@ final class Controller(
         (user match {
           case Some(u) => Some(Racer.PlayerId.User(u.id))
           case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
-        }) match {
+        }) match
           case None => notFound
-          case Some(pid) =>
+          case Some(pid: Racer.PlayerId) =>
             endpoint(
               name = "racer",
               behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {
@@ -203,7 +203,6 @@ final class Controller(
               credits = 30,
               interval = 15.seconds
             )
-        }
       }
     }
 
@@ -225,12 +224,11 @@ final class Controller(
     }
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response =
-    req.sri match {
+    req.sri match
       case Some(validSri) => f(validSri)
       case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST)
-    }
 
-  private object CSRF {
+  private object CSRF:
 
     val csrfOrigin = config.getString("csrf.origin")
     val appOrigins = Set(
@@ -241,22 +239,19 @@ final class Controller(
     )
 
     def check(req: RequestHeader)(f: => Response): Response =
-      req.origin match {
-        case None                                                       => f // for exotic clients and acid ape chess
+      req.origin match
+        case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case Some(origin) =>
           logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
           Future successful Left(HttpResponseStatus.FORBIDDEN)
-      }
-  }
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
   private def fromVersion(req: RequestHeader): Option[SocketVersion] =
     req queryParameter "v" flatMap (_.toIntOption) map SocketVersion.apply
-}
 
-object Controller {
+object Controller:
 
   val logger = Logger(getClass)
 
@@ -266,7 +261,7 @@ object Controller {
       behavior: ClientBehavior,
       credits: Int,
       interval: FiniteDuration
-  ) = {
+  ) =
     Monitor.connection open name
     Right(
       new Endpoint(
@@ -278,7 +273,5 @@ object Controller {
         )
       )
     )
-  }
 
   type Response = Future[Either[HttpResponseStatus, Endpoint]]
-}

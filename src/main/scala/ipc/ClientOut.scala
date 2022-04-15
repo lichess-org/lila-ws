@@ -4,8 +4,8 @@ package ipc
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
-import lila.ws.util.LilaJsObject.augment
-import play.api.libs.json._
+import lila.ws.util.JsExtension.*
+import play.api.libs.json.*
 import scala.util.{ Success, Try }
 
 sealed trait ClientOut extends ClientMsg
@@ -16,7 +16,7 @@ sealed trait ClientOutStudy extends ClientOut
 sealed trait ClientOutRound extends ClientOut
 sealed trait ClientOutRacer extends ClientOut
 
-object ClientOut {
+object ClientOut:
 
   case class Ping(lag: Option[Int]) extends ClientOutSite
 
@@ -226,10 +226,9 @@ object ClientOut {
             // storm
             case "sk1" =>
               o str "d" flatMap { s =>
-                s split '!' match {
+                s split '!' match
                   case Array(key, pad) => Some(StormKey(key, pad))
                   case _               => None
-                }
               }
             // racer
             case "racerScore" => o int "d" map RacerScore.apply
@@ -261,4 +260,3 @@ object ClientOut {
         Try(Centis(Integer.parseInt(v, 36))).toOption
       }
     )
-}

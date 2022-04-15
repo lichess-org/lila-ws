@@ -4,11 +4,11 @@ import akka.actor.typed.ActorRef
 import chess.Color
 import chess.format.{ FEN, Uci }
 import java.util.concurrent.ConcurrentHashMap
-import lila.ws.ipc._
+import lila.ws.ipc.*
 import lila.ws.{ Clock, Position }
 
 /* Manages subscriptions to FEN updates */
-object Fens {
+object Fens:
 
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 
@@ -81,4 +81,3 @@ object Fens {
   private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+white":(\d+).+black":(\d+)""".r.unanchored
 
   def size = games.size
-}

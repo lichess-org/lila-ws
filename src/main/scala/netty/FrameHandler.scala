@@ -12,19 +12,19 @@ import ipc.ClientOut
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame
 
 final private class FrameHandler(implicit ec: ExecutionContext)
-    extends SimpleChannelInboundHandler[WebSocketFrame] {
+    extends SimpleChannelInboundHandler[WebSocketFrame]:
 
-  import FrameHandler._
+  import FrameHandler.*
   import ProtocolHandler.key
 
   override protected def channelRead0(
       ctx: ChannelHandlerContext,
       anyFrame: WebSocketFrame
   ) =
-    anyFrame match {
+    anyFrame match
       case frame: TextWebSocketFrame =>
         val txt = frame.text
-        if (txt.nonEmpty) {
+        if (txt.nonEmpty)
           val limiter = ctx.channel.attr(key.limit).get
           if (limiter == null || limiter(txt)) ClientOut parse txt foreach {
 
@@ -36,26 +36,20 @@ final private class FrameHandler(implicit ec: ExecutionContext)
               Monitor.clientOutWrongHole.increment()
 
             case out =>
-              Option(ctx.channel.attr(key.client).get) match {
+              Option(ctx.channel.attr(key.client).get) match
                 case Some(clientFu) =>
-                  clientFu.value match {
+                  clientFu.value match
                     case Some(client) => client foreach (_ ! out)
                     case None         => clientFu foreach (_ ! out)
-                  }
                 case None => logger.warn(s"No client actor to receive $out")
-              }
           }
-        }
       case frame: PongWebSocketFrame =>
         val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
         val pong      = ClientOut.RoundPongFrame(lagMillis)
         Option(ctx.channel.attr(key.client).get) foreach { _.value foreach { _ foreach (_ ! pong) } }
       case frame =>
         logger.info("unsupported frame type: " + frame.getClass.getName)
-    }
-}
 
-private object FrameHandler {
+private object FrameHandler:
 
   private val logger = Logger(getClass)
-}

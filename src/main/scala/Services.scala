@@ -1,6 +1,6 @@
 package lila.ws
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import ipc.LilaIn
 
@@ -15,7 +15,7 @@ final class Services(
     val friends: FriendList,
     val stormSign: StormSign,
     val lag: Lag
-) {
+):
 
   def lila = lilaRedis.emit
 
@@ -25,4 +25,3 @@ final class Services(
   val challengePing = groupedWithin[RoomId](20, 2.seconds) { ids =>
     lila.challenge(LilaIn.ChallengePings(ids.distinct))
   }
-}

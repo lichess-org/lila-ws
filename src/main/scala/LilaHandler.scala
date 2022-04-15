@@ -2,7 +2,7 @@ package lila.ws
 
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import ipc._
+import ipc.*
 import scala.concurrent.{ ExecutionContext, Promise }
 
 final class LilaHandler(
@@ -14,14 +14,14 @@ final class LilaHandler(
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
     services: Services
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  import LilaOut._
+  import LilaOut.*
   import Bus.publish
 
   private val logger = Logger(getClass)
 
-  private val siteHandler: Emit[LilaOut] = {
+  private val siteHandler: Emit[LilaOut] =
 
     case Mlat(millis)            => publish(_.mlat, ClientIn.Mlat(millis))
     case TellFlag(flag, payload) => publish(_ flag flag, ClientIn.Payload(payload))
@@ -58,9 +58,8 @@ final class LilaHandler(
       lila.status.setOffline()
 
     case msg => logger.warn(s"Unhandled site: $msg")
-  }
 
-  private val lobbyHandler: Emit[LilaOut] = {
+  private val lobbyHandler: Emit[LilaOut] =
 
     case TellLobbyUsers(us, json) =>
       users.tellMany(us, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
@@ -77,26 +76,22 @@ final class LilaHandler(
 
     case site: SiteOut => siteHandler(site)
     case msg           => logger.warn(s"Unhandled lobby: $msg")
-  }
 
-  private val simulHandler: Emit[LilaOut] = {
+  private val simulHandler: Emit[LilaOut] =
     case LilaOut.RoomFilterPresent(reqId, roomId, userIds) =>
       lila.emit.simul(LilaIn.ReqResponse(reqId, roomCrowd.filterPresent(roomId, userIds).mkString(",")))
     case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
     case msg      => roomHandler(msg)
-  }
 
-  private val teamHandler: Emit[LilaOut] = {
+  private val teamHandler: Emit[LilaOut] =
     case LilaBoot => roomBoot(_.idFilter.team, lila.emit.team)
     case msg      => roomHandler(msg)
-  }
 
-  private val swissHandler: Emit[LilaOut] = {
+  private val swissHandler: Emit[LilaOut] =
     case LilaBoot => roomBoot(_.idFilter.swiss, lila.emit.swiss)
     case msg      => roomHandler(msg)
-  }
 
-  private val tourHandler: Emit[LilaOut] = {
+  private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
         case (active, playing) =>
@@ -104,27 +99,26 @@ final class LilaHandler(
           val standby   = active diff playing
           val allAbsent = standby diff present
           lila.emit.tour(LilaIn.WaitingUsers(roomId, present intersect standby))
-          val absent = {
+          val absent =
             if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          }
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
-  }
 
-  private val studyHandler: Emit[LilaOut] = {
+  private val studyHandler: Emit[LilaOut] =
     case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
       lila.emit.study(LilaIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
     case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
     case msg      => roomHandler(msg)
-  }
 
-  private val roundHandler: Emit[LilaOut] = {
-    implicit def gameRoomId(gameId: Game.Id): RoomId = RoomId(gameId)
-    implicit def roomGameId(roomId: RoomId): Game.Id = Game.Id(roomId.value)
-    ({
+  private val roundHandler: Emit[LilaOut] =
+    given Conversion[Game.Id, RoomId] with
+      def apply(str: Game.Id): RoomId = RoomId(str)
+    given Conversion[RoomId, Game.Id] with
+      def apply(roomId: RoomId): Game.Id = Game.Id(roomId.value)
+    {
       case RoundVersion(gameId, version, flags, tpe, data) =>
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
         History.round.add(gameId, versioned)
@@ -163,45 +157,39 @@ final class LilaHandler(
         lila.status.setOnline()
         Impersonations.reset()
       case msg => roomHandler(msg)
-    })
-  }
+    }
 
-  private val racerHandler: Emit[LilaOut] = {
+  private val racerHandler: Emit[LilaOut] =
     case RacerState(raceId, data) => publish(_ room RoomId(raceId), ClientIn.racerState(data))
     case msg                      => roomHandler(msg)
-  }
 
-  private val roomHandler: Emit[LilaOut] = {
-    def tellVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) = {
-      val versioned = ClientIn.Versioned(payload, version, troll)
-      History.room.add(roomId, versioned)
-      publish(_ room roomId, versioned)
-    }
-    {
-      case TellRoomVersion(roomId, version, troll, payload) =>
-        tellVersion(roomId, version, troll, payload)
-      case TellRoomChat(roomId, version, troll, payload) =>
-        tellVersion(roomId, version, troll, payload)
-        publish(_ externalChat roomId, ClientIn.Payload(payload))
-      case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
-      case RoomStop(roomId)          => History.room.stop(roomId)
+  private def tellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) =
+    val versioned = ClientIn.Versioned(payload, version, troll)
+    History.room.add(roomId, versioned)
+    publish(_ room roomId, versioned)
 
-      case site: SiteOut => siteHandler(site)
-      case msg           => logger.warn(s"Unhandled room: $msg")
-    }
-  }
+  private val roomHandler: Emit[LilaOut] =
+    case TellRoomVersion(roomId, version, troll, payload) =>
+      tellRoomVersion(roomId, version, troll, payload)
+    case TellRoomChat(roomId, version, troll, payload) =>
+      tellRoomVersion(roomId, version, troll, payload)
+      publish(_ externalChat roomId, ClientIn.Payload(payload))
+    case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
+    case RoomStop(roomId)          => History.room.stop(roomId)
+
+    case site: SiteOut => siteHandler(site)
+    case msg           => logger.warn(s"Unhandled room: $msg")
 
   private def roomBoot(
       filter: Mongo => Mongo.IdFilter,
       lilaIn: Emit[LilaIn.RoomSetVersions]
-  ): Unit = {
+  ): Unit =
     val versions = History.room.allVersions
     filter(mongo)(versions.map(_._1)) foreach { ids =>
       lilaIn(LilaIn.RoomSetVersions(versions.filter(v => ids(v._1))))
     }
-  }
 
-  lila.setHandlers({
+  lila.setHandlers {
     case Lila.chans.round.out     => roundHandler
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
@@ -213,5 +201,4 @@ final class LilaHandler(
     case Lila.chans.challenge.out => roomHandler
     case Lila.chans.racer.out     => racerHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
-  })
-}
+  }

@@ -3,135 +3,113 @@ package lila.ws
 import chess.Color
 import chess.format.{ FEN, Uci }
 
-trait StringValue extends Any {
+trait StringValue extends Any:
   def value: String
   override def toString = value
-}
-trait IntValue extends Any {
+trait IntValue extends Any:
   def value: Int
   override def toString = value.toString
-}
 
 case class User(id: User.ID) extends AnyVal
 
-object User {
+object User:
   type ID = String
-}
 
-object Game {
-  case class Id(value: String) extends AnyVal with StringValue {
+object Game:
+  case class Id(value: String) extends AnyVal with StringValue:
     def full(playerId: PlayerId) = FullId(s"$value$playerId")
-  }
-  case class FullId(value: String) extends AnyVal with StringValue {
+  case class FullId(value: String) extends AnyVal with StringValue:
     def gameId   = Id(value take 8)
     def playerId = PlayerId(value drop 8)
-  }
   case class PlayerId(value: String) extends AnyVal with StringValue
 
   case class Player(id: PlayerId, userId: Option[User.ID])
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Id, players: Color.Map[Player], ext: Option[RoundExt]) {
+  case class Round(id: Id, players: Color.Map[Player], ext: Option[RoundExt]):
     def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
       Color.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
-  }
 
   case class RoundPlayer(
       id: PlayerId,
       color: Color,
       ext: Option[RoundExt]
-  ) {
+  ):
     def tourId  = ext collect { case RoundExt.Tour(id) => id }
     def swissId = ext collect { case RoundExt.Swiss(id) => id }
     def simulId = ext collect { case RoundExt.Simul(id) => id }
-  }
 
   sealed abstract trait RoundExt { val id: String }
-  object RoundExt {
+  object RoundExt:
     case class Tour(id: String)  extends RoundExt
     case class Swiss(id: String) extends RoundExt
     case class Simul(id: String) extends RoundExt
-  }
-}
 
-object Simul {
+object Simul:
   type ID = String
-}
 
 case class Simul(id: Simul.ID) extends AnyVal
 
-object Tour {
+object Tour:
   type ID = String
-}
 
 case class Tour(id: Tour.ID) extends AnyVal
 
-object Study {
+object Study:
   type ID = String
-}
 
 case class Study(id: Study.ID) extends AnyVal
 
-object Chat {
+object Chat:
   type ID = String
-}
 
-object Team {
+object Team:
   type ID = String
   case class View(hasChat: Boolean)
-  object Access {
+  object Access:
     val NONE    = 0
     val LEADERS = 10
     val MEMBERS = 20
-  }
-}
 
-object Swiss {
+object Swiss:
   type ID = String
-}
 
-object Challenge {
+object Challenge:
   case class Id(value: String) extends AnyVal with StringValue
   sealed trait Challenger
   case class Anon(secret: String) extends Challenger
   case class User(userId: String) extends Challenger
   case object Open                extends Challenger
-}
 
-object Racer {
+object Racer:
   type RaceId = String
   sealed trait PlayerId
-  object PlayerId {
+  object PlayerId:
     case class User(uid: String) extends PlayerId { override def toString = uid      }
     case class Anon(sid: String) extends PlayerId { override def toString = s"@$sid" }
-  }
-}
 
 case class Chat(id: Chat.ID) extends AnyVal
 
 case class Sri(value: String) extends AnyVal with StringValue
 
-object Sri {
+object Sri:
   type Str = String
   def random = Sri(util.Util.secureRandom string 12)
   def from(str: String): Option[Sri] =
     if (str contains ' ') None
     else Some(Sri(str))
-}
 
 case class Flag private (value: String) extends AnyVal with StringValue
 
-object Flag {
+object Flag:
   def make(value: String) =
-    value match {
+    value match
       case "simul" | "tournament" | "api" => Some(Flag(value))
       case _                              => None
-    }
   val api = Flag("api")
-}
 
 case class IpAddress(value: String) extends AnyVal with StringValue
 
@@ -141,27 +119,23 @@ case class ChapterId(value: String) extends AnyVal with StringValue
 
 case class JsonString(value: String) extends AnyVal with StringValue
 
-case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[SocketVersion] {
+case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[SocketVersion]:
   def compare(other: SocketVersion) = Integer.compare(value, other.value)
-}
 
 case class IsTroll(value: Boolean) extends AnyVal
 
 case class RoomId(value: String) extends AnyVal with StringValue
 
-object RoomId {
+object RoomId:
   def apply(v: StringValue): RoomId = RoomId(v.value)
-}
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 
-case class UptimeMillis(millis: Long) extends AnyVal {
+case class UptimeMillis(millis: Long) extends AnyVal:
   def toNow: Long = UptimeMillis.make.millis - millis
-}
 
-object UptimeMillis {
+object UptimeMillis:
   def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
-}
 
 case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
 
@@ -176,6 +150,5 @@ case class RoundEventFlags(
 case class UserTv(value: User.ID) extends AnyVal with StringValue
 
 case class Clock(white: Int, black: Int)
-case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color) {
+case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color):
   def fenWithColor = s"$fen ${turnColor.letter}"
-}

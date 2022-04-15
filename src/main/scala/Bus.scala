@@ -4,7 +4,7 @@ import akka.actor.typed.ActorRef
 
 import ipc.ClientMsg
 
-object Bus {
+object Bus:
 
   type Chan = String
 
@@ -13,8 +13,8 @@ object Bus {
     publish = (actor, event) => actor ! event
   )
 
-  def subscribe   = impl.subscribe _
-  def unsubscribe = impl.unsubscribe _
+  def subscribe   = impl.subscribe
+  def unsubscribe = impl.unsubscribe
 
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)
@@ -29,7 +29,7 @@ object Bus {
 
   type ChanSelect = Bus.channel.type => Chan
 
-  object channel {
+  object channel:
     def sri(s: Sri)               = s"sri/${s.value}"
     def flag(f: Flag)             = s"flag/$f"
     val mlat                      = "mlat"
@@ -40,7 +40,6 @@ object Bus {
     def room(id: RoomId)          = s"room/$id"
     def tourStanding(id: Tour.ID) = s"tour-standing/$id"
     def externalChat(id: RoomId)  = s"external-chat/$id"
-  }
 
   def msg(event: ClientMsg, chan: ChanSelect) =
     Msg(event, chan(channel))
@@ -53,4 +52,3 @@ object Bus {
     initialCapacity = 16,
     publish = (listener, event) => listener lift event
   )
-}

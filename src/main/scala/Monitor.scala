@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.TimeUnit
 
@@ -14,11 +14,11 @@ final class Monitor(
 )(implicit
     scheduler: akka.actor.typed.Scheduler,
     ec: ExecutionContext
-) {
+):
 
-  import Monitor._
+  import Monitor.*
 
-  def start(): Unit = {
+  def start(): Unit =
 
     val version  = System.getProperty("java.version")
     val memory   = Runtime.getRuntime.maxMemory() / 1024 / 1024
@@ -31,9 +31,8 @@ final class Monitor(
     if (useKamon) kamon.Kamon.init()
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
-  }
 
-  private def periodicMetrics() = {
+  private def periodicMetrics() =
 
     val members = LilaWsServer.connections.get
     val rounds  = services.roundCrowd.size
@@ -48,18 +47,15 @@ final class Monitor(
     watchSize.update(Fens.size.toDouble)
     busSize.update(Bus.size.toDouble)
     busAllSize.update(Bus.sizeOf(_.all).toDouble)
-  }
-}
 
-object Monitor {
+object Monitor:
 
   private val logger = Logger(getClass)
 
-  object connection {
+  object connection:
     val current = Kamon.gauge("connection.current").withoutTags()
     def open(endpoint: String) =
       Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
-  }
 
   def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags()
   def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags()
@@ -94,7 +90,7 @@ object Monitor {
       .withTag("name", name)
       .increment()
 
-  object redis {
+  object redis:
     val publishTime      = Kamon.timer("redis.publish.time").withoutTags()
     private val countIn  = Kamon.counter("redis.in")
     private val countOut = Kamon.counter("redis.out")
@@ -116,31 +112,25 @@ object Monitor {
         .counter("redis.out.drop")
         .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
         .increment()
-  }
 
-  object ping {
+  object ping:
 
     private def apply(chan: String) = Kamon.timer("ping").withTag("chan", chan)
 
-    def record(chan: String, at: UptimeMillis): Int = {
+    def record(chan: String, at: UptimeMillis): Int =
       val millis = at.toNow
       apply(chan).record(millis, TimeUnit.MILLISECONDS)
       millis.toInt
-    }
-  }
 
-  object lag {
+  object lag:
 
     private val frameLagHistogram = Kamon.timer("round.lag.frame").withoutTags()
 
     def roundFrameLag(millis: Int) =
       if (millis > 1 && millis < 99999) frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
-  }
 
-  def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A = {
+  def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()
     val res   = f
     timer.stop()
     res
-  }
-}

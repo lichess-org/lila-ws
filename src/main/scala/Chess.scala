@@ -1,22 +1,22 @@
 package lila.ws
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import chess.format.{ FEN, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
-import cats.syntax.option._
+import cats.syntax.option.*
 
-import ipc._
+import ipc.*
 
-object Chess {
+object Chess:
 
   private val logger = Logger(getClass)
 
   def apply(req: ClientOut.AnaMove): ClientIn =
     Monitor.time(_.chessMoveTime) {
-      try {
+      try
         chess
           .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
           .toOption flatMap { case (game, move) =>
@@ -24,27 +24,25 @@ object Chess {
             makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
           }
         } getOrElse ClientIn.StepFailure
-      } catch {
+      catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
           ClientIn.StepFailure
-      }
     }
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime) {
-      try {
+      try
         chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.pos).toOption flatMap {
           case (game, drop) =>
             game.pgnMoves.lastOption map { san =>
               makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
             }
         } getOrElse ClientIn.StepFailure
-      } catch {
+      catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
           ClientIn.StepFailure
-      }
     }
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
@@ -79,7 +77,7 @@ object Chess {
       move: Uci.WithSan,
       path: Path,
       chapterId: Option[ChapterId]
-  ): ClientIn.Node = {
+  ): ClientIn.Node =
     val movable = game.situation playable false
     val fen     = chess.format.Forsyth >> game
     ClientIn.Node(
@@ -98,27 +96,28 @@ object Chess {
       crazyData = game.situation.board.crazyData,
       chapterId = chapterId
     )
-  }
 
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
-  object json {
-    implicit val fenWrite         = Writes[FEN] { fen => JsString(fen.value) }
-    implicit val pathWrite        = Writes[Path] { path => JsString(path.value) }
-    implicit val uciWrite         = Writes[Uci] { uci => JsString(uci.uci) }
-    implicit val uciCharPairWrite = Writes[UciCharPair] { ucp => JsString(ucp.toString) }
-    implicit val posWrite         = Writes[Pos] { pos => JsString(pos.key) }
-    implicit val chapterIdWrite   = Writes[ChapterId] { ch => JsString(ch.value) }
-    implicit val openingWrite = Writes[FullOpening] { o =>
-      Json.obj(
-        "eco"  -> o.eco,
-        "name" -> o.name
-      )
-    }
-    implicit val destsJsonWriter: Writes[Map[Pos, List[Pos]]] = Writes { dests =>
-      JsString(destString(dests))
-    }
-    def destString(dests: Map[Pos, List[Pos]]): String = {
+  object json:
+    given Writes[FEN] with
+      def writes(fen: FEN) = JsString(fen.value)
+    given Writes[Path] with
+      def writes(path: Path) = JsString(path.value)
+    given Writes[Uci] with
+      def writes(uci: Uci) = JsString(uci.uci)
+    given Writes[UciCharPair] with
+      def writes(ucp: UciCharPair) = JsString(ucp.toString)
+    given Writes[Pos] with
+      def writes(pos: Pos) = JsString(pos.key)
+    given Writes[ChapterId] with
+      def writes(ch: ChapterId) = JsString(ch.value)
+    given Writes[FullOpening] with
+      def writes(o: FullOpening) = Json.obj("eco" -> o.eco, "name" -> o.name)
+    given Writes[Map[Pos, List[Pos]]] with
+      def writes(dests: Map[Pos, List[Pos]]) = JsString(destString(dests))
+
+    def destString(dests: Map[Pos, List[Pos]]): String =
       val sb    = new java.lang.StringBuilder(80)
       var first = true
       dests foreach { case (orig, dests) =>
@@ -128,7 +127,6 @@ object Chess {
         dests foreach { sb append _.piotr }
       }
       sb.toString
-    }
 
     implicit val crazyhousePocketWriter: OWrites[Crazyhouse.Pocket] = OWrites { v =>
       JsObject(
@@ -140,5 +138,3 @@ object Chess {
     implicit val crazyhouseDataWriter: OWrites[chess.variant.Crazyhouse.Data] = OWrites { v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
     }
-  }
-}

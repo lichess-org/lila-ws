@@ -12,8 +12,8 @@ final class RateLimitMap(
     duration: FiniteDuration,
     enforce: Boolean = true,
     log: Boolean = true
-) {
-  import RateLimit._
+):
+  import RateLimit.*
 
   private type ClearAt = Long
 
@@ -24,7 +24,7 @@ final class RateLimitMap(
   private def makeClearAt = nowMillis + duration.toMillis
 
   def apply(k: String, cost: Cost = 1, msg: => String = ""): Boolean = cost < 1 || {
-    storage getIfPresent k match {
+    storage getIfPresent k match
       case None =>
         storage.put(k, cost -> makeClearAt)
         true
@@ -38,6 +38,4 @@ final class RateLimitMap(
         if (log) logger.info(s"$name $credits/$duration $k cost: $cost $msg")
         false
       case _ => true
-    }
   }
-}

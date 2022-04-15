@@ -1,11 +1,11 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import reactivemongo.api.bson._
-import scala.concurrent.duration._
+import reactivemongo.api.bson.*
+import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
-final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionContext) {
+final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionContext):
 
   type TitleName = String
 
@@ -23,13 +23,11 @@ final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionConte
         BSONDocument("_id" -> id),
         Some(BSONDocument("username" -> true, "title" -> true))
       ).one[BSONDocument] map { docOpt =>
-        val name = {
+        val name =
           for {
             doc  <- docOpt
             name <- doc.getAsOpt[String]("username")
           } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
-        }
         name getOrElse id
       }
     }
-}

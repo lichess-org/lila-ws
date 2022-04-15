@@ -3,15 +3,15 @@ package lila.ws
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 
-import ipc._
+import ipc.*
 
-object SiteClientActor {
+object SiteClientActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
-      import deps._
+      import deps.*
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self) }
       apply(State(), deps)
@@ -20,15 +20,14 @@ object SiteClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
-        msg match {
+        msg match
 
           case ctrl: ClientCtrl => socketControl(state, deps, ctrl)
 
           case in: ClientIn =>
-            clientInReceive(state, deps, in) match {
+            clientInReceive(state, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(s, deps)
-            }
 
           case msg: ClientOutSite =>
             val newState = globalReceive(state, deps, ctx, msg)
@@ -38,11 +37,9 @@ object SiteClientActor {
           case _ =>
             Monitor.clientOutUnhandled("site").increment()
             Behaviors.same
-        }
 
       }
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state, deps, ctx)
         Behaviors.same
       }
-}

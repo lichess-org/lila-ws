@@ -16,7 +16,7 @@ sealed trait RacerOut extends RoomOut
 
 sealed trait AnyRoomOut extends RoundOut with StudyOut with TourOut with SimulOut with RacerOut
 
-object LilaOut {
+object LilaOut:
 
   // site
 
@@ -49,7 +49,7 @@ object LilaOut {
       version: SocketVersion,
       troll: IsTroll,
       json: JsonString
-  )                                                                        extends AnyRoomOut
+  ) extends AnyRoomOut
   case class TellRoomUser(roomId: RoomId, user: User.ID, json: JsonString) extends AnyRoomOut with SiteOut
   case class TellRoomUsers(roomId: RoomId, users: Iterable[User.ID], json: JsonString)
       extends AnyRoomOut
@@ -84,7 +84,7 @@ object LilaOut {
       flags: RoundEventFlags,
       tpe: String,
       data: JsonString
-  )                                                                                   extends RoundOut
+  ) extends RoundOut
   case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                     extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
@@ -101,7 +101,7 @@ object LilaOut {
   case class ApiUserOnline(userId: User.ID, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                       extends AnyRoomOut
   case class LilaStop(reqId: Int)                            extends AnyRoomOut
-  case object VersioningReady                                extends RoundOut // lila is ready to receive versioned round events
+  case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
   // impl
 
@@ -110,10 +110,10 @@ object LilaOut {
   ): Option[LilaOut] =
     f.applyOrElse(args.split(" ", nb), (_: Array[String]) => None)
 
-  def read(str: String): Option[LilaOut] = {
+  def read(str: String): Option[LilaOut] =
     val parts = str.split(" ", 2)
     val args  = parts.lift(1) getOrElse ""
-    parts(0) match {
+    parts(0) match
 
       case "mlat" => args.toDoubleOption map Mlat.apply
 
@@ -139,7 +139,9 @@ object LilaOut {
 
       case "tell/flag" =>
         get(args, 2) { case Array(flag, payload) =>
-          Some(TellFlag(Flag(flag), JsonString(payload)))
+          Flag make flag map {
+            TellFlag(_, JsonString(payload))
+          }
         }
 
       case "tell/users" =>
@@ -315,7 +317,7 @@ object LilaOut {
           Some(ApiUserOnline(userId, boolean(online)))
         }
 
-      case "pong" => args.toLongOption map UptimeMillis.apply map Pong
+      case "pong" => args.toLongOption map UptimeMillis.apply map Pong.apply
 
       case "boot" => Some(LilaBoot)
 
@@ -324,12 +326,9 @@ object LilaOut {
       case "r/versioning-ready" => Some(VersioningReady)
 
       case _ => None
-    }
-  }
 
   def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
   def boolean(str: String): Boolean                 = str == "+"
   def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
   def readColor(str: String): Color                 = Color.fromWhite(str == "w")
   def readOptionalColor(str: String): Option[Color] = optional(str) map readColor
-}

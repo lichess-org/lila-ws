@@ -2,11 +2,11 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.ActorContext
 
-import ipc._
+import ipc.*
 
-object RoomActor {
+object RoomActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   case class State(
       id: RoomId,
@@ -19,22 +19,19 @@ object RoomActor {
       fromVersion: Option[SocketVersion],
       deps: Deps,
       ctx: ActorContext[ClientMsg]
-  ): Unit = {
-    import deps._
+  ): Unit =
+    import deps.*
     ClientActor.onStart(deps, ctx)
     req.user foreach { users.connect(_, ctx.self) }
     Bus.subscribe(Bus.channel room state.id, ctx.self)
     roomCrowd.connect(state.id, req.user)
-    History.room.getFrom(state.id, fromVersion) match {
+    History.room.getFrom(state.id, fromVersion) match
       case None         => clientIn(ClientIn.Resync)
       case Some(events) => events map { versionFor(state.isTroll, _) } foreach clientIn
-    }
-  }
 
-  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
+  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     Bus.unsubscribe(Bus.channel room state.id, ctx.self)
     deps.roomCrowd.disconnect(state.id, deps.req.user)
-  }
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
     if (!msg.troll.value || isTroll.value) msg.full
@@ -43,7 +40,7 @@ object RoomActor {
   def receive(
       state: State,
       deps: Deps
-  ): PartialFunction[ClientMsg, (Option[State], Option[LilaIn.AnyRoom])] = {
+  ): PartialFunction[ClientMsg, (Option[State], Option[LilaIn.AnyRoom])] =
 
     case versioned: ClientIn.Versioned =>
       deps.clientIn(versionFor(state.isTroll, versioned))
@@ -69,5 +66,3 @@ object RoomActor {
 
     case ClientOut.ChatTimeout(suspect, reason, text) =>
       None -> deps.req.user.map { u => LilaIn.ChatTimeout(state.id, u.id, suspect, reason, text) }
-  }
-}

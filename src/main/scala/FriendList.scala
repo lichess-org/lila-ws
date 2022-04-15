@@ -1,10 +1,10 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import SocialGraph.UserMeta
-import ipc.ClientIn.following._
+import ipc.ClientIn.following.*
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -12,9 +12,9 @@ final class FriendList(
     users: Users,
     graph: SocialGraph,
     mongo: Mongo
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext):
 
-  import FriendList._
+  import FriendList.*
 
   private val userDatas: AsyncLoadingCache[User.ID, Option[UserData]] = Scaffeine()
     .expireAfterAccess(20.minutes)
@@ -80,13 +80,10 @@ final class FriendList(
       case ipc.LilaIn.DisconnectUsers(users) => users foreach onDisconnect
     }
   )
-}
 
-object FriendList {
+object FriendList:
 
-  case class UserData(name: String, title: Option[String], patron: Boolean) {
+  case class UserData(name: String, title: Option[String], patron: Boolean):
     def titleName = title.fold(name)(_ + " " + name)
-  }
 
   case class UserView(id: User.ID, data: UserData, meta: SocialGraph.UserMeta)
-}

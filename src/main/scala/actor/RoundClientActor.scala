@@ -2,19 +2,19 @@ package lila.ws
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
-import ipc._
+import ipc.*
 import chess.Centis
 
-object RoundClientActor {
+object RoundClientActor:
 
-  import ClientActor._
+  import ClientActor.*
 
   case class State(
       room: RoomActor.State,
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
       site: ClientActor.State = ClientActor.State()
-  ) {
+  ):
     def busChans: List[Bus.Chan] =
       Bus.channel.room(room.id) ::
         player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
@@ -27,7 +27,6 @@ object RoundClientActor {
           List(Bus.channel.externalChat(RoomId(extId)))
         } :::
         userTv.map(tv => Bus.channel.userTv(tv.value)).toList
-  }
 
   def start(
       roomState: RoomActor.State,
@@ -36,16 +35,15 @@ object RoundClientActor {
       fromVersion: Option[SocketVersion]
   )(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
-      import deps._
+      import deps.*
       val state = State(roomState, player, userTv)
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self) }
       state.busChans foreach { Bus.subscribe(_, ctx.self) }
       roundCrowd.connect(roomState.id, req.user, player.map(_.color))
-      History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match {
+      History.round.getFrom(Game.Id(roomState.id.value), fromVersion) match
         case None         => clientIn(ClientIn.Resync)
         case Some(events) => events map { versionFor(state, _) } foreach clientIn
-      }
       apply(state, deps)
     }
 
@@ -62,7 +60,7 @@ object RoundClientActor {
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
       .receive[ClientMsg] { (ctx, msg) =>
-        import deps._
+        import deps.*
 
         def gameId = Game.Id(state.room.id.value)
         def fullId =
@@ -70,7 +68,7 @@ object RoundClientActor {
             gameId full p.id
           }
 
-        msg match {
+        msg match
 
           case ClientOut.RoundPongFrame(lagMillis) =>
             services.lag.recordTrustedLag(lagMillis, req.userId)
@@ -92,10 +90,9 @@ object RoundClientActor {
 
           case crowd: ClientIn.Crowd =>
             if (crowd == state.room.lastCrowd) Behaviors.same
-            else {
+            else
               deps.clientIn(crowd)
               apply(state.copy(room = state.room.copy(lastCrowd = crowd)), deps)
-            }
 
           case SetTroll(v) =>
             apply(state.copy(room = state.room.copy(isTroll = v)), deps)
@@ -143,22 +140,20 @@ object RoundClientActor {
             Behaviors.same
 
           case ClientOut.ChatSay(msg) =>
-            state.player match {
+            state.player match
               case None =>
                 req.userId foreach {
                   lilaIn round LilaIn.WatcherChatSay(state.room.id, _, msg)
                 }
               case Some(p) =>
-                import Game.RoundExt._
+                import Game.RoundExt.*
                 def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
-                p.ext match {
+                p.ext match
                   case None =>
                     lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
                   case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
                   case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
                   case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
-                }
-            }
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
@@ -203,7 +198,6 @@ object RoundClientActor {
           case _ =>
             Monitor.clientOutUnhandled("round").increment()
             Behaviors.same
-        }
 
       }
       .receiveSignal { case (ctx, PostStop) =>
@@ -212,4 +206,3 @@ object RoundClientActor {
         deps.roundCrowd.disconnect(state.room.id, deps.req.user, state.player.map(_.color))
         Behaviors.same
       }
-}

@@ -1,11 +1,11 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
-import ipc._
+import ipc.*
 
-object Tv {
+object Tv:
 
   private val fast: Cache[String, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
@@ -15,7 +15,7 @@ object Tv {
     .expireAfterWrite(2.hours)
     .build[String, Boolean]()
 
-  def select(out: LilaOut.TvSelect): Unit = {
+  def select(out: LilaOut.TvSelect): Unit =
     val cliMsg = ClientIn.tvSelect(out.json)
     List(fast, slow) foreach { in =>
       in.asMap().keys foreach { gameId =>
@@ -23,7 +23,6 @@ object Tv {
       }
     }
     (if (out.speed <= chess.Speed.Bullet) fast else slow).put(out.gameId.value, true)
-  }
 
   def get(gameId: Game.Id): Boolean = get(gameId, fast) || get(gameId, slow)
 
@@ -31,4 +30,3 @@ object Tv {
     isNotNull(in.underlying.getIfPresent(gameId.value))
 
   @inline private def isNotNull[A](a: A) = a != null
-}

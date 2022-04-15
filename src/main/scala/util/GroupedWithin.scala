@@ -7,11 +7,10 @@ import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 
-final class GroupedWithin()(implicit scheduler: Scheduler, ec: ExecutionContext) {
+final class GroupedWithin()(implicit scheduler: Scheduler, ec: ExecutionContext):
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     new GroupedWithinStage[A](nb, interval, emit)
-}
 
 final class GroupedWithinStage[A](
     nb: Int,
@@ -20,11 +19,11 @@ final class GroupedWithinStage[A](
 )(implicit
     scheduler: Scheduler,
     ec: ExecutionContext
-) {
+):
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 
-  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, flush _)
+  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, (() => flush()))
 
   def apply(elem: A): Unit =
     synchronized {
@@ -34,12 +33,9 @@ final class GroupedWithinStage[A](
 
   private def flush(): Unit = synchronized { unsafeFlush() }
 
-  private def unsafeFlush(): Unit = {
-    if (buffer.nonEmpty) {
+  private def unsafeFlush(): Unit =
+    if (buffer.nonEmpty)
       emit(buffer.result())
       buffer.clear()
-    }
     scheduledFlush.cancel()
-    scheduledFlush = scheduler.scheduleOnce(interval, flush _)
-  }
-}
+    scheduledFlush = scheduler.scheduleOnce(interval, (() => flush()))

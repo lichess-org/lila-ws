@@ -3,10 +3,10 @@ package lila.ws
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
-import ipc._
+import ipc.*
 import util.Util.nowSeconds
 
-object ClientActor {
+object ClientActor:
 
   case class State(
       watchedGames: Set[Game.Id] = Set.empty,
@@ -14,13 +14,12 @@ object ClientActor {
       tourReminded: Boolean = false
   )
 
-  def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
+  def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     LilaWsServer.connections.incrementAndGet
     busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
-  }
 
-  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit = {
-    import deps._
+  def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
+    import deps.*
     LilaWsServer.connections.decrementAndGet
     if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
@@ -28,10 +27,9 @@ object ClientActor {
       users.disconnect(user, ctx.self)
       deps.services.friends.onClientStop(user.id)
     }
-  }
 
   def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] =
-    msg match {
+    msg match
 
       case ClientCtrl.Broom(oldSeconds) =>
         if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
@@ -44,23 +42,21 @@ object ClientActor {
       case ClientCtrl.ApiDisconnect =>
         // handled by ApiActor only
         Behaviors.same
-    }
 
-  def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State = {
+  def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State =
     for { l <- msg.lag; u <- deps.req.user } deps.services.lag.recordClientLag(u.id -> l)
     state.copy(lastPing = nowSeconds)
-  }
 
   def globalReceive(
       state: State,
       deps: Deps,
       ctx: ActorContext[ClientMsg],
       msg: ClientOutSite
-  ): State = {
+  ): State =
 
-    import deps._
+    import deps.*
 
-    msg match {
+    msg match
 
       case msg: ClientOut.Ping =>
         clientIn(ClientIn.Pong)
@@ -124,23 +120,21 @@ object ClientActor {
 
       case ClientOut.Ignore =>
         state
-    }
-  }
+
+      case unexpected => sys error s"$this can't handle $unexpected"
 
   def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] =
-    msg match {
+    msg match
 
       case msg: ClientIn.TourReminder =>
         if (state.tourReminded) None
-        else {
+        else
           deps clientIn msg
           Some(state.copy(tourReminded = true))
-        }
 
       case in: ClientIn =>
         deps clientIn in
         None
-    }
 
   private val logger = Logger("ClientActor")
 
@@ -162,20 +156,17 @@ object ClientActor {
       sri: Sri,
       flag: Option[Flag],
       user: Option[User]
-  ) {
+  ):
     def userId            = user.map(_.id)
     override def toString = s"${user getOrElse "Anon"} $name"
-  }
 
   case class Deps(
       clientIn: ClientEmit,
       req: Req,
       services: Services
-  ) {
+  ):
     def lilaIn     = services.lila
     def users      = services.users
     def roomCrowd  = services.roomCrowd
     def roundCrowd = services.roundCrowd
     def keepAlive  = services.keepAlive
-  }
-}
