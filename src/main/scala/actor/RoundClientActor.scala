@@ -85,7 +85,7 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientIn.OnlyFor(endpoint, payload) =>
-            if (endpoint == ClientIn.OnlyFor.Room(state.room.id)) clientIn(payload)
+            if (endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room.id)) clientIn(payload)
             Behaviors.same
 
           case crowd: ClientIn.Crowd =>

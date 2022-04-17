@@ -85,12 +85,12 @@ object ClientIn:
   case class OnlyFor(endpoint: OnlyFor.Endpoint, payload: Payload) extends ClientMsg:
     def write = payload.write
   object OnlyFor:
-    sealed trait Endpoint
-    case object Api             extends Endpoint
-    case object Lobby           extends Endpoint
-    case class Room(id: RoomId) extends Endpoint
-  def onlyFor(select: OnlyFor.type => OnlyFor.Endpoint, payload: Payload) =
-    OnlyFor(select(OnlyFor), payload)
+    enum Endpoint:
+      case Api
+      case Lobby
+      case Room(id: RoomId)
+  def onlyFor(select: OnlyFor.Endpoint.type => OnlyFor.Endpoint, payload: Payload) =
+    OnlyFor(select(OnlyFor.Endpoint), payload)
 
   case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn:
     lazy val write = cliMsg(

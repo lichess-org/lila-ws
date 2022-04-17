@@ -42,7 +42,7 @@ final class LilaHandler(
     case UnFollow(left, right) => friendList.unFollow(left, right)
 
     case ApiUserOnline(user, true) =>
-      clients ! Clients.Start(
+      clients ! Clients.Control.Start(
         ApiActor start ApiActor.Deps(User(user), services),
         Promise[_root_.lila.ws.Client]()
       )
@@ -55,7 +55,7 @@ final class LilaHandler(
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")
       lila.emit.site(LilaIn.ReqResponse(reqId, "See you on the other side"))
-      lila.status.setOffline()
+      lila.currentStatus.setOffline()
 
     case msg => logger.warn(s"Unhandled site: $msg")
 
@@ -155,7 +155,7 @@ final class LilaHandler(
         lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
       case VersioningReady =>
         logger.info("#################### LILA VERSIONING READY ####################")
-        lila.status.setOnline()
+        lila.currentStatus.setOnline()
         Impersonations.reset()
       case msg => roomHandler(msg)
     }

@@ -42,11 +42,10 @@ object Game:
     def swissId = ext collect { case RoundExt.Swiss(id) => id }
     def simulId = ext collect { case RoundExt.Simul(id) => id }
 
-  sealed abstract trait RoundExt { val id: String }
-  object RoundExt:
-    case class Tour(id: String)  extends RoundExt
-    case class Swiss(id: String) extends RoundExt
-    case class Simul(id: String) extends RoundExt
+  enum RoundExt(val id: String):
+    case Tour(i: String)  extends RoundExt(i)
+    case Swiss(i: String) extends RoundExt(i)
+    case Simul(i: String) extends RoundExt(i)
 
 object Simul:
   type ID = String
@@ -79,10 +78,10 @@ object Swiss:
 
 object Challenge:
   case class Id(value: String) extends AnyVal with StringValue
-  sealed trait Challenger
-  case class Anon(secret: String) extends Challenger
-  case class User(userId: String) extends Challenger
-  case object Open                extends Challenger
+  enum Challenger:
+    case Anon(secret: String)
+    case User(userId: String)
+    case Open
 
 object Racer:
   type RaceId = String

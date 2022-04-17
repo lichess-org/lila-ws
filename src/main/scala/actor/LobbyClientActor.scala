@@ -42,7 +42,7 @@ object LobbyClientActor:
             Behaviors.same
 
           case ClientIn.OnlyFor(endpoint, payload) =>
-            if (endpoint == ClientIn.OnlyFor.Lobby) clientIn(payload)
+            if (endpoint == ClientIn.OnlyFor.Endpoint.Lobby) clientIn(payload)
             Behaviors.same
 
           case in: ClientIn =>

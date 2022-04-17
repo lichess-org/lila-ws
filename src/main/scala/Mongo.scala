@@ -196,9 +196,9 @@ final class Mongo(config: Config)(implicit executionContext: ExecutionContext) e
         _.flatMap {
           _.getAsOpt[BSONDocument]("challenger")
         } map { c =>
-          val anon = c.getAsOpt[String]("s") map Challenge.Anon.apply
-          val user = c.getAsOpt[String]("id") map Challenge.User.apply
-          anon orElse user getOrElse Challenge.Open
+          val anon = c.getAsOpt[String]("s") map Challenge.Challenger.Anon.apply
+          val user = c.getAsOpt[String]("id") map Challenge.Challenger.User.apply
+          anon orElse user getOrElse Challenge.Challenger.Open
         }
       }
     }

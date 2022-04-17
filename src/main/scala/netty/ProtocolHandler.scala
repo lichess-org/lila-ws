@@ -54,12 +54,12 @@ final private class ProtocolHandler(
       promise: Promise[Client]
   ): Unit =
     channel.attr(key.limit).set(endpoint.rateLimit)
-    clients ! Clients.Start(endpoint.behavior, promise)
+    clients ! Clients.Control.Start(endpoint.behavior, promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
         Option(channel.attr(key.client).get) match {
           case Some(client) =>
-            client foreach { c => clients ! Clients.Stop(c) }
+            client foreach { c => clients ! Clients.Control.Stop(c) }
           case None => Monitor.websocketError("clientActorMissing")
         }
     })

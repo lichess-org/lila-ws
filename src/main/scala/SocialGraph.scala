@@ -23,6 +23,7 @@ import scala.util.Random
 final class SocialGraph(mongo: Mongo, config: Config):
 
   import SocialGraph.*
+  import Slot.*
 
   private val logCapacity = config.getInt("socialGraph.logCapacity")
 
@@ -226,6 +227,10 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
 object SocialGraph:
 
+  private enum Slot:
+    case NewSlot(slot: Int)
+    case ExistingSlot(slot: Int, entry: UserEntry)
+
   private val MaxStride: Int = 16
 
   case class UserMeta private (flags: Int) extends AnyVal:
@@ -253,10 +258,6 @@ object SocialGraph:
 
   case class UserEntry(id: User.ID, meta: UserMeta):
     def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
-
-  sealed private trait Slot
-  private case class NewSlot(slot: Int)                        extends Slot
-  private case class ExistingSlot(slot: Int, entry: UserEntry) extends Slot
 
   private class AdjacencyList:
     private val inner: java.util.TreeSet[Long] = new java.util.TreeSet()

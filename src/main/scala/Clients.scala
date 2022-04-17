@@ -5,17 +5,17 @@ import scala.concurrent.Promise
 
 object Clients:
 
-  sealed trait Control
-  final case class Start(behavior: ClientBehavior, promise: Promise[Client]) extends Control
-  final case class Stop(client: Client)                                      extends Control
+  enum Control:
+    case Start(behavior: ClientBehavior, promise: Promise[Client])
+    case Stop(client: Client)
 
   def behavior =
     Behaviors.receive[Control] { (ctx, msg) =>
       msg match
-        case Start(behavior, promise) =>
+        case Control.Start(behavior, promise) =>
           promise success ctx.spawnAnonymous(behavior)
           Behaviors.same
-        case Stop(client) =>
+        case Control.Stop(client) =>
           ctx.stop(client)
           Behaviors.same
     }

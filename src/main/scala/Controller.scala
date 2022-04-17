@@ -135,9 +135,9 @@ final class Controller(
     WebSocket(req) { sri => user =>
       mongo challenger id map {
         _ map {
-          case Challenge.Anon(secret) => Auth sidFromReq req contains secret
-          case Challenge.User(userId) => user.exists(_.id == userId)
-          case Challenge.Open         => false
+          case Challenge.Challenger.Anon(secret) => Auth sidFromReq req contains secret
+          case Challenge.Challenger.User(userId) => user.exists(_.id == userId)
+          case Challenge.Challenger.Open         => false
         }
       } map {
         case None => notFound

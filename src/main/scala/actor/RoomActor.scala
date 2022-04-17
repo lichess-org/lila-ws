@@ -47,7 +47,7 @@ object RoomActor:
       None -> None
 
     case ClientIn.OnlyFor(endpoint, payload) =>
-      if (endpoint == ClientIn.OnlyFor.Room(state.id)) deps.clientIn(payload)
+      if (endpoint == ClientIn.OnlyFor.Endpoint.Room(state.id)) deps.clientIn(payload)
       None -> None
 
     case crowd: ClientIn.Crowd =>

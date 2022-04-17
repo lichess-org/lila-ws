@@ -14,13 +14,13 @@ final class Lila(config: Config)(implicit ec: ExecutionContext):
 
   import Lila.*
 
-  object status:
-    private var value: Status = Online
-    def setOffline() = { value = Offline }
+  object currentStatus:
+    private var value: Status = Status.Online
+    def setOffline()          = { value = Status.Offline }
     def setOnline() =
-      value = Online
+      value = Status.Online
       buffer.flush()
-    def isOnline: Boolean = value == Online
+    def isOnline: Boolean = value == Status.Online
 
   private object buffer:
     case class Buffered(chan: String, msg: String)
@@ -87,7 +87,7 @@ final class Lila(config: Config)(implicit ec: ExecutionContext):
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
       val chanIn = chan in msg
-      if (status.isOnline)
+      if (currentStatus.isOnline)
         connIn.async.publish(chanIn, msg)
         Monitor.redis.in(chanIn, path)
       else if (in.critical)
@@ -134,13 +134,13 @@ final class Lila(config: Config)(implicit ec: ExecutionContext):
 
 object Lila:
 
-  sealed trait Status
-  case object Online  extends Status
-  case object Offline extends Status
+  enum Status:
+    case Online
+    case Offline
 
   type Handlers = String => Emit[LilaOut]
 
-  sealed trait Chan:
+  trait Chan:
     def in(msg: String): String
     val out: String
 
