@@ -16,7 +16,7 @@ import io.netty.buffer.Unpooled
 final private class ProtocolHandler(
     clients: ActorRef[Clients.Control],
     router: Router
-)(implicit ec: ExecutionContext)
+)(using ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
       "",    // path
       null,  // subprotocols (?)

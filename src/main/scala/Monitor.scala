@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 final class Monitor(
     config: Config,
     services: Services
-)(implicit
+)(using
     scheduler: akka.actor.typed.Scheduler,
     ec: ExecutionContext
 ):

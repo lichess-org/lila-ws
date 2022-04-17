@@ -11,10 +11,10 @@ import util.Util.nowSeconds
 
 object Boot extends App:
 
-  lazy val config: Config                         = ConfigFactory.load
-  lazy val clientSystem: ClientSystem             = ActorSystem(Clients.behavior, "clients")
-  implicit def scheduler: Scheduler               = clientSystem.scheduler
-  implicit def executionContext: ExecutionContext = clientSystem.executionContext
+  lazy val config: Config             = ConfigFactory.load
+  lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
+  given Scheduler                     = clientSystem.scheduler
+  given ExecutionContext              = clientSystem.executionContext
 
   lazy val mongo         = wire[Mongo]
   lazy val groupedWithin = wire[util.GroupedWithin]
@@ -48,7 +48,7 @@ final class LilaWsServer(
     lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   def start(): Unit =
 

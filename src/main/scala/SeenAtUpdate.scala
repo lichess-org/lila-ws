@@ -10,7 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 import scala.util.Success
 
-final class SeenAtUpdate(mongo: Mongo)(implicit
+final class SeenAtUpdate(mongo: Mongo)(using
     context: ExecutionContext,
     scheduler: akka.actor.typed.Scheduler
 ) extends MongoHandlers:

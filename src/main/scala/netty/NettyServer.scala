@@ -15,7 +15,7 @@ final class NettyServer(
     clients: ClientSystem,
     router: Router,
     config: Config
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   private val logger = Logger(getClass)
 
@@ -62,4 +62,3 @@ final class NettyServer(
     finally
       bossGroup.shutdownGracefully()
       workerGroup.shutdownGracefully()
-

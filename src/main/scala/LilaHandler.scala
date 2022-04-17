@@ -14,7 +14,7 @@ final class LilaHandler(
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
     services: Services
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   import LilaOut.*
   import Bus.publish
@@ -114,7 +114,6 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
 
   private val roundHandler: Emit[LilaOut] =
-    import scala.language.implicitConversions
     given Conversion[Game.Id, RoomId] with
       def apply(str: Game.Id): RoomId = RoomId(str)
     given Conversion[RoomId, Game.Id] with

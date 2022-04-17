@@ -5,7 +5,7 @@ import reactivemongo.api.bson.*
 import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
-final class LightUserApi(mongo: Mongo)(implicit executionContext: ExecutionContext):
+final class LightUserApi(mongo: Mongo)(using executionContext: ExecutionContext):
 
   type TitleName = String
 

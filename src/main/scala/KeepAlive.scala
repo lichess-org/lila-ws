@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext
 
 import ipc.*
 
-final class KeepAlive(lila: Lila, scheduler: Scheduler)(implicit ec: ExecutionContext):
+final class KeepAlive(lila: Lila, scheduler: Scheduler)(using ec: ExecutionContext):
 
   import KeepAlive.*
 

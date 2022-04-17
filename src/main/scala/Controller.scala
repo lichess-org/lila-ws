@@ -12,7 +12,7 @@ final class Controller(
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   import Controller.*
   import ClientActor.{ Deps, Req }

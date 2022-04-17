@@ -128,13 +128,13 @@ object Chess:
       }
       sb.toString
 
-    implicit val crazyhousePocketWriter: OWrites[Crazyhouse.Pocket] = OWrites { v =>
+    given OWrites[Crazyhouse.Pocket] = OWrites { v =>
       JsObject(
         Crazyhouse.storableRoles.flatMap { role =>
           Some(v.roles.count(role == _)).filter(0 < _).map { count => role.name -> JsNumber(count) }
         }
       )
     }
-    implicit val crazyhouseDataWriter: OWrites[chess.variant.Crazyhouse.Data] = OWrites { v =>
+    given OWrites[chess.variant.Crazyhouse.Data] = OWrites { v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
     }

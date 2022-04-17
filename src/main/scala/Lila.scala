@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.*
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 
-final class Lila(config: Config)(implicit ec: ExecutionContext):
+final class Lila(config: Config)(using ec: ExecutionContext):
 
   import Lila.*
 

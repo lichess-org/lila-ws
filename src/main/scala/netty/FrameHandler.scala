@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import ipc.ClientOut
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame
 
-final private class FrameHandler(implicit ec: ExecutionContext)
+final private class FrameHandler(using ec: ExecutionContext)
     extends SimpleChannelInboundHandler[WebSocketFrame]:
 
   import FrameHandler.*
