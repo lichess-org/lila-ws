@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters.*
 
 import ipc.*
 
-final class Users(implicit scheduler: Scheduler, ec: ExecutionContext):
+final class Users(using scheduler: Scheduler, ec: ExecutionContext):
 
   private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)

@@ -133,7 +133,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       info
     }).toList
 
-  private def doLoadFollowed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] =
+  private def doLoadFollowed(id: User.ID)(using ec: ExecutionContext): Future[List[UserEntry]] =
     mongo.loadFollowed(id) map { followed =>
       lock.lock()
       try
@@ -150,7 +150,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
-  def followed(id: User.ID)(implicit ec: ExecutionContext): Future[List[UserEntry]] =
+  def followed(id: User.ID)(using ec: ExecutionContext): Future[List[UserEntry]] =
     lock.lock()
     val infos =
       try

@@ -11,7 +11,7 @@ final class RoundCrowd(
     lila: Lila,
     json: CrowdJson,
     groupedWithin: util.GroupedWithin
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   import RoundCrowd.*
 

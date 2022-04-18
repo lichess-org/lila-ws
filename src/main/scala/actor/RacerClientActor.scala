@@ -37,8 +37,7 @@ object RacerClientActor:
               case Some(s) => apply(state.copy(site = s), deps)
 
           case ClientCtrl.Broom(oldSeconds) =>
-            if (state.site.lastPing < oldSeconds)
-              Behaviors.stopped
+            if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
               keepAlive.racer(state.room.id)
               Behaviors.same

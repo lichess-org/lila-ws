@@ -29,18 +29,18 @@ object Chronometer:
 
   case class FuLap[A](lap: Future[Lap[A]]) extends AnyVal:
 
-    def logIfSlow(threshold: Int)(msg: A => String)(implicit ec: ExecutionContext) =
+    def logIfSlow(threshold: Int)(msg: A => String)(using ec: ExecutionContext) =
       lap.foreach(_.logIfSlow(threshold)(msg))
       this
 
-    def pp(implicit ec: ExecutionContext): Future[A]              = lap map (_.pp)
-    def pp(msg: String)(implicit ec: ExecutionContext): Future[A] = lap map (_ pp msg)
-    def ppIfGt(msg: String, duration: FiniteDuration)(implicit ec: ExecutionContext): Future[A] =
+    def pp(using ec: ExecutionContext): Future[A]              = lap map (_.pp)
+    def pp(msg: String)(using ec: ExecutionContext): Future[A] = lap map (_ pp msg)
+    def ppIfGt(msg: String, duration: FiniteDuration)(using ec: ExecutionContext): Future[A] =
       lap map (_.ppIfGt(msg, duration))
 
-    def result(implicit ec: ExecutionContext) = lap.map(_.result)
+    def result(using ec: ExecutionContext) = lap.map(_.result)
 
-  def apply[A](f: => Future[A])(implicit ec: ExecutionContext): FuLap[A] =
+  def apply[A](f: => Future[A])(using ec: ExecutionContext): FuLap[A] =
     val start = nowNanos
     FuLap(f map { Lap(_, nowNanos - start) })
 

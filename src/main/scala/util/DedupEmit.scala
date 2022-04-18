@@ -5,7 +5,7 @@ import akka.actor.typed.Scheduler
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 
-final class DedupEmit[A](interval: FiniteDuration)(emit: Emit[A])(implicit
+final class DedupEmit[A](interval: FiniteDuration)(emit: Emit[A])(using
     scheduler: Scheduler,
     ec: ExecutionContext
 ):

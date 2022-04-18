@@ -9,7 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 final class CrowdJson(
     mongo: Mongo,
     lightUserApi: LightUserApi
-)(implicit ec: ExecutionContext):
+)(using ec: ExecutionContext):
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if (crowd.users.sizeIs > 20) keepOnlyStudyMembers(crowd) map { users =>

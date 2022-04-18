@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(implicit executionContext: ExecutionContext) extends MongoHandlers:
+final class Mongo(config: Config)(using executionContext: ExecutionContext) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
