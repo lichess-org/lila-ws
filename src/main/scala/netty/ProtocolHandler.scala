@@ -14,8 +14,7 @@ import scala.concurrent.{ ExecutionContext, Future, Promise }
 import io.netty.buffer.Unpooled
 
 final private class ProtocolHandler(
-    clients: ActorRef[Clients.Control],
-    router: Router
+    clients: ActorRef[Clients.Control]
 )(using ec: ExecutionContext)
     extends WebSocketServerProtocolHandler(
       "",    // path
@@ -34,27 +33,18 @@ final private class ProtocolHandler(
     evt match
       case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
-        val promise = Promise[Client]()
-        ctx.channel.attr(key.client).set(promise.future)
-        router(
-          new util.RequestHeader(hs.requestUri, hs.requestHeaders),
-          emitToChannel(ctx.channel)
-        ) foreach {
-          case Left(status) =>
-            terminateConnection(ctx.channel)
-            promise failure new Exception(s"Router refused the connection: $status")
-          case Right(client) => connectActorToChannel(client, ctx.channel, promise)
-        }
+        connectActorToChannel(ctx.channel.attr(key.endpoint).get, ctx.channel)
       case _ =>
     super.userEventTriggered(ctx, evt)
 
   private def connectActorToChannel(
       endpoint: Endpoint,
-      channel: Channel,
-      promise: Promise[Client]
+      channel: Channel
   ): Unit =
+    val promise = Promise[Client]()
+    channel.attr(key.client).set(promise.future)
     channel.attr(key.limit).set(endpoint.rateLimit)
-    clients ! Clients.Control.Start(endpoint.behavior, promise)
+    clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
         Option(channel.attr(key.client).get) match {
@@ -77,18 +67,6 @@ final private class ProtocolHandler(
         }
     }
 
-  // cancel before the handshake was completed
-  private def sendSimpleErrorResponse(
-      channel: Channel,
-      status: HttpResponseStatus
-  ): ChannelFuture =
-    val response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status)
-    response.headers.set(HttpHeaderNames.CONNECTION, "close")
-    response.headers.set(HttpHeaderNames.CONTENT_LENGTH, "0")
-    val f = channel.write(response)
-    f.addListener(ChannelFutureListener.CLOSE)
-    f
-
   // nicely terminate an ongoing connection
   private def terminateConnection(channel: Channel): ChannelFuture =
     channel.writeAndFlush(new CloseWebSocketFrame).addListener(ChannelFutureListener.CLOSE)
@@ -99,22 +77,30 @@ final private class ProtocolHandler(
       // sending/receiving the response.
       case _: IOException =>
         Monitor.websocketError("io")
-        ctx.channel.close()
+        ctx.close()
+      // Includes normal GET requests without WebSocket upgrade
       case _: WebSocketHandshakeException =>
-        Monitor.websocketError("handshake")
-        ctx.channel.close()
+        val response = new DefaultFullHttpResponse(
+          HttpVersion.HTTP_1_1,
+          HttpResponseStatus.BAD_REQUEST,
+          ctx.alloc.buffer(0)
+        )
+        val f = ctx.writeAndFlush(response)
+        f.addListener(ChannelFutureListener.CLOSE)
       case e: CorruptedWebSocketFrameException
           if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
         Monitor.websocketError("frameLength")
+        ctx.close()
       case _: CorruptedWebSocketFrameException =>
         Monitor.websocketError("corrupted")
+        ctx.close()
       case _: TooLongFrameException =>
         Monitor.websocketError("uriTooLong")
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.REQUEST_URI_TOO_LONG)
+        ctx.close()
       case e: IllegalArgumentException
           if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
         Monitor.websocketError("headerIllegalChar")
-        sendSimpleErrorResponse(ctx.channel, HttpResponseStatus.BAD_REQUEST)
+        ctx.close()
       case _ =>
         Monitor.websocketError("other")
         super.exceptionCaught(ctx, cause)
@@ -122,5 +108,6 @@ final private class ProtocolHandler(
 private object ProtocolHandler:
 
   object key:
-    val client = AttributeKey.valueOf[Future[Client]]("client")
-    val limit  = AttributeKey.valueOf[RateLimit]("limit")
+    val endpoint = AttributeKey.valueOf[Controller.Endpoint]("endpoint")
+    val client   = AttributeKey.valueOf[Future[Client]]("client")
+    val limit    = AttributeKey.valueOf[RateLimit]("limit")

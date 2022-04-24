@@ -47,7 +47,8 @@ final class NettyServer(
             val pipeline = ch.pipeline()
             pipeline.addLast(new HttpServerCodec)
             pipeline.addLast(new HttpObjectAggregator(4096))
-            pipeline.addLast(new ProtocolHandler(clients, router))
+            pipeline.addLast(new RequestHandler(router))
+            pipeline.addLast(new ProtocolHandler(clients))
             pipeline.addLast(new FrameHandler)
           }
         })
