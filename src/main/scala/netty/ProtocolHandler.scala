@@ -47,11 +47,7 @@ final private class ProtocolHandler(
     clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
-        Option(channel.attr(key.client).get) match {
-          case Some(client) =>
-            client foreach { c => clients ! Clients.Control.Stop(c) }
-          case None => Monitor.websocketError("clientActorMissing")
-        }
+        promise.future foreach { client => clients ! Clients.Control.Stop(client) }
     })
 
   private def emitToChannel(channel: Channel): ClientEmit =
