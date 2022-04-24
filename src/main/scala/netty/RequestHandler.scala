@@ -14,7 +14,9 @@ import scala.concurrent.ExecutionContext
 final private class RequestHandler(
     router: Router
 )(using ec: ExecutionContext)
-    extends SimpleChannelInboundHandler[FullHttpRequest](false):
+    extends SimpleChannelInboundHandler[FullHttpRequest](
+      false // do not automatically release req
+    ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
     router(new util.RequestHeader(req.uri, req.headers)) foreach {
