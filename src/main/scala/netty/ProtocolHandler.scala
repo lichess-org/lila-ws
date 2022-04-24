@@ -76,13 +76,8 @@ final private class ProtocolHandler(
         ctx.close()
       // Includes normal GET requests without WebSocket upgrade
       case _: WebSocketHandshakeException =>
-        val response = new DefaultFullHttpResponse(
-          HttpVersion.HTTP_1_1,
-          HttpResponseStatus.BAD_REQUEST,
-          ctx.alloc.buffer(0)
-        )
-        val f = ctx.writeAndFlush(response)
-        f.addListener(ChannelFutureListener.CLOSE)
+        Monitor.websocketError("handshake")
+        super.exceptionCaught(ctx, cause)
       case e: CorruptedWebSocketFrameException
           if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
         Monitor.websocketError("frameLength")
