@@ -1,6 +1,7 @@
 package lila.ws
 package netty
 
+import io.netty.buffer.Unpooled
 import io.netty.channel.{ ChannelFutureListener, ChannelHandlerContext, SimpleChannelInboundHandler }
 import io.netty.handler.codec.http.{
   DefaultFullHttpResponse,
@@ -23,14 +24,14 @@ final private class RequestHandler(
       case Left(status) =>
         sendErrorResponse(
           ctx,
-          new DefaultFullHttpResponse(req.protocolVersion(), status, ctx.alloc().buffer(0))
+          new DefaultFullHttpResponse(req.protocolVersion(), status, Unpooled.EMPTY_BUFFER)
         )
         req.release()
       case Right(_) if req.method != HttpMethod.GET =>
         val response = new DefaultFullHttpResponse(
           req.protocolVersion(),
           HttpResponseStatus.METHOD_NOT_ALLOWED,
-          ctx.alloc().buffer(0)
+          Unpooled.EMPTY_BUFFER
         )
         response.headers.set(HttpHeaderNames.ALLOW, "GET")
         sendErrorResponse(ctx, response)
