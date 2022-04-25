@@ -43,7 +43,6 @@ final private class ProtocolHandler(
   ): Unit =
     val promise = Promise[Client]()
     channel.attr(key.client).set(promise.future)
-    channel.attr(key.limit).set(endpoint.rateLimit)
     clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), promise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
       def operationComplete(f: NettyFuture[Void]): Unit =
@@ -101,4 +100,3 @@ private object ProtocolHandler:
   object key:
     val endpoint = AttributeKey.valueOf[Controller.Endpoint]("endpoint")
     val client   = AttributeKey.valueOf[Future[Client]]("client")
-    val limit    = AttributeKey.valueOf[RateLimit]("limit")

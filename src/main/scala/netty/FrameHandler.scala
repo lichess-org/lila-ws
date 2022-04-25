@@ -25,8 +25,8 @@ final private class FrameHandler(using ec: ExecutionContext)
       case frame: TextWebSocketFrame =>
         val txt = frame.text
         if (txt.nonEmpty)
-          val limiter = ctx.channel.attr(key.limit).get
-          if (limiter == null || limiter(txt)) ClientOut parse txt foreach {
+          val endpoint = ctx.channel.attr(key.endpoint).get
+          if (endpoint == null || endpoint.rateLimit(txt)) ClientOut parse txt foreach {
 
             case ClientOut.Unexpected(msg) =>
               Monitor.clientOutUnexpected.increment()
