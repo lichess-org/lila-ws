@@ -1,3 +1,4 @@
+# Lila websocket
 Handle incoming websocket traffic for [lichess.org](https://lichess.org).
 
 ```
@@ -26,8 +27,7 @@ redis.uri = "redis://127.0.0.1"
 
 Trusts `X-Forwarded-For`. Use only behind a reverse proxy!
 
-Code formatting
-###
+### Code formatting
 
 This repository uses [scalafmt](https://scalameta.org/scalafmt/).
 
