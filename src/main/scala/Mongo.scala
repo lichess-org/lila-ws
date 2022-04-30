@@ -76,8 +76,8 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       Some(
         Team.View(
           hasChat = teamDoc.int("chat").fold(false) { chat =>
-            chat == Team.Access.MEMBERS ||
-            (chat == Team.Access.LEADERS && me.fold(false) { me =>
+            chat == Team.Access.Members.id ||
+            (chat == Team.Access.Leaders.id && me.fold(false) { me =>
               teamDoc.getAsOpt[Set[User.ID]]("leaders").exists(_ contains me.id)
             })
           }

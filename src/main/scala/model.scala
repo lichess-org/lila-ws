@@ -68,10 +68,10 @@ object Chat:
 object Team:
   type ID = String
   case class View(hasChat: Boolean)
-  object Access:
-    val NONE    = 0
-    val LEADERS = 10
-    val MEMBERS = 20
+  enum Access(val id: Int):
+    case None    extends Access(0)
+    case Leaders extends Access(10)
+    case Members extends Access(20)
 
 object Swiss:
   type ID = String
