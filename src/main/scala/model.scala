@@ -85,9 +85,9 @@ object Challenge:
 
 object Racer:
   type RaceId = String
-  enum PlayerId:
-    case User(uid: String)
-    case Anon(sid: String)
+  enum PlayerId(val key: String):
+    case User(uid: String) extends PlayerId(uid)
+    case Anon(sid: String) extends PlayerId(s"@$sid")
 
 case class Chat(id: Chat.ID) extends AnyVal
 
