@@ -19,42 +19,45 @@ final class Controller(
 
   private val logger = Logger(getClass)
 
-  def site(req: RequestHeader, emit: ClientEmit) =
+  def site(req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      Future successful siteEndpoint(req, emit, sri, user)
+      Future successful siteEndpoint(req, sri, user)
     }
 
-  private def siteEndpoint(req: RequestHeader, emit: ClientEmit, sri: Sri, user: Option[User]) =
+  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User]) =
     endpoint(
       name = "site",
-      behavior = SiteClientActor start {
-        Deps(emit, Req(req, sri, user), services)
-      },
+      behavior = (emit: ClientEmit) =>
+        SiteClientActor start {
+          Deps(emit, Req(req, sri, user), services)
+        },
       credits = 50,
       interval = 20.seconds
     )
 
-  def lobby(req: RequestHeader, emit: ClientEmit) =
+  def lobby(req: RequestHeader) =
     WebSocket(req) { sri => user =>
       Future successful endpoint(
         name = "lobby",
-        behavior = LobbyClientActor start {
-          Deps(emit, Req(req, sri, user), services)
-        },
+        behavior = (emit: ClientEmit) =>
+          LobbyClientActor start {
+            Deps(emit, Req(req, sri, user), services)
+          },
         credits = 30,
         interval = 30.seconds
       )
     }
 
-  def simul(id: Simul.ID, req: RequestHeader, emit: ClientEmit) =
+  def simul(id: Simul.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.simulExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "simul",
-            behavior = SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior = (emit: ClientEmit) =>
+              SimulClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
             interval = 20.seconds
           )
@@ -62,15 +65,16 @@ final class Controller(
       }
     }
 
-  def tournament(id: Tour.ID, req: RequestHeader, emit: ClientEmit) =
+  def tournament(id: Tour.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.tourExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "tour",
-            behavior = TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior = (emit: ClientEmit) =>
+              TourClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
             interval = 20.seconds
           )
@@ -78,15 +82,16 @@ final class Controller(
       }
     }
 
-  def study(id: Study.ID, req: RequestHeader, emit: ClientEmit) =
+  def study(id: Study.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "study",
-            behavior = StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior = (emit: ClientEmit) =>
+              StudyClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 60,
             interval = 15.seconds
           )
@@ -94,17 +99,18 @@ final class Controller(
       }
     }
 
-  def roundWatch(id: Game.Id, req: RequestHeader, emit: ClientEmit) =
+  def roundWatch(id: Game.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.gameExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           val userTv = req queryParameter "userTv" map UserTv.apply
           endpoint(
             name = "round/watch",
-            behavior = RoundClientActor
-              .start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
+            behavior = (emit: ClientEmit) =>
+              RoundClientActor
+                .start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
+                  Deps(emit, Req(req, sri, user), services)
+                },
             credits = 50,
             interval = 20.seconds
           )
@@ -112,18 +118,19 @@ final class Controller(
       }
     }
 
-  def roundPlay(id: Game.FullId, req: RequestHeader, emit: ClientEmit) =
+  def roundPlay(id: Game.FullId, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.player(id, user) zip mongo.troll.is(user) map {
         case (Some(player), isTroll) =>
           endpoint(
             name = "round/play",
-            behavior = RoundClientActor.start(
-              RoomActor.State(RoomId(id.gameId), isTroll),
-              Some(player),
-              None,
-              fromVersion(req)
-            ) { Deps(emit, Req(req, sri, user), services) },
+            behavior = (emit: ClientEmit) =>
+              RoundClientActor.start(
+                RoomActor.State(RoomId(id.gameId), isTroll),
+                Some(player),
+                None,
+                fromVersion(req)
+              ) { Deps(emit, Req(req, sri, user), services) },
             credits = 100,
             interval = 20.seconds
           )
@@ -131,7 +138,7 @@ final class Controller(
       }
     }
 
-  def challenge(id: Challenge.Id, req: RequestHeader, emit: ClientEmit) =
+  def challenge(id: Challenge.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo challenger id map {
         _ map {
@@ -144,41 +151,44 @@ final class Controller(
         case Some(owner) =>
           endpoint(
             name = "challenge",
-            behavior = ChallengeClientActor
-              .start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
+            behavior = (emit: ClientEmit) =>
+              ChallengeClientActor
+                .start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
+                  Deps(emit, Req(req, sri, user), services)
+                },
             credits = 50,
             interval = 30.seconds
           )
       }
     }
 
-  def team(id: Team.ID, req: RequestHeader, emit: ClientEmit) =
+  def team(id: Team.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.teamView(id, user) zip mongo.troll.is(user) map { case (view, isTroll) =>
         if (view.exists(_.hasChat))
           endpoint(
             name = "team",
-            behavior = TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior = (emit: ClientEmit) =>
+              TeamClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
             interval = 20.seconds
           )
-        else siteEndpoint(req, emit, sri, user)
+        else siteEndpoint(req, sri, user)
       }
     }
 
-  def swiss(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
+  def swiss(id: Swiss.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.swissExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
           endpoint(
             name = "swiss",
-            behavior = SwissClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
-              Deps(emit, Req(req, sri, user), services)
-            },
+            behavior = (emit: ClientEmit) =>
+              SwissClientActor.start(RoomActor.State(RoomId(id), isTroll), fromVersion(req)) {
+                Deps(emit, Req(req, sri, user), services)
+              },
             credits = 30,
             interval = 20.seconds
           )
@@ -186,7 +196,7 @@ final class Controller(
       }
     }
 
-  def racer(id: Swiss.ID, req: RequestHeader, emit: ClientEmit) =
+  def racer(id: Swiss.ID, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       Future successful {
         user.match {
@@ -197,21 +207,23 @@ final class Controller(
           case Some(pid) =>
             endpoint(
               name = "racer",
-              behavior = RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {
-                Deps(emit, Req(req, sri, user), services)
-              },
+              behavior = (emit: ClientEmit) =>
+                RacerClientActor.start(RoomActor.State(RoomId(id), IsTroll(false)), pid) {
+                  Deps(emit, Req(req, sri, user), services)
+                },
               credits = 30,
               interval = 15.seconds
             )
       }
     }
 
-  def api(req: RequestHeader, emit: ClientEmit) =
+  def api(req: RequestHeader) =
     Future successful endpoint(
       name = "api",
-      behavior = SiteClientActor.start {
-        Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-      },
+      behavior = (emit: ClientEmit) =>
+        SiteClientActor.start {
+          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+        },
       credits = 50,
       interval = 20.seconds
     )
@@ -255,10 +267,10 @@ object Controller:
 
   val logger = Logger(getClass)
 
-  final class Endpoint(val behavior: ClientBehavior, val rateLimit: RateLimit)
+  final class Endpoint(val behavior: ClientEmit => ClientBehavior, val rateLimit: RateLimit)
   def endpoint(
       name: String,
-      behavior: ClientBehavior,
+      behavior: ClientEmit => ClientBehavior,
       credits: Int,
       interval: FiniteDuration
   ) =
