@@ -24,7 +24,7 @@ final class Lila(config: Config)(using ec: ExecutionContext):
 
   private object buffer:
     case class Buffered(chan: String, msg: String)
-    private val queue       = new ConcurrentLinkedQueue[Buffered]()
+    private val queue       = new ConcurrentLinkedQueue[Buffered]
     private lazy val connIn = redis.connectPubSub
 
     def enqueue(chan: String, msg: String) = queue offer Buffered(chan, msg)

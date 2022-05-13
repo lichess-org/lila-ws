@@ -96,4 +96,4 @@ final class SeenAtUpdate(mongo: Mongo)(using
       maxTime = None,
       collation = None,
       arrayFilters = Seq.empty
-    ) map (_.result[BSONDocument])
+    ) map _.result[BSONDocument]

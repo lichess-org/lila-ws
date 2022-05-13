@@ -10,7 +10,7 @@ object Util:
 
   object secureRandom:
 
-    private val secureRandom = new SecureRandom()
+    private val secureRandom = new SecureRandom
     private val chars        = (('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')).mkString
     private val nbChars      = chars.length
 
