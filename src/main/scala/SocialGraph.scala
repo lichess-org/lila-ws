@@ -27,7 +27,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   private val logCapacity = config.getInt("socialGraph.logCapacity")
 
-  private val graph = new Graph()
+  private val graph = new Graph
 
   // A linear probing, open addressing hash table. A custom implementation is
   // used, so that we know the index of an entry in the hash table is stable
@@ -36,7 +36,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
 
   // Hold this while reading, writing and modifying edge sets.
-  private val lock = new ReentrantLock()
+  private val lock = new ReentrantLock
 
   @inline
   private def read(slot: Int): Option[UserEntry] = Option(slots(slot))
@@ -59,7 +59,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
-    for (s <- hash to (hash + SocialGraph.MaxStride))
+    for (s <- hash to hash + SocialGraph.MaxStride)
       val slot = s & slotsMask
       read(slot) match
         case None => throwReturn[Slot](NewSlot(slot))
@@ -73,7 +73,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     // is lost.
     // Do not replace exceptSlot. This can be used so that a followed user
     // does not replace its follower.
-    for (s <- hash to (hash + SocialGraph.MaxStride))
+    for (s <- hash to hash + SocialGraph.MaxStride)
       val slot = s & slotsMask
       read(slot) match
         case None => throwReturn[Slot](NewSlot(slot))
@@ -84,7 +84,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
         case _ =>
 
     // The hashtable is full. Overwrite a random entry.
-    val slot = if (hash != exceptSlot) hash else (hash + 1) & slotsMask
+    val slot = if (hash != exceptSlot) hash else hash + 1 & slotsMask
     freeSlot(slot)
   }
 
@@ -260,7 +260,7 @@ object SocialGraph:
     def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
 
   private class AdjacencyList:
-    private val inner: java.util.TreeSet[Long] = new java.util.TreeSet()
+    private val inner: java.util.TreeSet[Long] = new java.util.TreeSet
 
     def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
     def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
@@ -275,8 +275,8 @@ object SocialGraph:
         .toList
 
   private class Graph:
-    private val outgoing = new AdjacencyList()
-    private val incoming = new AdjacencyList()
+    private val outgoing = new AdjacencyList
+    private val incoming = new AdjacencyList
 
     def readOutgoing(a: Int): List[Int] = outgoing.read(a)
 
@@ -292,4 +292,4 @@ object SocialGraph:
 
   private object AdjacencyList:
     @inline
-    private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
+    private def makePair(a: Int, b: Int): Long = a.toLong << 32 | b.toLong
