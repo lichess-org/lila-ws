@@ -49,9 +49,9 @@ object RoundClientActor:
 
   def versionFor(state: State, msg: ClientIn.RoundVersioned): ClientIn.Payload =
     if (
-      msg.flags.troll && !state.room.isTroll.value ||
-      msg.flags.owner && state.player.isEmpty ||
-      msg.flags.watcher && state.player.isDefined ||
+      (msg.flags.troll && !state.room.isTroll.value) ||
+      (msg.flags.owner && state.player.isEmpty) ||
+      (msg.flags.watcher && state.player.isDefined) ||
       msg.flags.player.exists(c => state.player.fold(true)(_.color != c))
     ) msg.skip
     else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c))) msg.noDests

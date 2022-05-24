@@ -28,10 +28,10 @@ final class RateLimitMap(
       case None =>
         storage.put(k, cost -> makeClearAt)
         true
-      case Some(a, clearAt) if a < credits =>
-        storage.put(k, a + cost -> clearAt)
+      case Some((a, clearAt)) if a < credits =>
+        storage.put(k, (a + cost) -> clearAt)
         true
-      case Some(_, clearAt) if nowMillis > clearAt =>
+      case Some((_, clearAt)) if nowMillis > clearAt =>
         storage.put(k, cost -> makeClearAt)
         true
       case _ if enforce =>

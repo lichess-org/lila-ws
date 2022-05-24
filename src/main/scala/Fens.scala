@@ -59,7 +59,7 @@ object Fens:
       gameId,
       (_, watched) => {
         val turnColor = moveBy.fold(Color.white)(c => !c)
-        json.value match {
+        (json.value match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for {
               uci <- Uci(uciS)
@@ -68,7 +68,7 @@ object Fens:
             } yield Position(uci, FEN(fenS), Some(Clock(wc, bc)), turnColor)
           case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, FEN(fenS), None, turnColor) }
           case _                     => None
-        }.fold(watched) { position =>
+        }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)
           watched.clients foreach { _ ! msg }
           watched.copy(position = Some(position))
