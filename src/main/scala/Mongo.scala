@@ -203,9 +203,9 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       }
     }
 
-  def inquirers: Future[Set[User.ID]] =
+  def inquirers: Future[List[User.ID]] =
     reportColl flatMap {
-      _.distinct[User.ID, Set](
+      _.distinct[User.ID, List](
         key = "inquiry.mod",
         selector = Some(BSONDocument("inquiry.mod" -> BSONDocument("$exists" -> true))),
         readConcern = ReadConcern.Local,

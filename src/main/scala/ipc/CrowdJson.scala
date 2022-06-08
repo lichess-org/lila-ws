@@ -7,6 +7,7 @@ import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 
 final class CrowdJson(
+    inquirers: Inquirers,
     mongo: Mongo,
     lightUserApi: LightUserApi
 )(using ec: ExecutionContext):
@@ -37,22 +38,15 @@ final class CrowdJson(
   private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
     if (crowd.users.isEmpty) Future successful Json.obj("nb" -> crowd.members)
     else
-      inquirersCache.get {} flatMap { inquirers =>
-        Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get) map { names =>
-          Json.obj(
-            "nb"    -> crowd.members,
-            "users" -> names.filterNot(isBotName),
-            "anons" -> crowd.anons
-          )
-        }
+      Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get) map { names =>
+        Json.obj(
+          "nb"    -> crowd.members,
+          "users" -> names.filterNot(isBotName),
+          "anons" -> crowd.anons
+        )
       }
 
   private def isBotName(str: String) = str startsWith "BOT "
-
-  private val inquirersCache: AsyncLoadingCache[Unit, Set[User.ID]] =
-    Scaffeine()
-      .expireAfterWrite(1.second)
-      .buildAsyncFuture(_ => mongo.inquirers)
 
   private val isStudyCache: AsyncLoadingCache[String, Boolean] =
     Scaffeine()

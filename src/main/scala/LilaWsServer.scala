@@ -21,6 +21,7 @@ object Boot extends App:
   lazy val lightUserApi  = wire[LightUserApi]
   lazy val lilaRedis     = wire[Lila]
   lazy val lilaHandlers  = wire[LilaHandler]
+  lazy val inquirers     = wire[Inquirers]
   lazy val roundCrowd    = wire[RoundCrowd]
   lazy val roomCrowd     = wire[RoomCrowd]
   lazy val crowdJson     = wire[ipc.CrowdJson]
