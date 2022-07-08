@@ -6,7 +6,7 @@ lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.19"
-val kamonVersion         = "2.5.3"
+val kamonVersion         = "2.5.5"
 val nettyVersion         = "4.1.78.Final"
 val reactivemongoVersion = "1.1.0-RC4"
 
@@ -15,7 +15,7 @@ val os = sys.props.get("os.name") match {
   case _                                                    => "linux"
 }
 
-scalaVersion := "3.1.2"
+scalaVersion := "3.1.3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
