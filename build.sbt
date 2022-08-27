@@ -36,7 +36,7 @@ libraryDependencies += "com.typesafe.play"          %% "play-json"       % "2.10
 libraryDependencies += "io.kamon"                   %% "kamon-core"      % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"  % kamonVersion
 // libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.7" % "provided"
+libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.8" % "provided"
 libraryDependencies += "com.roundeights"          %% "hasher" % "1.3.0"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
