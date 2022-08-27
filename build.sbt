@@ -7,7 +7,7 @@ lazy val `lila-ws` = (project in file("."))
 
 val akkaVersion          = "2.6.19"
 val kamonVersion         = "2.5.7"
-val nettyVersion         = "4.1.79.Final"
+val nettyVersion         = "4.1.80.Final"
 val reactivemongoVersion = "1.1.0-RC4"
 
 val os = sys.props.get("os.name") match {
@@ -29,14 +29,14 @@ libraryDependencies += "org.lichess"        %% "scalachess"       % "11.0.1"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
-libraryDependencies += "joda-time"                   % "joda-time"       % "2.10.14"
+libraryDependencies += "joda-time"                   % "joda-time"       % "2.11.1"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"       % "5.2.0" % "compile"
 libraryDependencies += "ch.qos.logback"              % "logback-classic" % "1.2.11"
 libraryDependencies += "com.typesafe.play"          %% "play-json"       % "2.10.0-RC6"
 libraryDependencies += "io.kamon"                   %% "kamon-core"      % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"  % kamonVersion
 // libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.7" % "provided"
+libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.8" % "provided"
 libraryDependencies += "com.roundeights"          %% "hasher" % "1.3.0"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
