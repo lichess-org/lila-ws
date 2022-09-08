@@ -39,7 +39,7 @@ libraryDependencies += "io.kamon"                   %% "kamon-influxdb"  % kamon
 libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.8" % "provided"
 libraryDependencies += "com.roundeights"          %% "hasher" % "1.3.0"
 
-resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 scalacOptions := Seq(
