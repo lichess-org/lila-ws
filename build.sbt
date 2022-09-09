@@ -7,7 +7,7 @@ lazy val `lila-ws` = (project in file("."))
 
 val akkaVersion          = "2.6.19"
 val kamonVersion         = "2.5.7"
-val nettyVersion         = "4.1.80.Final"
+val nettyVersion         = "4.1.81.Final"
 val reactivemongoVersion = "1.1.0-RC4"
 
 val os = sys.props.get("os.name") match {
