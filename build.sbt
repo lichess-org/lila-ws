@@ -6,8 +6,8 @@ lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.19"
-val kamonVersion         = "2.5.7"
-val nettyVersion         = "4.1.80.Final"
+val kamonVersion         = "2.5.8"
+val nettyVersion         = "4.1.81.Final"
 val reactivemongoVersion = "1.1.0-RC4"
 
 val os = sys.props.get("os.name") match {
@@ -39,7 +39,7 @@ libraryDependencies += "io.kamon"                   %% "kamon-influxdb"  % kamon
 libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.8" % "provided"
 libraryDependencies += "com.roundeights"          %% "hasher" % "1.3.0"
 
-resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
 
 scalacOptions := Seq(
