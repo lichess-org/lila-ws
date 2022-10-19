@@ -36,6 +36,7 @@ final class RateLimitMap(
         true
       case _ if enforce =>
         if (log) logger.info(s"$name $credits/$duration $k cost: $cost $msg")
+        Monitor rateLimit name
         false
       case _ => true
   }
