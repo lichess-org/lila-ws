@@ -14,6 +14,7 @@ val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
   case _                                                    => "linux"
 }
+val nettyFlavor = if (os == "linux") "epoll" else "kqueue"
 
 scalaVersion := "3.1.3"
 
@@ -23,7 +24,7 @@ libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$
 libraryDependencies += "io.lettuce" % "lettuce-core"                 % "6.2.0.RELEASE"
 libraryDependencies += "io.netty"   % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
+libraryDependencies += "io.netty"   % s"netty-transport-native-$nettyFlavor" % nettyVersion
 libraryDependencies += "com.github.ornicar" %% "scalalib"         % "8.0.2"
 libraryDependencies += "org.lichess"        %% "scalachess"       % "11.0.1"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
