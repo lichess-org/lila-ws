@@ -35,7 +35,14 @@ final class RateLimitMap(
         storage.put(k, cost -> makeClearAt)
         true
       case _ if enforce =>
-        if (log) logger.info(s"$name $credits/$duration $k cost: $cost $msg")
+        if (log) logDedup(s"$name $credits/$duration $k cost: $cost $msg")
+        Monitor rateLimit name
         false
       case _ => true
   }
+
+  private var lastLog = ""
+  private def logDedup(msg: String) =
+    if (msg != lastLog)
+      lastLog = msg
+      logger.info(msg)
