@@ -14,7 +14,7 @@ val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
   case _                                                    => "linux"
 }
-val shaded = System.getProperty("os.arch").toLowerCase.startsWith("x86")
+val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.1.3"
 
