@@ -14,16 +14,22 @@ val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
   case _                                                    => "linux"
 }
+val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.1.3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
-libraryDependencies += "org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64"
+libraryDependencies ++=(
+  if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
+  else Nil
+)
 libraryDependencies += "io.lettuce" % "lettuce-core"                 % "6.2.1.RELEASE"
 libraryDependencies += "io.netty"   % "netty-handler"                % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"   % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64"
+libraryDependencies += "io.netty"   % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64"
+libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64"
+libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-aarch_64"
 libraryDependencies += "com.github.ornicar" %% "scalalib"         % "8.0.2"
 libraryDependencies += "org.lichess"        %% "scalachess"       % "11.1.0"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
