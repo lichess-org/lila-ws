@@ -42,5 +42,5 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
 
 object History:
 
-  val room  = new History[RoomId, ipc.ClientIn.Versioned](20, 4096)
-  val round = new History[Game.Id, ipc.ClientIn.RoundVersioned](20, 32768)
+  val room  = new History[RoomId, ipc.ClientIn.Versioned](20, 16384)
+  val round = new History[Game.Id, ipc.ClientIn.RoundVersioned](20, 65536)
