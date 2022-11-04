@@ -20,22 +20,22 @@ scalaVersion := "3.1.3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
-libraryDependencies ++=(
+libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
   else Nil
 )
-libraryDependencies += "io.lettuce" % "lettuce-core"                 % "6.2.1.RELEASE"
-libraryDependencies += "io.netty"   % "netty-handler"                % nettyVersion
-libraryDependencies += "io.netty"   % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"   % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64"
-libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64"
-libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-aarch_64"
+libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.1.RELEASE"
+libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
+libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
+libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-x86_64"
+libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64"
+libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-aarch_64"
 libraryDependencies += "com.github.ornicar" %% "scalalib"         % "8.0.2"
 libraryDependencies += "org.lichess"        %% "scalachess"       % "11.1.0"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
-libraryDependencies += "joda-time"                   % "joda-time"       % "2.12.0"
+libraryDependencies += "joda-time"                   % "joda-time"       % "2.12.1"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"       % "5.2.1" % "compile"
 libraryDependencies += "ch.qos.logback"              % "logback-classic" % "1.4.4"
 libraryDependencies += "com.typesafe.play"          %% "play-json"       % "2.10.0-RC6"
