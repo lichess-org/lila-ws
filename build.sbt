@@ -6,7 +6,7 @@ lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
 val akkaVersion          = "2.6.20"
-val kamonVersion         = "2.5.9"
+val kamonVersion         = "2.5.11"
 val nettyVersion         = "4.1.84.Final"
 val reactivemongoVersion = "1.1.0-RC4"
 
@@ -20,16 +20,16 @@ scalaVersion := "3.1.3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
-libraryDependencies ++=(
+libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
   else Nil
 )
-libraryDependencies += "io.lettuce" % "lettuce-core"                 % "6.2.1.RELEASE"
-libraryDependencies += "io.netty"   % "netty-handler"                % nettyVersion
-libraryDependencies += "io.netty"   % "netty-codec-http"             % nettyVersion
-libraryDependencies += "io.netty"   % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64"
-libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64"
-libraryDependencies += "io.netty"   % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-aarch_64"
+libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.1.RELEASE"
+libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
+libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
+libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-x86_64"
+libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64"
+libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-aarch_64"
 libraryDependencies += "com.github.ornicar" %% "scalalib"         % "8.0.2"
 libraryDependencies += "org.lichess"        %% "scalachess"       % "11.1.0"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
