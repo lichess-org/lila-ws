@@ -1,8 +1,8 @@
 package lila.ws
 package util
 
-import akka.actor.typed.Scheduler
 import akka.actor.Cancellable
+import akka.actor.typed.Scheduler
 import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
@@ -16,10 +16,7 @@ final class GroupedWithinStage[A](
     nb: Int,
     interval: FiniteDuration,
     emit: Emit[Vector[A]]
-)(using
-    scheduler: Scheduler,
-    ec: ExecutionContext
-):
+)(using scheduler: Scheduler, ec: ExecutionContext):
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 
