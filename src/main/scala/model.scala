@@ -99,16 +99,12 @@ object RoomId:
   def ofPlayer(id: Game.FullId): RoomId     = id.gameId.value
   def ofChallenge(id: Challenge.Id): RoomId = id.value
 extension (o: RoomId) def roomId = o
-// given Format[ChatId] = stringFormat.bimap(ChatId.apply, _.chatId)
 
-case class Sri(value: String) extends AnyVal with StringValue
-
+opaque type Sri = String
 object Sri:
-  type Str = String
-  def random = Sri(util.Util.secureRandom string 12)
-  def from(str: String): Option[Sri] =
-    if (str contains ' ') None
-    else Some(Sri(str))
+  def apply(v: String): Sri          = v
+  def random                         = Sri(util.Util.secureRandom string 12)
+  def from(str: String): Option[Sri] = if str contains ' ' then None else Some(str)
 
 case class Flag private (value: String) extends AnyVal with StringValue
 
@@ -125,14 +121,15 @@ case class Path(value: String) extends AnyVal with StringValue
 
 case class ChapterId(value: String) extends AnyVal with StringValue
 
-case class JsonString(value: String) extends AnyVal with StringValue
+opaque type JsonString = String
+object JsonString:
+  def apply(v: String): JsonString = v
+extension (o: JsonString) def jsonString = o
 
 case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[SocketVersion]:
   def compare(other: SocketVersion) = Integer.compare(value, other.value)
 
 case class IsTroll(value: Boolean) extends AnyVal
-
-case class ReqId(value: Int) extends AnyVal with IntValue
 
 case class UptimeMillis(millis: Long) extends AnyVal:
   def toNow: Long = UptimeMillis.make.millis - millis

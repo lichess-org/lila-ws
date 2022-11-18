@@ -59,7 +59,7 @@ object Fens:
       gameId,
       (_, watched) => {
         val turnColor = moveBy.fold(Color.white)(c => !c)
-        (json.value match {
+        (json.jsonString match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for {
               uci <- Uci(uciS)

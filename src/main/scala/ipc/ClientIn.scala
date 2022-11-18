@@ -57,11 +57,11 @@ object ClientIn:
     val version: SocketVersion
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends HasVersion:
-    lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
+    lazy val full = Payload(JsonString(s"""{"v":$version,${json.jsonString drop 1}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
 
   case class Payload(json: JsonString) extends ClientIn:
-    def write = json.value
+    def write = json.jsonString
   def payload(js: JsValue)                 = Payload(JsonString(Json stringify js))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
@@ -241,9 +241,9 @@ object ClientIn:
       "t" -> t,
       "d" -> data
     )
-  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
+  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.jsonString}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
-    s"""{"t":"$t","v":$version,"d":${data.value}}"""
+    s"""{"t":"$t","v":$version,"d":${data.jsonString}}"""
   private def cliMsg(t: String, int: Int): String      = s"""{"t":"$t","d":$int}"""
   private def cliMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
   private def cliMsg(t: String): String                = s"""{"t":"$t"}"""

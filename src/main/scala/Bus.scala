@@ -30,7 +30,7 @@ object Bus:
   type ChanSelect = Bus.channel.type => Chan
 
   object channel:
-    def sri(s: Sri)               = s"sri/${s.value}"
+    def sri(s: Sri)               = s"sri/$s"
     def flag(f: Flag)             = s"flag/$f"
     val mlat                      = "mlat"
     val all                       = "all"
