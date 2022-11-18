@@ -1,5 +1,6 @@
 package lila.ws
 
+import play.api.libs.json.{ Format, Json, Reads, Writes }
 import chess.Color
 import chess.format.{ FEN, Uci }
 
@@ -10,10 +11,13 @@ trait IntValue extends Any:
   def value: Int
   override def toString = value.toString
 
-case class User(id: User.ID) extends AnyVal
+val stringFormat: Format[String] = Format(Reads.StringReads, Writes.StringWrites)
 
-object User:
-  type ID = String
+opaque type UserId = String
+object UserId:
+  def apply(v: String): UserId = v
+extension (o: UserId) def userId = o
+given Format[UserId] = stringFormat.bimap(UserId.apply, _.userId)
 
 object Game:
   case class Id(value: String) extends AnyVal with StringValue:
@@ -23,12 +27,12 @@ object Game:
     def playerId = PlayerId(value drop 8)
   case class PlayerId(value: String) extends AnyVal with StringValue
 
-  case class Player(id: PlayerId, userId: Option[User.ID])
+  case class Player(id: PlayerId, userId: Option[UserId])
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
   case class Round(id: Id, players: Color.Map[Player], ext: Option[RoundExt]):
-    def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
+    def player(id: PlayerId, userId: Option[UserId]): Option[RoundPlayer] =
       Color.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
@@ -86,8 +90,8 @@ object Challenge:
 object Racer:
   type RaceId = String
   enum PlayerId(val key: String):
-    case User(uid: String) extends PlayerId(uid)
-    case Anon(sid: String) extends PlayerId(s"@$sid")
+    case User(user: UserId) extends PlayerId(user.userId)
+    case Anon(sid: String)  extends PlayerId(s"@$sid")
 
 case class Chat(id: Chat.ID) extends AnyVal
 
@@ -135,7 +139,7 @@ case class UptimeMillis(millis: Long) extends AnyVal:
 object UptimeMillis:
   def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
 
-case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
+case class ThroughStudyDoor(user: UserId, through: Either[RoomId, RoomId])
 
 case class RoundEventFlags(
     watcher: Boolean,
@@ -145,7 +149,11 @@ case class RoundEventFlags(
     troll: Boolean
 )
 
-case class UserTv(value: User.ID) extends AnyVal with StringValue
+opaque type UserTv = String
+object UserTv:
+  def apply(v: String): UserTv = v
+  def from(v: UserId): UserTv  = v
+extension (o: UserTv) def tvUserId = o
 
 case class Clock(white: Int, black: Int)
 case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color):

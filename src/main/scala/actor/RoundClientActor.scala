@@ -26,7 +26,7 @@ object RoundClientActor:
         player.flatMap(p => p.simulId orElse p.swissId).fold(List.empty[Bus.Chan]) { extId =>
           List(Bus.channel.externalChat(RoomId(extId)))
         } :::
-        userTv.map(tv => Bus.channel.userTv(tv.value)).toList
+        userTv.map(Bus.channel.userTv).toList
 
   def start(
       roomState: RoomActor.State,
@@ -71,7 +71,8 @@ object RoundClientActor:
         msg match
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.recordTrustedLag(lagMillis, req.userId)
+            services.lag.recordTrustedLag(lagMillis, req.user)
+
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
@@ -117,7 +118,7 @@ object RoundClientActor:
             fullId foreach { fid =>
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
-              val frameLagCentis = req.userId.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis)
+              val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis)
               val lag            = clientLag withFrameLag frameLagCentis
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             }
@@ -142,15 +143,15 @@ object RoundClientActor:
           case ClientOut.ChatSay(msg) =>
             state.player match
               case None =>
-                req.userId foreach {
+                req.user foreach {
                   lilaIn round LilaIn.WatcherChatSay(state.room.id, _, msg)
                 }
               case Some(p) =>
                 import Game.RoundExt.*
-                def extMsg(id: String) = req.userId.map { LilaIn.ChatSay(RoomId(id), _, msg) }
+                def extMsg(id: String) = req.user.map { LilaIn.ChatSay(RoomId(id), _, msg) }
                 p.ext match
                   case None =>
-                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.userId.toLeft(p.color), msg))
+                    lilaIn.round(LilaIn.PlayerChatSay(state.room.id, req.user.toLeft(p.color), msg))
                   case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
                   case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
                   case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
@@ -158,7 +159,7 @@ object RoundClientActor:
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
             deps.req.user foreach { u =>
-              def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u.id, suspect, reason, text)
+              def msg(id: String) = LilaIn.ChatTimeout(RoomId(id), u, suspect, reason, text)
               state.player flatMap { p =>
                 p.tourId.map(msg).map(lilaIn.tour) orElse
                   p.simulId.map(msg).map(lilaIn.simul)
@@ -169,19 +170,19 @@ object RoundClientActor:
           case ClientOut.RoundBerserk(ackId) =>
             if (state.player.isDefined) req.user foreach { u =>
               clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundBerserk(gameId, u.id))
+              lilaIn.round(LilaIn.RoundBerserk(gameId, u))
             }
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId zip req.ip foreach { case (fid, ip) =>
+            fullId zip req.ip foreach { (fid, ip) =>
               lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId zip req.ip foreach { case (fid, ip) =>
-              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user.map(_.id), name))
+            fullId zip req.ip foreach { (fid, ip) =>
+              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user, name))
             }
             Behaviors.same
 

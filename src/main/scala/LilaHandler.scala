@@ -43,7 +43,7 @@ final class LilaHandler(
 
     case ApiUserOnline(user, true) =>
       clients ! Clients.Control.Start(
-        ApiActor start ApiActor.Deps(User(user), services),
+        ApiActor start ApiActor.Deps(user, services),
         Promise[_root_.lila.ws.Client]()
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
@@ -144,7 +144,7 @@ final class LilaHandler(
       case GameStart(users) =>
         users.foreach { u =>
           friendList.startPlaying(u)
-          publish(_ userTv u, ClientIn.Resync)
+          publish(_ userTv UserTv.from(u), ClientIn.Resync)
         }
       case GameFinish(gameId, winner, users) =>
         users foreach friendList.stopPlaying

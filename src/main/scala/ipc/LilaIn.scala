@@ -36,22 +36,22 @@ object LilaIn:
       with Challenge
       with Racer
 
-  case class TellSri(sri: Sri, userId: Option[User.ID], payload: JsValue) extends Site with Lobby:
-    def write = s"tell/sri $sri ${optional(userId)} ${Json.stringify(payload)}"
+  case class TellSri(sri: Sri, user: Option[UserId], payload: JsValue) extends Site with Lobby:
+    def write = s"tell/sri $sri ${optional(user.map(_.userId))} ${Json.stringify(payload)}"
 
-  case class TellUser(userId: User.ID, payload: JsObject) extends Site:
+  case class TellUser(userId: UserId, payload: JsObject) extends Site:
     def write = s"tell/user $userId ${Json.stringify(payload)}"
 
-  case class NotifiedBatch(userIds: Iterable[User.ID]) extends Site:
+  case class NotifiedBatch(userIds: Iterable[UserId]) extends Site:
     def write = s"notified/batch ${commas(userIds)}"
 
-  case class Lags(value: Map[User.ID, Int]) extends Site:
+  case class Lags(value: Map[UserId, Int]) extends Site:
     def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
 
-  case class ConnectUser(user: User, silently: Boolean) extends Site:
-    def write = s"connect/user ${user.id}"
+  case class ConnectUser(user: UserId, silently: Boolean) extends Site:
+    def write = s"connect/user ${user.userId}"
 
-  case class DisconnectUsers(userIds: Set[User.ID]) extends Site:
+  case class DisconnectUsers(userIds: Set[UserId]) extends Site:
     def write = s"disconnect/users ${commas(userIds)}"
 
   case object WsBoot extends Site:
@@ -61,7 +61,7 @@ object LilaIn:
   case class Ping(at: UptimeMillis) extends Site with Round:
     def write = s"ping ${at.millis}"
 
-  type SriUserId = (Sri, Option[User.ID])
+  type SriUserId = (Sri, Option[UserId])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby:
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
     def write                         = s"connect/sris ${commas(sris map render)}"
@@ -74,15 +74,15 @@ object LilaIn:
 
   case class KeepAlives(roomIds: Iterable[RoomId]) extends AnyRoom:
     def write = s"room/alives ${commas(roomIds)}"
-  case class ChatSay(roomId: RoomId, userId: User.ID, msg: String) extends AnyRoom:
+  case class ChatSay(roomId: RoomId, userId: UserId, msg: String) extends AnyRoom:
     def write = s"chat/say $roomId $userId $msg"
-  case class ChatTimeout(roomId: RoomId, userId: User.ID, suspectId: User.ID, reason: String, text: String)
+  case class ChatTimeout(roomId: RoomId, userId: UserId, suspectId: UserId, reason: String, text: String)
       extends AnyRoom:
     def write = s"chat/timeout $roomId $userId $suspectId $reason $text"
 
   case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round:
     import tellSri.*
-    def write = s"tell/room/sri $roomId $sri ${optional(userId)} ${Json.stringify(payload)}"
+    def write = s"tell/room/sri $roomId $sri ${optional(user.map(_.userId))} ${Json.stringify(payload)}"
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom:
     def write =
@@ -90,7 +90,7 @@ object LilaIn:
           s"$r:$v"
         })}"
 
-  case class WaitingUsers(roomId: RoomId, waiting: Set[User.ID]) extends Tour:
+  case class WaitingUsers(roomId: RoomId, waiting: Set[UserId]) extends Tour:
     def write = s"tour/waiting $roomId ${commas(waiting)}"
 
   case class RoundPlayerDo(fullId: Game.FullId, payload: JsValue) extends Round:
@@ -102,7 +102,7 @@ object LilaIn:
       s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)} ${centis(lag.frameLag)}"
     override def critical = true
 
-  case class RoundBerserk(gameId: Game.Id, userId: User.ID) extends Round:
+  case class RoundBerserk(gameId: Game.Id, userId: UserId) extends Round:
     def write = s"r/berserk $gameId $userId"
 
   case class RoundHold(fullId: Game.FullId, ip: IpAddress, mean: Int, sd: Int) extends Round:
@@ -110,10 +110,10 @@ object LilaIn:
   case class RoundSelfReport(
       fullId: Game.FullId,
       ip: IpAddress,
-      userId: Option[User.ID],
+      user: Option[UserId],
       name: String
   ) extends Round:
-    def write = s"r/report $fullId $ip ${optional(userId)} $name"
+    def write = s"r/report $fullId $ip ${optional(user.map(_.userId))} $name"
 
   case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId]) extends Round:
     def write = s"r/flag $gameId ${writeColor(color)} ${optional(playerId.map(_.value))}"
@@ -121,10 +121,10 @@ object LilaIn:
   case class RoundBye(fullId: Game.FullId) extends Round:
     def write = s"r/bye $fullId"
 
-  case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.ID, Color], msg: String) extends Round:
+  case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[UserId, Color], msg: String) extends Round:
     def author = userIdOrColor.fold(identity, writeColor)
     def write  = s"chat/say $roomId $author $msg"
-  case class WatcherChatSay(roomId: RoomId, userId: User.ID, msg: String) extends Round:
+  case class WatcherChatSay(roomId: RoomId, userId: UserId, msg: String) extends Round:
     def write = s"chat/say/w $roomId $userId $msg"
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round:

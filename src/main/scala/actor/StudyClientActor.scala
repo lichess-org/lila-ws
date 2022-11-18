@@ -29,9 +29,7 @@ object StudyClientActor:
         import deps.*
 
         def forward(payload: JsValue): Unit =
-          lilaIn.study(
-            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
-          )
+          lilaIn.study(LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user, payload)))
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] =
 

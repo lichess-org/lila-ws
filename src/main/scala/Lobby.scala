@@ -12,7 +12,7 @@ final class Lobby(
 
   private val lilaIn = lila.emit.lobby
 
-  val connect = groupedWithin[(Sri, Option[User.ID])](6, 479.millis) { connects =>
+  val connect = groupedWithin[(Sri, Option[UserId])](6, 479.millis) { connects =>
     lilaIn(LilaIn.ConnectSris(connects))
   }
 

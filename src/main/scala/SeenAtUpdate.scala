@@ -15,20 +15,20 @@ final class SeenAtUpdate(mongo: Mongo)(using
     scheduler: akka.actor.typed.Scheduler
 ) extends MongoHandlers:
 
-  private val done: Cache[User.ID, Boolean] = Scaffeine()
+  private val done: Cache[UserId, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
-    .build[User.ID, Boolean]()
+    .build[UserId, Boolean]()
 
-  def apply(user: User): Future[Unit] =
-    if done.getIfPresent(user.id).isDefined then Future successful {}
+  def apply(user: UserId): Future[Unit] =
+    if done.getIfPresent(user).isDefined then Future successful {}
     else
-      done.put(user.id, true)
+      done.put(user, true)
       for
         userColl <- mongo.userColl
         now = DateTime.now
         userDoc <- findAndModify(
           coll = userColl,
-          selector = BSONDocument("_id" -> user.id),
+          selector = BSONDocument("_id" -> user),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
           fields = BSONDocument("roles" -> true, "_id" -> false)
         )
@@ -37,7 +37,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
           if (isCoach)
             mongo.coach(
               _.update(ordered = false).one(
-                BSONDocument("_id"  -> user.id),
+                BSONDocument("_id"  -> user),
                 BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
               )
             )
@@ -46,7 +46,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
           if (userDoc.isDefined && streamers.contains(user))
             mongo.streamer(
               _.update(ordered = false).one(
-                BSONDocument("_id"  -> user.id),
+                BSONDocument("_id"  -> user),
                 BSONDocument("$set" -> BSONDocument("seenAt" -> now))
               )
             )
@@ -55,13 +55,13 @@ final class SeenAtUpdate(mongo: Mongo)(using
 
   object streamers:
 
-    def contains(user: User) = ids contains user.id
+    def contains(user: UserId) = ids contains user
 
-    private var ids = Set.empty[User.ID]
+    private var ids = Set.empty[UserId]
 
-    private def fetch: Future[Set[User.ID]] =
+    private def fetch: Future[Set[UserId]] =
       mongo.streamer(
-        _.distinct[User.ID, Set](
+        _.distinct[UserId, Set](
           key = "_id",
           selector = Some(
             BSONDocument(

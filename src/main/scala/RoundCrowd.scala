@@ -17,13 +17,13 @@ final class RoundCrowd(
 
   private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
 
-  def connect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
+  def connect(roomId: RoomId, user: Option[UserId], player: Option[Color]): Unit =
     publish(
       roomId,
       rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
     )
 
-  def disconnect(roomId: RoomId, user: Option[User], player: Option[Color]): Unit =
+  def disconnect(roomId: RoomId, user: Option[UserId], player: Option[Color]): Unit =
     rounds.computeIfPresent(
       roomId,
       (_, round) => {
@@ -46,10 +46,10 @@ final class RoundCrowd(
       }
     )
 
-  def getUsers(roomId: RoomId): Set[User.ID] =
-    Option(rounds get roomId).fold(Set.empty[User.ID])(_.room.users.keySet)
+  def getUsers(roomId: RoomId): Set[UserId] =
+    Option(rounds get roomId).fold(Set.empty[UserId])(_.room.users.keySet)
 
-  def isPresent(roomId: RoomId, userId: User.ID): Boolean =
+  def isPresent(roomId: RoomId, userId: UserId): Boolean =
     Option(rounds get roomId).exists(_.room.users contains userId)
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
@@ -86,12 +86,12 @@ object RoundCrowd:
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
       players: Color.Map[Int] = Color.Map(0, 0)
   ):
-    def connect(user: Option[User], player: Option[Color]) =
+    def connect(user: Option[UserId], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room connect user,
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
-    def disconnect(user: Option[User], player: Option[Color]) =
+    def disconnect(user: Option[UserId], player: Option[Color]) =
       copy(
         room = if (player.isDefined) room else room disconnect user,
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))

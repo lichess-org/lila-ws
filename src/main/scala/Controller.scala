@@ -24,7 +24,7 @@ final class Controller(
       Future successful siteEndpoint(req, sri, user)
     }
 
-  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User]) =
+  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[UserId]) =
     endpoint(
       name = "site",
       behavior = (emit: ClientEmit) =>
@@ -143,7 +143,7 @@ final class Controller(
       mongo challenger id map {
         _ map {
           case Challenge.Challenger.Anon(secret) => Auth sidFromReq req contains secret
-          case Challenge.Challenger.User(userId) => user.exists(_.id == userId)
+          case Challenge.Challenger.User(userId) => user.contains(userId)
           case Challenge.Challenger.Open         => false
         }
       } map {
@@ -200,7 +200,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful {
         user.match {
-          case Some(u) => Option(Racer.PlayerId.User(u.id))
+          case Some(u) => Option(Racer.PlayerId.User(u))
           case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
         }.match
           case None => notFound
@@ -228,7 +228,7 @@ final class Controller(
       interval = 20.seconds
     )
 
-  private def WebSocket(req: RequestHeader)(f: Sri => Option[User] => Response): Response =
+  private def WebSocket(req: RequestHeader)(f: Sri => Option[UserId] => Response): Response =
     CSRF.check(req) {
       ValidSri(req) { sri =>
         auth(req) flatMap f(sri)

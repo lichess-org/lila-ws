@@ -8,8 +8,9 @@ import util.RequestHeader
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using executionContext: ExecutionContext):
 
   import Auth.*
+  import Mongo.given
 
-  def apply(req: RequestHeader): Future[Option[User]] =
+  def apply(req: RequestHeader): Future[Option[UserId]] =
     if (req.flag contains Flag.api) Future successful None
     else
       sessionIdFromReq(req) match
@@ -22,15 +23,14 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using executionContext: Exe
             ).one[BSONDocument]
           } map {
             _ flatMap {
-              _.getAsOpt[User.ID]("user") map User.apply
+              _.getAsOpt[UserId]("user")
             }
           } map {
             _ map { user =>
-              Impersonations.get(user.id) match
-                case None =>
-                  seenAt(user)
-                  user
-                case Some(impersonatedId) => User(impersonatedId)
+              Impersonations.get(user) getOrElse {
+                seenAt(user)
+                user
+              }
             }
           }
         case None => Future successful None

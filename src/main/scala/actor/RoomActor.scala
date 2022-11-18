@@ -62,7 +62,7 @@ object RoomActor:
       Some(state.copy(isTroll = v)) -> None
 
     case ClientOut.ChatSay(msg) =>
-      None -> deps.req.user.map { u => LilaIn.ChatSay(state.id, u.id, msg) }
+      None -> deps.req.user.map { LilaIn.ChatSay(state.id, _, msg) }
 
     case ClientOut.ChatTimeout(suspect, reason, text) =>
-      None -> deps.req.user.map { u => LilaIn.ChatTimeout(state.id, u.id, suspect, reason, text) }
+      None -> deps.req.user.map { LilaIn.ChatTimeout(state.id, _, suspect, reason, text) }

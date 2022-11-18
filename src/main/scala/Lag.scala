@@ -12,19 +12,19 @@ final class Lag(
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f
 
-  private val trustedStats: Cache[User.ID, TrustedMillis] = Scaffeine()
+  private val trustedStats: Cache[UserId, TrustedMillis] = Scaffeine()
     .expireAfterWrite(1 hour)
-    .build[User.ID, TrustedMillis]()
+    .build[UserId, TrustedMillis]()
 
-  private val clientReports = groupedWithin[(User.ID, Int)](128, 947.millis) { lags =>
+  private val clientReports = groupedWithin[(UserId, Int)](128, 947.millis) { lags =>
     lilaRedis.emit.site(LilaIn.Lags(lags.toMap))
   }
 
-  def sessionLag(userId: User.ID) = trustedStats getIfPresent userId
+  def sessionLag(userId: UserId) = trustedStats getIfPresent userId
 
   def recordClientLag = clientReports.apply
 
-  def recordTrustedLag(millis: Int, userId: Option[User.ID]) =
+  def recordTrustedLag(millis: Int, userId: Option[UserId]) =
     Monitor.lag.roundFrameLag(millis)
     userId foreach { uid =>
       trustedStats.put(
