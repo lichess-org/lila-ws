@@ -5,6 +5,8 @@ version := "3.1"
 lazy val `lila-ws` = (project in file("."))
   .enablePlugins(JavaAppPackaging)
 
+resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
+
 val akkaVersion          = "2.6.20"
 val kamonVersion         = "2.5.11"
 val nettyVersion         = "4.1.85.Final"
@@ -18,7 +20,7 @@ val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.2.1"
 
-libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % reactivemongoVersion
+libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % "1.1.0-275c4ca-RC7-SNAPSHOT"
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
 libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
