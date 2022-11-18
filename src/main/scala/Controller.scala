@@ -108,7 +108,7 @@ final class Controller(
             name = "round/watch",
             behavior = (emit: ClientEmit) =>
               RoundClientActor
-                .start(RoomActor.State(RoomId(id), isTroll), None, userTv, fromVersion(req)) {
+                .start(RoomActor.State(RoomId.ofGame(id), isTroll), None, userTv, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
                 },
             credits = 50,
@@ -126,7 +126,7 @@ final class Controller(
             name = "round/play",
             behavior = (emit: ClientEmit) =>
               RoundClientActor.start(
-                RoomActor.State(RoomId(id.gameId), isTroll),
+                RoomActor.State(RoomId.ofPlayer(id), isTroll),
                 Some(player),
                 None,
                 fromVersion(req)
@@ -153,7 +153,7 @@ final class Controller(
             name = "challenge",
             behavior = (emit: ClientEmit) =>
               ChallengeClientActor
-                .start(RoomActor.State(RoomId(id), IsTroll(false)), owner, fromVersion(req)) {
+                .start(RoomActor.State(RoomId.ofChallenge(id), IsTroll(false)), owner, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
                 },
             credits = 50,

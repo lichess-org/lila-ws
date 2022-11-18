@@ -93,7 +93,7 @@ final class LilaHandler(
 
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
-      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
+      mongo.tournamentActiveUsers(roomId.roomId) zip mongo.tournamentPlayingUsers(roomId.roomId) foreach {
         case (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
@@ -102,7 +102,7 @@ final class LilaHandler(
           val absent =
             if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
+          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.roomId, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
@@ -114,13 +114,12 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
 
   private val roundHandler: Emit[LilaOut] =
-
     import scala.language.implicitConversions
-
     given Conversion[Game.Id, RoomId] with
-      def apply(str: Game.Id): RoomId = RoomId(str)
+      def apply(id: Game.Id): RoomId = RoomId.ofGame(id)
     given Conversion[RoomId, Game.Id] with
-      def apply(roomId: RoomId): Game.Id = Game.Id(roomId.value)
+      def apply(roomId: RoomId): Game.Id = Game.Id(roomId.roomId)
+
     {
       case RoundVersion(gameId, version, flags, tpe, data) =>
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
@@ -129,11 +128,11 @@ final class LilaHandler(
         if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
+        publish(_ room fullId.gameId, ClientIn.RoundResyncPlayer(fullId.playerId))
       case RoundGone(fullId, gone) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundGone(fullId.playerId, gone))
+        publish(_ room fullId.gameId, ClientIn.RoundGone(fullId.playerId, gone))
       case RoundGoneIn(fullId, seconds) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
+        publish(_ room fullId.gameId, ClientIn.RoundGoneIn(fullId.playerId, seconds))
       case RoundTourStanding(tourId, data) =>
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
       case o: TvSelect => Tv select o

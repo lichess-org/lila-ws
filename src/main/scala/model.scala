@@ -22,6 +22,8 @@ given Format[UserId] = stringFormat.bimap(UserId.apply, _.userId)
 object Game:
   case class Id(value: String) extends AnyVal with StringValue:
     def full(playerId: PlayerId) = FullId(s"$value$playerId")
+  object Id:
+    def ofRoom(room: RoomId): Id = Id(room.roomId)
   case class FullId(value: String) extends AnyVal with StringValue:
     def gameId   = Id(value take 8)
     def playerId = PlayerId(value drop 8)
@@ -66,9 +68,6 @@ object Study:
 
 case class Study(id: Study.ID) extends AnyVal
 
-object Chat:
-  type ID = String
-
 object Team:
   type ID = String
   case class View(hasChat: Boolean)
@@ -93,7 +92,14 @@ object Racer:
     case User(user: UserId) extends PlayerId(user.userId)
     case Anon(sid: String)  extends PlayerId(s"@$sid")
 
-case class Chat(id: Chat.ID) extends AnyVal
+opaque type RoomId = String
+object RoomId:
+  def apply(v: String): RoomId              = v
+  def ofGame(id: Game.Id): RoomId           = id.value
+  def ofPlayer(id: Game.FullId): RoomId     = id.gameId.value
+  def ofChallenge(id: Challenge.Id): RoomId = id.value
+extension (o: RoomId) def roomId = o
+// given Format[ChatId] = stringFormat.bimap(ChatId.apply, _.chatId)
 
 case class Sri(value: String) extends AnyVal with StringValue
 
@@ -125,11 +131,6 @@ case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[S
   def compare(other: SocketVersion) = Integer.compare(value, other.value)
 
 case class IsTroll(value: Boolean) extends AnyVal
-
-case class RoomId(value: String) extends AnyVal with StringValue
-
-object RoomId:
-  def apply(v: StringValue): RoomId = RoomId(v.value)
 
 case class ReqId(value: Int) extends AnyVal with IntValue
 

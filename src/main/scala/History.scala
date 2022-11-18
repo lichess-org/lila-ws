@@ -2,7 +2,7 @@ package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
 
-final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
+final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
     initialCapacity: Int
 ):

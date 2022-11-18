@@ -128,8 +128,8 @@ object LilaIn:
     def write = s"chat/say/w $roomId $userId $msg"
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round:
-    private def one(r: RoundCrowd.Output) =
-      if (r.isEmpty) r.room.roomId.value
+    private def one(r: RoundCrowd.Output): String =
+      if (r.isEmpty) r.room.roomId.roomId
       else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
     def write = s"r/ons ${commas(many map one)}"
 
