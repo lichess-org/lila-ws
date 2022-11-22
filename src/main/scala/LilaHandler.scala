@@ -116,7 +116,7 @@ final class LilaHandler(
   private val roundHandler: Emit[LilaOut] =
     import scala.language.implicitConversions
     given Conversion[Game.Id, RoomId] with
-      def apply(id: Game.Id): RoomId = RoomId.ofGame(id)
+      def apply(id: Game.Id): RoomId = id.into(RoomId)
 
     {
       case RoundVersion(gameId, version, flags, tpe, data) =>

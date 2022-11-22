@@ -41,7 +41,7 @@ object RoundClientActor:
       req.user foreach { users.connect(_, ctx.self) }
       state.busChans foreach { Bus.subscribe(_, ctx.self) }
       roundCrowd.connect(roomState.room, req.user, player.map(_.color))
-      History.round.getFrom(Game.Id.ofRoom(roomState.room), fromVersion) match
+      History.round.getFrom(roomState.room.into(Game.Id), fromVersion) match
         case None         => clientIn(ClientIn.Resync)
         case Some(events) => events map { versionFor(state, _) } foreach clientIn
       apply(state, deps)
@@ -62,7 +62,7 @@ object RoundClientActor:
       .receive[ClientMsg] { (ctx, msg) =>
         import deps.*
 
-        def gameId = Game.Id.ofRoom(state.room.room)
+        def gameId = state.room.room into Game.Id
         def fullId =
           state.player map { p =>
             gameId full p.id

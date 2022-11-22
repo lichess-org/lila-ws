@@ -18,30 +18,31 @@ object UserId extends OpaqueString[UserId]
 given Format[UserId] = stringFormat.bimap(UserId.apply, identity)
 
 object Game:
-  case class Id(value: String) extends AnyVal with StringValue:
-    def full(playerId: PlayerId) = FullId(s"$value$playerId")
-  object Id:
-    def ofRoom(room: RoomId): Id = Id(room.value)
-  case class FullId(value: String) extends AnyVal with StringValue:
-    def gameId   = Id(value take 8)
-    def playerId = PlayerId(value drop 8)
-  case class PlayerId(value: String) extends AnyVal with StringValue
+
+  opaque type Id = String
+  object Id extends OpaqueString[Id]:
+    extension (id: Id) def full(playerId: PlayerId): FullId = FullId(s"$id$playerId")
+
+  opaque type FullId = String
+  object FullId extends OpaqueString[FullId]:
+    extension (fullId: FullId)
+      def gameId   = Game.Id(fullId.value take 8)
+      def playerId = PlayerId(fullId.value drop 8)
+
+  opaque type PlayerId = String
+  object PlayerId extends OpaqueString[PlayerId]
 
   case class Player(id: PlayerId, userId: Option[UserId])
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Id, players: Color.Map[Player], ext: Option[RoundExt]):
+  case class Round(id: Game.Id, players: Color.Map[Player], ext: Option[RoundExt]):
     def player(id: PlayerId, userId: Option[UserId]): Option[RoundPlayer] =
       Color.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
 
-  case class RoundPlayer(
-      id: PlayerId,
-      color: Color,
-      ext: Option[RoundExt]
-  ):
+  case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
     def tourId  = ext collect { case RoundExt.Tour(id) => id }
     def swissId = ext collect { case RoundExt.Swiss(id) => id }
     def simulId = ext collect { case RoundExt.Simul(id) => id }
@@ -50,6 +51,7 @@ object Game:
     case Tour(i: String)  extends RoundExt(i)
     case Swiss(i: String) extends RoundExt(i)
     case Simul(i: String) extends RoundExt(i)
+end Game
 
 object Simul:
   type ID = String
@@ -92,7 +94,6 @@ object Racer:
 
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
-  def ofGame(id: Game.Id): RoomId           = id.value
   def ofPlayer(id: Game.FullId): RoomId     = id.gameId.value
   def ofChallenge(id: Challenge.Id): RoomId = id.value
 

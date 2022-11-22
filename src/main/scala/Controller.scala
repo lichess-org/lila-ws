@@ -108,7 +108,7 @@ final class Controller(
             name = "round/watch",
             behavior = (emit: ClientEmit) =>
               RoundClientActor
-                .start(RoomActor.State(RoomId.ofGame(id), isTroll), None, userTv, fromVersion(req)) {
+                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
                 },
             credits = 50,
