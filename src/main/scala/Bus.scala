@@ -36,9 +36,9 @@ object Bus:
     val all                       = "all"
     val lobby                     = "lobby"
     val tv                        = "tv"
-    def userTv(u: UserTv)         = s"userTv/${u.tvUserId}"
+    def userTv(u: UserTv)         = s"userTv/$u"
     def room(id: RoomId)          = s"room/$id"
-    def tourStanding(id: Tour.ID) = s"tour-standing/$id"
+    def tourStanding(id: Tour.Id) = s"tour-standing/$id"
     def externalChat(id: RoomId)  = s"external-chat/$id"
 
   def msg(event: ClientMsg, chan: ChanSelect) =

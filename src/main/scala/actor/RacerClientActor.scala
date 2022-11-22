@@ -14,7 +14,8 @@ object RacerClientActor:
       playerId: PlayerId,
       room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
-  )
+  ):
+    def raceId = room.room into Racer.Id
 
   def start(roomState: RoomActor.State, playerId: PlayerId)(
       deps: Deps
@@ -45,15 +46,15 @@ object RacerClientActor:
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientOut.RacerScore(score) =>
-            services.lila.racer(LilaIn.RacerScore(state.room.room.value, state.playerId, score))
+            services.lila.racer(LilaIn.RacerScore(state.raceId, state.playerId, score))
             Behaviors.same
 
           case ClientOut.RacerJoin =>
-            services.lila.racer(LilaIn.RacerJoin(state.room.room.value, state.playerId))
+            services.lila.racer(LilaIn.RacerJoin(state.raceId, state.playerId))
             Behaviors.same
 
           case ClientOut.RacerStart =>
-            services.lila.racer(LilaIn.RacerStart(state.room.room.value, state.playerId))
+            services.lila.racer(LilaIn.RacerStart(state.raceId, state.playerId))
             Behaviors.same
 
           // default receive (site)

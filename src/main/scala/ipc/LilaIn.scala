@@ -139,13 +139,13 @@ object LilaIn:
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge:
     def write = s"challenge/pings ${commas(ids)}"
 
-  case class RacerScore(raceId: Racer.RaceId, playerId: Racer.PlayerId, score: Int) extends Racer:
+  case class RacerScore(raceId: Racer.Id, playerId: Racer.PlayerId, score: Int) extends Racer:
     def write = s"racer/score $raceId ${playerId.key} $score"
 
-  case class RacerJoin(raceId: Racer.RaceId, playerId: Racer.PlayerId) extends Racer:
+  case class RacerJoin(raceId: Racer.Id, playerId: Racer.PlayerId) extends Racer:
     def write = s"racer/join $raceId ${playerId.key}"
 
-  case class RacerStart(raceId: Racer.RaceId, playerId: Racer.PlayerId) extends Racer:
+  case class RacerStart(raceId: Racer.Id, playerId: Racer.PlayerId) extends Racer:
     def write = s"racer/start $raceId ${playerId.key}"
 
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site:

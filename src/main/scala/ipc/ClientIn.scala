@@ -6,7 +6,6 @@ import chess.format.UciCharPair
 import chess.opening.FullOpening
 import chess.variant.Crazyhouse
 import lila.ws.Position
-import lila.ws.util.JsExtension.*
 import play.api.libs.json.*
 
 sealed trait ClientIn extends ClientMsg:
@@ -57,11 +56,11 @@ object ClientIn:
     val version: SocketVersion
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends HasVersion:
-    lazy val full = Payload(JsonString(s"""{"v":$version,${json.jsonString drop 1}"""))
+    lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
 
   case class Payload(json: JsonString) extends ClientIn:
-    def write = json.jsonString
+    def write = json.value
   def payload(js: JsValue)                 = Payload(JsonString(Json stringify js))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
@@ -92,7 +91,7 @@ object ClientIn:
   def onlyFor(select: OnlyFor.Endpoint.type => OnlyFor.Endpoint, payload: Payload) =
     OnlyFor(select(OnlyFor.Endpoint), payload)
 
-  case class TourReminder(tourId: Tour.ID, tourName: String) extends ClientIn:
+  case class TourReminder(tourId: Tour.Id, tourName: String) extends ClientIn:
     lazy val write = cliMsg(
       "tournamentReminder",
       Json.obj(
@@ -241,9 +240,9 @@ object ClientIn:
       "t" -> t,
       "d" -> data
     )
-  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.jsonString}}"""
+  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
-    s"""{"t":"$t","v":$version,"d":${data.jsonString}}"""
+    s"""{"t":"$t","v":$version,"d":${data.value}}"""
   private def cliMsg(t: String, int: Int): String      = s"""{"t":"$t","d":$int}"""
   private def cliMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
   private def cliMsg(t: String): String                = s"""{"t":"$t"}"""

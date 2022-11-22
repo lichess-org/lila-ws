@@ -20,12 +20,14 @@ object RoundClientActor:
         player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
           List(
             Bus.channel.tourStanding(tourId),
-            Bus.channel.externalChat(RoomId(tourId))
+            Bus.channel.externalChat(tourId into RoomId)
           )
         } :::
-        player.flatMap(p => p.simulId orElse p.swissId).fold(List.empty[Bus.Chan]) { extId =>
-          List(Bus.channel.externalChat(RoomId(extId)))
-        } :::
+        player
+          .flatMap(_.extRoomId)
+          .fold(List.empty[Bus.Chan]) { roomId =>
+            List(Bus.channel.externalChat(roomId))
+          } :::
         userTv.map(Bus.channel.userTv).toList
 
   def start(
@@ -148,21 +150,23 @@ object RoundClientActor:
                 }
               case Some(p) =>
                 import Game.RoundExt.*
-                def extMsg(id: String) = req.user.map { LilaIn.ChatSay(RoomId(id), _, msg) }
+                def extMsg[A](id: A)(using bts: BasicallyTheSame[A, String]) = req.user.map {
+                  LilaIn.ChatSay(RoomId(bts(id)), _, msg)
+                }
                 p.ext match
                   case None =>
                     lilaIn.round(LilaIn.PlayerChatSay(state.room.room, req.user.toLeft(p.color), msg))
-                  case Some(Tour(id))  => extMsg(id) foreach lilaIn.tour
-                  case Some(Swiss(id)) => extMsg(id) foreach lilaIn.swiss
-                  case Some(Simul(id)) => extMsg(id) foreach lilaIn.simul
+                  case Some(InTour(id))  => extMsg(id) foreach lilaIn.tour
+                  case Some(InSwiss(id)) => extMsg(id) foreach lilaIn.swiss
+                  case Some(InSimul(id)) => extMsg(id) foreach lilaIn.simul
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
             deps.req.user foreach { u =>
               def msg(id: RoomId) = LilaIn.ChatTimeout(id, u, suspect, reason, text)
               state.player flatMap { p =>
-                p.tourId.map(RoomId.apply).map(msg).map(lilaIn.tour) orElse
-                  p.simulId.map(RoomId.apply).map(msg).map(lilaIn.simul)
+                p.tourId.map(_ into RoomId).map(msg).map(lilaIn.tour) orElse
+                  p.simulId.map(_ into RoomId).map(msg).map(lilaIn.simul)
               } getOrElse lilaIn.round(msg(state.room.room))
             }
             Behaviors.same

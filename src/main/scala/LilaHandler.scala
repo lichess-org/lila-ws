@@ -93,8 +93,8 @@ final class LilaHandler(
 
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
-      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
-        case (active, playing) =>
+      mongo.tournamentActiveUsers(roomId into Tour.Id) zip
+        mongo.tournamentPlayingUsers(roomId into Tour.Id) foreach { case (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
           val allAbsent = standby diff present
@@ -102,8 +102,8 @@ final class LilaHandler(
           val absent =
             if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
-      }
+          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
+        }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
 
@@ -141,7 +141,7 @@ final class LilaHandler(
       case GameStart(users) =>
         users.foreach { u =>
           friendList.startPlaying(u)
-          publish(_ userTv UserTv.from(u), ClientIn.Resync)
+          publish(_ userTv u.into(UserTv), ClientIn.Resync)
         }
       case GameFinish(gameId, winner, users) =>
         users foreach friendList.stopPlaying
@@ -160,7 +160,7 @@ final class LilaHandler(
     }
 
   private val racerHandler: Emit[LilaOut] =
-    case RacerState(raceId, data) => publish(_ room RoomId(raceId), ClientIn.racerState(data))
+    case RacerState(raceId, data) => publish(_ room raceId.into(RoomId), ClientIn.racerState(data))
     case msg                      => roomHandler(msg)
 
   private def tellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) =

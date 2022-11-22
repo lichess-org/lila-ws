@@ -4,7 +4,6 @@ package ipc
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
-import lila.ws.util.JsExtension.*
 import play.api.libs.json.*
 import scala.util.{ Success, Try }
 

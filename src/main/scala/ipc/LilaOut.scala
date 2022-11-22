@@ -85,7 +85,7 @@ object LilaOut:
       tpe: String,
       data: JsonString
   ) extends RoundOut
-  case class RoundTourStanding(tourId: Tour.ID, data: JsonString)                    extends RoundOut
+  case class RoundTourStanding(tourId: Tour.Id, data: JsonString)                    extends RoundOut
   case class RoundResyncPlayer(fullId: Game.FullId)                                  extends RoundOut
   case class RoundGone(fullId: Game.FullId, v: Boolean)                              extends RoundOut
   case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                          extends RoundOut
@@ -96,7 +96,7 @@ object LilaOut:
 
   // racer
 
-  case class RacerState(raceId: Racer.RaceId, state: JsonString) extends TourOut
+  case class RacerState(raceId: Racer.Id, state: JsonString) extends TourOut
 
   case class ApiUserOnline(userId: UserId, online: Boolean) extends AnyRoomOut
   case object LilaBoot                                      extends AnyRoomOut
@@ -266,7 +266,7 @@ object LilaOut:
 
       case "r/tour/standing" =>
         get(args, 2) { case Array(tourId, data) =>
-          Some(RoundTourStanding(tourId, JsonString(data)))
+          Some(RoundTourStanding(Tour.Id(tourId), JsonString(data)))
         }
 
       case "r/resync/player" => Some(RoundResyncPlayer(Game.FullId(args)))
@@ -307,7 +307,7 @@ object LilaOut:
 
       case "racer/state" =>
         get(args, 2) { case Array(raceId, data) =>
-          Some(RacerState(raceId, JsonString(data)))
+          Some(RacerState(Racer.Id(raceId), JsonString(data)))
         }
 
       // misc
