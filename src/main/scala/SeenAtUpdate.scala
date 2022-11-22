@@ -15,11 +15,11 @@ final class SeenAtUpdate(mongo: Mongo)(using
     scheduler: akka.actor.typed.Scheduler
 ) extends MongoHandlers:
 
-  private val done: Cache[UserId, Boolean] = Scaffeine()
+  private val done: Cache[User.Id, Boolean] = Scaffeine()
     .expireAfterWrite(10.minutes)
-    .build[UserId, Boolean]()
+    .build[User.Id, Boolean]()
 
-  def apply(user: UserId): Future[Unit] =
+  def apply(user: User.Id): Future[Unit] =
     if done.getIfPresent(user).isDefined then Future successful {}
     else
       done.put(user, true)
@@ -55,13 +55,13 @@ final class SeenAtUpdate(mongo: Mongo)(using
 
   object streamers:
 
-    def contains(user: UserId) = ids contains user
+    def contains(user: User.Id) = ids contains user
 
-    private var ids = Set.empty[UserId]
+    private var ids = Set.empty[User.Id]
 
-    private def fetch: Future[Set[UserId]] =
+    private def fetch: Future[Set[User.Id]] =
       mongo.streamer(
-        _.distinct[UserId, Set](
+        _.distinct[User.Id, Set](
           key = "_id",
           selector = Some(
             BSONDocument(

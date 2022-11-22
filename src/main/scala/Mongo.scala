@@ -59,10 +59,10 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
 
   def simulExists(id: Simul.Id): Future[Boolean] = simulColl flatMap idExists(id.value)
 
-  private def isTeamMember(teamId: Team.Id, user: UserId): Future[Boolean] =
+  private def isTeamMember(teamId: Team.Id, user: User.Id): Future[Boolean] =
     teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.value}@$teamId")) }
 
-  def teamView(id: Team.Id, me: Option[UserId]): Future[Option[Team.HasChat]] = {
+  def teamView(id: Team.Id, me: Option[User.Id]): Future[Option[Team.HasChat]] = {
     teamColl flatMap {
       _.find(
         selector = BSONDocument("_id" -> id),
@@ -78,7 +78,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
           teamDoc.int("chat").fold(false) { chat =>
             chat == Team.Access.Members.id ||
             (chat == Team.Access.Leaders.id && me.fold(false) { me =>
-              teamDoc.getAsOpt[Set[UserId]]("leaders").exists(_ contains me)
+              teamDoc.getAsOpt[Set[User.Id]]("leaders").exists(_ contains me)
             })
           }
         )
@@ -96,7 +96,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       case None        => gameColl flatMap idExists(id.value)
       case Some(entry) => entry.map(_.isDefined)(parasitic)
 
-  def player(fullId: Game.FullId, user: Option[UserId]): Future[Option[Game.RoundPlayer]] =
+  def player(fullId: Game.FullId, user: Option[User.Id]): Future[Option[Game.RoundPlayer]] =
     gameCache
       .get(fullId.gameId)
       .map {
@@ -120,7 +120,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
             for {
               doc       <- docOpt
               playerIds <- doc.getAsOpt[String]("is")
-              users = doc.getAsOpt[List[UserId]]("us") getOrElse Nil
+              users = doc.getAsOpt[List[User.Id]]("us") getOrElse Nil
               players = Color.Map(
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.value.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
@@ -136,7 +136,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
-  def studyExistsFor(id: Study.Id, user: Option[UserId]): Future[Boolean] =
+  def studyExistsFor(id: Study.Id, user: Option[User.Id]): Future[Boolean] =
     studyColl flatMap {
       exists(
         _,
@@ -154,7 +154,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       )
     }
 
-  def studyMembers(id: Study.Id): Future[Set[UserId]] =
+  def studyMembers(id: Study.Id): Future[Set[User.Id]] =
     studyColl flatMap {
       _.find(
         selector = BSONDocument("_id" -> id),
@@ -163,13 +163,13 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
         for {
           doc     <- docOpt
           members <- doc.getAsOpt[BSONDocument]("members")
-        } yield members.elements.collect { case BSONElement(key, _) => UserId(key) }.toSet
+        } yield members.elements.collect { case BSONElement(key, _) => User.Id(key) }.toSet
       } map (_ getOrElse Set.empty)
     }
 
-  def tournamentActiveUsers(tourId: Tour.Id): Future[Set[UserId]] =
+  def tournamentActiveUsers(tourId: Tour.Id): Future[Set[User.Id]] =
     tourPlayerColl flatMap {
-      _.distinct[UserId, Set](
+      _.distinct[User.Id, Set](
         key = "uid",
         selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
         readConcern = ReadConcern.Local,
@@ -177,9 +177,9 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       )
     }
 
-  def tournamentPlayingUsers(tourId: Tour.Id): Future[Set[UserId]] =
+  def tournamentPlayingUsers(tourId: Tour.Id): Future[Set[User.Id]] =
     tourPairingColl flatMap {
-      _.distinct[UserId, Set](
+      _.distinct[User.Id, Set](
         key = "u",
         selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
         readConcern = ReadConcern.Local,
@@ -197,15 +197,15 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
           _.getAsOpt[BSONDocument]("challenger")
         } map { c =>
           val anon = c.getAsOpt[String]("s") map Challenge.Challenger.Anon.apply
-          val user = c.getAsOpt[UserId]("id") map Challenge.Challenger.User.apply
+          val user = c.getAsOpt[User.Id]("id") map Challenge.Challenger.User.apply
           anon orElse user getOrElse Challenge.Challenger.Open
         }
       }
     }
 
-  def inquirers: Future[List[UserId]] =
+  def inquirers: Future[List[User.Id]] =
     reportColl flatMap {
-      _.distinct[UserId, List](
+      _.distinct[User.Id, List](
         key = "inquiry.mod",
         selector = Some(BSONDocument("inquiry.mod" -> BSONDocument("$exists" -> true))),
         readConcern = ReadConcern.Local,
@@ -217,14 +217,14 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
     BSONDocument("username" -> true, "title" -> true, "plan" -> true, "_id" -> false)
   private def userDataReader(doc: BSONDocument) =
     for {
-      name <- doc.getAsOpt[String]("username")
-      title  = doc.getAsOpt[String]("title")
-      patron = doc.child("plan").flatMap(_.getAsOpt[Boolean]("active")) getOrElse false
+      name <- doc.getAsOpt[User.Name]("username")
+      title  = doc.getAsOpt[User.Title]("title")
+      patron = doc.child("plan").flatMap(_.getAsOpt[User.Patron]("active")) getOrElse User.Patron(false)
     } yield FriendList.UserData(name, title, patron)
 
-  def loadFollowed(userId: UserId): Future[Iterable[UserId]] =
+  def loadFollowed(userId: User.Id): Future[Iterable[User.Id]] =
     relationColl flatMap {
-      _.distinct[UserId, List](
+      _.distinct[User.Id, List](
         key = "u2",
         selector = Some(BSONDocument("u1" -> userId, "r" -> true)),
         readConcern = ReadConcern.Local,
@@ -232,7 +232,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       )
     }
 
-  def userData(userId: UserId): Future[Option[FriendList.UserData]] =
+  def userData(userId: User.Id): Future[Option[FriendList.UserData]] =
     userColl flatMap {
       _.find(
         BSONDocument("_id" -> userId),
@@ -243,13 +243,13 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
 
   object troll:
 
-    def is(user: Option[UserId]): Future[IsTroll] =
+    def is(user: Option[User.Id]): Future[IsTroll] =
       user.fold(Future successful IsTroll(false))(cache.get)
 
-    def set(userId: UserId, v: IsTroll): Unit =
+    def set(userId: User.Id, v: IsTroll): Unit =
       cache.put(userId, Future successful v)
 
-    private val cache: AsyncLoadingCache[UserId, IsTroll] = Scaffeine()
+    private val cache: AsyncLoadingCache[User.Id, IsTroll] = Scaffeine()
       .expireAfterAccess(20.minutes)
       .buildAsyncFuture { id =>
         userColl flatMap {

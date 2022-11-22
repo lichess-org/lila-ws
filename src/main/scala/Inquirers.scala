@@ -12,9 +12,9 @@ final class Inquirers(mongo: Mongo, lightUserApi: LightUserApi)(using
 
   private val cache = Scaffeine()
     .expireAfterWrite(5 minutes)
-    .build[UserId, Boolean]()
+    .build[User.Id, Boolean]()
 
-  def contains(user: UserId): Boolean =
+  def contains(user: User.Id): Boolean =
     cache.underlying.getIfPresent(user) == true
 
   scheduler.scheduleAtFixedRate(10 seconds, 2 seconds) { () =>

@@ -6,29 +6,26 @@ import scala.concurrent.duration.*
 import scala.concurrent.{ ExecutionContext, Future }
 import Mongo.given
 
-final class LightUserApi(mongo: Mongo)(using executionContext: ExecutionContext):
+final class LightUserApi(mongo: Mongo)(using ExecutionContext):
 
-  type TitleName = String
+  def get(id: User.Id): Future[User.TitleName] = cache get id
 
-  def get(id: UserId): Future[TitleName] = cache get id
-
-  private val cache: AsyncLoadingCache[UserId, TitleName] =
+  private val cache: AsyncLoadingCache[User.Id, User.TitleName] =
     Scaffeine()
       .initialCapacity(32768)
       .expireAfterWrite(15.minutes)
       .buildAsyncFuture(fetch)
 
-  private def fetch(id: UserId): Future[TitleName] =
+  private def fetch(id: User.Id): Future[User.TitleName] =
     mongo.user {
       _.find(
         BSONDocument("_id" -> id),
         Some(BSONDocument("username" -> true, "title" -> true))
       ).one[BSONDocument] map { docOpt =>
-        val name =
-          for {
-            doc  <- docOpt
-            name <- doc.getAsOpt[String]("username")
-          } yield doc.getAsOpt[String]("title").fold(name)(_ + " " + name)
-        name getOrElse id.value
+        val name = for
+          doc  <- docOpt
+          name <- doc.getAsOpt[User.Name]("username")
+        yield User.TitleName(name, doc.getAsOpt[User.Title]("title"))
+        name getOrElse id.into(User.TitleName)
       }
     }

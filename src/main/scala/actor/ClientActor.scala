@@ -144,7 +144,7 @@ object ClientActor:
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
-  def Req(req: util.RequestHeader, sri: Sri, user: Option[UserId]): Req =
+  def Req(req: util.RequestHeader, sri: Sri, user: Option[User.Id]): Req =
     Req(
       name = req.name,
       ip = req.ip,
@@ -158,7 +158,7 @@ object ClientActor:
       ip: Option[IpAddress],
       sri: Sri,
       flag: Option[Flag],
-      user: Option[UserId]
+      user: Option[User.Id]
   ):
     override def toString = s"${user.fold("Anon")(_.value)} $name"
 

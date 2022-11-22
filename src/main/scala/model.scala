@@ -4,8 +4,19 @@ import play.api.libs.json.{ Format, Json, Reads, Writes }
 import chess.Color
 import chess.format.{ FEN, Uci }
 
-opaque type UserId = String
-object UserId extends OpaqueString[UserId]
+object User:
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
+  opaque type Name = String
+  object Name extends OpaqueString[Name]
+  opaque type Title = String
+  object Title extends OpaqueString[Title]
+  opaque type TitleName = String
+  object TitleName extends OpaqueString[TitleName]:
+    def apply(name: Name, title: Option[Title]): TitleName =
+      TitleName(title.fold(name.value)(_.value + " " + name.value))
+  opaque type Patron = Boolean
+  object Patron extends YesNo[Patron]
 
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
@@ -26,12 +37,12 @@ object Game:
   opaque type PlayerId = String
   object PlayerId extends OpaqueString[PlayerId]
 
-  case class Player(id: PlayerId, userId: Option[UserId])
+  case class Player(id: PlayerId, userId: Option[User.Id])
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
   case class Round(id: Game.Id, players: Color.Map[Player], ext: Option[RoundExt]):
-    def player(id: PlayerId, userId: Option[UserId]): Option[RoundPlayer] =
+    def player(id: PlayerId, userId: Option[User.Id]): Option[RoundPlayer] =
       Color.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
@@ -81,15 +92,15 @@ object Challenge:
   object Id extends OpaqueString[Id]
   enum Challenger:
     case Anon(secret: String)
-    case User(userId: UserId)
+    case User(userId: lila.ws.User.Id)
     case Open
 
 object Racer:
   opaque type Id = String
   object Id extends OpaqueString[Id]
   enum PlayerId(val key: String):
-    case User(user: UserId) extends PlayerId(user.value)
-    case Anon(sid: String)  extends PlayerId(s"@$sid")
+    case User(user: lila.ws.User.Id) extends PlayerId(user.value)
+    case Anon(sid: String)           extends PlayerId(s"@$sid")
 
 opaque type Sri = String
 object Sri extends OpaqueString[Sri]:
@@ -128,7 +139,7 @@ case class UptimeMillis(millis: Long) extends AnyVal:
 object UptimeMillis:
   def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
 
-case class ThroughStudyDoor(user: UserId, through: Either[RoomId, RoomId])
+case class ThroughStudyDoor(user: User.Id, through: Either[RoomId, RoomId])
 
 case class RoundEventFlags(
     watcher: Boolean,

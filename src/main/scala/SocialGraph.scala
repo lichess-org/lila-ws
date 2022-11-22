@@ -50,12 +50,12 @@ final class SocialGraph(mongo: Mongo, config: Config):
   // using a cryptographically secure and randomized hash, just make it
   // slightly more inconvenient to exploit than String.hashCode().
   private val seed = Random.nextInt()
-  private def fxhash32(user: UserId): Int =
+  private def fxhash32(user: User.Id): Int =
     user.value.foldLeft(seed) { case (state, ch) =>
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
 
-  private def findSlot(id: UserId, exceptSlot: Int): Slot = returning[Slot] {
+  private def findSlot(id: User.Id, exceptSlot: Int): Slot = returning[Slot] {
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
@@ -110,14 +110,14 @@ final class SocialGraph(mongo: Mongo, config: Config):
       }
     }
 
-  private def readOnlineFollowing(leftSlot: Int): List[UserId] =
+  private def readOnlineFollowing(leftSlot: Int): List[User.Id] =
     graph.readIncoming(leftSlot) flatMap { rightSlot =>
       read(rightSlot) collect {
         case entry if entry.meta.online && entry.meta.subscribed => entry.id
       }
     }
 
-  private def updateFollowed(leftSlot: Int, followed: Iterable[UserId]): List[UserEntry] =
+  private def updateFollowed(leftSlot: Int, followed: Iterable[User.Id]): List[UserEntry] =
     graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
 
     (followed map { userId =>
@@ -133,7 +133,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       info
     }).toList
 
-  private def doLoadFollowed(id: UserId)(using ec: ExecutionContext): Future[List[UserEntry]] =
+  private def doLoadFollowed(id: User.Id)(using ec: ExecutionContext): Future[List[UserEntry]] =
     mongo.loadFollowed(id) map { followed =>
       lock.lock()
       try
@@ -150,7 +150,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
-  def followed(id: UserId)(using ec: ExecutionContext): Future[List[UserEntry]] =
+  def followed(id: User.Id)(using ec: ExecutionContext): Future[List[UserEntry]] =
     lock.lock()
     val infos =
       try
@@ -166,7 +166,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
         lock.unlock()
     infos.fold(doLoadFollowed(id))(Future.successful)
 
-  def unsubscribe(id: UserId): Unit =
+  def unsubscribe(id: User.Id): Unit =
     lock.lock()
     try
       findSlot(id, -1) match
@@ -177,7 +177,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       lock.unlock()
 
   // left no longer follows right.
-  def unfollow(left: UserId, right: UserId): Unit =
+  def unfollow(left: User.Id, right: User.Id): Unit =
     lock.lock()
     try
       findSlot(left, -1) match
@@ -191,7 +191,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       lock.unlock()
 
   // left now follows right.
-  def follow(left: UserId, right: UserId): Unit =
+  def follow(left: User.Id, right: User.Id): Unit =
     lock.lock()
     try
       findSlot(left, -1) match
@@ -210,7 +210,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   // Updates the status of a user. Returns the current user info and a list of
   // subscribed users that are interested in this update (if any).
-  def tell(id: UserId, meta: UserMeta => UserMeta): Option[(SocialGraph.UserEntry, List[UserId])] =
+  def tell(id: User.Id, meta: UserMeta => UserMeta): Option[(SocialGraph.UserEntry, List[User.Id])] =
     lock.lock()
     try
       findSlot(id, -1) match
@@ -258,7 +258,7 @@ object SocialGraph:
       inline def withPlaying(playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
   end UserMeta
 
-  case class UserEntry(id: UserId, meta: UserMeta):
+  case class UserEntry(id: User.Id, meta: UserMeta):
     def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
 
   private class AdjacencyList:

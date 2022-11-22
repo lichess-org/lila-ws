@@ -24,7 +24,7 @@ final class Controller(
       Future successful siteEndpoint(req, sri, user)
     }
 
-  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[UserId]) =
+  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User.Id]) =
     endpoint(
       name = "site",
       behavior = (emit: ClientEmit) =>
@@ -228,7 +228,7 @@ final class Controller(
       interval = 20.seconds
     )
 
-  private def WebSocket(req: RequestHeader)(f: Sri => Option[UserId] => Response): Response =
+  private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
     CSRF.check(req) {
       ValidSri(req) { sri =>
         auth(req) flatMap f(sri)

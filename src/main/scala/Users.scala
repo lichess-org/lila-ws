@@ -10,8 +10,8 @@ import ipc.*
 
 final class Users(using scheduler: Scheduler, ec: ExecutionContext):
 
-  private val users       = new ConcurrentHashMap[UserId, Set[Client]](32768)
-  private val disconnects = ConcurrentHashMap.newKeySet[UserId](2048)
+  private val users       = new ConcurrentHashMap[User.Id, Set[Client]](32768)
+  private val disconnects = ConcurrentHashMap.newKeySet[User.Id](2048)
 
   private def publish(msg: Matchable) = Bus.internal.publish("users", msg)
 
@@ -20,7 +20,7 @@ final class Users(using scheduler: Scheduler, ec: ExecutionContext):
     disconnects.clear()
   }
 
-  def connect(user: UserId, client: Client, silently: Boolean = false): Unit =
+  def connect(user: User.Id, client: Client, silently: Boolean = false): Unit =
     users.compute(
       user,
       {
@@ -32,7 +32,7 @@ final class Users(using scheduler: Scheduler, ec: ExecutionContext):
       }
     )
 
-  def disconnect(user: UserId, client: Client): Unit =
+  def disconnect(user: User.Id, client: Client): Unit =
     users.computeIfPresent(
       user,
       (_, clients) => {
@@ -44,24 +44,24 @@ final class Users(using scheduler: Scheduler, ec: ExecutionContext):
       }
     )
 
-  def tellOne(userId: UserId, payload: ClientMsg): Unit =
+  def tellOne(userId: User.Id, payload: ClientMsg): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! payload }
     }
 
-  def tellMany(userIds: Iterable[UserId], payload: ClientMsg): Unit =
+  def tellMany(userIds: Iterable[User.Id], payload: ClientMsg): Unit =
     userIds foreach { tellOne(_, payload) }
 
-  def kick(userId: UserId): Unit =
+  def kick(userId: User.Id): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! ClientCtrl.Disconnect }
     }
 
-  def setTroll(userId: UserId, v: IsTroll): Unit =
+  def setTroll(userId: User.Id, v: IsTroll): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
 
-  def isOnline(userId: UserId): Boolean = users containsKey userId
+  def isOnline(userId: User.Id): Boolean = users containsKey userId
 
   def size = users.size

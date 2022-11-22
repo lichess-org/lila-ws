@@ -2,11 +2,11 @@ package lila.ws
 
 object Impersonations:
 
-  private type ModId = UserId
+  private type ModId = User.Id
 
-  private var all = Map.empty[ModId, UserId]
+  private var all = Map.empty[ModId, User.Id]
 
-  def apply(user: UserId, by: Option[UserId]): Unit =
+  def apply(user: User.Id, by: Option[User.Id]): Unit =
     by match
       case Some(modId) => all = all + (modId -> user)
       case None =>
@@ -14,7 +14,7 @@ object Impersonations:
           case (m, u) if u == user => m
         } foreach { modId => all = all - modId }
 
-  def get(modId: ModId): Option[UserId] = all get modId
+  def get(modId: ModId): Option[User.Id] = all get modId
 
   def reset() =
     all = Map.empty

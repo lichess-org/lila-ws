@@ -37,4 +37,4 @@ object ApiActor:
         Behaviors.same
       }
 
-  case class Deps(user: UserId, services: Services)
+  case class Deps(user: User.Id, services: Services)

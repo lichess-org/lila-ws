@@ -194,10 +194,10 @@ object ClientIn:
     val write = "" // not actually sent
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
-  case class Palantir(userIds: Iterable[UserId]) extends ClientIn:
+  case class Palantir(userIds: Iterable[User.Id]) extends ClientIn:
     def write = cliMsg("palantir", userIds)
 
-  case class MsgType(orig: UserId) extends ClientIn:
+  case class MsgType(orig: User.Id) extends ClientIn:
     def write = cliMsg("msgType", orig)
 
   object following:
@@ -208,7 +208,7 @@ object ClientIn:
           "t"       -> "following_onlines",
           "d"       -> users.map(_.data.titleName),
           "playing" -> users.collect { case u if u.meta.playing => u.id },
-          "patrons" -> users.collect { case u if u.data.patron => u.id }
+          "patrons" -> users.collect { case u if u.data.patron.yes => u.id }
         )
     case class Enters(user: FriendList.UserView) extends ClientIn:
       // We use 'd' for backward compatibility with the mobile client
@@ -217,16 +217,16 @@ object ClientIn:
           "t" -> "following_enters",
           "d" -> user.data.titleName
         ) ++ {
-          if (user.data.patron) Json.obj("patron" -> true)
+          if (user.data.patron.yes) Json.obj("patron" -> true)
           else Json.obj()
         }
 
     abstract class Event(key: String) extends ClientIn:
-      def user: UserId
+      def user: User.Id
       def write = cliMsg(s"following_$key", user)
-    case class Leaves(user: UserId)         extends Event("leaves")
-    case class Playing(user: UserId)        extends Event("playing")
-    case class StoppedPlaying(user: UserId) extends Event("stopped_playing")
+    case class Leaves(user: User.Id)         extends Event("leaves")
+    case class Playing(user: User.Id)        extends Event("playing")
+    case class StoppedPlaying(user: User.Id) extends Event("stopped_playing")
 
   case class StormKey(signed: String) extends ClientIn:
     def write = cliMsg("sk1", signed)
