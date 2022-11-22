@@ -45,15 +45,15 @@ object RacerClientActor:
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientOut.RacerScore(score) =>
-            services.lila.racer(LilaIn.RacerScore(state.room.room.roomId, state.playerId, score))
+            services.lila.racer(LilaIn.RacerScore(state.room.room.value, state.playerId, score))
             Behaviors.same
 
           case ClientOut.RacerJoin =>
-            services.lila.racer(LilaIn.RacerJoin(state.room.room.roomId, state.playerId))
+            services.lila.racer(LilaIn.RacerJoin(state.room.room.value, state.playerId))
             Behaviors.same
 
           case ClientOut.RacerStart =>
-            services.lila.racer(LilaIn.RacerStart(state.room.room.roomId, state.playerId))
+            services.lila.racer(LilaIn.RacerStart(state.room.room.value, state.playerId))
             Behaviors.same
 
           // default receive (site)

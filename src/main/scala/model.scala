@@ -14,16 +14,14 @@ trait IntValue extends Any:
 val stringFormat: Format[String] = Format(Reads.StringReads, Writes.StringWrites)
 
 opaque type UserId = String
-object UserId:
-  def apply(v: String): UserId = v
-extension (o: UserId) def userId = o
-given Format[UserId] = stringFormat.bimap(UserId.apply, _.userId)
+object UserId extends OpaqueString[UserId]
+given Format[UserId] = stringFormat.bimap(UserId.apply, identity)
 
 object Game:
   case class Id(value: String) extends AnyVal with StringValue:
     def full(playerId: PlayerId) = FullId(s"$value$playerId")
   object Id:
-    def ofRoom(room: RoomId): Id = Id(room.roomId)
+    def ofRoom(room: RoomId): Id = Id(room.value)
   case class FullId(value: String) extends AnyVal with StringValue:
     def gameId   = Id(value take 8)
     def playerId = PlayerId(value drop 8)
@@ -89,16 +87,14 @@ object Challenge:
 object Racer:
   type RaceId = String
   enum PlayerId(val key: String):
-    case User(user: UserId) extends PlayerId(user.userId)
+    case User(user: UserId) extends PlayerId(user.value)
     case Anon(sid: String)  extends PlayerId(s"@$sid")
 
 opaque type RoomId = String
-object RoomId:
-  def apply(v: String): RoomId              = v
+object RoomId extends OpaqueString[RoomId]:
   def ofGame(id: Game.Id): RoomId           = id.value
   def ofPlayer(id: Game.FullId): RoomId     = id.gameId.value
   def ofChallenge(id: Challenge.Id): RoomId = id.value
-extension (o: RoomId) def roomId = o
 
 opaque type Sri = String
 object Sri:

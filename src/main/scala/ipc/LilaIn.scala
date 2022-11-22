@@ -37,7 +37,7 @@ object LilaIn:
       with Racer
 
   case class TellSri(sri: Sri, user: Option[UserId], payload: JsValue) extends Site with Lobby:
-    def write = s"tell/sri $sri ${optional(user.map(_.userId))} ${Json.stringify(payload)}"
+    def write = s"tell/sri $sri ${optional(user.map(_.value))} ${Json.stringify(payload)}"
 
   case class TellUser(userId: UserId, payload: JsObject) extends Site:
     def write = s"tell/user $userId ${Json.stringify(payload)}"
@@ -49,7 +49,7 @@ object LilaIn:
     def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
 
   case class ConnectUser(user: UserId, silently: Boolean) extends Site:
-    def write = s"connect/user ${user.userId}"
+    def write = s"connect/user ${user.value}"
 
   case class DisconnectUsers(userIds: Set[UserId]) extends Site:
     def write = s"disconnect/users ${commas(userIds)}"
@@ -82,7 +82,7 @@ object LilaIn:
 
   case class TellRoomSri(roomId: RoomId, tellSri: TellSri) extends Study with Round:
     import tellSri.*
-    def write = s"tell/room/sri $roomId $sri ${optional(user.map(_.userId))} ${Json.stringify(payload)}"
+    def write = s"tell/room/sri $roomId $sri ${optional(user.map(_.value))} ${Json.stringify(payload)}"
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom:
     def write =
@@ -113,7 +113,7 @@ object LilaIn:
       user: Option[UserId],
       name: String
   ) extends Round:
-    def write = s"r/report $fullId $ip ${optional(user.map(_.userId))} $name"
+    def write = s"r/report $fullId $ip ${optional(user.map(_.value))} $name"
 
   case class RoundFlag(gameId: Game.Id, color: Color, playerId: Option[Game.PlayerId]) extends Round:
     def write = s"r/flag $gameId ${writeColor(color)} ${optional(playerId.map(_.value))}"
@@ -129,7 +129,7 @@ object LilaIn:
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round:
     private def one(r: RoundCrowd.Output): String =
-      if (r.isEmpty) r.room.roomId.roomId
+      if (r.isEmpty) r.room.roomId.value
       else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
     def write = s"r/ons ${commas(many map one)}"
 

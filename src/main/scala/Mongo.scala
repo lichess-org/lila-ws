@@ -60,7 +60,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
   def simulExists(id: Simul.ID): Future[Boolean] = simulColl flatMap idExists(id)
 
   private def isTeamMember(teamId: Team.ID, user: UserId): Future[Boolean] =
-    teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.userId}@$teamId")) }
+    teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.value}@$teamId")) }
 
   def teamView(id: Team.ID, me: Option[UserId]): Future[Option[Team.View]] = {
     teamColl flatMap {
@@ -122,7 +122,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
               playerIds <- doc.getAsOpt[String]("is")
               users = doc.getAsOpt[List[UserId]]("us") getOrElse Nil
               players = Color.Map(
-                Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.userId.nonEmpty)),
+                Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.value.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
               ext =
@@ -146,7 +146,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
             BSONDocument(
               "$or" -> BSONArray(
                 visibilityNotPrivate,
-                BSONDocument(s"members.${u.userId}" -> BSONDocument("$exists" -> true))
+                BSONDocument(s"members.${u.value}" -> BSONDocument("$exists" -> true))
               )
             )
           }
@@ -297,6 +297,6 @@ trait MongoHandlers:
       }
     @inline def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
 
-  given UserIdHandler: BSONHandler[UserId] = BSONStringHandler.as(UserId.apply, _.userId)
+  given UserIdHandler: BSONHandler[UserId] = BSONStringHandler.as(UserId.apply, _.value)
 
 object Mongo extends MongoHandlers

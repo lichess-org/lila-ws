@@ -93,7 +93,7 @@ final class LilaHandler(
 
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
-      mongo.tournamentActiveUsers(roomId.roomId) zip mongo.tournamentPlayingUsers(roomId.roomId) foreach {
+      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
         case (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
@@ -102,7 +102,7 @@ final class LilaHandler(
           val absent =
             if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.roomId, name))
+          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
       }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
@@ -117,8 +117,6 @@ final class LilaHandler(
     import scala.language.implicitConversions
     given Conversion[Game.Id, RoomId] with
       def apply(id: Game.Id): RoomId = RoomId.ofGame(id)
-    given Conversion[RoomId, Game.Id] with
-      def apply(roomId: RoomId): Game.Id = Game.Id(roomId.roomId)
 
     {
       case RoundVersion(gameId, version, flags, tpe, data) =>
@@ -137,7 +135,7 @@ final class LilaHandler(
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
       case o: TvSelect => Tv select o
       case RoomStop(roomId) =>
-        History.round.stop(roomId)
+        History.round.stop(Game.Id(roomId.value))
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case GameStart(users) =>

@@ -160,7 +160,7 @@ object ClientActor:
       flag: Option[Flag],
       user: Option[UserId]
   ):
-    override def toString = s"${user.fold("Anon")(_.userId)} $name"
+    override def toString = s"${user.fold("Anon")(_.value)} $name"
 
   case class Deps(
       clientIn: ClientEmit,
