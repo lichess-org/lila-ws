@@ -233,28 +233,30 @@ object SocialGraph:
 
   private val MaxStride: Int = 16
 
-  case class UserMeta private (flags: Int) extends AnyVal:
-    @inline
-    private def toggle(flag: Int, on: Boolean) = UserMeta(if (on) flags | flag else flags & ~flag)
-    @inline
-    private def has(flag: Int): Boolean = (flags & flag) != 0
+  opaque type UserMeta = Int
+  object UserMeta extends OpaqueInt[UserMeta]:
 
-    def fresh      = has(UserMeta.FRESH)
-    def subscribed = has(UserMeta.SUBSCRIBED)
-    def online     = has(UserMeta.ONLINE)
-    def playing    = has(UserMeta.PLAYING)
-
-    def withFresh(fresh: Boolean)           = toggle(UserMeta.FRESH, fresh)
-    def withSubscribed(subscribed: Boolean) = toggle(UserMeta.SUBSCRIBED, subscribed)
-    def withOnline(online: Boolean)         = toggle(UserMeta.ONLINE, online)
-    def withPlaying(playing: Boolean)       = toggle(UserMeta.PLAYING, playing)
-  object UserMeta:
     private val FRESH      = 1
     private val SUBSCRIBED = 2
     private val ONLINE     = 4
     private val PLAYING    = 8
     val stale              = UserMeta(0)
     val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
+
+    extension (flags: UserMeta)
+      private inline def toggle(flag: Int, on: Boolean) = UserMeta(if (on) flags | flag else flags & ~flag)
+      private inline def has(flag: Int): Boolean        = (flags & flag) != 0
+
+      inline def fresh      = flags.has(UserMeta.FRESH)
+      inline def subscribed = flags.has(UserMeta.SUBSCRIBED)
+      inline def online     = flags.has(UserMeta.ONLINE)
+      inline def playing    = flags.has(UserMeta.PLAYING)
+
+      inline def withFresh(fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
+      inline def withSubscribed(subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
+      inline def withOnline(online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
+      inline def withPlaying(playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
+  end UserMeta
 
   case class UserEntry(id: UserId, meta: UserMeta):
     def update(f: UserMeta => UserMeta) = copy(meta = f(meta))
