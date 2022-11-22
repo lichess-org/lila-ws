@@ -19,8 +19,6 @@ trait TotalWrapper[Newtype, Impl](using ev: Newtype =:= Impl):
 end TotalWrapper
 
 inline given [A, T](using bts: BasicallyTheSame[T, A], ord: Ordering[A]): Ordering[T] = Ordering.by(bts.apply)
-// inline given [A, T](using bts: BasicallyTheSame[T, A], ord: Ordering[T]): Ordered[T] with
-//   def compare(that: T): Int = ord.compare(this, that)
 
 trait OpaqueString[A](using A =:= String) extends TotalWrapper[A, String]
 
@@ -33,5 +31,7 @@ abstract class YesNo[A](using ev: Boolean =:= A):
   given BasicallyTheSame[A, Boolean]     = _ == Yes
   given BasicallyTheSame[Boolean, A]     = if _ then Yes else No
 
-  extension (inline a: A) inline def value: Boolean = a == Yes
+  extension (inline a: A)
+    inline def value: Boolean = a == Yes
+    inline def yes: Boolean   = a == Yes
 end YesNo

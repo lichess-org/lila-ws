@@ -165,7 +165,7 @@ final class Controller(
   def team(id: Team.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo.teamView(id, user) zip mongo.troll.is(user) map { case (view, isTroll) =>
-        if (view.exists(_.hasChat))
+        if (view.exists(_.yes))
           endpoint(
             name = "team",
             behavior = (emit: ClientEmit) =>
