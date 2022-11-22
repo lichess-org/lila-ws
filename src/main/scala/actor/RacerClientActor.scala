@@ -14,7 +14,8 @@ object RacerClientActor:
       playerId: PlayerId,
       room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
-  )
+  ):
+    def raceId = room.room into Racer.Id
 
   def start(roomState: RoomActor.State, playerId: PlayerId)(
       deps: Deps
@@ -39,21 +40,21 @@ object RacerClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
-              keepAlive.racer(state.room.id)
+              keepAlive.racer(state.room.room)
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientOut.RacerScore(score) =>
-            services.lila.racer(LilaIn.RacerScore(state.room.id.value, state.playerId, score))
+            services.lila.racer(LilaIn.RacerScore(state.raceId, state.playerId, score))
             Behaviors.same
 
           case ClientOut.RacerJoin =>
-            services.lila.racer(LilaIn.RacerJoin(state.room.id.value, state.playerId))
+            services.lila.racer(LilaIn.RacerJoin(state.raceId, state.playerId))
             Behaviors.same
 
           case ClientOut.RacerStart =>
-            services.lila.racer(LilaIn.RacerStart(state.room.id.value, state.playerId))
+            services.lila.racer(LilaIn.RacerStart(state.raceId, state.playerId))
             Behaviors.same
 
           // default receive (site)

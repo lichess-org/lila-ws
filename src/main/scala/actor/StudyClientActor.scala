@@ -29,9 +29,7 @@ object StudyClientActor:
         import deps.*
 
         def forward(payload: JsValue): Unit =
-          lilaIn.study(
-            LilaIn.TellRoomSri(state.room.id, LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
-          )
+          lilaIn.study(LilaIn.TellRoomSri(state.room.room, LilaIn.TellSri(req.sri, req.user, payload)))
 
         def receive: PartialFunction[ClientMsg, Behavior[ClientMsg]] =
 
@@ -43,7 +41,7 @@ object StudyClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
-              keepAlive study state.room.id
+              keepAlive study state.room.room
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
@@ -63,7 +61,7 @@ object StudyClientActor:
             Behaviors.same
 
           case ClientOut.PalantirPing =>
-            deps.req.user map { Palantir.respondToPing(state.room.id, _) } foreach clientIn
+            deps.req.user map { Palantir.respondToPing(state.room.room, _) } foreach clientIn
             Behaviors.same
 
           // default receive (site)

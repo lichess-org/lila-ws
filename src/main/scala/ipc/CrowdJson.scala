@@ -46,15 +46,15 @@ final class CrowdJson(
         )
       }
 
-  private def isBotName(str: String) = str startsWith "BOT "
+  private def isBotName(name: User.TitleName) = name.value startsWith "BOT "
 
-  private val isStudyCache: AsyncLoadingCache[String, Boolean] =
+  private val isStudyCache: AsyncLoadingCache[Study.Id, Boolean] =
     Scaffeine()
       .expireAfterWrite(20.minutes)
       .buildAsyncFuture(mongo.studyExists)
 
-  private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.ID]] =
-    isStudyCache.get(crowd.roomId.value) flatMap {
+  private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.Id]] =
+    isStudyCache.get(crowd.roomId into Study.Id) flatMap {
       case false => Future successful Nil
-      case true  => mongo.studyMembers(crowd.roomId.value) map crowd.users.toSet.intersect
+      case true  => mongo.studyMembers(crowd.roomId into Study.Id) map crowd.users.toSet.intersect
     }

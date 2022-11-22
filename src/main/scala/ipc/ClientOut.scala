@@ -4,7 +4,6 @@ package ipc
 import chess.format.{ FEN, Uci }
 import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
-import lila.ws.util.JsExtension.*
 import play.api.libs.json.*
 import scala.util.{ Success, Try }
 
@@ -58,7 +57,7 @@ object ClientOut:
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
-  case class MsgType(dest: User.ID) extends ClientOutSite
+  case class MsgType(dest: User.Id) extends ClientOutSite
 
   case class SiteForward(payload: JsObject) extends ClientOutSite
 
@@ -95,7 +94,7 @@ object ClientOut:
   // chat
 
   case class ChatSay(msg: String)                                       extends ClientOut
-  case class ChatTimeout(suspect: String, reason: String, text: String) extends ClientOut
+  case class ChatTimeout(suspect: User.Id, reason: String, text: String) extends ClientOut
 
   // challenge
 
@@ -168,7 +167,7 @@ object ClientOut:
                 chapterId = d str "ch" map ChapterId.apply
               } yield AnaDests(FEN(fen), Path(path), variant, chapterId)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
-            case "msgType"             => o str "d" map MsgType.apply
+            case "msgType"             => o.get[User.Id]("d") map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
             case "idle" => o boolean "d" map { Idle(_, o) }
@@ -218,7 +217,7 @@ object ClientOut:
             case "timeout" =>
               for {
                 data   <- o obj "d"
-                userId <- data str "userId"
+                userId <- data.get[User.Id]("userId")
                 reason <- data str "reason"
                 text   <- data str "text"
               } yield ChatTimeout(userId, reason, text)

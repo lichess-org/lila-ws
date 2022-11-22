@@ -18,7 +18,7 @@ object ApiActor:
     import deps.*
     LilaWsServer.connections.decrementAndGet
     services.users.disconnect(user, ctx.self)
-    services.friends.onClientStop(user.id)
+    services.friends.onClientStop(user)
 
   private def apply(deps: Deps): Behavior[ClientMsg] =
     Behaviors
@@ -37,4 +37,4 @@ object ApiActor:
         Behaviors.same
       }
 
-  case class Deps(user: User, services: Services)
+  case class Deps(user: User.Id, services: Services)

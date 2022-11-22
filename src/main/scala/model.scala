@@ -1,133 +1,137 @@
 package lila.ws
 
+import play.api.libs.json.{ Format, Json, Reads, Writes }
 import chess.Color
 import chess.format.{ FEN, Uci }
 
-trait StringValue extends Any:
-  def value: String
-  override def toString = value
-trait IntValue extends Any:
-  def value: Int
-  override def toString = value.toString
-
-case class User(id: User.ID) extends AnyVal
-
 object User:
-  type ID = String
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
+  opaque type Name = String
+  object Name extends OpaqueString[Name]
+  opaque type Title = String
+  object Title extends OpaqueString[Title]
+  opaque type TitleName = String
+  object TitleName extends OpaqueString[TitleName]:
+    def apply(name: Name, title: Option[Title]): TitleName =
+      TitleName(title.fold(name.value)(_.value + " " + name.value))
+  opaque type Patron = Boolean
+  object Patron extends YesNo[Patron]
+
+opaque type RoomId = String
+object RoomId extends OpaqueString[RoomId]:
+  def ofPlayer(id: Game.FullId): RoomId = id.gameId.value
 
 object Game:
-  case class Id(value: String) extends AnyVal with StringValue:
-    def full(playerId: PlayerId) = FullId(s"$value$playerId")
-  case class FullId(value: String) extends AnyVal with StringValue:
-    def gameId   = Id(value take 8)
-    def playerId = PlayerId(value drop 8)
-  case class PlayerId(value: String) extends AnyVal with StringValue
 
-  case class Player(id: PlayerId, userId: Option[User.ID])
+  opaque type Id = String
+  object Id extends OpaqueString[Id]:
+    extension (id: Id) def full(playerId: PlayerId): FullId = FullId(s"$id$playerId")
+
+  opaque type FullId = String
+  object FullId extends OpaqueString[FullId]:
+    extension (fullId: FullId)
+      def gameId   = Game.Id(fullId.value take 8)
+      def playerId = PlayerId(fullId.value drop 8)
+
+  opaque type PlayerId = String
+  object PlayerId extends OpaqueString[PlayerId]
+
+  case class Player(id: PlayerId, userId: Option[User.Id])
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Id, players: Color.Map[Player], ext: Option[RoundExt]):
-    def player(id: PlayerId, userId: Option[User.ID]): Option[RoundPlayer] =
+  case class Round(id: Game.Id, players: Color.Map[Player], ext: Option[RoundExt]):
+    def player(id: PlayerId, userId: Option[User.Id]): Option[RoundPlayer] =
       Color.all.collectFirst {
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
       }
 
-  case class RoundPlayer(
-      id: PlayerId,
-      color: Color,
-      ext: Option[RoundExt]
-  ):
-    def tourId  = ext collect { case RoundExt.Tour(id) => id }
-    def swissId = ext collect { case RoundExt.Swiss(id) => id }
-    def simulId = ext collect { case RoundExt.Simul(id) => id }
+  case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
+    def tourId    = ext collect { case RoundExt.InTour(id) => id }
+    def swissId   = ext collect { case RoundExt.InSwiss(id) => id }
+    def simulId   = ext collect { case RoundExt.InSimul(id) => id }
+    def extRoomId = simulId.map(_ into RoomId) orElse swissId.map(_ into RoomId)
 
-  enum RoundExt(val id: String):
-    case Tour(i: String)  extends RoundExt(i)
-    case Swiss(i: String) extends RoundExt(i)
-    case Simul(i: String) extends RoundExt(i)
+  enum RoundExt:
+    case InTour(id: Tour.Id)   extends RoundExt
+    case InSwiss(id: Swiss.Id) extends RoundExt
+    case InSimul(id: Simul.Id) extends RoundExt
+end Game
 
 object Simul:
-  type ID = String
-
-case class Simul(id: Simul.ID) extends AnyVal
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
 
 object Tour:
-  type ID = String
-
-case class Tour(id: Tour.ID) extends AnyVal
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
 
 object Study:
-  type ID = String
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
 
-case class Study(id: Study.ID) extends AnyVal
-
-object Chat:
-  type ID = String
+object Swiss:
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
 
 object Team:
-  type ID = String
-  case class View(hasChat: Boolean)
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
+
+  opaque type HasChat = Boolean
+  object HasChat extends YesNo[HasChat]
+
   enum Access(val id: Int):
     case None    extends Access(0)
     case Leaders extends Access(10)
     case Members extends Access(20)
 
-object Swiss:
-  type ID = String
-
 object Challenge:
-  case class Id(value: String) extends AnyVal with StringValue
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
   enum Challenger:
     case Anon(secret: String)
-    case User(userId: String)
+    case User(userId: lila.ws.User.Id)
     case Open
 
 object Racer:
-  type RaceId = String
+  opaque type Id = String
+  object Id extends OpaqueString[Id]
   enum PlayerId(val key: String):
-    case User(uid: String) extends PlayerId(uid)
-    case Anon(sid: String) extends PlayerId(s"@$sid")
+    case User(user: lila.ws.User.Id) extends PlayerId(user.value)
+    case Anon(sid: String)           extends PlayerId(s"@$sid")
 
-case class Chat(id: Chat.ID) extends AnyVal
+opaque type Sri = String
+object Sri extends OpaqueString[Sri]:
+  def random                         = Sri(util.Util.secureRandom string 12)
+  def from(str: String): Option[Sri] = if str contains ' ' then None else Some(str)
 
-case class Sri(value: String) extends AnyVal with StringValue
-
-object Sri:
-  type Str = String
-  def random = Sri(util.Util.secureRandom string 12)
-  def from(str: String): Option[Sri] =
-    if (str contains ' ') None
-    else Some(Sri(str))
-
-case class Flag private (value: String) extends AnyVal with StringValue
-
-object Flag:
+opaque type Flag = String
+object Flag extends OpaqueString[Flag]:
   def make(value: String) =
     value match
       case "simul" | "tournament" | "api" => Some(Flag(value))
       case _                              => None
   val api = Flag("api")
 
-case class IpAddress(value: String) extends AnyVal with StringValue
+opaque type IpAddress = String
+object IpAddress extends OpaqueString[IpAddress]
 
-case class Path(value: String) extends AnyVal with StringValue
+opaque type Path = String
+object Path extends OpaqueString[Path]
 
-case class ChapterId(value: String) extends AnyVal with StringValue
+opaque type ChapterId = String
+object ChapterId extends OpaqueString[ChapterId]
 
-case class JsonString(value: String) extends AnyVal with StringValue
+opaque type JsonString = String
+object JsonString extends OpaqueString[JsonString]
 
-case class SocketVersion(value: Int) extends AnyVal with IntValue with Ordered[SocketVersion]:
-  def compare(other: SocketVersion) = Integer.compare(value, other.value)
+opaque type SocketVersion = Int
+object SocketVersion extends OpaqueInt[SocketVersion]
 
-case class IsTroll(value: Boolean) extends AnyVal
-
-case class RoomId(value: String) extends AnyVal with StringValue
-
-object RoomId:
-  def apply(v: StringValue): RoomId = RoomId(v.value)
-
-case class ReqId(value: Int) extends AnyVal with IntValue
+opaque type IsTroll = Boolean
+object IsTroll extends YesNo[IsTroll]
 
 case class UptimeMillis(millis: Long) extends AnyVal:
   def toNow: Long = UptimeMillis.make.millis - millis
@@ -135,7 +139,7 @@ case class UptimeMillis(millis: Long) extends AnyVal:
 object UptimeMillis:
   def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
 
-case class ThroughStudyDoor(user: User, through: Either[RoomId, RoomId])
+case class ThroughStudyDoor(user: User.Id, through: Either[RoomId, RoomId])
 
 case class RoundEventFlags(
     watcher: Boolean,
@@ -145,7 +149,8 @@ case class RoundEventFlags(
     troll: Boolean
 )
 
-case class UserTv(value: User.ID) extends AnyVal with StringValue
+opaque type UserTv = String
+object UserTv extends OpaqueString[UserTv]
 
 case class Clock(white: Int, black: Int)
 case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color):

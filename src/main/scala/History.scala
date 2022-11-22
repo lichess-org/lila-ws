@@ -2,7 +2,7 @@ package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
 
-final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
+final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
     initialCapacity: Int
 ):
@@ -19,9 +19,9 @@ final class History[K <: StringValue, V <: ipc.ClientIn.HasVersion](
     val allEvents = histories.getOrDefault(key.toString, Nil)
     versionOpt
       .fold(Option(allEvents.take(5))) { since =>
-        if (allEvents.headOption.fold(true)(_.version <= since)) Some(Nil)
+        if (allEvents.headOption.fold(true)(_.version.value <= since.value)) Some(Nil)
         else
-          val events = allEvents.takeWhile(_.version > since)
+          val events = allEvents.takeWhile(_.version.value > since.value)
           if (events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
           else None
       }

@@ -10,8 +10,8 @@ import ipc.*
 
 final class Users(using scheduler: Scheduler, ec: ExecutionContext):
 
-  private val users       = new ConcurrentHashMap[User.ID, Set[Client]](32768)
-  private val disconnects = ConcurrentHashMap.newKeySet[User.ID](2048)
+  private val users       = new ConcurrentHashMap[User.Id, Set[Client]](32768)
+  private val disconnects = ConcurrentHashMap.newKeySet[User.Id](2048)
 
   private def publish(msg: Matchable) = Bus.internal.publish("users", msg)
 
@@ -20,48 +20,48 @@ final class Users(using scheduler: Scheduler, ec: ExecutionContext):
     disconnects.clear()
   }
 
-  def connect(user: User, client: Client, silently: Boolean = false): Unit =
+  def connect(user: User.Id, client: Client, silently: Boolean = false): Unit =
     users.compute(
-      user.id,
+      user,
       {
         case (_, null) =>
-          if (!disconnects.remove(user.id)) publish(LilaIn.ConnectUser(user, silently))
+          if (!disconnects.remove(user)) publish(LilaIn.ConnectUser(user, silently))
           Set(client)
         case (_, clients) =>
           clients + client
       }
     )
 
-  def disconnect(user: User, client: Client): Unit =
+  def disconnect(user: User.Id, client: Client): Unit =
     users.computeIfPresent(
-      user.id,
+      user,
       (_, clients) => {
         val newClients = clients - client
         if (newClients.isEmpty) {
-          disconnects add user.id
+          disconnects add user
           null
         } else newClients
       }
     )
 
-  def tellOne(userId: User.ID, payload: ClientMsg): Unit =
+  def tellOne(userId: User.Id, payload: ClientMsg): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! payload }
     }
 
-  def tellMany(userIds: Iterable[User.ID], payload: ClientMsg): Unit =
+  def tellMany(userIds: Iterable[User.Id], payload: ClientMsg): Unit =
     userIds foreach { tellOne(_, payload) }
 
-  def kick(userId: User.ID): Unit =
+  def kick(userId: User.Id): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! ClientCtrl.Disconnect }
     }
 
-  def setTroll(userId: User.ID, v: IsTroll): Unit =
+  def setTroll(userId: User.Id, v: IsTroll): Unit =
     Option(users get userId) foreach {
       _ foreach { _ ! ipc.SetTroll(v) }
     }
 
-  def isOnline(userId: User.ID): Boolean = users containsKey userId
+  def isOnline(userId: User.Id): Boolean = users containsKey userId
 
   def size = users.size
