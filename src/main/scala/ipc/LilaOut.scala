@@ -20,23 +20,23 @@ object LilaOut:
 
   // site
 
-  case class Mlat(millis: Double)                                 extends SiteOut
-  case class TellFlag(flag: Flag, json: JsonString)               extends SiteOut
+  case class Mlat(millis: Double)                                  extends SiteOut
+  case class TellFlag(flag: Flag, json: JsonString)                extends SiteOut
   case class TellUsers(users: Iterable[User.Id], json: JsonString) extends SiteOut
-  case class TellAll(json: JsonString)                            extends SiteOut
+  case class TellAll(json: JsonString)                             extends SiteOut
   case class DisconnectUser(user: User.Id)                         extends SiteOut
-  case class TellSri(sri: Sri, json: JsonString)                  extends SiteOut with LobbyOut with StudyOut
+  case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
   case class SetTroll(user: User.Id, v: IsTroll)                   extends SiteOut
-  case class Impersonate(user: User.Id, by: Option[User.Id])        extends SiteOut
-  case class Follow(left: User.Id, right: User.Id)                  extends SiteOut
-  case class UnFollow(left: User.Id, right: User.Id)                extends SiteOut
-  case class Pong(pingAt: UptimeMillis)                           extends SiteOut with RoundOut
+  case class Impersonate(user: User.Id, by: Option[User.Id])       extends SiteOut
+  case class Follow(left: User.Id, right: User.Id)                 extends SiteOut
+  case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
+  case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
 
   // lobby
 
-  case class LobbyPairings(pairings: List[(Sri, Game.FullId)])         extends LobbyOut
-  case class TellLobby(json: JsonString)                               extends LobbyOut
-  case class TellLobbyActive(json: JsonString)                         extends LobbyOut
+  case class LobbyPairings(pairings: List[(Sri, Game.FullId)])          extends LobbyOut
+  case class TellLobby(json: JsonString)                                extends LobbyOut
+  case class TellLobbyActive(json: JsonString)                          extends LobbyOut
   case class TellLobbyUsers(users: Iterable[User.Id], json: JsonString) extends LobbyOut
 
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
@@ -85,22 +85,22 @@ object LilaOut:
       tpe: String,
       data: JsonString
   ) extends RoundOut
-  case class RoundTourStanding(tourId: Tour.Id, data: JsonString)                    extends RoundOut
-  case class RoundResyncPlayer(fullId: Game.FullId)                                  extends RoundOut
-  case class RoundGone(fullId: Game.FullId, v: Boolean)                              extends RoundOut
-  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                          extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)               extends RoundOut
+  case class RoundTourStanding(tourId: Tour.Id, data: JsonString)                     extends RoundOut
+  case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                           extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)                extends RoundOut
   case class GameStart(users: List[User.Id])                                          extends RoundOut
   case class GameFinish(gameId: Game.Id, winner: Option[Color], users: List[User.Id]) extends RoundOut
-  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString)         extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString)          extends RoundOut
 
   // racer
 
   case class RacerState(raceId: Racer.Id, state: JsonString) extends TourOut
 
   case class ApiUserOnline(userId: User.Id, online: Boolean) extends AnyRoomOut
-  case object LilaBoot                                      extends AnyRoomOut
-  case class LilaStop(reqId: Int)                           extends AnyRoomOut
+  case object LilaBoot                                       extends AnyRoomOut
+  case class LilaStop(reqId: Int)                            extends AnyRoomOut
   case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
   // impl
@@ -146,7 +146,7 @@ object LilaOut:
 
       case "tell/users" =>
         get(args, 2) { case Array(users, payload) =>
-          Some(TellUsers(commas(users).map(User.Id.apply), JsonString(payload)))
+          Some(TellUsers(User.Id from commas(users), JsonString(payload)))
         }
 
       case "tell/sri" =>
@@ -173,7 +173,7 @@ object LilaOut:
 
       case "tell/lobby/users" =>
         get(args, 2) { case Array(users, payload) =>
-          Some(TellLobbyUsers(commas(users) map User.Id.apply, JsonString(payload)))
+          Some(TellLobbyUsers(User.Id from commas(users), JsonString(payload)))
         }
 
       case "mod/troll/set" =>
@@ -182,7 +182,7 @@ object LilaOut:
         }
       case "mod/impersonate" =>
         get(args, 2) { case Array(user, by) =>
-          Some(Impersonate(User.Id(user), optional(by) map User.Id.apply))
+          Some(Impersonate(User.Id(user), User.Id from optional(by)))
         }
 
       case "rel/follow" =>
@@ -199,7 +199,7 @@ object LilaOut:
         get(args, 2) { case Array(sris, payload) =>
           Some(
             TellSris(
-              commas(sris).toSeq map Sri.apply,
+              Sri from commas(sris).toSeq,
               JsonString(payload)
             )
           )
@@ -228,7 +228,7 @@ object LilaOut:
         }
       case "tell/room/users" =>
         get(args, 3) { case Array(roomId, userIds, payload) =>
-          Some(TellRoomUsers(RoomId(roomId), commas(userIds) map User.Id.apply, JsonString(payload)))
+          Some(TellRoomUsers(RoomId(roomId), User.Id from commas(userIds), JsonString(payload)))
         }
 
       case "room/stop" => Some(RoomStop(RoomId(args)))
@@ -243,7 +243,7 @@ object LilaOut:
       case "room/filter-present" =>
         get(args, 3) { case Array(reqIdS, roomId, userIds) =>
           reqIdS.toIntOption map { reqId =>
-            RoomFilterPresent(reqId, RoomId(roomId), commas(userIds).map(User.Id.apply).toSet)
+            RoomFilterPresent(reqId, RoomId(roomId), User.Id from commas(userIds).toSet)
           }
         }
 
@@ -288,10 +288,12 @@ object LilaOut:
           Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
-      case "r/start" => Some(GameStart(commas(args).toList.map(User.Id.apply)))
+      case "r/start" => Some(GameStart(User.Id from commas(args).toList))
       case "r/finish" =>
         get(args, 3) { case Array(gameId, winner, users) =>
-          Some(GameFinish(Game.Id(gameId), readOptionalColor(winner), commas(users).toList.map(User.Id.apply)))
+          Some(
+            GameFinish(Game.Id(gameId), readOptionalColor(winner), User.Id from commas(users).toList)
+          )
         }
 
       // tv

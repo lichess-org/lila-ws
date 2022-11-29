@@ -3,8 +3,8 @@ package lila.ws
 import play.api.libs.json.*
 
 inline given [A, T](using
-    bts: BasicallyTheSame[A, T],
-    stb: BasicallyTheSame[T, A],
+    bts: SameRuntime[A, T],
+    stb: SameRuntime[T, A],
     format: Format[A]
 ): Format[T] = format.bimap(bts.apply, stb.apply)
 

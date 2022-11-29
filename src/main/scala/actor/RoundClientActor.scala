@@ -150,7 +150,7 @@ object RoundClientActor:
                 }
               case Some(p) =>
                 import Game.RoundExt.*
-                def extMsg[A](id: A)(using bts: BasicallyTheSame[A, String]) = req.user.map {
+                def extMsg[A](id: A)(using bts: SameRuntime[A, String]) = req.user.map {
                   LilaIn.ChatSay(RoomId(bts(id)), _, msg)
                 }
                 p.ext match

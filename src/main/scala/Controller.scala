@@ -103,7 +103,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       mongo.gameExists(id) zip mongo.troll.is(user) map {
         case (true, isTroll) =>
-          val userTv = req queryParameter "userTv" map UserTv.apply
+          val userTv = UserTv.from(req queryParameter "userTv")
           endpoint(
             name = "round/watch",
             behavior = (emit: ClientEmit) =>
@@ -261,7 +261,7 @@ final class Controller(
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
   private def fromVersion(req: RequestHeader): Option[SocketVersion] =
-    req queryParameter "v" flatMap (_.toIntOption) map SocketVersion.apply
+    SocketVersion.from(req queryParameter "v" flatMap (_.toIntOption))
 
 object Controller:
 
