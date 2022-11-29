@@ -2,13 +2,9 @@ package lila.ws
 
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 
-object LilaWs extends ornicar.scalalib.Zeros
-
-export LilaWs.{ *, given }
-
-export ornicar.scalalib.OrnicarBooleanWrapper
-export ornicar.scalalib.ScalalibExtensions.*
 export ornicar.scalalib.newtypes.*
+export ornicar.scalalib.zeros.*
+export ornicar.scalalib.extensions.*
 
 type Emit[A] = Function[A, Unit]
 
@@ -21,3 +17,6 @@ type ~[+A, +B] = Tuple2[A, B]
 object ~ :
   def apply[A, B](x: A, y: B)                              = Tuple2(x, y)
   def unapply[A, B](x: Tuple2[A, B]): Option[Tuple2[A, B]] = Some(x)
+
+def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
+val startedAtMillis = System.currentTimeMillis()

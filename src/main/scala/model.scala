@@ -3,6 +3,7 @@ package lila.ws
 import play.api.libs.json.{ Format, Json, Reads, Writes }
 import chess.Color
 import chess.format.{ FEN, Uci }
+import ornicar.scalalib.SecureRandom
 
 object User:
   opaque type Id = String
@@ -104,7 +105,7 @@ object Racer:
 
 opaque type Sri = String
 object Sri extends OpaqueString[Sri]:
-  def random                         = Sri(util.Util.secureRandom string 12)
+  def random                         = Sri(SecureRandom nextString 12)
   def from(str: String): Option[Sri] = if str contains ' ' then None else Some(str)
 
 opaque type Flag = String
@@ -137,7 +138,7 @@ case class UptimeMillis(millis: Long) extends AnyVal:
   def toNow: Long = UptimeMillis.make.millis - millis
 
 object UptimeMillis:
-  def make = UptimeMillis(System.currentTimeMillis() - util.Util.startedAtMillis)
+  def make = UptimeMillis(System.currentTimeMillis() - startedAtMillis)
 
 case class ThroughStudyDoor(user: User.Id, through: Either[RoomId, RoomId])
 

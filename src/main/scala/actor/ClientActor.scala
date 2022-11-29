@@ -4,7 +4,6 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 import ipc.*
-import util.Util.nowSeconds
 
 object ClientActor:
 

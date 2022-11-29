@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
 import ipc.*
 import scala.concurrent.{ ExecutionContext, Promise }
+import ornicar.scalalib.ThreadLocalRandom
 
 final class LilaHandler(
     lila: Lila,
@@ -100,7 +101,7 @@ final class LilaHandler(
           val allAbsent = standby diff present
           lila.emit.tour(LilaIn.WaitingUsers(roomId, present intersect standby))
           val absent =
-            if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
+            if (allAbsent.sizeIs > 100) ThreadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
         }
