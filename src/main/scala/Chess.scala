@@ -1,7 +1,7 @@
 package lila.ws
 
 import play.api.libs.json.*
-import chess.format.{ FEN, Uci, UciCharPair }
+import chess.format.{ Fen, Uci, UciCharPair }
 import chess.opening.{ FullOpening, FullOpeningDB }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
@@ -100,8 +100,8 @@ object Chess:
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
   object json:
-    given Writes[FEN] with
-      def writes(fen: FEN) = JsString(fen.value)
+    given Writes[Fen] with
+      def writes(fen: Fen) = JsString(fen.value)
     given Writes[Path] with
       def writes(path: Path) = JsString(path.value)
     given Writes[Uci] with
@@ -123,8 +123,8 @@ object Chess:
       dests foreach { (orig, dests) =>
         if (first) first = false
         else sb append " "
-        sb append orig.toChar
-        dests foreach { sb append _.toChar }
+        sb append orig.asChar
+        dests foreach { sb append _.asChar }
       }
       sb.toString
 

@@ -120,7 +120,7 @@ object ClientIn:
       id: UciCharPair,
       ply: Int,
       move: chess.format.Uci.WithSan,
-      fen: chess.format.FEN,
+      fen: chess.format.Fen,
       check: Boolean,
       dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[chess.opening.FullOpening],

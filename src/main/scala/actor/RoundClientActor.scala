@@ -120,7 +120,7 @@ object RoundClientActor:
             fullId foreach { fid =>
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
-              val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis)
+              val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
               val lag            = clientLag withFrameLag frameLagCentis
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             }

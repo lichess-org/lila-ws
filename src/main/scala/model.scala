@@ -2,7 +2,7 @@ package lila.ws
 
 import play.api.libs.json.{ Format, Json, Reads, Writes }
 import chess.Color
-import chess.format.{ FEN, Uci }
+import chess.format.{ Fen, Uci }
 import ornicar.scalalib.SecureRandom
 
 object User:
@@ -154,5 +154,5 @@ opaque type UserTv = String
 object UserTv extends OpaqueString[UserTv]
 
 case class Clock(white: Int, black: Int)
-case class Position(lastUci: Uci, fen: FEN, clock: Option[Clock], turnColor: Color):
+case class Position(lastUci: Uci, fen: Fen, clock: Option[Clock], turnColor: Color):
   def fenWithColor = s"$fen ${turnColor.letter}"
