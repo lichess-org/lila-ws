@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
 import ipc.*
 import scala.concurrent.{ ExecutionContext, Promise }
+import ornicar.scalalib.ThreadLocalRandom
 
 final class LilaHandler(
     lila: Lila,
@@ -43,7 +44,7 @@ final class LilaHandler(
 
     case ApiUserOnline(user, true) =>
       clients ! Clients.Control.Start(
-        ApiActor start ApiActor.Deps(User(user), services),
+        ApiActor start ApiActor.Deps(user, services),
         Promise[_root_.lila.ws.Client]()
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
@@ -93,17 +94,17 @@ final class LilaHandler(
 
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
-      mongo.tournamentActiveUsers(roomId.value) zip mongo.tournamentPlayingUsers(roomId.value) foreach {
-        case (active, playing) =>
+      mongo.tournamentActiveUsers(roomId into Tour.Id) zip
+        mongo.tournamentPlayingUsers(roomId into Tour.Id) foreach { case (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
           val allAbsent = standby diff present
           lila.emit.tour(LilaIn.WaitingUsers(roomId, present intersect standby))
           val absent =
-            if (allAbsent.sizeIs > 100) util.Util.threadLocalRandom.shuffle(allAbsent) take 80
+            if (allAbsent.sizeIs > 100) ThreadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId.value, name))
-      }
+          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
+        }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
 
@@ -114,13 +115,10 @@ final class LilaHandler(
     case msg      => roomHandler(msg)
 
   private val roundHandler: Emit[LilaOut] =
-
     import scala.language.implicitConversions
-
     given Conversion[Game.Id, RoomId] with
-      def apply(str: Game.Id): RoomId = RoomId(str)
-    given Conversion[RoomId, Game.Id] with
-      def apply(roomId: RoomId): Game.Id = Game.Id(roomId.value)
+      def apply(id: Game.Id): RoomId = id.into(RoomId)
+
     {
       case RoundVersion(gameId, version, flags, tpe, data) =>
         val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
@@ -129,22 +127,22 @@ final class LilaHandler(
         if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
       case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
       case RoundResyncPlayer(fullId) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundResyncPlayer(fullId.playerId))
+        publish(_ room fullId.gameId, ClientIn.RoundResyncPlayer(fullId.playerId))
       case RoundGone(fullId, gone) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundGone(fullId.playerId, gone))
+        publish(_ room fullId.gameId, ClientIn.RoundGone(fullId.playerId, gone))
       case RoundGoneIn(fullId, seconds) =>
-        publish(_ room RoomId(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
+        publish(_ room fullId.gameId, ClientIn.RoundGoneIn(fullId.playerId, seconds))
       case RoundTourStanding(tourId, data) =>
         publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
       case o: TvSelect => Tv select o
       case RoomStop(roomId) =>
-        History.round.stop(roomId)
+        History.round.stop(Game.Id(roomId.value))
         publish(_ room roomId, ClientCtrl.Disconnect)
       case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
       case GameStart(users) =>
         users.foreach { u =>
           friendList.startPlaying(u)
-          publish(_ userTv u, ClientIn.Resync)
+          publish(_ userTv u.into(UserTv), ClientIn.Resync)
         }
       case GameFinish(gameId, winner, users) =>
         users foreach friendList.stopPlaying
@@ -163,7 +161,7 @@ final class LilaHandler(
     }
 
   private val racerHandler: Emit[LilaOut] =
-    case RacerState(raceId, data) => publish(_ room RoomId(raceId), ClientIn.racerState(data))
+    case RacerState(raceId, data) => publish(_ room raceId.into(RoomId), ClientIn.racerState(data))
     case msg                      => roomHandler(msg)
 
   private def tellRoomVersion(roomId: RoomId, version: SocketVersion, troll: IsTroll, payload: JsonString) =

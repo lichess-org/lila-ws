@@ -37,7 +37,7 @@ object SwissClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
-              keepAlive.swiss(state.room.id)
+              keepAlive.swiss(state.room.room)
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)

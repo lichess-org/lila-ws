@@ -2,12 +2,12 @@ package lila.ws
 
 import akka.actor.typed.ActorRef
 import chess.Color
-import chess.format.{ FEN, Uci }
+import chess.format.{ Fen, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc.*
 import lila.ws.{ Clock, Position }
 
-/* Manages subscriptions to FEN updates */
+/* Manages subscriptions to Fen updates */
 object Fens:
 
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
@@ -65,8 +65,8 @@ object Fens:
               uci <- Uci(uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, FEN(fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, FEN(fenS), None, turnColor) }
+            } yield Position(uci, Fen(fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, Fen(fenS), None, turnColor) }
           case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)

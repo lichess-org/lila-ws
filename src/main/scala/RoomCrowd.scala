@@ -15,13 +15,13 @@ final class RoomCrowd(
 
   private val rooms = new ConcurrentHashMap[RoomId, RoomState](1024)
 
-  def connect(roomId: RoomId, user: Option[User]): Unit =
+  def connect(roomId: RoomId, user: Option[User.Id]): Unit =
     publish(
       roomId,
       rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
     )
 
-  def disconnect(roomId: RoomId, user: Option[User]): Unit =
+  def disconnect(roomId: RoomId, user: Option[User.Id]): Unit =
     val room = rooms.computeIfPresent(
       roomId,
       (_, room) => {
@@ -31,14 +31,14 @@ final class RoomCrowd(
     )
     if (room != null) publish(roomId, room)
 
-  def getUsers(roomId: RoomId): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet)
+  def getUsers(roomId: RoomId): Set[User.Id] =
+    Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet)
 
-  def isPresent(roomId: RoomId, userId: User.ID): Boolean =
+  def isPresent(roomId: RoomId, userId: User.Id): Boolean =
     Option(rooms get roomId).exists(_.users contains userId)
 
-  def filterPresent(roomId: RoomId, userIds: Set[User.ID]): Set[User.ID] =
-    Option(rooms get roomId).fold(Set.empty[User.ID])(_.users.keySet intersect userIds)
+  def filterPresent(roomId: RoomId, userIds: Set[User.Id]): Set[User.Id] =
+    Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet intersect userIds)
 
   private def publish(roomId: RoomId, room: RoomState): Unit =
     outputBatch(outputOf(roomId, room))
@@ -62,7 +62,7 @@ object RoomCrowd:
   case class Output(
       roomId: RoomId,
       members: Int,
-      users: Iterable[User.ID],
+      users: Iterable[User.Id],
       anons: Int
   )
 
@@ -76,17 +76,17 @@ object RoomCrowd:
 
   case class RoomState(
       anons: Int = 0,
-      users: Map[User.ID, Int] = Map.empty
+      users: Map[User.Id, Int] = Map.empty
   ):
     def nbUsers   = users.size
     def nbMembers = anons + nbUsers
     def isEmpty   = nbMembers < 1
 
-    def connect(user: Option[User]) =
+    def connect(user: Option[User.Id]) =
       user.fold(copy(anons = anons + 1)) { u =>
-        copy(users = users.updatedWith(u.id)(cur => Some(cur.fold(1)(_ + 1))))
+        copy(users = users.updatedWith(u)(cur => Some(cur.fold(1)(_ + 1))))
       }
-    def disconnect(user: Option[User]) =
+    def disconnect(user: Option[User.Id]) =
       user.fold(copy(anons = anons - 1)) { u =>
-        copy(users = users.updatedWith(u.id)(_.map(_ - 1).filter(_ > 0)))
+        copy(users = users.updatedWith(u)(_.map(_ - 1).filter(_ > 0)))
       }

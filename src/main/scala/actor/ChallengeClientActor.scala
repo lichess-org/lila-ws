@@ -43,13 +43,13 @@ object ChallengeClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
-              keepAlive challenge state.room.id
+              keepAlive challenge state.room.room
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientOut.ChallengePing =>
-            if (state.owner) services.challengePing(state.room.id)
+            if (state.owner) services.challengePing(state.room.room)
             Behaviors.same
 
           // default receive (site)

@@ -1,11 +1,10 @@
 #!/bin/sh
 
-APP=lila-ws-2.0
 REMOTE=$1
 REMOTE_DIR="/home/lila-ws"
 stage="target/universal/stage"
 
-echo "Deploy $APP to server $REMOTE:$REMOTE_DIR"
+echo "Deploy lila-ws to server $REMOTE:$REMOTE_DIR"
 
 rm -rf $stage
 sbt stage

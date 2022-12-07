@@ -34,7 +34,7 @@ final class RequestHeader(uri: String, req: HttpHeaders):
 
   def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make
 
-  def ip: Option[IpAddress] = header("X-Forwarded-For") map IpAddress.apply
+  def ip: Option[IpAddress] = IpAddress from header("X-Forwarded-For")
 
   def name: String = s"$uri UA: $userAgent"
 

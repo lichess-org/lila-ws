@@ -7,8 +7,6 @@ import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
-import util.Util.nowSeconds
-
 object Boot extends App:
 
   lazy val config: Config             = ConfigFactory.load

@@ -20,7 +20,7 @@ object LobbyClientActor:
       import deps.*
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
-      services.lobby.connect(req.sri -> req.user.map(_.id))
+      services.lobby.connect(req.sri -> req.user)
       Bus.subscribe(Bus.channel.lobby, ctx.self)
       apply(State(), deps)
     }
@@ -31,7 +31,7 @@ object LobbyClientActor:
         import deps.*
 
         def forward(payload: JsValue): Unit =
-          lilaIn.lobby(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+          lilaIn.lobby(LilaIn.TellSri(req.sri, req.user, payload))
 
         msg match
 

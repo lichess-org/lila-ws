@@ -37,7 +37,7 @@ object SimulClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if (state.site.lastPing < oldSeconds) Behaviors.stopped
             else
-              keepAlive.simul(state.room.id)
+              keepAlive.simul(state.room.room)
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)

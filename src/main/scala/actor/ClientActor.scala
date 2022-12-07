@@ -4,7 +4,6 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 import ipc.*
-import util.Util.nowSeconds
 
 object ClientActor:
 
@@ -25,7 +24,7 @@ object ClientActor:
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user foreach { user =>
       users.disconnect(user, ctx.self)
-      deps.services.friends.onClientStop(user.id)
+      deps.services.friends.onClientStop(user)
     }
 
   def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] =
@@ -44,7 +43,10 @@ object ClientActor:
         Behaviors.same
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State =
-    for { l <- msg.lag; u <- deps.req.user } deps.services.lag.recordClientLag(u.id -> l)
+    for
+      l <- msg.lag
+      u <- deps.req.user
+    do deps.services.lag.recordClientLag(u -> l)
     state.copy(lastPing = nowSeconds)
 
   def globalReceive(
@@ -75,11 +77,11 @@ object ClientActor:
         state
 
       case ClientOut.Notified =>
-        req.userId foreach services.notified.apply
+        req.user foreach services.notified.apply
         state
 
       case ClientOut.FollowingOnline =>
-        req.userId foreach { services.friends.start(_, clientIn) }
+        req.user foreach { services.friends.start(_, clientIn) }
         state
 
       case opening: ClientOut.Opening =>
@@ -100,17 +102,17 @@ object ClientActor:
 
       case ClientOut.MsgType(dest) =>
         req.user foreach { orig =>
-          deps.users.tellOne(dest, ClientIn.MsgType(orig.id))
+          deps.users.tellOne(dest, ClientIn.MsgType(orig))
         }
         state
 
       case ClientOut.SiteForward(payload) =>
-        lilaIn.site(LilaIn.TellSri(req.sri, req.user.map(_.id), payload))
+        lilaIn.site(LilaIn.TellSri(req.sri, req.user, payload))
         state
 
       case ClientOut.UserForward(payload) =>
         req.user foreach { user =>
-          lilaIn.site(LilaIn.TellUser(user.id, payload))
+          lilaIn.site(LilaIn.TellUser(user, payload))
         }
         state
 
@@ -141,7 +143,7 @@ object ClientActor:
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
-  def Req(req: util.RequestHeader, sri: Sri, user: Option[User]): Req =
+  def Req(req: util.RequestHeader, sri: Sri, user: Option[User.Id]): Req =
     Req(
       name = req.name,
       ip = req.ip,
@@ -155,10 +157,9 @@ object ClientActor:
       ip: Option[IpAddress],
       sri: Sri,
       flag: Option[Flag],
-      user: Option[User]
+      user: Option[User.Id]
   ):
-    def userId            = user.map(_.id)
-    override def toString = s"${user getOrElse "Anon"} $name"
+    override def toString = s"${user.fold("Anon")(_.value)} $name"
 
   case class Deps(
       clientIn: ClientEmit,

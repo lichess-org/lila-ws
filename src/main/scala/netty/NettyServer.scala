@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
+import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.*
@@ -24,18 +25,14 @@ final class NettyServer(
     logger.info("Start")
 
     val port     = config.getInt("http.port")
-    val useEpoll = config.getBoolean("netty.useEpoll")
 
-    val bossGroup =
-      if (useEpoll) new EpollEventLoopGroup(1)
-      else new NioEventLoopGroup(1)
-    val workerGroup =
-      if (useEpoll) new EpollEventLoopGroup
-      else new NioEventLoopGroup
-
-    val channelClz =
-      if (useEpoll) classOf[EpollServerSocketChannel]
-      else classOf[NioServerSocketChannel]
+    val (bossGroup, workerGroup, channelClz) =
+      if (!config.getBoolean("netty.native"))
+        (new NioEventLoopGroup(1), new NioEventLoopGroup(1), classOf[NioServerSocketChannel])
+      else if (System.getProperty("os.name").toLowerCase.startsWith("mac"))
+        (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(1), classOf[KQueueServerSocketChannel])
+      else
+        (new EpollEventLoopGroup(1), new EpollEventLoopGroup(1), classOf[EpollServerSocketChannel])
 
     try
       val boot = new ServerBootstrap

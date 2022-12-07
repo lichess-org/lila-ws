@@ -1,8 +1,8 @@
 package lila.ws
 
 import play.api.libs.json.*
-import chess.format.{ FEN, Uci, UciCharPair }
-import chess.opening.{ FullOpening, FullOpeningDB }
+import chess.format.{ Fen, Uci, UciCharPair }
+import chess.opening.{ Opening, OpeningDb }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
@@ -50,7 +50,7 @@ object Chess:
       ClientIn.Dests(
         path = req.path,
         dests = {
-          if (req.variant.standard && req.fen == chess.format.Forsyth.initial && req.path.value.isEmpty)
+          if (req.variant.standard && req.fen == chess.format.Fen.initial && req.path.value.isEmpty)
             initialDests
           else {
             val sit = chess.Game(req.variant.some, Some(req.fen)).situation
@@ -58,17 +58,17 @@ object Chess:
           }
         },
         opening = {
-          if (Variant.openingSensibleVariants(req.variant)) FullOpeningDB findByFen req.fen
+          if (Variant.openingSensibleVariants(req.variant)) OpeningDb findByFen req.fen.opening
           else None
         },
         chapterId = req.chapterId
       )
     }
 
-  def apply(req: ClientOut.Opening): Option[ClientIn.Opening] =
+  def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
     if (Variant.openingSensibleVariants(req.variant))
-      FullOpeningDB findByFen req.fen map {
-        ClientIn.Opening(req.path, _)
+      OpeningDb findByFen req.fen.opening map {
+        ClientIn.OpeningMsg(req.path, _)
       }
     else None
 
@@ -79,7 +79,7 @@ object Chess:
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
     val movable = game.situation playable false
-    val fen     = chess.format.Forsyth >> game
+    val fen     = chess.format.Fen write game
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
@@ -90,7 +90,7 @@ object Chess:
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
         if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant))
-          FullOpeningDB findByFen fen
+          OpeningDb findByFen fen.opening
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
@@ -100,8 +100,6 @@ object Chess:
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
   object json:
-    given Writes[FEN] with
-      def writes(fen: FEN) = JsString(fen.value)
     given Writes[Path] with
       def writes(path: Path) = JsString(path.value)
     given Writes[Uci] with
@@ -112,19 +110,19 @@ object Chess:
       def writes(pos: Pos) = JsString(pos.key)
     given Writes[ChapterId] with
       def writes(ch: ChapterId) = JsString(ch.value)
-    given Writes[FullOpening] with
-      def writes(o: FullOpening) = Json.obj("eco" -> o.eco, "name" -> o.name)
+    given Writes[Opening] with
+      def writes(o: Opening) = Json.obj("eco" -> o.eco, "name" -> o.name)
     given Writes[Map[Pos, List[Pos]]] with
       def writes(dests: Map[Pos, List[Pos]]) = JsString(destString(dests))
 
     def destString(dests: Map[Pos, List[Pos]]): String =
       val sb    = new java.lang.StringBuilder(80)
       var first = true
-      dests foreach { case (orig, dests) =>
+      dests foreach { (orig, dests) =>
         if (first) first = false
         else sb append " "
-        sb append orig.piotr
-        dests foreach { sb append _.piotr }
+        sb append orig.asChar
+        dests foreach { sb append _.asChar }
       }
       sb.toString
 
