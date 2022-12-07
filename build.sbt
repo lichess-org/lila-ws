@@ -26,7 +26,7 @@ libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
   else Nil
 )
-libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.1.RELEASE"
+libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.2.RELEASE"
 libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
 libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-x86_64"
