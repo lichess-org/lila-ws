@@ -7,7 +7,7 @@ import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
-object Boot extends App:
+object LilaWs extends App:
 
   lazy val config: Config             = ConfigFactory.load
   lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
