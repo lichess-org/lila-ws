@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import chess.Color
-import chess.format.UciCharPair
+import chess.format.{ EpdFen, Uci, UciCharPair }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
 import lila.ws.Position
@@ -119,8 +119,8 @@ object ClientIn:
       path: Path,
       id: UciCharPair,
       ply: Int,
-      move: chess.format.Uci.WithSan,
-      fen: chess.format.Fen,
+      move: Uci.WithSan,
+      fen: EpdFen,
       check: Boolean,
       dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[Opening],

@@ -27,12 +27,12 @@ object ClientOut:
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: Path, fen: Fen) extends ClientOutSite
+  case class Opening(variant: Variant, path: Path, fen: Fen.Epd) extends ClientOutSite
 
   case class AnaMove(
       orig: Pos,
       dest: Pos,
-      fen: Fen,
+      fen: Fen.Epd,
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
@@ -43,7 +43,7 @@ object ClientOut:
   case class AnaDrop(
       role: chess.Role,
       pos: Pos,
-      fen: Fen,
+      fen: Fen.Epd,
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId],
@@ -51,7 +51,7 @@ object ClientOut:
   ) extends ClientOutSite
 
   case class AnaDests(
-      fen: Fen,
+      fen: Fen.Epd,
       path: Path,
       variant: Variant,
       chapterId: Option[ChapterId]
@@ -134,38 +134,38 @@ object ClientOut:
               for {
                 d    <- o obj "d"
                 path <- d str "path"
-                fen  <- d str "fen"
+                fen  <- d.get[Fen.Epd]("fen")
                 variant = dataVariant(d)
-              } yield Opening(variant, Path(path), Fen(fen))
+              } yield Opening(variant, Path(path), fen)
             case "anaMove" =>
               for {
                 d    <- o obj "d"
                 orig <- d str "orig" flatMap { Pos.fromKey(_) }
                 dest <- d str "dest" flatMap { Pos.fromKey(_) }
                 path <- d str "path"
-                fen  <- d str "fen"
+                fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
                 promotion = d str "promotion" flatMap { chess.Role.promotable(_) }
-              } yield AnaMove(orig, dest, Fen(fen), Path(path), variant, chapterId, promotion, o)
+              } yield AnaMove(orig, dest, fen, Path(path), variant, chapterId, promotion, o)
             case "anaDrop" =>
               for {
                 d    <- o obj "d"
                 role <- d str "role" flatMap chess.Role.allByName.get
                 pos  <- d str "pos" flatMap { Pos.fromKey(_) }
                 path <- d str "path"
-                fen  <- d str "fen"
+                fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
-              } yield AnaDrop(role, pos, Fen(fen), Path(path), variant, chapterId, o)
+              } yield AnaDrop(role, pos, fen, Path(path), variant, chapterId, o)
             case "anaDests" =>
               for {
                 d    <- o obj "d"
                 path <- d str "path"
-                fen  <- d str "fen"
+                fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
-              } yield AnaDests(Fen(fen), Path(path), variant, chapterId)
+              } yield AnaDests(fen, Path(path), variant, chapterId)
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o.get[User.Id]("d") map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))

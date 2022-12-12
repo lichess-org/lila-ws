@@ -154,5 +154,5 @@ opaque type UserTv = String
 object UserTv extends OpaqueString[UserTv]
 
 case class Clock(white: Int, black: Int)
-case class Position(lastUci: Uci, fen: Fen, clock: Option[Clock], turnColor: Color):
-  def fenWithColor = s"$fen ${turnColor.letter}"
+case class Position(lastUci: Uci, fen: Fen.Board, clock: Option[Clock], turnColor: Color):
+  def fenWithColor = fen.andColor(turnColor)

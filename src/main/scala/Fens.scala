@@ -65,8 +65,8 @@ object Fens:
               uci <- Uci(uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, Fen(fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, Fen(fenS), None, turnColor) }
+            } yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
+          case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, Fen.Board(fenS), None, turnColor) }
           case _                     => None
         }).fold(watched) { position =>
           val msg = ClientIn.Fen(gameId, position)
