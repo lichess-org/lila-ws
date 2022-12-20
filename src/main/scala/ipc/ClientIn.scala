@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import chess.Color
+import chess.{ Color, Ply }
 import chess.format.{ EpdFen, Uci, UciCharPair }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
@@ -118,7 +118,7 @@ object ClientIn:
   case class Node(
       path: Path,
       id: UciCharPair,
-      ply: Int,
+      ply: Ply,
       move: Uci.WithSan,
       fen: EpdFen,
       check: Boolean,

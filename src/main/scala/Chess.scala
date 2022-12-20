@@ -82,13 +82,13 @@ object Chess:
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
-      ply = game.turns,
+      ply = game.ply,
       move = move,
       fen = fen,
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
-        if (game.turns <= 30 && Variant.openingSensibleVariants(game.board.variant))
+        if (game.ply <= 30 && Variant.openingSensibleVariants(game.board.variant))
           OpeningDb findByEpdFen fen
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),

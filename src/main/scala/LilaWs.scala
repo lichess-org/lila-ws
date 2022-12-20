@@ -47,7 +47,7 @@ final class LilaWsServer(
     lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
-)(using ec: ExecutionContext):
+)(using ExecutionContext):
 
   def start(): Unit =
 
