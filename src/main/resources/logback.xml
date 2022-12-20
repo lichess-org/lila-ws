@@ -17,6 +17,9 @@
   <logger name="akka.actor.DeadLetterActorRef" level="WARN">
     <appender-ref ref="ASYNC"/>
   </logger>
+  <logger name="lila.ws" level="DEBUG">
+    <appender-ref ref="ASYNC"/>
+  </logger>
 
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
