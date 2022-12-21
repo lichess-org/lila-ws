@@ -242,7 +242,8 @@ object ClientOut:
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 
-  private def dataVariant(d: JsObject): Variant = Variant.orDefault(d str "variant" getOrElse "")
+  private def dataVariant(d: JsObject): Variant =
+    d.get[Variant.Key]("variant").flatMap(Variant(_)) | Variant.default
 
   private def parseOldMove(d: JsObject) =
     for {

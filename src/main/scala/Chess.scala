@@ -57,7 +57,7 @@ object Chess:
           }
         },
         opening = {
-          if (Variant.openingSensibleVariants(req.variant)) OpeningDb findByEpdFen req.fen
+          if (Variant.list.openingSensibleVariants(req.variant)) OpeningDb findByEpdFen req.fen
           else None
         },
         chapterId = req.chapterId
@@ -65,7 +65,7 @@ object Chess:
     }
 
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
-    if (Variant.openingSensibleVariants(req.variant))
+    if (Variant.list.openingSensibleVariants(req.variant))
       OpeningDb findByEpdFen req.fen map {
         ClientIn.OpeningMsg(req.path, _)
       }
@@ -88,7 +88,7 @@ object Chess:
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
-        if (game.ply <= 30 && Variant.openingSensibleVariants(game.board.variant))
+        if (game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant))
           OpeningDb findByEpdFen fen
         else None,
       drops = if (movable) game.situation.drops else Some(Nil),
