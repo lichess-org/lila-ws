@@ -300,7 +300,7 @@ object LilaOut:
 
       case "tv/select" =>
         get(args, 3) { case Array(gameId, speedS, data) =>
-          speedS.toIntOption flatMap chess.Speed.apply map { speed =>
+          chess.SpeedId.from(speedS.toIntOption) flatMap chess.Speed.apply map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
         }
