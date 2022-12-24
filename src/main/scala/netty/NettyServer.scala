@@ -24,7 +24,7 @@ final class NettyServer(
 
     logger.info("Start")
 
-    val port     = config.getInt("http.port")
+    val port = config.getInt("http.port")
 
     val (bossGroup, workerGroup, channelClz) =
       if (!config.getBoolean("netty.native"))
