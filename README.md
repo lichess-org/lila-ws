@@ -20,7 +20,6 @@ Custom config file example:
 ```
 include "application"
 http.port = 8080
-netty.useEpoll = true
 mongo.uri = "mongodb://localhost:27017/lichess"
 redis.uri = "redis://127.0.0.1"
 ```
