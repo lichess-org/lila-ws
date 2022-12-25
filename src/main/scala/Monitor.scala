@@ -32,12 +32,12 @@ final class Monitor(
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
 
-  private def periodicMetrics() =
+    scheduler.scheduleWithFixedDelay(1 minute, 1 minute) { () => jvmThreads() }
 
+  private def periodicMetrics() =
     val members = LilaWsServer.connections.get
     val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
-
     connection.current update members.toDouble
     historyRoomSize.update(History.room.size.toDouble)
     historyRoundSize.update(History.round.size.toDouble)
@@ -47,6 +47,15 @@ final class Monitor(
     watchSize.update(Fens.size.toDouble)
     busSize.update(Bus.size.toDouble)
     busAllSize.update(Bus.sizeOf(_.all).toDouble)
+
+  private def jvmThreads() =
+    val perState = Kamon.gauge("jvm.threads.group")
+    val total    = Kamon.gauge("jvm.threads.group.total")
+    for
+      group <- ornicar.scalalib.Jvm.threadGroups()
+      _ = total.withTags(TagSet.from(Map("name" -> group.name))).update(group.total)
+      (state, count) <- group.states
+    yield perState.withTags(TagSet.from(Map("name" -> group.name, "state" -> state.toString))).update(count)
 
 object Monitor:
 
