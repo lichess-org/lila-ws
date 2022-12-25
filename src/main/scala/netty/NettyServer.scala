@@ -28,11 +28,11 @@ final class NettyServer(
 
     val (bossGroup, workerGroup, channelClz) =
       if (!config.getBoolean("netty.native"))
-        (new NioEventLoopGroup(1), new NioEventLoopGroup(1), classOf[NioServerSocketChannel])
+        (new NioEventLoopGroup(1), new NioEventLoopGroup, classOf[NioServerSocketChannel])
       else if (System.getProperty("os.name").toLowerCase.startsWith("mac"))
-        (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(1), classOf[KQueueServerSocketChannel])
+        (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup, classOf[KQueueServerSocketChannel])
       else
-        (new EpollEventLoopGroup(1), new EpollEventLoopGroup(1), classOf[EpollServerSocketChannel])
+        (new EpollEventLoopGroup(1), new EpollEventLoopGroup, classOf[EpollServerSocketChannel])
 
     try
       val boot = new ServerBootstrap
