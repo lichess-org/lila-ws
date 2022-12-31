@@ -24,13 +24,13 @@ final class LilaHandler(
 
   private val siteHandler: Emit[LilaOut] =
 
-    case Mlat(millis)            => publish(_.mlat, ClientIn.Mlat(millis))
-    case TellFlag(flag, payload) => publish(_ flag flag, ClientIn.Payload(payload))
-    case TellSri(sri, payload)   => publish(_ sri sri, ClientIn.Payload(payload))
-    case TellAll(payload)        => publish(_.all, ClientIn.Payload(payload))
-
-    case TellUsers(us, json)  => users.tellMany(us, ClientIn.Payload(json))
-    case DisconnectUser(user) => users.kick(user)
+    case Mlat(millis)                                  => publish(_.mlat, ClientIn.Mlat(millis))
+    case TellFlag(flag, payload)                       => publish(_ flag flag, ClientIn.Payload(payload))
+    case TellSri(sri, payload) if sri == EvalCache.sri => services.evalCache.hit(payload)
+    case TellSri(sri, payload)                         => publish(_ sri sri, ClientIn.Payload(payload))
+    case TellAll(payload)                              => publish(_.all, ClientIn.Payload(payload))
+    case TellUsers(us, json)                           => users.tellMany(us, ClientIn.Payload(json))
+    case DisconnectUser(user)                          => users.kick(user)
     case TellRoomUser(roomId, user, json) =>
       users.tellOne(user, ClientIn.onlyFor(_ Room roomId, ClientIn.Payload(json)))
     case TellRoomUsers(roomId, us, json) =>

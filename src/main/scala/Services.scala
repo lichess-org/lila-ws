@@ -14,7 +14,8 @@ final class Services(
     val lobby: Lobby,
     val friends: FriendList,
     val stormSign: StormSign,
-    val lag: Lag
+    val lag: Lag,
+    val evalCache: EvalCache
 ):
 
   def lila = lilaRedis.emit

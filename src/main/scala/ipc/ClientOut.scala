@@ -57,6 +57,8 @@ object ClientOut:
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
+  case class EvalGet(fen: Fen.Epd, path: String, mpv: Int = 1) extends ClientOutSite
+
   case class MsgType(dest: User.Id) extends ClientOutSite
 
   case class SiteForward(payload: JsObject) extends ClientOutSite
@@ -166,6 +168,9 @@ object ClientOut:
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
               } yield AnaDests(fen, Path(path), variant, chapterId)
+            case "evalGet" =>
+              import EvalCache.given
+              o.get[ClientOut.EvalGet]("d")
             case "evalGet" | "evalPut" => Some(SiteForward(o))
             case "msgType"             => o.get[User.Id]("d") map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))

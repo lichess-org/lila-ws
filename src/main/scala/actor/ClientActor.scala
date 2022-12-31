@@ -100,6 +100,12 @@ object ClientActor:
         clientIn(Chess(anaDests))
         state
 
+      case evalGet: ClientOut.EvalGet =>
+        services.evalCache.get(evalGet, lilaIn.site) { msg =>
+          clientIn(ClientIn.payload(msg))
+        }
+        state
+
       case ClientOut.MsgType(dest) =>
         req.user foreach { orig =>
           deps.users.tellOne(dest, ClientIn.MsgType(orig))
