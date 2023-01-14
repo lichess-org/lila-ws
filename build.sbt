@@ -9,7 +9,7 @@ resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snap
 
 val akkaVersion          = "2.6.20"
 val kamonVersion         = "2.5.12"
-val nettyVersion         = "4.1.86.Final"
+val nettyVersion         = "4.1.87.Final"
 val reactivemongoVersion = "1.1.0-RC6"
 
 val os = sys.props.get("os.name") match {
@@ -29,7 +29,7 @@ libraryDependencies ++= (
 libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.2.RELEASE"
 libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
-libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-x86_64" classifier s"linux-aarch_64"
+libraryDependencies += "io.netty" % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64" classifier s"linux-aarch_64"
 libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64" classifier s"osx-aarch_64"
 libraryDependencies += "com.github.ornicar" %% "scalalib"         % "9.1.1"
 libraryDependencies += "org.lichess"        %% "scalachess"       % "13.2.4"
