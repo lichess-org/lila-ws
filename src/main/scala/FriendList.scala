@@ -12,7 +12,7 @@ final class FriendList(
     users: Users,
     graph: SocialGraph,
     mongo: Mongo
-)(using ExecutionContext):
+)(using ec: ExecutionContext):
 
   import FriendList.*
 

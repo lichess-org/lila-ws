@@ -7,7 +7,7 @@ import scala.collection.immutable.VectorBuilder
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 
-final class GroupedWithin()(using Scheduler, ExecutionContext):
+final class GroupedWithin()(using scheduler: Scheduler, ec: ExecutionContext):
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     new GroupedWithinStage[A](nb, interval, emit)

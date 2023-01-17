@@ -13,7 +13,8 @@ object Bus:
     publish = (actor, event) => actor ! event
   )
 
-  export impl.{ subscribe, unsubscribe }
+  def subscribe   = impl.subscribe
+  def unsubscribe = impl.unsubscribe
 
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)
