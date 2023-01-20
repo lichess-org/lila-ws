@@ -27,6 +27,7 @@ final class LilaHandler(
     case Mlat(millis)            => publish(_.mlat, ClientIn.Mlat(millis))
     case TellFlag(flag, payload) => publish(_ flag flag, ClientIn.Payload(payload))
     case TellSri(sri, payload)   => publish(_ sri sri, ClientIn.Payload(payload))
+    case TellSris(sris, payload) => sris foreach { sri => publish(_ sri sri, ClientIn.Payload(payload)) }
     case TellAll(payload)        => publish(_.all, ClientIn.Payload(payload))
 
     case TellUsers(us, json)  => users.tellMany(us, ClientIn.Payload(json))
@@ -65,15 +66,11 @@ final class LilaHandler(
     case TellLobbyUsers(us, json) =>
       users.tellMany(us, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
 
-    case TellLobby(payload) => publish(_.lobby, ClientIn.Payload(payload))
-    case TellLobbyActive(payload) =>
-      publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
-    case TellSris(sris, payload) =>
-      sris foreach { sri =>
-        publish(_ sri sri, ClientIn.Payload(payload))
-      }
+    case TellLobby(payload)       => publish(_.lobby, ClientIn.Payload(payload))
+    case TellLobbyActive(payload) => publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
+    case TellSris(sris, payload)  => sris foreach { sri => publish(_ sri sri, ClientIn.Payload(payload)) }
     case LobbyPairings(pairings) =>
-      pairings.foreach { case (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
+      pairings.foreach { (sri, fullId) => publish(_ sri sri, ClientIn.LobbyPairing(fullId)) }
 
     case site: SiteOut => siteHandler(site)
     case msg           => logger.warn(s"Unhandled lobby: $msg")
