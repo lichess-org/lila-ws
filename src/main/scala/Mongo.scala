@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference }
+import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -30,7 +30,15 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def studyDb: Future[DB] =
-    studyConnection flatMap { case (conn, dbName) =>
+    studyConnection flatMap { (conn, dbName) =>
+      conn database dbName.getOrElse("lichess")
+    }
+  private val yoloConnection =
+    MongoConnection.fromString(config.getString("yolo.mongo.uri")) flatMap { parsedUri =>
+      driver.connect(parsedUri).map(_ -> parsedUri.db)
+    }
+  private def yoloDb: Future[DB] =
+    yoloConnection flatMap { (conn, dbName) =>
       conn database dbName.getOrElse("lichess")
     }
 
@@ -51,6 +59,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
   def swissColl                       = collNamed("swiss")
   def reportColl                      = collNamed("report2")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
+  def evalCacheColl                   = yoloDb.map(_ collection "eval_cache")(parasitic)
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f
@@ -165,6 +174,20 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
           members <- doc.getAsOpt[BSONDocument]("members")
         } yield members.elements.collect { case BSONElement(key, _) => User.Id(key) }.toSet
       } map (_ getOrElse Set.empty)
+    }
+
+  import evalCache.EvalCacheEntry
+  def evalCacheEntry(id: EvalCacheEntry.Id): Future[Option[EvalCacheEntry]] =
+    import evalCache.EvalCacheBsonHandlers.given
+    evalCacheColl flatMap {
+      _.find(selector = BSONDocument("_id" -> id))
+        .one[EvalCacheEntry]
+    }
+  def evalCacheUsedNow(id: EvalCacheEntry.Id): Unit =
+    import evalCache.EvalCacheBsonHandlers.given
+    evalCacheColl foreach {
+      _.update(ordered = false, writeConcern = WriteConcern.Unacknowledged)
+        .one(BSONDocument("_id" -> id), BSONDocument("$set" -> BSONDocument("usedAt" -> DateTime.now)))
     }
 
   def tournamentActiveUsers(tourId: Tour.Id): Future[Set[User.Id]] =
@@ -290,14 +313,14 @@ trait MongoHandlers:
 
   type IdFilter = Iterable[String] => Future[Set[String]]
 
-  inline given dateHandler: BSONHandler[DateTime] with
+  given dateHandler: BSONHandler[DateTime] with
     def readTry(bson: BSONValue): Try[DateTime] =
       bson.asTry[BSONDateTime] map { dt =>
         new DateTime(dt.value)
       }
     def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
 
-  inline given [A, T](using
+  given [A, T](using
       bts: SameRuntime[A, T],
       stb: SameRuntime[T, A],
       handler: BSONHandler[A]

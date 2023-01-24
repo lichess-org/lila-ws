@@ -143,3 +143,8 @@ object Monitor:
     val res   = f
     timer.stop()
     res
+
+  object evalCache:
+    private val r = Kamon.counter("evalCache.request")
+    def request(ply: Int, isHit: Boolean) =
+      r.withTags(TagSet.from(Map("ply" -> (if (ply < 15) ply.toString else "15+"), "hit" -> isHit)))
