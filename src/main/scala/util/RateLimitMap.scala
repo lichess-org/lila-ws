@@ -21,7 +21,7 @@ final class RateLimitMap(
     .expireAfterWrite(duration)
     .build[String, (Cost, ClearAt)]()
 
-  private def makeClearAt = nowMillis + duration.toMillis
+  private inline def makeClearAt = nowMillis + duration.toMillis
 
   def apply(k: String, cost: Cost = 1, msg: => String = ""): Boolean = cost < 1 || {
     storage getIfPresent k match

@@ -9,7 +9,7 @@ final class RateLimit(
 ):
   import RateLimit.*
 
-  private def makeClearAt: Long = nowMillis + intervalMillis
+  private inline def makeClearAt: Long = nowMillis + intervalMillis
 
   private var credits: Int    = maxCredits
   private var clearAt: Long   = makeClearAt
@@ -35,6 +35,6 @@ object RateLimit:
   type Charge = Cost => Unit
   type Cost   = Int
 
-  def nowMillis = System.currentTimeMillis()
+  inline def nowMillis = System.currentTimeMillis()
 
   val logger = Logger(getClass)
