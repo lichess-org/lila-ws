@@ -38,4 +38,4 @@ final class RequestHeader(uri: String, req: HttpHeaders):
 
   def name: String = s"$uri UA: $userAgent"
 
-  def sri = queryParameter("sri") flatMap Sri.from
+  def sri = Sri from queryParameter("sri")

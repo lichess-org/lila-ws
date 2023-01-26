@@ -5,7 +5,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 import util.RequestHeader
 
-final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using executionContext: ExecutionContext):
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using ExecutionContext):
 
   import Auth.*
   import Mongo.given
