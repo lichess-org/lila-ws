@@ -7,7 +7,7 @@ final class EventBus[Event, Channel, Subscriber](
     publish: (Subscriber, Event) => Unit
 ):
 
-  private val entries = new ConcurrentHashMap[Channel, Set[Subscriber]](initialCapacity)
+  private val entries = ConcurrentHashMap[Channel, Set[Subscriber]](initialCapacity)
 
   def subscribe(channel: Channel, subscriber: Subscriber): Unit =
     entries.compute(

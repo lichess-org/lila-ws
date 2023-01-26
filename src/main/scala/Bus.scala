@@ -8,13 +8,13 @@ object Bus:
 
   type Chan = String
 
-  private val impl = new util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
+  private val impl = util.EventBus[ClientMsg, Chan, ActorRef[ClientMsg]](
     initialCapacity = 65535,
     publish = (actor, event) => actor ! event
   )
 
-  def subscribe   = impl.subscribe
-  def unsubscribe = impl.unsubscribe
+  inline def subscribe   = impl.subscribe
+  inline def unsubscribe = impl.unsubscribe
 
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)

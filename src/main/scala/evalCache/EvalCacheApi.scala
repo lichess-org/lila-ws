@@ -6,9 +6,10 @@ import scala.concurrent.duration.*
 
 import scala.concurrent.{ ExecutionContext, Future }
 import lila.ws.ipc.ClientOut.EvalGet
+import lila.ws.ipc.ClientIn
 import chess.variant.Variant
 import chess.format.Fen
-import play.api.libs.json.JsObject
+import play.api.libs.json.{ JsObject, JsString }
 import org.joda.time.DateTime
 
 final class EvalCacheApi(mongo: Mongo)(using ExecutionContext):
@@ -16,8 +17,12 @@ final class EvalCacheApi(mongo: Mongo)(using ExecutionContext):
   import EvalCacheEntry.*
   import EvalCacheBsonHandlers.given
 
-  def get(e: EvalGet) =
-    println(e)
+  def get(e: EvalGet, emit: Emit[ClientIn]): Unit =
+    getEvalJson(e.variant, e.fen, e.multiPv).foreach {
+      _.foreach { json =>
+        emit(ClientIn.EvalHit(json + ("path" -> JsString(e.path.value))))
+      }
+    }
 
   private def getEvalJson(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): Future[Option[JsObject]] =
     getEval(Id(variant, SmallFen.make(variant, fen.simple)), multiPv) map {

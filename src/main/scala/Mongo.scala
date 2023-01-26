@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(using executionContext: ExecutionContext) extends MongoHandlers:
+final class Mongo(config: Config)(using ExecutionContext) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
@@ -21,7 +21,7 @@ final class Mongo(config: Config)(using executionContext: ExecutionContext) exte
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def mainDb: Future[DB] =
-    mainConnection flatMap { case (conn, dbName) =>
+    mainConnection flatMap { (conn, dbName) =>
       conn database dbName.getOrElse("lichess")
     }
 

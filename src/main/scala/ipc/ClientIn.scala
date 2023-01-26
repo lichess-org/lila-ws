@@ -231,16 +231,16 @@ object ClientIn:
   case class StormKey(signed: String) extends ClientIn:
     def write = cliMsg("sk1", signed)
 
+  case class EvalHit(data: JsObject) extends ClientIn:
+    def write = cliMsg("evalHit", data)
+
   def racerState(data: JsonString) = payload("racerState", data)
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
-  private def cliMsg[A: Writes](t: String, data: A): String =
-    Json stringify Json.obj(
-      "t" -> t,
-      "d" -> data
-    )
-  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
+  private def cliMsg[A: Writes](t: String, data: A): String = cliMsg(t, Json.toJson(data))
+  private def cliMsg(t: String, js: JsValue): String        = s"""{"t":"$t","d":${Json stringify js}}"""
+  private def cliMsg(t: String, data: JsonString): String   = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
     s"""{"t":"$t","v":$version,"d":${data.value}}"""
   private def cliMsg(t: String, int: Int): String      = s"""{"t":"$t","d":$int}"""
