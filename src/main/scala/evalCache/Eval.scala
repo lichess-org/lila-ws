@@ -1,43 +1,26 @@
 package lila.ws
 package evalCache
 
-case class Eval(
-    cp: Option[Eval.Cp],
-    mate: Option[Eval.Mate],
-):
-
+case class Eval( cp: Option[Eval.Cp], mate: Option[Eval.Mate]):
   def isEmpty = cp.isEmpty && mate.isEmpty
 
-  // def invert = copy(cp = cp.map(_.invert), mate = mate.map(_.invert))
-
-  // def score: Option[Eval.Score] = cp.map(Eval.Score.cp(_)) orElse mate.map(Eval.Score.mate(_))
-
-  // def forceAsCp: Option[Eval.Cp] = cp orElse mate.map {
-  //   case m if m.negative => Eval.Cp(Int.MinValue - m.value)
-  //   case m               => Eval.Cp(Int.MaxValue - m.value)
-  // }
-
 object Eval:
+
+  val initial = Eval(Some(Cp.initial), None)
+  val empty = Eval(None, None)
 
   opaque type Score = Either[Cp, Mate]
   object Score extends TotalWrapper[Score, Either[Cp, Mate]]:
 
     inline def cp(x: Cp): Score     = Score(Left(x))
     inline def mate(y: Mate): Score = Score(Right(y))
-    // val checkmate: Either[Cp, Mate] = Right(Mate(0))
 
     extension (score: Score)
 
       inline def cp: Option[Cp]     = score.value.left.toOption
       inline def mate: Option[Mate] = score.value.toOption
 
-    //   inline def isCheckmate = score.value == Score.checkmate
       inline def mateFound   = score.value.isRight
-
-    //   inline def invert = Score(score.value.left.map(Cp.invert(_)).map(Mate.invert(_)))
-    //   inline def invertIf(cond: Boolean): Score = if (cond) invert else score
-
-    //   def eval: Eval = Eval(cp, mate)
 
   end Score
 
@@ -76,7 +59,3 @@ object Eval:
 
       inline def positive = mate.value > 0
       inline def negative = mate.value < 0
-
-  val initial = Eval(Some(Cp.initial), None)
-
-  val empty = Eval(None, None)

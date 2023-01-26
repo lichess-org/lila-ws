@@ -4,7 +4,7 @@ package evalCache
 import EvalCacheEntry.*
 
 // selects the evals to store for a given position
-object EvalCacheSelector:
+private object EvalCacheSelector:
 
   private type Evals = List[Eval]
 

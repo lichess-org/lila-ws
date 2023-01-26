@@ -148,3 +148,8 @@ object Monitor:
     private val r = Kamon.counter("evalCache.request")
     def request(ply: Int, isHit: Boolean) =
       r.withTags(TagSet.from(Map("ply" -> (if (ply < 15) ply.toString else "15+"), "hit" -> isHit)))
+    object upgrade:
+      val count     = Kamon.counter("evalCache.upgrade.count").withoutTags()
+      val members   = Kamon.gauge("evalCache.upgrade.members").withoutTags()
+      val evals     = Kamon.gauge("evalCache.upgrade.evals").withoutTags()
+      val expirable = Kamon.gauge("evalCache.upgrade.expirable").withoutTags()

@@ -39,13 +39,7 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
-  case class Eval(
-      pvs: NonEmptyList[Pv],
-      knodes: Knodes,
-      depth: Depth,
-      by: User.Id,
-      trust: Trust
-  ):
+  case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
     def multiPv = MultiPv(pvs.size)
 
@@ -74,16 +68,11 @@ object EvalCacheEntry:
 
     def truncate = copy(moves = Moves truncate moves)
 
-  case class TrustedUser(trust: Trust, user: User.Id)
-
   case class Id(variant: Variant, smallFen: SmallFen)
 
   case class Input(id: Id, fen: Fen.Epd, eval: Eval)
 
-  object Input:
-    case class Candidate(variant: Variant, fen: Fen.Epd, eval: Eval):
-      def input =
-        SmallFen.validate(variant, fen) ifTrue eval.looksValid map { smallFen =>
-          Input(Id(variant, smallFen), fen, eval.truncatePvs)
-        }
-
+  def makeInput(variant: Variant, fen: Fen.Epd, eval: Eval) =
+    SmallFen.validate(variant, fen) ifTrue eval.looksValid map { smallFen =>
+      Input(Id(variant, smallFen), fen, eval.truncatePvs)
+    }

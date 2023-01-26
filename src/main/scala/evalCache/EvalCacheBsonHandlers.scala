@@ -3,13 +3,10 @@ package evalCache
 
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
-import scala.util.{ Success, Try, Failure }
+import scala.util.{ Failure, Success, Try }
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxList
-
 import chess.format.Uci
-// import lila.db.dsl.{ *, given }
-// import lila.tree.Eval.*
 
 object EvalCacheBsonHandlers:
 
@@ -49,7 +46,7 @@ object EvalCacheBsonHandlers:
                 case x => sys error s"Invalid PV $pvStr: ${x.toList} (in $value)"
             }
           }.flatMap {
-            _.toNel .toRight(new Exception(s"Empty PVs $value")) .toTry
+            _.toNel.toRight(new Exception(s"Empty PVs $value")).toTry
           }
         case b => handlerBadType[NonEmptyList[Pv]](b)
 
@@ -64,9 +61,10 @@ object EvalCacheBsonHandlers:
     Failure(TypeDoesNotMatchException("BSONValue", b.getClass.getSimpleName))
   private def handlerBadValue[T](msg: String): Try[T] = Failure(new IllegalArgumentException(msg))
 
-  private def tryHandler[T](read: PartialFunction[BSONValue, Try[T]], write: T => BSONValue): BSONHandler[T] = new:
-    def readTry(bson: BSONValue) = read.applyOrElse( bson, (b: BSONValue) => handlerBadType(b))
-    def writeTry(t: T) = Success(write(t))
+  private def tryHandler[T](read: PartialFunction[BSONValue, Try[T]], write: T => BSONValue): BSONHandler[T] =
+    new:
+      def readTry(bson: BSONValue) = read.applyOrElse(bson, (b: BSONValue) => handlerBadType(b))
+      def writeTry(t: T)           = Success(write(t))
 
   given BSONHandler[Id] = tryHandler[Id](
     { case BSONString(value) =>

@@ -101,7 +101,7 @@ object ClientActor:
         state
 
       case evalGet: ClientOut.EvalGet =>
-        services.evalCache.get(evalGet, clientIn)
+        services.evalCache.get(req.sri, evalGet, clientIn)
         state
 
       case ClientOut.MsgType(dest) =>

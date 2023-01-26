@@ -232,7 +232,7 @@ object ClientIn:
     def write = cliMsg("sk1", signed)
 
   case class EvalHit(data: JsObject) extends ClientIn:
-    def write = cliMsg("evalHit", data)
+    val write = cliMsg("evalHit", data)
 
   def racerState(data: JsonString) = payload("racerState", data)
 

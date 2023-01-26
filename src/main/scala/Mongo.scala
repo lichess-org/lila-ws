@@ -7,6 +7,7 @@ import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
+import reactivemongo.api.commands.WriteResult
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext.parasitic
 import scala.concurrent.{ ExecutionContext, Future }
@@ -60,6 +61,10 @@ final class Mongo(config: Config)(using ExecutionContext) extends MongoHandlers:
   def reportColl                      = collNamed("report2")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
   def evalCacheColl                   = yoloDb.map(_ collection "eval_cache")(parasitic)
+
+  def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
+  def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =
+    case wr: WriteResult if isDuplicateKey(wr) => ()
 
   def security[A](f: BSONCollection => Future[A]): Future[A] = securityColl flatMap f
   def coach[A](f: BSONCollection => Future[A]): Future[A]    = coachColl flatMap f

@@ -6,6 +6,7 @@ import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
 import play.api.libs.json.*
 import scala.util.{ Success, Try }
+import cats.data.NonEmptyList
 
 sealed trait ClientOut extends ClientMsg
 
@@ -61,7 +62,16 @@ object ClientOut:
       fen: Fen.Epd,
       variant: Variant,
       multiPv: MultiPv,
-      path: Path
+      path: Path,
+      up: Boolean
+  ) extends ClientOutSite
+
+  case class EvalPut(
+      fen: Fen.Epd,
+      variant: Variant,
+      pvs: NonEmptyList[evalCache.EvalCacheEntry.Pv],
+      knodes: evalCache.Knodes,
+      depth: Depth
   ) extends ClientOutSite
 
   case class MsgType(dest: User.Id) extends ClientOutSite
@@ -173,15 +183,8 @@ object ClientOut:
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
               yield AnaDests(fen, Path(path), variant, chapterId)
-            case "evalGet" =>
-              for
-                d   <- o obj "d"
-                fen <- d.get[Fen.Epd]("fen")
-                variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
-                multiPv = d.get[MultiPv]("mpv") | MultiPv(1)
-                path <- d.get[Path]("path")
-              yield EvalGet(fen, variant, multiPv, path)
-            case "evalPut"             => Some(SiteForward(o))
+            case "evalGet"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGet)
+            case "evalPut"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readPut)
             case "msgType"             => o.get[User.Id]("d") map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby

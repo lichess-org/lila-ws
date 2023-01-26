@@ -4,11 +4,29 @@ package evalCache
 import cats.implicits.*
 import chess.format.{ Fen, Uci }
 import play.api.libs.json.*
+import chess.variant.Variant
 
-import EvalCacheEntry.*
-import Eval.*
+import evalCache.EvalCacheEntry.*
+import evalCache.Eval.*
 
 object EvalCacheJsonHandlers:
+
+  def readGet(d: JsObject) = for
+    fen <- d.get[Fen.Epd]("fen")
+    variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
+    multiPv = d.get[MultiPv]("mpv") | MultiPv(1)
+    path <- d.get[Path]("path")
+    up = d.get[Boolean]("up") | false
+  yield ipc.ClientOut.EvalGet(fen, variant, multiPv, path, up)
+
+  def readPut(d: JsObject) = for
+    fen <- d.get[Fen.Epd]("fen")
+    variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
+    knodes <- d.get[Knodes]("knodes")
+    depth  <- d.get[Depth]("depth")
+    pvObjs <- d objs "pvs"
+    pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
+  yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
   def writeEval(e: Eval, fen: Fen.Epd) =
     Json.obj(
@@ -21,43 +39,20 @@ object EvalCacheJsonHandlers:
   private def writePv(pv: Pv) = Json
     .obj("moves" -> pv.moves.value.toList.map(_.uci).mkString(" "))
     .add("cp" -> pv.score.cp)
-    .add("mate"-> pv.score.mate)
+    .add("mate" -> pv.score.mate)
 
-  // private[evalCache] def readPut(trustedUser: TrustedUser, o: JsObject): Option[Input.Candidate] =
-  //   o obj "d" flatMap { readPutData(trustedUser, _) }
-
-  // private[evalCache] def readPutData(trustedUser: TrustedUser, d: JsObject): Option[Input.Candidate] =
-  //   import chess.variant.Variant
-  //   for
-  //     fen    <- d.get[Fen.Epd]("fen")
-  //     knodes <- d int "knodes"
-  //     depth  <- d.get[Depth]("depth")
-  //     pvObjs <- d objs "pvs"
-  //     pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
-  //     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
-  //   yield Input.Candidate(
-  //     variant,
-  //     fen,
-  //     Eval(
-  //       pvs = pvs,
-  //       knodes = Knodes(knodes),
-  //       depth = depth,
-  //       by = trustedUser.user.id,
-  //       trust = trustedUser.trust
-  //     )
-  //   )
-
-  // private def parsePv(d: JsObject): Option[Pv] =
-  //   for {
-  //     movesStr <- d str "moves"
-  //     moves <- Moves from
-  //       movesStr
-  //         .split(' ')
-  //         .take(MAX_PV_SIZE)
-  //         .foldLeft(List.empty[Uci].some) {
-  //           case (Some(ucis), str) => Uci(str) map (_ :: ucis)
-  //           case _                 => None
-  //         }
-  //         .flatMap(_.reverse.toNel)
-  //     score <- d.get[Cp]("cp").map(Score.cp(_)) orElse d.get[Mate]("mate").map(Score.mate(_))
-  //   } yield Pv(score, moves)
+  private def parsePv(d: JsObject): Option[Pv] =
+    for {
+      movesStr <- d str "moves"
+      moves <- Moves from
+        movesStr
+          .split(' ')
+          .take(MAX_PV_SIZE)
+          .foldLeft(List.empty[Uci].some) {
+            case (Some(ucis), str) => Uci(str) map (_ :: ucis)
+            case _                 => None
+          }
+          .flatMap(_.reverse.toNel)
+      score <- d.get[Cp]("cp").map(Score.cp(_)) orElse
+        d.get[Mate]("mate").map(Score.mate(_))
+    } yield Pv(score, moves)
