@@ -1,7 +1,7 @@
 package lila.ws
 
 import play.api.libs.json.*
-import chess.format.{ Fen, Uci, UciCharPair }
+import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import chess.opening.{ Opening, OpeningDb }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
@@ -74,7 +74,7 @@ object Chess:
   private def makeNode(
       game: chess.Game,
       move: Uci.WithSan,
-      path: Path,
+      path: UciPath,
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
     val movable = game.situation playable false

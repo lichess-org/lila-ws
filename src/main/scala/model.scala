@@ -119,9 +119,6 @@ object Flag extends OpaqueString[Flag]:
 opaque type IpAddress = String
 object IpAddress extends OpaqueString[IpAddress]
 
-opaque type Path = String
-object Path extends OpaqueString[Path]
-
 opaque type ChapterId = String
 object ChapterId extends OpaqueString[ChapterId]
 

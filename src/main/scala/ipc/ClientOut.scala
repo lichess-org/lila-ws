@@ -1,12 +1,11 @@
 package lila.ws
 package ipc
 
-import chess.format.{ Fen, Uci }
+import chess.format.{ Fen, Uci, UciPath }
 import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
 import play.api.libs.json.*
 import scala.util.{ Success, Try }
-import cats.data.NonEmptyList
 
 sealed trait ClientOut extends ClientMsg
 
@@ -28,13 +27,13 @@ object ClientOut:
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: Path, fen: Fen.Epd) extends ClientOutSite
+  case class Opening(variant: Variant, path: UciPath, fen: Fen.Epd) extends ClientOutSite
 
   case class AnaMove(
       orig: Pos,
       dest: Pos,
       fen: Fen.Epd,
-      path: Path,
+      path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId],
       promotion: Option[chess.PromotableRole],
@@ -45,7 +44,7 @@ object ClientOut:
       role: chess.Role,
       pos: Pos,
       fen: Fen.Epd,
-      path: Path,
+      path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId],
       payload: JsObject
@@ -53,7 +52,7 @@ object ClientOut:
 
   case class AnaDests(
       fen: Fen.Epd,
-      path: Path,
+      path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
@@ -62,7 +61,7 @@ object ClientOut:
       fen: Fen.Epd,
       variant: Variant,
       multiPv: MultiPv,
-      path: Path,
+      path: UciPath,
       up: Boolean
   ) extends ClientOutSite
 
@@ -150,7 +149,7 @@ object ClientOut:
             case "opening" =>
               for
                 d    <- o obj "d"
-                path <- d str "path"
+                path <- d.get[UciPath]("path")
                 fen  <- d.get[Fen.Epd]("fen")
                 variant = dataVariant(d)
               yield Opening(variant, Path(path), fen)
@@ -159,30 +158,30 @@ object ClientOut:
                 d    <- o obj "d"
                 orig <- d str "orig" flatMap { Pos.fromKey(_) }
                 dest <- d str "dest" flatMap { Pos.fromKey(_) }
-                path <- d str "path"
+                path <- d.get[UciPath]("path")
                 fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
                 promotion = d str "promotion" flatMap { chess.Role.promotable(_) }
-              yield AnaMove(orig, dest, fen, Path(path), variant, chapterId, promotion, o)
+              } yield AnaMove(orig, dest, fen, path, variant, chapterId, promotion, o)
             case "anaDrop" =>
               for
                 d    <- o obj "d"
                 role <- d str "role" flatMap chess.Role.allByName.get
                 pos  <- d str "pos" flatMap { Pos.fromKey(_) }
-                path <- d str "path"
+                path <- d.get[UciPath]("path")
                 fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
-              yield AnaDrop(role, pos, fen, Path(path), variant, chapterId, o)
+              } yield AnaDrop(role, pos, fen, path, variant, chapterId, o)
             case "anaDests" =>
               for
                 d    <- o obj "d"
-                path <- d str "path"
+                path <- d.get[UciPath]("path")
                 fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
-              yield AnaDests(fen, Path(path), variant, chapterId)
+              yield AnaDests(fen, path, variant, chapterId)
             case "evalGet"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGet)
             case "evalPut"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readPut)
             case "msgType"             => o.get[User.Id]("d") map MsgType.apply
