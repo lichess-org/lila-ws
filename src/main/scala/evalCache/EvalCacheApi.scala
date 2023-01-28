@@ -36,7 +36,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster.get(user) foreach {
-      _ foreach { trust =>
+      _.filter(_.isEnough) foreach { trust =>
         makeInput(
           e.variant,
           e.fen,
@@ -63,7 +63,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private val cache: AsyncLoadingCache[Id, Option[EvalCacheEntry]] = Scaffeine()
     .initialCapacity(65536)
-    .expireAfterAccess(5 minutes)
+    .expireAfterWrite(5 minutes)
     .buildAsyncFuture(fetchAndSetAccess)
 
   private def getEval(id: Id, multiPv: MultiPv): Future[Option[Eval]] =
@@ -82,9 +82,8 @@ final class EvalCacheApi(mongo: Mongo)(using
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
     def destSize(fen: Fen.Epd): Int =
       chess.Game(chess.variant.Standard.some, fen.some).situation.moves.view.map(_._2.size).sum
-    println(s"putting $input")
     mongo.evalCacheColl.flatMap { c =>
-      EvalCacheValidator(input).pp("validation") match
+      EvalCacheValidator(input) match
         case Some(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
@@ -106,12 +105,9 @@ final class EvalCacheApi(mongo: Mongo)(using
                   upgrade.onEval(input, sri)
                 }
             case Some(oldEntry) =>
-              println(s"old $oldEntry")
               val entry = oldEntry add input.eval
-              println(s"new $entry")
               if entry.similarTo(oldEntry) then Future.successful(())
               else
-                println("updating!")
                 c.update.one(BSONDocument("_id" -> entry.id), entry, upsert = true).map { _ =>
                   cache.put(input.id, Future.successful(entry.some))
                   upgrade.onEval(input, sri)

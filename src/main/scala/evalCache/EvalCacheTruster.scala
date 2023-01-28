@@ -15,7 +15,7 @@ final private class EvalCacheTruster(
 
   private val cache: AsyncLoadingCache[User.Id, Option[Trust]] = Scaffeine()
     .initialCapacity(256)
-    .expireAfterWrite(10.minutes)
+    .expireAfterWrite(5.minutes)
     .buildAsyncFuture { userId =>
       mongo.userColl
         .flatMap {
@@ -28,7 +28,7 @@ final private class EvalCacheTruster(
     }
 
   private def computeTrust(user: BSONDocument): Trust =
-    if (user.contains("marks")) Trust(-9999)
+    if (user.getAsOpt[List[String]]("marks").exists(_.nonEmpty)) Trust(-9999)
     else
       Trust {
         seniorityBonus(user) +
