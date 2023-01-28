@@ -27,7 +27,7 @@ final class Controller(
   private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User.Id]) =
     endpoint(
       name = "site",
-      behavior = (emit: ClientEmit) =>
+      behavior = emit =>
         SiteClientActor start {
           Deps(emit, Req(req, sri, user), services)
         },
@@ -39,7 +39,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful endpoint(
         name = "lobby",
-        behavior = (emit: ClientEmit) =>
+        behavior = emit =>
           LobbyClientActor start {
             Deps(emit, Req(req, sri, user), services)
           },
@@ -54,7 +54,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "simul",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -71,7 +71,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "tour",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               TourClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -88,7 +88,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "study",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               StudyClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -106,7 +106,7 @@ final class Controller(
           val userTv = UserTv.from(req queryParameter "userTv")
           endpoint(
             name = "round/watch",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               RoundClientActor
                 .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
@@ -124,7 +124,7 @@ final class Controller(
         case (Some(player), isTroll) =>
           endpoint(
             name = "round/play",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               RoundClientActor.start(
                 RoomActor.State(RoomId.ofPlayer(id), isTroll),
                 Some(player),
@@ -151,7 +151,7 @@ final class Controller(
         case Some(owner) =>
           endpoint(
             name = "challenge",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               ChallengeClientActor
                 .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
@@ -168,7 +168,7 @@ final class Controller(
         if (view.exists(_.yes))
           endpoint(
             name = "team",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               TeamClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -185,7 +185,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "swiss",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               SwissClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -207,7 +207,7 @@ final class Controller(
           case Some(pid) =>
             endpoint(
               name = "racer",
-              behavior = (emit: ClientEmit) =>
+              behavior = emit =>
                 RacerClientActor.start(RoomActor.State(id into RoomId, IsTroll(false)), pid) {
                   Deps(emit, Req(req, sri, user), services)
                 },
@@ -220,7 +220,7 @@ final class Controller(
   def api(req: RequestHeader) =
     Future successful endpoint(
       name = "api",
-      behavior = (emit: ClientEmit) =>
+      behavior = emit =>
         SiteClientActor.start {
           Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
         },
@@ -276,9 +276,9 @@ object Controller:
   ) =
     Monitor.connection open name
     Right(
-      new Endpoint(
+      Endpoint(
         behavior,
-        new RateLimit(
+        RateLimit(
           maxCredits = credits,
           intervalMillis = interval.toMillis.toInt,
           name = name
