@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import chess.{ Color, Ply }
+import chess.{ Check, Color, Ply }
 import chess.format.{ EpdFen, Uci, UciCharPair }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
@@ -121,7 +121,7 @@ object ClientIn:
       ply: Ply,
       move: Uci.WithSan,
       fen: EpdFen,
-      check: Boolean,
+      check: Check,
       dests: Map[chess.Pos, List[chess.Pos]],
       opening: Option[Opening],
       drops: Option[List[chess.Pos]],
@@ -145,7 +145,7 @@ object ClientIn:
                 "children" -> JsArray()
               )
               .add("opening" -> opening)
-              .add("check" -> check)
+              .add("check" -> check.yes)
               .add("drops" -> drops.map { drops =>
                 JsString(drops.map(_.key).mkString)
               })
