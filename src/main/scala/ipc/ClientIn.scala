@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import chess.{ Check, Color, Ply }
-import chess.format.{ EpdFen, Uci, UciCharPair }
+import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
 import lila.ws.Position
@@ -102,7 +102,7 @@ object ClientIn:
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
 
-  case class OpeningMsg(path: Path, opening: Opening) extends ClientIn:
+  case class OpeningMsg(path: UciPath, opening: Opening) extends ClientIn:
     def write =
       cliMsg(
         "opening",
@@ -116,7 +116,7 @@ object ClientIn:
     def write = cliMsg("stepFailure")
 
   case class Node(
-      path: Path,
+      path: UciPath,
       id: UciCharPair,
       ply: Ply,
       move: Uci.WithSan,
@@ -155,7 +155,7 @@ object ClientIn:
       )
 
   case class Dests(
-      path: Path,
+      path: UciPath,
       dests: String,
       opening: Option[Opening],
       chapterId: Option[ChapterId]

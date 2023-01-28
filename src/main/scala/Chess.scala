@@ -1,7 +1,7 @@
 package lila.ws
 
 import play.api.libs.json.*
-import chess.format.{ Fen, Uci, UciCharPair }
+import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import chess.opening.{ Opening, OpeningDb }
 import chess.Pos
 import chess.variant.{ Crazyhouse, Variant }
@@ -74,7 +74,7 @@ object Chess:
   private def makeNode(
       game: chess.Game,
       move: Uci.WithSan,
-      path: Path,
+      path: UciPath,
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
     val movable = game.situation playable false
@@ -99,16 +99,12 @@ object Chess:
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
 
   object json:
-    given Writes[Path] with
-      def writes(path: Path) = JsString(path.value)
     given Writes[Uci] with
       def writes(uci: Uci) = JsString(uci.uci)
     given Writes[UciCharPair] with
       def writes(ucp: UciCharPair) = JsString(ucp.toString)
     given Writes[Pos] with
       def writes(pos: Pos) = JsString(pos.key)
-    given Writes[ChapterId] with
-      def writes(ch: ChapterId) = JsString(ch.value)
     given Writes[Opening] with
       def writes(o: Opening) = Json.obj("eco" -> o.eco, "name" -> o.name)
     given Writes[Map[Pos, List[Pos]]] with
