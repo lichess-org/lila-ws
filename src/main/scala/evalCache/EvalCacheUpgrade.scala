@@ -4,7 +4,7 @@ package evalCache
 import play.api.libs.json.{ JsObject, JsString }
 
 import scala.concurrent.duration.*
-import chess.format.Fen
+import chess.format.{ Fen, UciPath }
 import chess.variant.Variant
 import lila.ws.util.ExpireCallbackMemo
 import lila.ws.ipc.ClientOut.EvalGet
@@ -85,4 +85,4 @@ private object EvalCacheUpgrade:
   private def makeSetupId(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): SetupId =
     s"${variant.id}${SmallFen.make(variant, fen.simple)}^$multiPv"
 
-  private case class WatchingMember(sri: Sri, setupId: SetupId, path: Path)
+  private case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

@@ -2,7 +2,7 @@ package lila.ws
 package evalCache
 
 import cats.implicits.*
-import chess.format.{ Fen, Uci }
+import chess.format.{ Fen, Uci, UciPath }
 import play.api.libs.json.*
 import chess.variant.Variant
 
@@ -15,7 +15,7 @@ object EvalCacheJsonHandlers:
     fen <- d.get[Fen.Epd]("fen")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     multiPv = d.get[MultiPv]("mpv") | MultiPv(1)
-    path <- d.get[Path]("path")
+    path <- d.get[UciPath]("path")
     up = d.get[Boolean]("up") | false
   yield ipc.ClientOut.EvalGet(fen, variant, multiPv, path, up)
 

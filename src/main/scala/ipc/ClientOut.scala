@@ -6,6 +6,7 @@ import chess.variant.Variant
 import chess.{ Centis, Color, Pos }
 import play.api.libs.json.*
 import scala.util.{ Success, Try }
+import cats.data.NonEmptyList
 
 sealed trait ClientOut extends ClientMsg
 
@@ -152,7 +153,7 @@ object ClientOut:
                 path <- d.get[UciPath]("path")
                 fen  <- d.get[Fen.Epd]("fen")
                 variant = dataVariant(d)
-              yield Opening(variant, Path(path), fen)
+              yield Opening(variant, path, fen)
             case "anaMove" =>
               for
                 d    <- o obj "d"
@@ -163,7 +164,7 @@ object ClientOut:
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
                 promotion = d str "promotion" flatMap { chess.Role.promotable(_) }
-              } yield AnaMove(orig, dest, fen, path, variant, chapterId, promotion, o)
+              yield AnaMove(orig, dest, fen, path, variant, chapterId, promotion, o)
             case "anaDrop" =>
               for
                 d    <- o obj "d"
@@ -173,7 +174,7 @@ object ClientOut:
                 fen  <- d.get[Fen.Epd]("fen")
                 variant   = dataVariant(d)
                 chapterId = d.get[ChapterId]("ch")
-              } yield AnaDrop(role, pos, fen, path, variant, chapterId, o)
+              yield AnaDrop(role, pos, fen, path, variant, chapterId, o)
             case "anaDests" =>
               for
                 d    <- o obj "d"
