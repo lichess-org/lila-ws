@@ -1,7 +1,5 @@
 package lila.ws
 
-import scala.concurrent.duration.*
-
 import ipc.LilaIn
 
 final class Services(

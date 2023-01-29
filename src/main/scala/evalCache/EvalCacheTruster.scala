@@ -2,14 +2,10 @@ package lila.ws
 package evalCache
 
 import org.joda.time.{ DateTime, Days }
-import scala.concurrent.duration.*
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
 
-final private class EvalCacheTruster(
-    mongo: Mongo
-)(using scala.concurrent.ExecutionContext)
-    extends MongoHandlers:
+final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends MongoHandlers:
 
   export cache.get
 

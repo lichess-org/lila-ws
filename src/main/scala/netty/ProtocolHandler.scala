@@ -10,12 +10,9 @@ import java.io.IOException
 import akka.actor.typed.ActorRef
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
-import scala.concurrent.{ ExecutionContext, Future, Promise }
 import io.netty.buffer.Unpooled
 
-final private class ProtocolHandler(
-    clients: ActorRef[Clients.Control]
-)(using ec: ExecutionContext)
+final private class ProtocolHandler(clients: ActorRef[Clients.Control])(using Executor)
     extends WebSocketServerProtocolHandler(
       "",    // path
       null,  // subprotocols (?)

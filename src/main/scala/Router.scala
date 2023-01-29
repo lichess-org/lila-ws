@@ -1,7 +1,6 @@
 package lila.ws
 
 import io.netty.handler.codec.http.HttpResponseStatus
-import scala.concurrent.Future
 
 import util.RequestHeader
 

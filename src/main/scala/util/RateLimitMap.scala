@@ -1,6 +1,5 @@
 package lila.ws
 
-import scala.concurrent.duration.FiniteDuration
 import com.github.blemale.scaffeine.Scaffeine
 
 /** Throttler that allows X operations per Y unit of time

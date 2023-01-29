@@ -8,12 +8,9 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
 import reactivemongo.api.commands.WriteResult
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext.parasitic
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(using ExecutionContext) extends MongoHandlers:
+final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 

@@ -6,13 +6,11 @@ import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.handler.codec.http.websocketx.WebSocketFrame
-import scala.concurrent.ExecutionContext
 
 import ipc.ClientOut
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame
 
-final private class FrameHandler(using ec: ExecutionContext)
-    extends SimpleChannelInboundHandler[WebSocketFrame]:
+final private class FrameHandler(using Executor) extends SimpleChannelInboundHandler[WebSocketFrame]:
 
   import FrameHandler.*
   import ProtocolHandler.key

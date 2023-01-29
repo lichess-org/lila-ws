@@ -2,8 +2,6 @@ package lila.ws
 
 import chess.Color
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 
 import ipc.*
 
@@ -11,11 +9,11 @@ final class RoundCrowd(
     lila: Lila,
     json: CrowdJson,
     groupedWithin: util.GroupedWithin
-)(using ExecutionContext):
+)(using Executor):
 
   import RoundCrowd.*
 
-  private val rounds = new ConcurrentHashMap[RoomId, RoundState](32768)
+  private val rounds = ConcurrentHashMap[RoomId, RoundState](32768)
 
   def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
     publish(

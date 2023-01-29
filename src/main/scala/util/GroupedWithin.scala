@@ -4,19 +4,17 @@ package util
 import akka.actor.Cancellable
 import akka.actor.typed.Scheduler
 import scala.collection.immutable.VectorBuilder
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.ExecutionContext
 
-final class GroupedWithin()(using scheduler: Scheduler, ec: ExecutionContext):
+final class GroupedWithin()(using scheduler: Scheduler, ec: Executor):
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
-    new GroupedWithinStage[A](nb, interval, emit)
+    GroupedWithinStage[A](nb, interval, emit)
 
 final class GroupedWithinStage[A](
     nb: Int,
     interval: FiniteDuration,
     emit: Emit[Vector[A]]
-)(using scheduler: Scheduler, ec: ExecutionContext):
+)(using scheduler: Scheduler, ec: Executor):
 
   private val buffer: VectorBuilder[A] = new VectorBuilder
 

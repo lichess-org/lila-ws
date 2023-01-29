@@ -3,14 +3,8 @@ package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import play.api.libs.json.*
-import scala.concurrent.duration.*
-import scala.concurrent.{ ExecutionContext, Future }
 
-final class CrowdJson(
-    inquirers: Inquirers,
-    mongo: Mongo,
-    lightUserApi: LightUserApi
-)(using ec: ExecutionContext):
+final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using Executor):
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if (crowd.users.sizeIs > 20) keepOnlyStudyMembers(crowd) map { users =>

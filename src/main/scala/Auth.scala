@@ -1,11 +1,9 @@
 package lila.ws
 
 import reactivemongo.api.bson.*
-import scala.concurrent.{ ExecutionContext, Future }
-
 import util.RequestHeader
 
-final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using ExecutionContext):
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using Executor):
 
   import Auth.*
   import Mongo.given

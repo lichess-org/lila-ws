@@ -5,6 +5,9 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 export ornicar.scalalib.newtypes.*
 export ornicar.scalalib.zeros.*
 export ornicar.scalalib.extensions.*
+export scala.concurrent.{ ExecutionContext as Executor, Future, Promise }
+export scala.concurrent.duration.{ DurationInt, FiniteDuration }
+export scala.concurrent.ExecutionContext.parasitic
 
 type Emit[A] = Function[A, Unit]
 

@@ -2,12 +2,8 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import lila.ws.ipc.LilaIn
-import scala.concurrent.duration.*
 
-final class Lag(
-    lilaRedis: Lila,
-    groupedWithin: util.GroupedWithin
-):
+final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
 
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f

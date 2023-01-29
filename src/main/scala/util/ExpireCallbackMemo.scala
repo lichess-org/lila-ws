@@ -4,7 +4,6 @@ package util
 import akka.actor.Cancellable
 import akka.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.*
 
 // calls a function when a key expires
@@ -13,7 +12,7 @@ final class ExpireCallbackMemo[K](
     ttl: FiniteDuration,
     callback: K => Unit,
     initialCapacity: Int = 4096
-)(using scala.concurrent.ExecutionContext):
+)(using Executor):
 
   private val timeouts = ConcurrentHashMap[K, Cancellable](initialCapacity)
 

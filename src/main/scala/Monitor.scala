@@ -4,8 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 import java.util.concurrent.TimeUnit
 
 final class Monitor(
@@ -13,7 +11,7 @@ final class Monitor(
     services: Services
 )(using
     scheduler: akka.actor.typed.Scheduler,
-    ec: ExecutionContext
+    ec: Executor
 ):
 
   import Monitor.*

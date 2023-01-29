@@ -10,13 +10,8 @@ import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.*
-import scala.concurrent.ExecutionContext
 
-final class NettyServer(
-    clients: ClientSystem,
-    router: Router,
-    config: Config
-)(using ec: ExecutionContext):
+final class NettyServer(clients: ClientSystem, router: Router, config: Config)(using Executor):
 
   private val logger = Logger(getClass)
 

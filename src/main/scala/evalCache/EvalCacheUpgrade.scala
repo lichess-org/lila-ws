@@ -3,7 +3,6 @@ package evalCache
 
 import play.api.libs.json.{ JsObject, JsString }
 
-import scala.concurrent.duration.*
 import chess.format.{ Fen, UciPath }
 import chess.variant.Variant
 import lila.ws.util.ExpireCallbackMemo
@@ -17,7 +16,7 @@ import scala.collection.mutable
  * and listening to new evals stored.
  */
 final private class EvalCacheUpgrade(using
-    ec: scala.concurrent.ExecutionContext,
+    ec: Executor,
     scheduler: akka.actor.typed.Scheduler
 ):
   import EvalCacheUpgrade.*
