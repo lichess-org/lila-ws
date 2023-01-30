@@ -15,7 +15,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
   private val mainConnection =
-    MongoConnection.fromString(config.getString("mongo.uri")) flatMap { parsedUri =>
+    MongoConnection.fromString(config.getString("mongo.uri").pp("main")) flatMap { parsedUri =>
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def mainDb: Future[DB] =
@@ -24,7 +24,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     }
 
   private val studyConnection =
-    MongoConnection.fromString(config.getString("study.mongo.uri")) flatMap { parsedUri =>
+    MongoConnection.fromString(config.getString("study.mongo.uri").pp("study")) flatMap { parsedUri =>
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def studyDb: Future[DB] =
@@ -32,7 +32,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
       conn database dbName.getOrElse("lichess")
     }
   private val yoloConnection =
-    MongoConnection.fromString(config.getString("yolo.mongo.uri")) flatMap { parsedUri =>
+    MongoConnection.fromString(config.getString("yolo.mongo.uri").pp("yolo")) flatMap { parsedUri =>
       driver.connect(parsedUri).map(_ -> parsedUri.db)
     }
   private def yoloDb: Future[DB] =
