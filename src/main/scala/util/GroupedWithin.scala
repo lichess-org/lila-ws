@@ -5,7 +5,7 @@ import akka.actor.Cancellable
 import akka.actor.typed.Scheduler
 import scala.collection.immutable.VectorBuilder
 
-final class GroupedWithin()(using scheduler: Scheduler, ec: Executor):
+final class GroupedWithin()(using Scheduler, Executor):
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     GroupedWithinStage[A](nb, interval, emit)

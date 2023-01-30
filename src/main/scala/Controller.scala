@@ -249,16 +249,19 @@ final class Controller(
       "http://localhost",      // android
       "http://localhost:8080"  // local app dev
     )
-    val blockOrigins = Set("http://chessodds.org")
+    val apiOrigins = Set("https://www.lichess4545.com")
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case Some(origin)                                               => block(req)
+        case _                                                          => block(req)
 
     def api(req: RequestHeader)(f: => Response): Response =
-      if req.origin.exists(blockOrigins.contains) then block(req) else f
+      req.origin match
+        case None                               => f
+        case Some(origin) if apiOrigins(origin) => f
+        case _                                  => block(req)
 
     private def block(req: RequestHeader): Response =
       logger.debug(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
