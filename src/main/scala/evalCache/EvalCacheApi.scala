@@ -29,7 +29,7 @@ final class EvalCacheApi(mongo: Mongo)(using
   def get(sri: Sri, e: EvalGet, emit: Emit[ClientIn]): Unit =
     getEvalJson(e.variant, e.fen, e.multiPv).foreach {
       _.foreach { json =>
-        emit(ClientIn.EvalHit(json + ("path" -> JsString(e.path.value))))
+        emit(ClientIn.EvalHit(json + ("path" -> JsString(e.path))))
       }
     }
     if e.up then upgrade.register(sri, e)
