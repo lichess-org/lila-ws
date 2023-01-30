@@ -216,15 +216,17 @@ final class Controller(
     }
 
   def api(req: RequestHeader) =
-    Future successful endpoint(
-      name = "api",
-      behavior = emit =>
-        SiteClientActor.start {
-          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-        },
-      credits = 50,
-      interval = 20.seconds
-    )
+    CSRF.api(req) {
+      Future successful endpoint(
+        name = "api",
+        behavior = emit =>
+          SiteClientActor.start {
+            Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+          },
+        credits = 50,
+        interval = 20.seconds
+      )
+    }
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
     CSRF.check(req) {
@@ -247,14 +249,20 @@ final class Controller(
       "http://localhost",      // android
       "http://localhost:8080"  // local app dev
     )
+    val blockOrigins = Set("http://chessodds.org")
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case Some(origin) =>
-          logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
-          Future successful Left(HttpResponseStatus.FORBIDDEN)
+        case Some(origin)                                               => block(req)
+
+    def api(req: RequestHeader)(f: => Response): Response =
+      if req.origin.exists(blockOrigins.contains) then block(req) else f
+
+    private def block(req: RequestHeader): Response =
+      logger.debug(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
+      Future successful Left(HttpResponseStatus.FORBIDDEN)
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
