@@ -1,19 +1,14 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 
 import ipc.*
 
-final class RoomCrowd(
-    json: CrowdJson,
-    groupedWithin: util.GroupedWithin
-)(using ec: ExecutionContext):
+final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using ec: Executor):
 
   import RoomCrowd.*
 
-  private val rooms = new ConcurrentHashMap[RoomId, RoomState](1024)
+  private val rooms = ConcurrentHashMap[RoomId, RoomState](1024)
 
   def connect(roomId: RoomId, user: Option[User.Id]): Unit =
     publish(
@@ -45,7 +40,7 @@ final class RoomCrowd(
 
   private val outputBatch = groupedWithin[Output](1024, 1.second) { outputs =>
     outputs
-      .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
+      .foldLeft(Map.empty[RoomId, Output]) { (crowds, crowd) =>
         crowds.updated(crowd.roomId, crowd)
       }
       .values foreach { output =>

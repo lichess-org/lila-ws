@@ -1,12 +1,10 @@
 package lila.ws
 
 import akka.actor.typed.Scheduler
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 
 import ipc.*
 
-final class KeepAlive(lila: Lila, scheduler: Scheduler)(using ec: ExecutionContext):
+final class KeepAlive(lila: Lila, scheduler: Scheduler)(using Executor):
 
   import KeepAlive.*
 

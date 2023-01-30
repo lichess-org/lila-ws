@@ -2,13 +2,11 @@ package lila.ws
 
 import akka.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.*
 
 import ipc.*
 
-final class Users(using scheduler: Scheduler, ec: ExecutionContext):
+final class Users(using scheduler: Scheduler, ec: Executor):
 
   private val users       = new ConcurrentHashMap[User.Id, Set[Client]](32768)
   private val disconnects = ConcurrentHashMap.newKeySet[User.Id](2048)

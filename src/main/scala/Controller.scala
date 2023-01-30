@@ -3,8 +3,6 @@ package lila.ws
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
-import scala.concurrent.duration.*
-import scala.concurrent.{ ExecutionContext, Future }
 import util.RequestHeader
 
 final class Controller(
@@ -12,7 +10,7 @@ final class Controller(
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(using ExecutionContext):
+)(using Executor):
 
   import Controller.*
   import ClientActor.{ Deps, Req }

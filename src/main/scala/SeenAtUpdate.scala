@@ -5,13 +5,10 @@ import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import scala.concurrent.duration.*
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Try
-import scala.util.Success
+import scala.util.{ Success, Try }
 
 final class SeenAtUpdate(mongo: Mongo)(using
-    context: ExecutionContext,
+    context: Executor,
     scheduler: akka.actor.typed.Scheduler
 ) extends MongoHandlers:
 

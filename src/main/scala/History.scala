@@ -7,7 +7,7 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
     initialCapacity: Int
 ):
 
-  private val histories = new ConcurrentHashMap[String, List[V]](initialCapacity)
+  private val histories = ConcurrentHashMap[String, List[V]](initialCapacity)
 
   def add(key: K, event: V): Unit =
     histories.compute(
@@ -42,5 +42,5 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
 object History:
 
-  val room  = new History[RoomId, ipc.ClientIn.Versioned](20, 16384)
-  val round = new History[Game.Id, ipc.ClientIn.RoundVersioned](20, 65536)
+  val room  = History[RoomId, ipc.ClientIn.Versioned](20, 8192)
+  val round = History[Game.Id, ipc.ClientIn.RoundVersioned](20, 65536)

@@ -1,14 +1,9 @@
 package lila.ws
 
-import scala.concurrent.duration.*
-
 import ipc.ClientIn.LobbyPong
 import ipc.LilaIn
 
-final class Lobby(
-    lila: Lila,
-    groupedWithin: util.GroupedWithin
-):
+final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin):
 
   private val lilaIn = lila.emit.lobby
 

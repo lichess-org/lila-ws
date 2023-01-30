@@ -2,7 +2,6 @@ package lila.ws
 
 import com.typesafe.config.Config
 import java.util.concurrent.locks.ReentrantLock
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.jdk.CollectionConverters.*
 import scala.util.control.NonLocalReturns.*
 import scala.util.Random
@@ -133,7 +132,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       info
     }).toList
 
-  private def doLoadFollowed(id: User.Id)(using ec: ExecutionContext): Future[List[UserEntry]] =
+  private def doLoadFollowed(id: User.Id)(using Executor): Future[List[UserEntry]] =
     mongo.loadFollowed(id) map { followed =>
       lock.lock()
       try
@@ -150,7 +149,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
-  def followed(id: User.Id)(using ec: ExecutionContext): Future[List[UserEntry]] =
+  def followed(id: User.Id)(using Executor): Future[List[UserEntry]] =
     lock.lock()
     val infos =
       try

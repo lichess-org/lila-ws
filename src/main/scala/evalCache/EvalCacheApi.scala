@@ -2,9 +2,7 @@ package lila.ws
 package evalCache
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import scala.concurrent.duration.*
 
-import scala.concurrent.{ ExecutionContext, Future }
 import lila.ws.ipc.ClientOut.{ EvalGet, EvalPut }
 import lila.ws.ipc.ClientIn
 import chess.variant.Variant
@@ -16,7 +14,7 @@ import cats.syntax.option.*
 import reactivemongo.api.bson.BSONDocument
 
 final class EvalCacheApi(mongo: Mongo)(using
-    ExecutionContext,
+    Executor,
     akka.actor.typed.Scheduler
 ):
 
