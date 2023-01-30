@@ -20,7 +20,7 @@ val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.2.1"
 
-libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % "1.1.0-d9cc5339-RC7-SNAPSHOT"
+libraryDependencies += "org.reactivemongo" %% "reactivemongo"          % "1.1.0-noshaded-RC7"
 libraryDependencies += "org.reactivemongo" %% "reactivemongo-bson-api" % reactivemongoVersion
 libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"$reactivemongoVersion-$os-x86-64")
