@@ -2,7 +2,7 @@ package lila.ws
 
 import play.api.libs.json.*
 
-inline given [A, T](using
+given [A, T](using
     bts: SameRuntime[A, T],
     stb: SameRuntime[T, A],
     format: Format[A]
