@@ -32,8 +32,7 @@ final class RateLimit(
 
 object RateLimit:
 
-  type Charge = Cost => Unit
-  type Cost   = Int
+  type Cost = Int
 
   inline def nowMillis = System.currentTimeMillis()
 

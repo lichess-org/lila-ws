@@ -10,11 +10,8 @@ import io.netty.handler.codec.http.{
   HttpMethod,
   HttpResponseStatus
 }
-import scala.concurrent.ExecutionContext
 
-final private class RequestHandler(
-    router: Router
-)(using ec: ExecutionContext)
+final private class RequestHandler(router: Router)(using Executor)
     extends SimpleChannelInboundHandler[FullHttpRequest](
       false // do not automatically release req
     ):

@@ -119,9 +119,6 @@ object Flag extends OpaqueString[Flag]:
 opaque type IpAddress = String
 object IpAddress extends OpaqueString[IpAddress]
 
-opaque type Path = String
-object Path extends OpaqueString[Path]
-
 opaque type ChapterId = String
 object ChapterId extends OpaqueString[ChapterId]
 
@@ -156,3 +153,9 @@ object UserTv extends OpaqueString[UserTv]
 case class Clock(white: Int, black: Int)
 case class Position(lastUci: Uci, fen: Fen.Board, clock: Option[Clock], turnColor: Color):
   def fenWithColor = fen.andColor(turnColor)
+
+opaque type MultiPv = Int
+object MultiPv extends OpaqueInt[MultiPv]
+
+opaque type Depth = Int
+object Depth extends OpaqueInt[Depth]

@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
 import ipc.*
-import scala.concurrent.{ ExecutionContext, Promise }
 import ornicar.scalalib.ThreadLocalRandom
 
 final class LilaHandler(
@@ -15,7 +14,7 @@ final class LilaHandler(
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
     services: Services
-)(using ec: ExecutionContext):
+)(using Executor):
 
   import LilaOut.*
   import Bus.publish

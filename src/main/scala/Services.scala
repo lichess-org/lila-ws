@@ -1,7 +1,5 @@
 package lila.ws
 
-import scala.concurrent.duration.*
-
 import ipc.LilaIn
 
 final class Services(
@@ -14,7 +12,8 @@ final class Services(
     val lobby: Lobby,
     val friends: FriendList,
     val stormSign: StormSign,
-    val lag: Lag
+    val lag: Lag,
+    val evalCache: lila.ws.evalCache.EvalCacheApi
 ):
 
   def lila = lilaRedis.emit

@@ -4,15 +4,13 @@ import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
 import scala.annotation.nowarn
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 
 object LilaWs extends App:
 
   lazy val config: Config             = ConfigFactory.load
   lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
   given Scheduler                     = clientSystem.scheduler
-  given ExecutionContext              = clientSystem.executionContext
+  given Executor                      = clientSystem.executionContext
 
   lazy val mongo         = wire[Mongo]
   lazy val groupedWithin = wire[util.GroupedWithin]
@@ -30,6 +28,7 @@ object LilaWs extends App:
   lazy val friendList    = wire[FriendList]
   lazy val stormSign     = wire[StormSign]
   lazy val lag           = wire[Lag]
+  lazy val evalCache     = wire[lila.ws.evalCache.EvalCacheApi]
   lazy val services      = wire[Services]
   lazy val controller    = wire[Controller]
   lazy val router        = wire[Router]
@@ -47,7 +46,7 @@ final class LilaWsServer(
     lobby: Lobby,
     monitor: Monitor,
     scheduler: Scheduler
-)(using ExecutionContext):
+)(using Executor):
 
   def start(): Unit =
 

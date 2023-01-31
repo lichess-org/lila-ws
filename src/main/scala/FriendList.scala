@@ -1,18 +1,15 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import scala.concurrent.duration.*
 
 import SocialGraph.UserMeta
 import ipc.ClientIn.following.*
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 final class FriendList(
     users: Users,
     graph: SocialGraph,
     mongo: Mongo
-)(using ec: ExecutionContext):
+)(using Executor):
 
   import FriendList.*
 
@@ -29,7 +26,7 @@ final class FriendList(
               .get(u.id)
               .map {
                 _ map { UserView(u.id, _, u.meta) }
-              }(ExecutionContext.parasitic)
+              }(parasitic)
         }
       } map { views =>
         emit(Onlines(views.flatten))

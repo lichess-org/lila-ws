@@ -2,7 +2,7 @@ package lila.ws
 
 import play.api.libs.json.*
 
-inline given [A, T](using
+given [A, T](using
     bts: SameRuntime[A, T],
     stb: SameRuntime[T, A],
     format: Format[A]
@@ -24,6 +24,16 @@ extension (js: JsObject)
 
   def get[A: Reads](key: String): Option[A] =
     (js \ key).asOpt[A]
+
+  def arr(key: String): Option[JsArray] =
+    (js \ key).asOpt[JsArray]
+
+  def arrAs[A](key: String)(as: JsValue => Option[A]): Option[List[A]] =
+    arr(key) map { j =>
+      j.value.iterator.map(as).to(List).flatten
+    }
+
+  def objs(key: String): Option[List[JsObject]] = arrAs(key)(_.asOpt[JsObject])
 
   def add(pair: (String, Boolean)): JsObject =
     if (pair._2) js + (pair._1 -> JsBoolean(true))

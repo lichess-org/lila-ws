@@ -3,8 +3,6 @@ package lila.ws
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
-import scala.concurrent.duration.*
-import scala.concurrent.{ ExecutionContext, Future }
 import util.RequestHeader
 
 final class Controller(
@@ -12,7 +10,7 @@ final class Controller(
     mongo: Mongo,
     auth: Auth,
     services: Services
-)(using ExecutionContext):
+)(using Executor):
 
   import Controller.*
   import ClientActor.{ Deps, Req }
@@ -27,7 +25,7 @@ final class Controller(
   private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User.Id]) =
     endpoint(
       name = "site",
-      behavior = (emit: ClientEmit) =>
+      behavior = emit =>
         SiteClientActor start {
           Deps(emit, Req(req, sri, user), services)
         },
@@ -39,7 +37,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       Future successful endpoint(
         name = "lobby",
-        behavior = (emit: ClientEmit) =>
+        behavior = emit =>
           LobbyClientActor start {
             Deps(emit, Req(req, sri, user), services)
           },
@@ -54,7 +52,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "simul",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -71,7 +69,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "tour",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               TourClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -88,7 +86,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "study",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               StudyClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -106,7 +104,7 @@ final class Controller(
           val userTv = UserTv.from(req queryParameter "userTv")
           endpoint(
             name = "round/watch",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               RoundClientActor
                 .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
@@ -124,7 +122,7 @@ final class Controller(
         case (Some(player), isTroll) =>
           endpoint(
             name = "round/play",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               RoundClientActor.start(
                 RoomActor.State(RoomId.ofPlayer(id), isTroll),
                 Some(player),
@@ -151,7 +149,7 @@ final class Controller(
         case Some(owner) =>
           endpoint(
             name = "challenge",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               ChallengeClientActor
                 .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
@@ -168,7 +166,7 @@ final class Controller(
         if (view.exists(_.yes))
           endpoint(
             name = "team",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               TeamClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -185,7 +183,7 @@ final class Controller(
         case (true, isTroll) =>
           endpoint(
             name = "swiss",
-            behavior = (emit: ClientEmit) =>
+            behavior = emit =>
               SwissClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
@@ -207,7 +205,7 @@ final class Controller(
           case Some(pid) =>
             endpoint(
               name = "racer",
-              behavior = (emit: ClientEmit) =>
+              behavior = emit =>
                 RacerClientActor.start(RoomActor.State(id into RoomId, IsTroll(false)), pid) {
                   Deps(emit, Req(req, sri, user), services)
                 },
@@ -218,15 +216,17 @@ final class Controller(
     }
 
   def api(req: RequestHeader) =
-    Future successful endpoint(
-      name = "api",
-      behavior = (emit: ClientEmit) =>
-        SiteClientActor.start {
-          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-        },
-      credits = 50,
-      interval = 20.seconds
-    )
+    CSRF.api(req) {
+      Future successful endpoint(
+        name = "api",
+        behavior = emit =>
+          SiteClientActor.start {
+            Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+          },
+        credits = 50,
+        interval = 20.seconds
+      )
+    }
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
     CSRF.check(req) {
@@ -249,14 +249,23 @@ final class Controller(
       "http://localhost",      // android
       "http://localhost:8080"  // local app dev
     )
+    val apiOrigins = Set("https://www.lichess4545.com")
 
     def check(req: RequestHeader)(f: => Response): Response =
       req.origin match
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case Some(origin) =>
-          logger.debug(s"""CSRF origin: "$origin" ${req.name}""")
-          Future successful Left(HttpResponseStatus.FORBIDDEN)
+        case _                                                          => block(req)
+
+    def api(req: RequestHeader)(f: => Response): Response =
+      req.origin match
+        case None                               => f
+        case Some(origin) if apiOrigins(origin) => f
+        case _                                  => block(req)
+
+    private def block(req: RequestHeader): Response =
+      logger.debug(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
+      Future successful Left(HttpResponseStatus.FORBIDDEN)
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
@@ -276,9 +285,9 @@ object Controller:
   ) =
     Monitor.connection open name
     Right(
-      new Endpoint(
+      Endpoint(
         behavior,
-        new RateLimit(
+        RateLimit(
           maxCredits = credits,
           intervalMillis = interval.toMillis.toInt,
           name = name

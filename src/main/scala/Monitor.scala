@@ -4,8 +4,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
-import scala.concurrent.duration.*
-import scala.concurrent.ExecutionContext
 import java.util.concurrent.TimeUnit
 
 final class Monitor(
@@ -13,7 +11,7 @@ final class Monitor(
     services: Services
 )(using
     scheduler: akka.actor.typed.Scheduler,
-    ec: ExecutionContext
+    ec: Executor
 ):
 
   import Monitor.*
@@ -143,3 +141,13 @@ object Monitor:
     val res   = f
     timer.stop()
     res
+
+  object evalCache:
+    private val r = Kamon.counter("evalCache.request")
+    def request(ply: Int, isHit: Boolean) =
+      r.withTags(TagSet.from(Map("ply" -> (if (ply < 15) ply.toString else "15+"), "hit" -> isHit)))
+    object upgrade:
+      val count     = Kamon.counter("evalCache.upgrade.count").withoutTags()
+      val members   = Kamon.gauge("evalCache.upgrade.members").withoutTags()
+      val evals     = Kamon.gauge("evalCache.upgrade.evals").withoutTags()
+      val expirable = Kamon.gauge("evalCache.upgrade.expirable").withoutTags()

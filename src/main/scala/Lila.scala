@@ -6,11 +6,9 @@ import io.lettuce.core.*
 import io.lettuce.core.pubsub.*
 import ipc.*
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.annotation.tailrec
-import scala.concurrent.duration.*
-import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
+import scala.concurrent.Await
 
-final class Lila(config: Config)(using ec: ExecutionContext):
+final class Lila(config: Config)(using Executor):
 
   import Lila.*
 
@@ -29,7 +27,8 @@ final class Lila(config: Config)(using ec: ExecutionContext):
 
     def enqueue(chan: String, msg: String) = queue offer Buffered(chan, msg)
 
-    @tailrec def flush(): Unit =
+    @annotation.tailrec
+    def flush(): Unit =
       val next = queue.poll()
       if (next != null)
         connIn.async.publish(next.chan, next.msg)
