@@ -17,7 +17,7 @@ val os = sys.props.get("os.name") match {
 }
 val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
-scalaVersion := "3.2.1"
+scalaVersion := "3.2.2"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC7"
 libraryDependencies ++= (
