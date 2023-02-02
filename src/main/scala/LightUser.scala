@@ -6,7 +6,7 @@ import Mongo.given
 
 final class LightUserApi(mongo: Mongo)(using Executor):
 
-  def get(id: User.Id): Future[User.TitleName] = cache get id
+  export cache.get
 
   private val cache: AsyncLoadingCache[User.Id, User.TitleName] =
     Scaffeine()
