@@ -12,7 +12,7 @@ object Fens:
 
   case class Watched(position: Option[Position], clients: Set[ActorRef[ClientMsg]])
 
-  private val games = new ConcurrentHashMap[Game.Id, Watched](1024)
+  private val games = ConcurrentHashMap[Game.Id, Watched](1024)
 
   // client starts watching
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =
@@ -35,11 +35,10 @@ object Fens:
     gameIds foreach { gameId =>
       games.computeIfPresent(
         gameId,
-        (_, watched) => {
+        (_, watched) =>
           val newClients = watched.clients - client
           if (newClients.isEmpty) null
           else watched.copy(clients = newClients)
-        }
       )
     }
 
@@ -57,15 +56,15 @@ object Fens:
   def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
     games.computeIfPresent(
       gameId,
-      (_, watched) => {
+      (_, watched) =>
         val turnColor = moveBy.fold(Color.white)(c => !c)
         (json.value match {
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
-            for {
+            for
               uci <- Uci(uciS)
               wc  <- wcS.toIntOption
               bc  <- bcS.toIntOption
-            } yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
+            yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
           case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, Fen.Board(fenS), None, turnColor) }
           case _                     => None
         }).fold(watched) { position =>
@@ -73,7 +72,6 @@ object Fens:
           watched.clients foreach { _ ! msg }
           watched.copy(position = Some(position))
         }
-      }
     )
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"clock":{"white":121.88,"black":120.94}
