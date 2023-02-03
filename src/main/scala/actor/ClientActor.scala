@@ -65,8 +65,10 @@ object ClientActor:
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
-        Fens.watch(gameIds, ctx.self)
-        state.copy(watchedGames = state.watchedGames ++ gameIds)
+        if state.watchedGames.sizeIs < 100 then
+          Fens.watch(gameIds, ctx.self)
+          state.copy(watchedGames = state.watchedGames ++ gameIds)
+        else state
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
         logger.info(s"API socket doesn't support $msg $req")
