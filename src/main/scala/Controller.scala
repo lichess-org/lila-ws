@@ -216,17 +216,15 @@ final class Controller(
     }
 
   def api(req: RequestHeader) =
-    CSRF.api(req) {
-      Future successful endpoint(
-        name = "api",
-        behavior = emit =>
-          SiteClientActor.start {
-            Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-          },
-        credits = 50,
-        interval = 20.seconds
-      )
-    }
+    Future successful endpoint(
+      name = "api",
+      behavior = emit =>
+        SiteClientActor.start {
+          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
+        },
+      credits = 50,
+      interval = 30.seconds
+    )
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
     CSRF.check(req) {
@@ -256,12 +254,6 @@ final class Controller(
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
         case _                                                          => block(req)
-
-    def api(req: RequestHeader)(f: => Response): Response =
-      req.origin match
-        case None                               => f
-        case Some(origin) if apiOrigins(origin) => f
-        case _                                  => block(req)
 
     private def block(req: RequestHeader): Response =
       logger.debug(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
