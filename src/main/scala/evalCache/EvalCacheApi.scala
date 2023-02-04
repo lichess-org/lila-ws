@@ -7,6 +7,7 @@ import lila.ws.ipc.ClientOut.{ EvalGet, EvalPut }
 import lila.ws.ipc.ClientIn
 import chess.variant.Variant
 import chess.format.Fen
+import chess.ErrorStr
 import play.api.libs.json.{ JsObject, JsString }
 import org.joda.time.DateTime
 import com.typesafe.scalalogging.Logger
@@ -115,13 +116,11 @@ final class EvalCacheApi(mongo: Mongo)(using
 
 private object EvalCacheValidator:
 
-  case class Error(message: String) extends AnyVal
-
-  def apply(in: EvalCacheEntry.Input): Option[Error] =
-    in.eval.pvs.toList.foldLeft(none[Error]) {
+  def apply(in: EvalCacheEntry.Input): Option[ErrorStr] =
+    in.eval.pvs.toList.foldLeft(none[ErrorStr]) {
       case (None, pv) =>
         chess.Replay
           .boardsFromUci(pv.moves.value.toList, in.fen.some, in.id.variant)
-          .fold(err => Error(err).some, _ => none)
+          .fold(Some(_), _ => none)
       case (error, _) => error
     }
