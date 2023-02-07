@@ -5,7 +5,7 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
 import scala.util.{ Failure, Success, Try }
 import cats.data.NonEmptyList
-import cats.implicits.catsSyntaxList
+import cats.syntax.all.*
 import chess.format.Uci
 
 object EvalCacheBsonHandlers:
