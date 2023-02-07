@@ -19,7 +19,7 @@ private object EvalCacheSelector:
       .sortBy(-_._1)(using intOrdering)
       // keep only the best eval in each group
       .flatMap {
-        import cats.implicits.*
+        import cats.syntax.all.*
         _._2.maximumByOption(ranking)
       }
       // now remove obsolete evals

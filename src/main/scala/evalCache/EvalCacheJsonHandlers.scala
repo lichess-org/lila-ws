@@ -1,7 +1,7 @@
 package lila.ws
 package evalCache
 
-import cats.implicits.*
+import cats.syntax.all.*
 import chess.format.{ Fen, Uci, UciPath }
 import play.api.libs.json.*
 import chess.variant.Variant
