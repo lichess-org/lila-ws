@@ -201,27 +201,27 @@ object ClientOut:
               Some(StudyForward(o))
             // round
             case "move" =>
-              for {
+              for
                 d    <- o obj "d"
                 move <- d str "u" flatMap Uci.Move.apply orElse parseOldMove(d)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(move, blur, parseMetrics(d), ackId)
+              yield RoundMove(move, blur, parseMetrics(d), ackId)
             case "drop" =>
-              for {
+              for
                 d    <- o obj "d"
                 role <- d str "role"
                 pos  <- d str "pos"
                 drop <- Uci.Drop.fromStrings(role, pos)
                 blur  = d int "b" contains 1
                 ackId = d int "a"
-              } yield RoundMove(drop, blur, parseMetrics(d), ackId)
+              yield RoundMove(drop, blur, parseMetrics(d), ackId)
             case "hold" =>
-              for {
+              for
                 d    <- o obj "d"
                 mean <- d int "mean"
                 sd   <- d int "sd"
-              } yield RoundHold(mean, sd)
+              yield RoundHold(mean, sd)
             case "berserk"      => Some(RoundBerserk(o obj "d" flatMap (_ int "a")))
             case "rep"          => o obj "d" flatMap (_ str "n") map RoundSelfReport.apply
             case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
@@ -233,12 +233,12 @@ object ClientOut:
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
             case "timeout" =>
-              for {
+              for
                 data   <- o obj "d"
                 userId <- data.get[User.Id]("userId")
                 reason <- data str "reason"
                 text   <- data str "text"
-              } yield ChatTimeout(userId, reason, text)
+              yield ChatTimeout(userId, reason, text)
             case "ping" => Some(ChallengePing)
             // storm
             case "sk1" =>
@@ -263,13 +263,12 @@ object ClientOut:
   private def dataVariant(d: JsObject): Variant =
     Variant.orDefault(d.get[Variant.LilaKey]("variant"))
 
-  private def parseOldMove(d: JsObject) =
-    for {
-      orig <- d str "from"
-      dest <- d str "to"
-      prom = d str "promotion"
-      move <- Uci.Move.fromStrings(orig, dest, prom)
-    } yield move
+  private def parseOldMove(d: JsObject) = for
+    orig <- d str "from"
+    dest <- d str "to"
+    prom = d str "promotion"
+    move <- Uci.Move.fromStrings(orig, dest, prom)
+  yield move
 
   private def parseMetrics(d: JsObject) =
     ClientMoveMetrics(
