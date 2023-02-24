@@ -1,13 +1,13 @@
 package lila.ws
 package evalCache
 
-case class Eval( cp: Option[Eval.Cp], mate: Option[Eval.Mate]):
+case class Eval(cp: Option[Eval.Cp], mate: Option[Eval.Mate]):
   def isEmpty = cp.isEmpty && mate.isEmpty
 
 object Eval:
 
   val initial = Eval(Some(Cp.initial), None)
-  val empty = Eval(None, None)
+  val empty   = Eval(None, None)
 
   opaque type Score = Either[Cp, Mate]
   object Score extends TotalWrapper[Score, Either[Cp, Mate]]:
@@ -20,7 +20,7 @@ object Eval:
       inline def cp: Option[Cp]     = score.value.left.toOption
       inline def mate: Option[Mate] = score.value.toOption
 
-      inline def mateFound   = score.value.isRight
+      inline def mateFound = score.value.isRight
 
   end Score
 
