@@ -17,15 +17,15 @@ final private class RequestHandler(router: Router)(using Executor)
     ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
-    router(new util.RequestHeader(req.uri, req.headers)) foreach {
+    router(util.RequestHeader(req.uri, req.headers)) foreach {
       case Left(status) =>
         sendErrorResponse(
           ctx,
-          new DefaultFullHttpResponse(req.protocolVersion(), status, Unpooled.EMPTY_BUFFER)
+          DefaultFullHttpResponse(req.protocolVersion(), status, Unpooled.EMPTY_BUFFER)
         )
         req.release()
       case Right(_) if req.method != HttpMethod.GET =>
-        val response = new DefaultFullHttpResponse(
+        val response = DefaultFullHttpResponse(
           req.protocolVersion(),
           HttpResponseStatus.METHOD_NOT_ALLOWED,
           Unpooled.EMPTY_BUFFER

@@ -11,9 +11,14 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.*
 
-final class NettyServer(clients: ClientSystem, router: Router, config: Config)(using Executor):
+final class NettyServer(
+    clients: ClientSystem,
+    router: Router,
+    config: Config
+)(using Executor):
 
-  private val logger = Logger(getClass)
+  private val connector = ActorChannelConnector(router, clients)
+  private val logger    = Logger(getClass)
 
   def start(): Unit =
 
@@ -50,11 +55,11 @@ final class NettyServer(clients: ClientSystem, router: Router, config: Config)(u
         .childHandler(new ChannelInitializer[Channel] {
           override def initChannel(ch: Channel): Unit = {
             val pipeline = ch.pipeline()
-            pipeline.addLast(new HttpServerCodec)
-            pipeline.addLast(new HttpObjectAggregator(4096))
-            pipeline.addLast(new RequestHandler(router))
-            pipeline.addLast(new ProtocolHandler(clients))
-            pipeline.addLast(new FrameHandler)
+            pipeline.addLast(HttpServerCodec())
+            pipeline.addLast(HttpObjectAggregator(4096))
+            pipeline.addLast(RequestHandler(router))
+            pipeline.addLast(ProtocolHandler(connector))
+            pipeline.addLast(FrameHandler(connector))
           }
         })
 

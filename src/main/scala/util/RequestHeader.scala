@@ -5,22 +5,23 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
 import scala.jdk.CollectionConverters.*
 
-final class RequestHeader(uri: String, req: HttpHeaders):
+final class RequestHeader(val uri: String, req: HttpHeaders):
 
-  private val query = new QueryStringDecoder(uri)
+  def switch(uri: String): RequestHeader = RequestHeader(uri, req)
+
+  private val query = QueryStringDecoder(uri)
 
   def path = query.path
 
   def header(name: CharSequence): Option[String] =
     Option(req get name).filter(_.nonEmpty)
 
-  def cookie(name: String): Option[String] =
-    for {
-      encoded <- header(HttpHeaderNames.COOKIE)
-      cookies = ServerCookieDecoder.LAX decode encoded
-      cookie <- cookies.asScala.find(_.name contains name)
-      value  <- Some(cookie.value).filter(_.nonEmpty)
-    } yield value
+  def cookie(name: String): Option[String] = for
+    encoded <- header(HttpHeaderNames.COOKIE)
+    cookies = ServerCookieDecoder.LAX decode encoded
+    cookie <- cookies.asScala.find(_.name contains name)
+    value  <- Some(cookie.value).filter(_.nonEmpty)
+  yield value
 
   def queryParameter(name: String): Option[String] =
     Option(query.parameters.get(name)).map(_ get 0).filter(_.nonEmpty)

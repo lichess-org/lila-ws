@@ -9,10 +9,9 @@ import io.netty.util.AttributeKey
 import java.io.IOException
 import akka.actor.typed.ActorRef
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
-import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
 import io.netty.buffer.Unpooled
 
-final private class ProtocolHandler(clients: ActorRef[Clients.Control])(using Executor)
+final private class ProtocolHandler(connector: ActorChannelConnector)(using Executor)
     extends WebSocketServerProtocolHandler(
       "",    // path
       null,  // subprotocols (?)
@@ -30,38 +29,9 @@ final private class ProtocolHandler(clients: ActorRef[Clients.Control])(using Ex
     evt match
       case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
-        connectActorToChannel(ctx.channel.attr(key.endpoint).get, ctx.channel)
+        connector(ctx.channel.attr(key.endpoint).get, ctx.channel)
       case _ =>
     super.userEventTriggered(ctx, evt)
-
-  private def connectActorToChannel(
-      endpoint: Endpoint,
-      channel: Channel
-  ): Unit =
-    val promise = Promise[Client]()
-    channel.attr(key.client).set(promise.future)
-    clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), promise)
-    channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
-      def operationComplete(f: NettyFuture[Void]): Unit =
-        promise.future foreach { client => clients ! Clients.Control.Stop(client) }
-    })
-
-  private def emitToChannel(channel: Channel): ClientEmit =
-    in => {
-      if (in == ipc.ClientIn.Disconnect) terminateConnection(channel)
-      else if (in == ipc.ClientIn.RoundPingFrameNoFlush)
-        channel.write {
-          new PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis())
-        }
-      else
-        channel.writeAndFlush {
-          new TextWebSocketFrame(in.write)
-        }
-    }
-
-  // nicely terminate an ongoing connection
-  private def terminateConnection(channel: Channel): ChannelFuture =
-    channel.writeAndFlush(new CloseWebSocketFrame).addListener(ChannelFutureListener.CLOSE)
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit =
     cause match

@@ -106,10 +106,9 @@ final class Lila(config: Config)(using Executor):
     connOut.addListener(new RedisPubSubAdapter[String, String] {
       override def message(_chan: String, msg: String): Unit = {
         Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
-        LilaOut read msg match {
+        LilaOut read msg match
           case Some(out) => handlers(handlerName)(out)
           case None      => logger.warn(s"Can't parse $msg on $chanName")
-        }
       }
     })
     val promise = Promise[Unit]()
