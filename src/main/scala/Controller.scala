@@ -29,6 +29,7 @@ final class Controller(
         SiteClientActor start {
           Deps(emit, Req(req, sri, user), services)
         },
+      req,
       credits = 50,
       interval = 20.seconds
     )
@@ -41,6 +42,7 @@ final class Controller(
           LobbyClientActor start {
             Deps(emit, Req(req, sri, user), services)
           },
+        req,
         credits = 30,
         interval = 30.seconds
       )
@@ -56,6 +58,7 @@ final class Controller(
               SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
+            req,
             credits = 30,
             interval = 20.seconds
           )
@@ -73,6 +76,7 @@ final class Controller(
               TourClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
+            req,
             credits = 30,
             interval = 20.seconds
           )
@@ -90,6 +94,7 @@ final class Controller(
               StudyClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
+            req,
             credits = 60,
             interval = 15.seconds
           )
@@ -109,6 +114,7 @@ final class Controller(
                 .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
                 },
+            req,
             credits = 50,
             interval = 20.seconds
           )
@@ -129,6 +135,7 @@ final class Controller(
                 None,
                 fromVersion(req)
               ) { Deps(emit, Req(req, sri, user), services) },
+            req,
             credits = 100,
             interval = 20.seconds
           )
@@ -154,6 +161,7 @@ final class Controller(
                 .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(req)) {
                   Deps(emit, Req(req, sri, user), services)
                 },
+            req,
             credits = 50,
             interval = 30.seconds
           )
@@ -170,6 +178,7 @@ final class Controller(
               TeamClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
+            req,
             credits = 30,
             interval = 20.seconds
           )
@@ -187,6 +196,7 @@ final class Controller(
               SwissClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
                 Deps(emit, Req(req, sri, user), services)
               },
+            req,
             credits = 30,
             interval = 20.seconds
           )
@@ -209,6 +219,7 @@ final class Controller(
                 RacerClientActor.start(RoomActor.State(id into RoomId, IsTroll(false)), pid) {
                   Deps(emit, Req(req, sri, user), services)
                 },
+              req,
               credits = 30,
               interval = 15.seconds
             )
@@ -222,6 +233,7 @@ final class Controller(
         SiteClientActor.start {
           Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
         },
+      req,
       credits = 50,
       interval = 30.seconds
     )
@@ -256,7 +268,7 @@ final class Controller(
         case _                                                          => block(req)
 
     private def block(req: RequestHeader): Response =
-      logger.debug(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
+      logger.info(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
       Future successful Left(HttpResponseStatus.FORBIDDEN)
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
@@ -268,10 +280,15 @@ object Controller:
 
   val logger = Logger(getClass)
 
-  final class Endpoint(val behavior: ClientEmit => ClientBehavior, val rateLimit: RateLimit)
+  final class Endpoint(
+      val behavior: ClientEmit => ClientBehavior,
+      val rateLimit: RateLimit,
+      val req: RequestHeader
+  )
   def endpoint(
       name: String,
       behavior: ClientEmit => ClientBehavior,
+      req: RequestHeader,
       credits: Int,
       interval: FiniteDuration
   ) =
@@ -283,7 +300,8 @@ object Controller:
           maxCredits = credits,
           intervalMillis = interval.toMillis.toInt,
           name = name
-        )
+        ),
+        req
       )
     )
 
