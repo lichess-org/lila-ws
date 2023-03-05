@@ -2,6 +2,7 @@ package lila.ws
 
 import reactivemongo.api.bson.*
 import util.RequestHeader
+import com.roundeights.hasher.Algo
 
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using Executor):
 
@@ -13,25 +14,38 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using Executor):
     else
       sessionIdFromReq(req) match
         case Some(sid) if sid startsWith appealPrefix => Future successful None
-        case Some(sid) =>
-          mongo.security {
-            _.find(
-              BSONDocument("_id" -> sid, "up" -> true),
-              Some(BSONDocument("_id" -> false, "user" -> true))
-            ).one[BSONDocument]
-          } map {
-            _ flatMap {
-              _.getAsOpt[User.Id]("user")
-            }
-          } map {
-            _ map { user =>
-              Impersonations.get(user) getOrElse {
-                seenAt(user)
-                user
-              }
-            }
-          }
-        case None => Future successful None
+        case Some(sid)                                => sessionAuth(sid)
+        case None =>
+          bearerFromReq(req) match
+            case Some(bearer) => bearerAuth(bearer)
+            case None         => Future successful None
+
+  private def sessionAuth(sid: String): Future[Option[User.Id]] =
+    mongo.security {
+      _.find(
+        BSONDocument("_id" -> sid, "up" -> true),
+        Some(BSONDocument("_id" -> false, "user" -> true))
+      ).one[BSONDocument]
+    } map {
+      _ flatMap { _.getAsOpt[User.Id]("user") }
+    } map {
+      _ map { user =>
+        Impersonations.get(user) getOrElse {
+          seenAt(user)
+          user
+        }
+      }
+    }
+
+  private def bearerAuth(bearer: Bearer): Future[Option[User.Id]] =
+    mongo.oauthColl.flatMap {
+      _.find(
+        BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:login"),
+        Some(BSONDocument("_id" -> false, "userId" -> true))
+      ).one[BSONDocument]
+    } map {
+      _ flatMap { _.getAsOpt[User.Id]("userId") }
+    }
 
 object Auth:
   private val cookieName     = "lila2"
@@ -53,3 +67,13 @@ object Auth:
       case sidRegex(id) => Some(id)
       case _            => None
     }
+
+  def bearerFromReq(req: RequestHeader): Option[Auth.Bearer] =
+    Auth.Bearer from req.queryParameter("bearer")
+
+  opaque type Bearer = String
+  object Bearer extends OpaqueString[Bearer]
+
+  opaque type AccessTokenId = String
+  object AccessTokenId extends OpaqueString[AccessTokenId]:
+    def from(bearer: Bearer) = AccessTokenId(Algo.sha256(bearer.value).hex)

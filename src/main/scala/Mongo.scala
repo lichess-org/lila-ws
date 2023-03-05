@@ -56,6 +56,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def teamMemberColl                  = collNamed("team_member")
   def swissColl                       = collNamed("swiss")
   def reportColl                      = collNamed("report2")
+  def oauthColl                       = collNamed("oauth2_access_token")
   def studyColl                       = studyDb.map(_ collection "study")(parasitic)
   def evalCacheColl                   = yoloDb.map(_ collection "eval_cache")(parasitic)
 
