@@ -3,8 +3,9 @@ package lila.ws
 import reactivemongo.api.bson.*
 import util.RequestHeader
 import com.roundeights.hasher.Algo
+import com.typesafe.config.Config
 
-final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using Executor):
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Executor):
 
   import Auth.*
   import Mongo.given
@@ -37,10 +38,19 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate)(using Executor):
       }
     }
 
+  private val bearerSigner = Algo hmac config.getString("oauth.secret")
+
+  private def bearerFromReq(req: RequestHeader): Option[Auth.Bearer] =
+    req.queryParameter("auth") flatMap {
+      _.split(':') match
+        case Array(bearer, signed) if bearerSigner.sha1(bearer) hash_= signed => Some(Bearer(bearer))
+        case _                                                                => None
+    }
+
   private def bearerAuth(bearer: Bearer): Future[Option[User.Id]] =
     mongo.oauthColl.flatMap {
       _.find(
-        BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:login"),
+        BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:socket"),
         Some(BSONDocument("_id" -> false, "userId" -> true))
       ).one[BSONDocument]
     } map {
@@ -67,9 +77,6 @@ object Auth:
       case sidRegex(id) => Some(id)
       case _            => None
     }
-
-  def bearerFromReq(req: RequestHeader): Option[Auth.Bearer] =
-    Auth.Bearer from req.queryParameter("bearer")
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]
