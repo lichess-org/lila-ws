@@ -17,7 +17,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         case Some(sid) if sid startsWith appealPrefix => Future successful None
         case Some(sid)                                => sessionAuth(sid)
         case None =>
-          bearerFromReq(req) match
+          bearerFromHeader(req) match
             case Some(bearer) => bearerAuth(bearer)
             case None         => Future successful None
 
@@ -40,11 +40,14 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
 
   private val bearerSigner = Algo hmac config.getString("oauth.secret")
 
-  private def bearerFromReq(req: RequestHeader): Option[Auth.Bearer] =
-    req.queryParameter("auth") flatMap {
-      _.split(':') match
-        case Array(bearer, signed) if bearerSigner.sha1(bearer) hash_= signed => Some(Bearer(bearer))
-        case _                                                                => None
+  private def bearerFromHeader(req: RequestHeader): Option[Auth.Bearer] =
+    req.header("Authorization").flatMap { authorization =>
+      val prefix = "Bearer "
+      if authorization.startsWith(prefix) then
+        authorization.stripPrefix(prefix).split(':') match
+          case Array(bearer, signed) if bearerSigner.sha1(bearer) hash_= signed => Some(Bearer(bearer))
+          case _                                                                => None
+      else None
     }
 
   private def bearerAuth(bearer: Bearer): Future[Option[User.Id]] =
