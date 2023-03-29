@@ -1,7 +1,7 @@
 package lila.ws
 package evalCache
 
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.JsString
 
 import chess.format.{ Fen, UciPath }
 import chess.variant.Variant

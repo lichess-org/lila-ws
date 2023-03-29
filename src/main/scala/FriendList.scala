@@ -20,14 +20,13 @@ final class FriendList(
   def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
     graph.followed(userId) flatMap { entries =>
       Future.sequence {
-        entries.collect {
+        entries.collect:
           case u if u.meta.online =>
             userDatas
               .get(u.id)
               .map {
                 _ map { UserView(u.id, _, u.meta) }
               }(parasitic)
-        }
       } map { views =>
         emit(Onlines(views.flatten))
       }
@@ -62,11 +61,10 @@ final class FriendList(
 
   private def updateView(userId: User.Id, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach { case (subject, subs) =>
-      if (subs.nonEmpty) userDatas.get(subject.id) foreach {
+      if (subs.nonEmpty) userDatas.get(subject.id) foreach:
         _ foreach { data =>
           users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
         }
-      }
     }
 
   Bus.internal.subscribe(

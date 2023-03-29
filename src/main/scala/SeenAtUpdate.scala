@@ -5,7 +5,6 @@ import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import scala.util.{ Success, Try }
 
 final class SeenAtUpdate(mongo: Mongo)(using
     context: Executor,

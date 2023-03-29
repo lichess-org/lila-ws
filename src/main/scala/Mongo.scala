@@ -81,7 +81,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
         projection = Some(BSONDocument("chat" -> true, "leaders" -> true))
       ).one[BSONDocument]
     } zip me.fold(Future successful false) { isTeamMember(id, _) }
-  } map {
+  } map:
     case (None, _)  => None
     case (_, false) => Some(Team.HasChat(false))
     case (Some(teamDoc), true) =>
@@ -95,7 +95,6 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
           }
         )
       )
-  }
 
   def swissExists(id: Swiss.Id): Future[Boolean] = swissColl flatMap idExists(id)
 
@@ -112,9 +111,8 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     gameCache
       .get(fullId.gameId)
       .map {
-        _ flatMap {
+        _ flatMap:
           _.player(fullId.playerId, user)
-        }
       }(parasitic)
 
   private val gameCacheProjection =
@@ -123,7 +121,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
     .expireAfterWrite(10.minutes)
     .buildAsyncFuture { id =>
-      gameColl flatMap {
+      gameColl flatMap:
         _.find(
           selector = BSONDocument("_id" -> id.value),
           projection = Some(gameCacheProjection)
@@ -143,13 +141,12 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
                   doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply)
             } yield Game.Round(id, players, ext)
           }(parasitic)
-      }
     }
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
   def studyExistsFor(id: Study.Id, user: Option[User.Id]): Future[Boolean] =
-    studyColl flatMap {
+    studyColl flatMap:
       exists(
         _,
         BSONDocument(
@@ -164,10 +161,9 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
           }
         )
       )
-    }
 
   def studyMembers(id: Study.Id): Future[Set[User.Id]] =
-    studyColl flatMap {
+    studyColl flatMap:
       _.find(
         selector = BSONDocument("_id" -> id),
         projection = Some(BSONDocument("members" -> true))
@@ -177,48 +173,43 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
           members <- doc.getAsOpt[BSONDocument]("members")
         } yield members.elements.collect { case BSONElement(key, _) => User.Id(key) }.toSet
       } map (_ getOrElse Set.empty)
-    }
 
   import evalCache.EvalCacheEntry
   def evalCacheEntry(id: EvalCacheEntry.Id): Future[Option[EvalCacheEntry]] =
     import evalCache.EvalCacheBsonHandlers.given
-    evalCacheColl flatMap {
+    evalCacheColl flatMap:
       _.find(selector = BSONDocument("_id" -> id))
         .one[EvalCacheEntry]
-    }
   def evalCacheUsedNow(id: EvalCacheEntry.Id): Unit =
     import evalCache.EvalCacheBsonHandlers.given
-    evalCacheColl foreach {
+    evalCacheColl foreach:
       _.update(ordered = false, writeConcern = WriteConcern.Unacknowledged)
         .one(BSONDocument("_id" -> id), BSONDocument("$set" -> BSONDocument("usedAt" -> DateTime.now)))
-    }
 
   def tournamentActiveUsers(tourId: Tour.Id): Future[Set[User.Id]] =
-    tourPlayerColl flatMap {
+    tourPlayerColl flatMap:
       _.distinct[User.Id, Set](
         key = "uid",
         selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
         readConcern = ReadConcern.Local,
         collation = None
       )
-    }
 
   def tournamentPlayingUsers(tourId: Tour.Id): Future[Set[User.Id]] =
-    tourPairingColl flatMap {
+    tourPairingColl flatMap:
       _.distinct[User.Id, Set](
         key = "u",
         selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
         readConcern = ReadConcern.Local,
         collation = None
       )
-    }
 
   def challenger(challengeId: Challenge.Id): Future[Option[Challenge.Challenger]] =
-    challengeColl flatMap {
+    challengeColl flatMap:
       _.find(
         selector = BSONDocument("_id" -> challengeId.value),
         projection = Some(BSONDocument("challenger" -> true))
-      ).one[BSONDocument] map {
+      ).one[BSONDocument] map:
         _.flatMap {
           _.getAsOpt[BSONDocument]("challenger")
         } map { c =>
@@ -226,18 +217,15 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
           val user = c.getAsOpt[User.Id]("id") map Challenge.Challenger.User.apply
           anon orElse user getOrElse Challenge.Challenger.Open
         }
-      }
-    }
 
   def inquirers: Future[List[User.Id]] =
-    reportColl flatMap {
+    reportColl flatMap:
       _.distinct[User.Id, List](
         key = "inquiry.mod",
         selector = Some(BSONDocument("inquiry.mod" -> BSONDocument("$exists" -> true))),
         readConcern = ReadConcern.Local,
         collation = None
       )
-    }
 
   private val userDataProjection =
     BSONDocument("username" -> true, "title" -> true, "plan" -> true, "_id" -> false)
@@ -249,23 +237,21 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     } yield FriendList.UserData(name, title, patron)
 
   def loadFollowed(userId: User.Id): Future[Iterable[User.Id]] =
-    relationColl flatMap {
+    relationColl flatMap:
       _.distinct[User.Id, List](
         key = "u2",
         selector = Some(BSONDocument("u1" -> userId, "r" -> true)),
         readConcern = ReadConcern.Local,
         collation = None
       )
-    }
 
   def userData(userId: User.Id): Future[Option[FriendList.UserData]] =
-    userColl flatMap {
+    userColl flatMap:
       _.find(
         BSONDocument("_id" -> userId),
         Some(userDataProjection)
       ).one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
         .map { _ flatMap userDataReader }
-    }
 
   object troll:
 
@@ -278,9 +264,8 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     private val cache: AsyncLoadingCache[User.Id, IsTroll] = Scaffeine()
       .expireAfterAccess(20.minutes)
       .buildAsyncFuture { id =>
-        userColl flatMap {
+        userColl flatMap:
           exists(_, BSONDocument("_id" -> id, "marks" -> "troll")).map(IsTroll.apply(_))
-        }
       }
 
   object idFilter:

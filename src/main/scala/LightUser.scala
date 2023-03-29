@@ -15,7 +15,7 @@ final class LightUserApi(mongo: Mongo)(using Executor):
       .buildAsyncFuture(fetch)
 
   private def fetch(id: User.Id): Future[User.TitleName] =
-    mongo.user {
+    mongo.user:
       _.find(
         BSONDocument("_id" -> id),
         Some(BSONDocument("username" -> true, "title" -> true))
@@ -26,4 +26,3 @@ final class LightUserApi(mongo: Mongo)(using Executor):
         yield User.TitleName(name, doc.getAsOpt[User.Title]("title"))
         name getOrElse id.into(User.TitleName)
       }
-    }

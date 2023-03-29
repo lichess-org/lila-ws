@@ -5,7 +5,6 @@ import chess.{ Check, Color, Ply }
 import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
-import lila.ws.Position
 import play.api.libs.json.*
 
 sealed trait ClientIn extends ClientMsg:
@@ -212,14 +211,13 @@ object ClientIn:
         )
     case class Enters(user: FriendList.UserView) extends ClientIn:
       // We use 'd' for backward compatibility with the mobile client
-      def write =
-        Json stringify Json.obj(
-          "t" -> "following_enters",
-          "d" -> user.data.titleName
-        ) ++ {
-          if (user.data.patron.yes) Json.obj("patron" -> true)
-          else Json.obj()
-        }
+      def write = Json.stringify:
+        Json
+          .obj(
+            "t" -> "following_enters",
+            "d" -> user.data.titleName
+          )
+          .add("patron" -> user.data.patron.yes)
 
     abstract class Event(key: String) extends ClientIn:
       def user: User.Id

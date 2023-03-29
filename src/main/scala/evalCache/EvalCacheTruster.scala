@@ -14,24 +14,22 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
     .expireAfterWrite(5.minutes)
     .buildAsyncFuture { userId =>
       mongo.userColl
-        .flatMap {
+        .flatMap:
           _.find(
             BSONDocument("_id" -> userId),
             Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1))
           ).one[BSONDocument]
-        }
         .map(_ map computeTrust)
     }
 
   private def computeTrust(user: BSONDocument): Trust =
     if (user.getAsOpt[List[String]]("marks").exists(_.nonEmpty)) Trust(-9999)
     else
-      Trust {
+      Trust:
         seniorityBonus(user) +
           patronBonus(user) +
           titleBonus(user) +
           nbGamesBonus(user)
-      }
 
   // 0 days = -1
   // 1 month = 0

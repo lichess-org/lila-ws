@@ -29,14 +29,12 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       ).one[BSONDocument]
     } map {
       _ flatMap { _.getAsOpt[User.Id]("user") }
-    } map {
+    } map:
       _ map { user =>
-        Impersonations.get(user) getOrElse {
+        Impersonations.get(user) getOrElse:
           seenAt(user)
           user
-        }
       }
-    }
 
   private val bearerSigner = Algo hmac config.getString("oauth.secret")
 
@@ -56,9 +54,8 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:socket"),
         Some(BSONDocument("_id" -> false, "userId" -> true))
       ).one[BSONDocument]
-    } map {
+    } map:
       _ flatMap { _.getAsOpt[User.Id]("userId") }
-    }
 
 object Auth:
   private val cookieName     = "lila2"
@@ -76,10 +73,9 @@ object Auth:
       req.queryParameter(sessionIdKey)
 
   def sidFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap {
+    req cookie cookieName flatMap:
       case sidRegex(id) => Some(id)
       case _            => None
-    }
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]

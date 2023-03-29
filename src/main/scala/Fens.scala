@@ -5,7 +5,6 @@ import chess.Color
 import chess.format.{ Fen, Uci }
 import java.util.concurrent.ConcurrentHashMap
 import lila.ws.ipc.*
-import lila.ws.{ Clock, Position }
 
 /* Manages subscriptions to Fen updates */
 object Fens:

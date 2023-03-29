@@ -17,7 +17,7 @@ val os = sys.props.get("os.name") match {
 }
 val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
-scalaVersion := "3.2.2"
+scalaVersion := "3.3.0-RC3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC7"
 libraryDependencies ++= (
@@ -56,6 +56,9 @@ scalacOptions := Seq(
   "-explaintypes",
   "-feature",
   "-language:postfixOps"
+  /* "-Wunused:all", */
+  /* "-Wunused:nowarn" */
+
   // Warnings as errors!
   // "-Xfatal-warnings",
 )

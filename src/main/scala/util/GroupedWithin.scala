@@ -21,10 +21,9 @@ final class GroupedWithinStage[A](
   private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, () => flush())
 
   def apply(elem: A): Unit =
-    synchronized {
+    synchronized:
       buffer += elem
       if (buffer.size >= nb) unsafeFlush()
-    }
 
   private def flush(): Unit = synchronized { unsafeFlush() }
 

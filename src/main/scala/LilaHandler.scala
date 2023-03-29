@@ -110,51 +110,49 @@ final class LilaHandler(
     case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
     case msg      => roomHandler(msg)
 
-  private val roundHandler: Emit[LilaOut] =
-    import scala.language.implicitConversions
-    given Conversion[Game.Id, RoomId] with
-      def apply(id: Game.Id): RoomId = id.into(RoomId)
+  import scala.language.implicitConversions
+  private given Conversion[Game.Id, RoomId] with
+    def apply(id: Game.Id): RoomId = id.into(RoomId)
 
-    {
-      case RoundVersion(gameId, version, flags, tpe, data) =>
-        val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
-        History.round.add(gameId, versioned)
-        publish(_ room gameId, versioned)
-        if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
-      case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
-      case RoundResyncPlayer(fullId) =>
-        publish(_ room fullId.gameId, ClientIn.RoundResyncPlayer(fullId.playerId))
-      case RoundGone(fullId, gone) =>
-        publish(_ room fullId.gameId, ClientIn.RoundGone(fullId.playerId, gone))
-      case RoundGoneIn(fullId, seconds) =>
-        publish(_ room fullId.gameId, ClientIn.RoundGoneIn(fullId.playerId, seconds))
-      case RoundTourStanding(tourId, data) =>
-        publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
-      case o: TvSelect => Tv select o
-      case RoomStop(roomId) =>
-        History.round.stop(Game.Id(roomId.value))
-        publish(_ room roomId, ClientCtrl.Disconnect)
-      case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
-      case GameStart(users) =>
-        users.foreach { u =>
-          friendList.startPlaying(u)
-          publish(_ userTv u.into(UserTv), ClientIn.Resync)
-        }
-      case GameFinish(gameId, winner, users) =>
-        users foreach friendList.stopPlaying
-        Fens.finish(gameId, winner)
-      case Pong(pingAt) =>
-        val millis = Monitor.ping.record("round", pingAt)
-        lila.emit.round(LilaIn.RoundLatency(millis))
-      case LilaBoot =>
-        logger.info("#################### LILA BOOT ####################")
-        lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
-      case VersioningReady =>
-        logger.info("#################### LILA VERSIONING READY ####################")
-        lila.currentStatus.setOnline()
-        Impersonations.reset()
-      case msg => roomHandler(msg)
-    }
+  private val roundHandler: Emit[LilaOut] =
+    case RoundVersion(gameId, version, flags, tpe, data) =>
+      val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
+      History.round.add(gameId, versioned)
+      publish(_ room gameId, versioned)
+      if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
+    case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
+    case RoundResyncPlayer(fullId) =>
+      publish(_ room fullId.gameId, ClientIn.RoundResyncPlayer(fullId.playerId))
+    case RoundGone(fullId, gone) =>
+      publish(_ room fullId.gameId, ClientIn.RoundGone(fullId.playerId, gone))
+    case RoundGoneIn(fullId, seconds) =>
+      publish(_ room fullId.gameId, ClientIn.RoundGoneIn(fullId.playerId, seconds))
+    case RoundTourStanding(tourId, data) =>
+      publish(_ tourStanding tourId, ClientIn.roundTourStanding(data))
+    case o: TvSelect => Tv select o
+    case RoomStop(roomId) =>
+      History.round.stop(Game.Id(roomId.value))
+      publish(_ room roomId, ClientCtrl.Disconnect)
+    case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
+    case GameStart(users) =>
+      users.foreach { u =>
+        friendList.startPlaying(u)
+        publish(_ userTv u.into(UserTv), ClientIn.Resync)
+      }
+    case GameFinish(gameId, winner, users) =>
+      users foreach friendList.stopPlaying
+      Fens.finish(gameId, winner)
+    case Pong(pingAt) =>
+      val millis = Monitor.ping.record("round", pingAt)
+      lila.emit.round(LilaIn.RoundLatency(millis))
+    case LilaBoot =>
+      logger.info("#################### LILA BOOT ####################")
+      lila.emit.round(LilaIn.RoomSetVersions(History.round.allVersions))
+    case VersioningReady =>
+      logger.info("#################### LILA VERSIONING READY ####################")
+      lila.currentStatus.setOnline()
+      Impersonations.reset()
+    case msg => roomHandler(msg)
 
   private val racerHandler: Emit[LilaOut] =
     case RacerState(raceId, data) => publish(_ room raceId.into(RoomId), ClientIn.racerState(data))
@@ -186,7 +184,7 @@ final class LilaHandler(
       lilaIn(LilaIn.RoomSetVersions(versions.filter(v => ids(v._1))))
     }
 
-  lila.setHandlers {
+  lila.setHandlers:
     case Lila.chans.round.out     => roundHandler
     case Lila.chans.site.out      => siteHandler
     case Lila.chans.lobby.out     => lobbyHandler
@@ -198,4 +196,3 @@ final class LilaHandler(
     case Lila.chans.challenge.out => roomHandler
     case Lila.chans.racer.out     => racerHandler
     case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
-  }

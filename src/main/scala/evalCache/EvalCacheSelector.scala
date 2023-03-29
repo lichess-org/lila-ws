@@ -8,7 +8,7 @@ private object EvalCacheSelector:
 
   private type Evals = List[Eval]
 
-  private given Ordering[Double] = Ordering.Double.TotalOrdering
+  // private given Ordering[Double] = Ordering.Double.TotalOrdering
 
   def apply(evals: Evals): Evals =
     // first, let us group evals by multiPv
@@ -18,15 +18,13 @@ private object EvalCacheSelector:
       // and sort the groups by multiPv, higher first
       .sortBy(-_._1)(using intOrdering)
       // keep only the best eval in each group
-      .flatMap {
+      .flatMap:
         import cats.syntax.all.*
         _._2.maximumByOption(ranking)
-      }
       // now remove obsolete evals
-      .foldLeft(Nil: Evals) {
+      .foldLeft(Nil: Evals):
         case (acc, e) if acc.exists { makesObsolete(_, e) } => acc
         case (acc, e)                                       => e :: acc
-      }
       // and finally ensure ordering by depth and nodes, best first
       .sortBy(negativeNodesAndDepth)
 

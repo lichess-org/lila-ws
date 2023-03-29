@@ -26,15 +26,14 @@ final class EvalCacheApi(mongo: Mongo)(using
   import EvalCacheBsonHandlers.given
 
   def get(sri: Sri, e: EvalGet, emit: Emit[ClientIn]): Unit =
-    getEvalJson(e.variant, e.fen, e.multiPv).foreach {
+    getEvalJson(e.variant, e.fen, e.multiPv).foreach:
       _.foreach { json =>
         emit(ClientIn.EvalHit(json + ("path" -> JsString(e.path.value))))
       }
-    }
     if e.up then upgrade.register(sri, e)
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
-    truster.get(user) foreach {
+    truster.get(user) foreach:
       _.filter(_.isEnough) foreach { trust =>
         makeInput(
           e.variant,
@@ -48,7 +47,6 @@ final class EvalCacheApi(mongo: Mongo)(using
           )
         ) foreach { putTrusted(sri, user, _) }
       }
-    }
 
   private def getEvalJson(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): Future[Option[JsObject]] =
     getEval(Id(variant, SmallFen.make(variant, fen.simple)), multiPv) map {
@@ -66,9 +64,8 @@ final class EvalCacheApi(mongo: Mongo)(using
     .buildAsyncFuture(fetchAndSetAccess)
 
   private def getEval(id: Id, multiPv: MultiPv): Future[Option[Eval]] =
-    getEntry(id) map {
+    getEntry(id) map:
       _.flatMap(_ makeBestMultiPvEval multiPv)
-    }
 
   private def getEntry(id: Id): Future[Option[EvalCacheEntry]] = cache get id
 
@@ -87,7 +84,7 @@ final class EvalCacheApi(mongo: Mongo)(using
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
         case None =>
-          getEntry(input.id) flatMap {
+          getEntry(input.id) flatMap:
             case None =>
               val entry = EvalCacheEntry(
                 _id = input.id,
@@ -111,16 +108,14 @@ final class EvalCacheApi(mongo: Mongo)(using
                   cache.put(input.id, Future.successful(entry.some))
                   upgrade.onEval(input, sri)
                 }
-          }
     }
 
 private object EvalCacheValidator:
 
   def apply(in: EvalCacheEntry.Input): Option[ErrorStr] =
-    in.eval.pvs.toList.foldLeft(none[ErrorStr]) {
+    in.eval.pvs.toList.foldLeft(none[ErrorStr]):
       case (None, pv) =>
         chess.Replay
           .boardsFromUci(pv.moves.value.toList, in.fen.some, in.id.variant)
           .fold(Some(_), _ => none)
       case (error, _) => error
-    }

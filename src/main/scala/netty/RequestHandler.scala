@@ -17,7 +17,7 @@ final private class RequestHandler(router: Router)(using Executor)
     ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
-    router(util.RequestHeader(req.uri, req.headers)) foreach {
+    router(util.RequestHeader(req.uri, req.headers)) foreach:
       case Left(status) =>
         sendErrorResponse(
           ctx,
@@ -37,7 +37,6 @@ final private class RequestHandler(router: Router)(using Executor)
         // Forward to ProtocolHandler with endpoint attribute
         ctx.channel.attr(ProtocolHandler.key.endpoint).set(endpoint)
         ctx.fireChannelRead(req)
-    }
 
   private def sendErrorResponse(ctx: ChannelHandlerContext, response: DefaultFullHttpResponse) =
     val f = ctx.writeAndFlush(response)

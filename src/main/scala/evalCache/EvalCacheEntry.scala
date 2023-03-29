@@ -48,9 +48,9 @@ object EvalCacheEntry:
     def bestMove: Uci = bestPv.moves.value.head
 
     def looksValid =
-      pvs.toList.forall(_.looksValid) && {
+      pvs.toList.forall(_.looksValid) && (
         pvs.toList.forall(_.score.mateFound) || (knodes >= MIN_KNODES || depth >= MIN_DEPTH)
-      }
+      )
 
     def truncatePvs = copy(pvs = pvs.map(_.truncate))
 
