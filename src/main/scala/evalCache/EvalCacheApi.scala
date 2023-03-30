@@ -33,20 +33,21 @@ final class EvalCacheApi(mongo: Mongo)(using
     if e.up then upgrade.register(sri, e)
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
-    truster.get(user) foreach:
-      _.filter(_.isEnough) foreach { trust =>
-        makeInput(
-          e.variant,
-          e.fen,
-          Eval(
-            pvs = e.pvs,
-            knodes = e.knodes,
-            depth = e.depth,
-            by = user,
-            trust = trust
-          )
-        ) foreach { putTrusted(sri, user, _) }
-      }
+    truster
+      .get(user) foreach:
+        _.filter(_.isEnough) foreach { trust =>
+          makeInput(
+            e.variant,
+            e.fen,
+            Eval(
+              pvs = e.pvs,
+              knodes = e.knodes,
+              depth = e.depth,
+              by = user,
+              trust = trust
+            )
+          ) foreach { putTrusted(sri, user, _) }
+        }
 
   private def getEvalJson(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): Future[Option[JsObject]] =
     getEval(Id(variant, SmallFen.make(variant, fen.simple)), multiPv) map {
