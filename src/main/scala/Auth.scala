@@ -31,9 +31,10 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       _ flatMap { _.getAsOpt[User.Id]("user") }
     } map:
       _ map { user =>
-        Impersonations.get(user) getOrElse:
-          seenAt(user)
-          user
+        Impersonations
+          .get(user) getOrElse:
+            seenAt(user)
+            user
       }
 
   private val bearerSigner = Algo hmac config.getString("oauth.secret")
@@ -49,13 +50,14 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     }
 
   private def bearerAuth(bearer: Bearer): Future[Option[User.Id]] =
-    mongo.oauthColl.flatMap {
-      _.find(
-        BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:socket"),
-        Some(BSONDocument("_id" -> false, "userId" -> true))
-      ).one[BSONDocument]
-    } map:
-      _ flatMap { _.getAsOpt[User.Id]("userId") }
+    mongo.oauthColl
+      .flatMap {
+        _.find(
+          BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:socket"),
+          Some(BSONDocument("_id" -> false, "userId" -> true))
+        ).one[BSONDocument]
+      } map:
+        _ flatMap { _.getAsOpt[User.Id]("userId") }
 
 object Auth:
   private val cookieName     = "lila2"

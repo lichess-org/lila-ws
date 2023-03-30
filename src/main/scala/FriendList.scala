@@ -61,10 +61,12 @@ final class FriendList(
 
   private def updateView(userId: User.Id, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach { case (subject, subs) =>
-      if (subs.nonEmpty) userDatas.get(subject.id) foreach:
-        _ foreach { data =>
-          users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
-        }
+      if (subs.nonEmpty)
+        userDatas
+          .get(subject.id) foreach:
+            _ foreach { data =>
+              users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
+            }
     }
 
   Bus.internal.subscribe(
