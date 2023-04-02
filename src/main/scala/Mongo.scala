@@ -3,12 +3,12 @@ package lila.ws
 import chess.Color
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
-import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
 import reactivemongo.api.commands.WriteResult
 import scala.util.{ Success, Try }
+import java.time.LocalDateTime
 
 final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
@@ -184,7 +184,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     import evalCache.EvalCacheBsonHandlers.given
     evalCacheColl foreach:
       _.update(ordered = false, writeConcern = WriteConcern.Unacknowledged)
-        .one(BSONDocument("_id" -> id), BSONDocument("$set" -> BSONDocument("usedAt" -> DateTime.now)))
+        .one(BSONDocument("_id" -> id), BSONDocument("$set" -> BSONDocument("usedAt" -> LocalDateTime.now)))
 
   def tournamentActiveUsers(tourId: Tour.Id): Future[Set[User.Id]] =
     tourPlayerColl flatMap:
@@ -301,12 +301,12 @@ trait MongoHandlers:
 
   type IdFilter = Iterable[String] => Future[Set[String]]
 
-  given dateHandler: BSONHandler[DateTime] with
-    def readTry(bson: BSONValue): Try[DateTime] =
+  given localDateHandler: BSONHandler[LocalDateTime] with
+    def readTry(bson: BSONValue): Try[LocalDateTime] =
       bson.asTry[BSONDateTime] map { dt =>
-        new DateTime(dt.value)
+        millisToDate(dt.value)
       }
-    def writeTry(date: DateTime) = Success(BSONDateTime(date.getMillis))
+    def writeTry(date: LocalDateTime) = Success(BSONDateTime(date.toMillis))
 
   given [A, T](using
       bts: SameRuntime[A, T],

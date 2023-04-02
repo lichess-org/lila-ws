@@ -9,10 +9,10 @@ import chess.variant.Variant
 import chess.format.Fen
 import chess.ErrorStr
 import play.api.libs.json.{ JsObject, JsString }
-import org.joda.time.DateTime
 import com.typesafe.scalalogging.Logger
 import cats.syntax.option.*
 import reactivemongo.api.bson.BSONDocument
+import java.time.LocalDateTime
 
 final class EvalCacheApi(mongo: Mongo)(using
     Executor,
@@ -91,8 +91,8 @@ final class EvalCacheApi(mongo: Mongo)(using
                 _id = input.id,
                 nbMoves = destSize(input.fen),
                 evals = List(input.eval),
-                usedAt = DateTime.now,
-                updatedAt = DateTime.now
+                usedAt = LocalDateTime.now,
+                updatedAt = LocalDateTime.now
               )
               c.insert
                 .one(entry)

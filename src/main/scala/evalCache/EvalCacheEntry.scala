@@ -3,17 +3,17 @@ package evalCache
 
 import chess.format.{ Fen, Uci }
 import chess.variant.Variant
-import org.joda.time.DateTime
 import cats.data.NonEmptyList
 
 import Eval.Score
+import java.time.LocalDateTime
 
 case class EvalCacheEntry(
     _id: EvalCacheEntry.Id,
     nbMoves: Int, // multipv cannot be greater than number of legal moves
     evals: List[EvalCacheEntry.Eval],
-    usedAt: DateTime,
-    updatedAt: DateTime
+    usedAt: LocalDateTime,
+    updatedAt: LocalDateTime
 ):
 
   import EvalCacheEntry.*
@@ -23,8 +23,8 @@ case class EvalCacheEntry(
   def add(eval: Eval) =
     copy(
       evals = EvalCacheSelector(eval :: evals),
-      usedAt = DateTime.now,
-      updatedAt = DateTime.now
+      usedAt = LocalDateTime.now,
+      updatedAt = LocalDateTime.now
     )
 
   // finds the best eval with at least multiPv pvs,
