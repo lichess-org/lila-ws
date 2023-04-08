@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.Color
+import chess.{ ByColor, Color }
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
@@ -131,7 +131,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
               doc       <- docOpt
               playerIds <- doc.getAsOpt[String]("is")
               users = doc.getAsOpt[List[User.Id]]("us") getOrElse Nil
-              players = Color.Map(
+              players = ByColor(
                 Game.Player(Game.PlayerId(playerIds take 4), users.headOption.filter(_.value.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds drop 4), users lift 1)
               )
