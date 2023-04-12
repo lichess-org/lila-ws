@@ -139,9 +139,8 @@ object LilaOut:
 
       case "tell/flag" =>
         get(args, 2) { case Array(flag, payload) =>
-          Flag make flag map {
+          Flag make flag map:
             TellFlag(_, JsonString(payload))
-          }
         }
 
       case "tell/users" =>
@@ -278,9 +277,8 @@ object LilaOut:
 
       case "r/goneIn" =>
         get(args, 2) { case Array(fullId, secS) =>
-          secS.toIntOption map {
+          secS.toIntOption map:
             RoundGoneIn(Game.FullId(fullId), _)
-          }
         }
 
       case "r/bot/online" =>

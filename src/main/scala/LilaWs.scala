@@ -3,7 +3,6 @@ package lila.ws
 import akka.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
-import scala.annotation.nowarn
 
 object LilaWs extends App:
 
@@ -16,7 +15,6 @@ object LilaWs extends App:
   lazy val groupedWithin = wire[util.GroupedWithin]
   lazy val lightUserApi  = wire[LightUserApi]
   lazy val lilaRedis     = wire[Lila]
-  lazy val lilaHandlers  = wire[LilaHandler]
   lazy val inquirers     = wire[Inquirers]
   lazy val roundCrowd    = wire[RoundCrowd]
   lazy val roomCrowd     = wire[RoomCrowd]
@@ -37,11 +35,11 @@ object LilaWs extends App:
   lazy val nettyServer   = wire[netty.NettyServer]
   lazy val monitor       = wire[Monitor]
 
+  wire[LilaHandler] // must eagerly instanciate!
   wire[LilaWsServer].start()
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
-    handlers: LilaHandler, // must eagerly instanciate!
     lila: Lila,
     lobby: Lobby,
     monitor: Monitor,

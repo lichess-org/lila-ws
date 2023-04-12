@@ -1,11 +1,10 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
-import org.joda.time.DateTime
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
-import scala.util.{ Success, Try }
+import java.time.LocalDateTime
 
 final class SeenAtUpdate(mongo: Mongo)(using
     context: Executor,
@@ -22,7 +21,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
       done.put(user, true)
       for
         userColl <- mongo.userColl
-        now = DateTime.now
+        now = LocalDateTime.now
         userDoc <- findAndModify(
           coll = userColl,
           selector = BSONDocument("_id" -> user),

@@ -50,7 +50,7 @@ final class Controller(
 
   def simul(id: Simul.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.simulExists(id) zip mongo.troll.is(user) map {
+      mongo.simulExists(id) zip mongo.troll.is(user) map:
         case (true, isTroll) =>
           endpoint(
             name = "simul",
@@ -63,12 +63,11 @@ final class Controller(
             interval = 20.seconds
           )
         case _ => notFound
-      }
     }
 
   def tournament(id: Tour.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.tourExists(id) zip mongo.troll.is(user) map {
+      mongo.tourExists(id) zip mongo.troll.is(user) map:
         case (true, isTroll) =>
           endpoint(
             name = "tour",
@@ -81,12 +80,11 @@ final class Controller(
             interval = 20.seconds
           )
         case _ => notFound
-      }
     }
 
   def study(id: Study.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map {
+      mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map:
         case (true, isTroll) =>
           endpoint(
             name = "study",
@@ -99,12 +97,11 @@ final class Controller(
             interval = 15.seconds
           )
         case _ => notFound
-      }
     }
 
   def roundWatch(id: Game.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.gameExists(id) zip mongo.troll.is(user) map {
+      mongo.gameExists(id) zip mongo.troll.is(user) map:
         case (true, isTroll) =>
           val userTv = UserTv.from(req queryParameter "userTv")
           endpoint(
@@ -119,12 +116,11 @@ final class Controller(
             interval = 20.seconds
           )
         case _ => notFound
-      }
     }
 
   def roundPlay(id: Game.FullId, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.player(id, user) zip mongo.troll.is(user) map {
+      mongo.player(id, user) zip mongo.troll.is(user) map:
         case (Some(player), isTroll) =>
           endpoint(
             name = "round/play",
@@ -140,18 +136,16 @@ final class Controller(
             interval = 20.seconds
           )
         case _ => notFound
-      }
     }
 
   def challenge(id: Challenge.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
       mongo challenger id map {
-        _ map {
+        _ map:
           case Challenge.Challenger.Anon(secret) => Auth sidFromReq req contains secret
           case Challenge.Challenger.User(userId) => user.contains(userId)
           case Challenge.Challenger.Open         => false
-        }
-      } map {
+      } map:
         case None => notFound
         case Some(owner) =>
           endpoint(
@@ -165,7 +159,6 @@ final class Controller(
             credits = 50,
             interval = 30.seconds
           )
-      }
     }
 
   def team(id: Team.Id, req: RequestHeader) =
@@ -188,7 +181,7 @@ final class Controller(
 
   def swiss(id: Swiss.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      mongo.swissExists(id) zip mongo.troll.is(user) map {
+      mongo.swissExists(id) zip mongo.troll.is(user) map:
         case (true, isTroll) =>
           endpoint(
             name = "swiss",
@@ -201,12 +194,11 @@ final class Controller(
             interval = 20.seconds
           )
         case _ => notFound
-      }
     }
 
   def racer(id: Racer.Id, req: RequestHeader) =
     WebSocket(req) { sri => user =>
-      Future successful {
+      Future successful:
         user.match {
           case Some(u) => Option(Racer.PlayerId.User(u))
           case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
@@ -223,7 +215,6 @@ final class Controller(
               credits = 30,
               interval = 15.seconds
             )
-      }
     }
 
   def api(req: RequestHeader) =
@@ -239,11 +230,10 @@ final class Controller(
     )
 
   private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
-    CSRF.check(req) {
+    CSRF.check(req):
       ValidSri(req) { sri =>
         auth(req) flatMap f(sri)
       }
-    }
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response =
     req.sri match

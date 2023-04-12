@@ -44,9 +44,8 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
         crowds.updated(crowd.roomId, crowd)
       }
       .values foreach { output =>
-      json room output foreach {
+      json room output foreach:
         Bus.publish(_ room output.roomId, _)
-      }
     }
   }
 

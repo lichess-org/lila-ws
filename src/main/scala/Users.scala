@@ -43,22 +43,19 @@ final class Users(using scheduler: Scheduler, ec: Executor):
     )
 
   def tellOne(userId: User.Id, payload: ClientMsg): Unit =
-    Option(users get userId) foreach {
+    Option(users get userId) foreach:
       _ foreach { _ ! payload }
-    }
 
   def tellMany(userIds: Iterable[User.Id], payload: ClientMsg): Unit =
     userIds foreach { tellOne(_, payload) }
 
   def kick(userId: User.Id): Unit =
-    Option(users get userId) foreach {
+    Option(users get userId) foreach:
       _ foreach { _ ! ClientCtrl.Disconnect }
-    }
 
   def setTroll(userId: User.Id, v: IsTroll): Unit =
-    Option(users get userId) foreach {
+    Option(users get userId) foreach:
       _ foreach { _ ! ipc.SetTroll(v) }
-    }
 
   def isOnline(userId: User.Id): Boolean = users containsKey userId
 

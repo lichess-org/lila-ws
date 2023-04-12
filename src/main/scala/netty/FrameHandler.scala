@@ -10,7 +10,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketFrame
 import ipc.ClientOut
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame
 import io.netty.channel.Channel
-import akka.actor.typed.ActorRef
 
 final private class FrameHandler(connector: ActorChannelConnector)(using Executor)
     extends SimpleChannelInboundHandler[WebSocketFrame]:
@@ -27,7 +26,7 @@ final private class FrameHandler(connector: ActorChannelConnector)(using Executo
         val txt = frame.text
         if (txt.nonEmpty)
           val endpoint = ctx.channel.attr(key.endpoint).get
-          if (endpoint == null || endpoint.rateLimit(txt)) ClientOut parse txt foreach {
+          if (endpoint == null || endpoint.rateLimit(txt)) ClientOut parse txt foreach:
 
             case ClientOut.Switch(uri) if endpoint != null =>
               withClientOf(ctx.channel) { connector.switch(_, endpoint, ctx.channel)(uri) }
@@ -40,7 +39,6 @@ final private class FrameHandler(connector: ActorChannelConnector)(using Executo
               Monitor.clientOutWrongHole.increment()
 
             case out => withClientOf(ctx.channel)(_ tell out)
-          }
       case frame: PongWebSocketFrame =>
         val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
         val pong      = ClientOut.RoundPongFrame(lagMillis)

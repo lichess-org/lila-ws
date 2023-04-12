@@ -6,7 +6,7 @@ import akka.actor.typed.ActorRef
 import io.netty.channel.*
 import ProtocolHandler.key
 import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
-import ipc.{ ClientIn, ClientOut }
+import ipc.ClientIn
 import io.netty.handler.codec.http.websocketx.*
 import io.netty.buffer.Unpooled
 
@@ -17,7 +17,7 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
     channel.attr(key.client).set(clientPromise.future)
     clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), clientPromise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
-      def operationComplete(f: NettyFuture[Void]): Unit =
+      def operationComplete(@annotation.nowarn("msg=unused explicit parameter") f: NettyFuture[Void]): Unit =
         channel.attr(key.client).get foreach { client =>
           clients ! Clients.Control.Stop(client)
         }
@@ -28,7 +28,7 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
     if endpoint.req.uri == newReq.uri
     then client ! ClientIn.SwitchResponse(uri, 200)
     else
-      router(newReq) foreach {
+      router(newReq) foreach:
         case Left(status) => client ! ClientIn.SwitchResponse(uri, status.code)
         case Right(newEndpoint) =>
           val clientPromise = Promise[Client]()
@@ -37,7 +37,6 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
           clientPromise.future foreach { _ ! ClientIn.SwitchResponse(uri, 200) }
           channel.attr(key.endpoint).set(newEndpoint)
           channel.attr(key.client).set(clientPromise.future)
-      }
 
   private def emitToChannel(channel: Channel): ClientEmit =
     case ipc.ClientIn.Disconnect =>

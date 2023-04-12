@@ -7,11 +7,9 @@ import io.netty.handler.codec.http.websocketx.*
 import io.netty.handler.codec.TooLongFrameException
 import io.netty.util.AttributeKey
 import java.io.IOException
-import akka.actor.typed.ActorRef
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
-import io.netty.buffer.Unpooled
 
-final private class ProtocolHandler(connector: ActorChannelConnector)(using Executor)
+final private class ProtocolHandler(connector: ActorChannelConnector)
     extends WebSocketServerProtocolHandler(
       "",    // path
       null,  // subprotocols (?)
@@ -23,7 +21,6 @@ final private class ProtocolHandler(connector: ActorChannelConnector)(using Exec
     ):
 
   import ProtocolHandler.*
-  import Controller.Endpoint
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit =
     evt match

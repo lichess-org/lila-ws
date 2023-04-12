@@ -61,9 +61,8 @@ final class RoundCrowd(
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
     aggregated foreach { output =>
-      json round output foreach {
+      json round output foreach:
         Bus.publish(_ room output.room.roomId, _)
-      }
     }
   }
 
@@ -94,9 +93,8 @@ object RoundCrowd:
         room = if (player.isDefined) room else room disconnect user,
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
-    def botOnline(color: Color, online: Boolean): Option[RoundState] = Some {
+    def botOnline(color: Color, online: Boolean): Option[RoundState] = Some:
       if (online) connect(None, Some(color))
       else disconnect(None, Some(color))
-    }
 
     def isEmpty = room.isEmpty && players.forall(1 > _)

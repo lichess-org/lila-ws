@@ -25,9 +25,8 @@ object EvalCacheBsonHandlers:
           Score cp Cp(c)
         }
     private def movesWrite(moves: Moves): String = Uci writeListChars moves.value.toList
-    private def movesRead(str: String): Option[Moves] = Moves from {
+    private def movesRead(str: String): Option[Moves] = Moves from:
       Uci.readListChars(str).flatMap(_.toNel)
-    }
     private val scoreSeparator = ':'
     private val pvSeparator    = '/'
     private val pvSeparatorStr = pvSeparator.toString
@@ -45,9 +44,8 @@ object EvalCacheBsonHandlers:
                   )
                 case x => sys error s"Invalid PV $pvStr: ${x.toList} (in $value)"
             }
-          }.flatMap {
+          }.flatMap:
             _.toNel.toRight(new Exception(s"Empty PVs $value")).toTry
-          }
         case b => handlerBadType[NonEmptyList[Pv]](b)
 
     def writeTry(x: NonEmptyList[Pv]) =

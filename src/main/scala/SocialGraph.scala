@@ -54,7 +54,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
 
-  private def findSlot(id: User.Id, exceptSlot: Int): Slot = returning[Slot] {
+  private def findSlot(id: User.Id, exceptSlot: Int): Slot = returning[Slot]:
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
@@ -85,7 +85,6 @@ final class SocialGraph(mongo: Mongo, config: Config):
     // The hashtable is full. Overwrite a random entry.
     val slot = if (hash != exceptSlot) hash else (hash + 1) & slotsMask
     freeSlot(slot)
-  }
 
   private def freeSlot(leftSlot: Int): NewSlot =
     // Clear all outgoing edges: A freed slot does not follow anyone.
@@ -111,9 +110,8 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   private def readOnlineFollowing(leftSlot: Int): List[User.Id] =
     graph.readIncoming(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) collect {
+      read(rightSlot) collect:
         case entry if entry.meta.online && entry.meta.subscribed => entry.id
-      }
     }
 
   private def updateFollowed(leftSlot: Int, followed: Iterable[User.Id]): List[UserEntry] =

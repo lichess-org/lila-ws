@@ -48,10 +48,9 @@ object EvalCacheJsonHandlers:
         movesStr
           .split(' ')
           .take(MAX_PV_SIZE)
-          .foldLeft(List.empty[Uci].some) {
+          .foldLeft(List.empty[Uci].some):
             case (Some(ucis), str) => Uci(str) map (_ :: ucis)
             case _                 => None
-          }
           .flatMap(_.reverse.toNel)
       score <- d.get[Cp]("cp").map(Score.cp(_)) orElse
         d.get[Mate]("mate").map(Score.mate(_))

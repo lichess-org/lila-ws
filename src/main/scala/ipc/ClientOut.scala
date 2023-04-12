@@ -138,7 +138,7 @@ object ClientOut:
   def parse(str: String): Try[ClientOut] =
     if (str == "null" || str == """{"t":"p"}""") emptyPing
     else
-      Try(Json parse str) map {
+      Try(Json parse str) map:
         case o: JsObject =>
           o str "t" flatMap {
             case "p" => Some(Ping(o int "l"))
@@ -263,7 +263,6 @@ object ClientOut:
             case _           => None
           } getOrElse Unexpected(o)
         case js => Unexpected(js)
-      }
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
 

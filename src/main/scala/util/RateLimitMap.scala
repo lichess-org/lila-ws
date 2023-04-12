@@ -22,7 +22,7 @@ final class RateLimitMap(
 
   private inline def makeClearAt = nowMillis + duration.toMillis
 
-  def apply(k: String, cost: Cost = 1, msg: => String = ""): Boolean = cost < 1 || {
+  def apply(k: String, cost: Cost = 1, msg: => String = ""): Boolean = cost < 1 || (
     storage getIfPresent k match
       case None =>
         storage.put(k, cost -> makeClearAt)
@@ -38,7 +38,7 @@ final class RateLimitMap(
         Monitor rateLimit name
         false
       case _ => true
-  }
+  )
 
   private var lastLog = ""
   private def logDedup(msg: String) =

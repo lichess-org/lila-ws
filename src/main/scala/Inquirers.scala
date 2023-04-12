@@ -3,10 +3,7 @@ package lila.ws
 import com.github.blemale.scaffeine.Scaffeine
 import akka.actor.typed.Scheduler
 
-final class Inquirers(mongo: Mongo, lightUserApi: LightUserApi)(using
-    ec: Executor,
-    scheduler: Scheduler
-):
+final class Inquirers(mongo: Mongo)(using ec: Executor, scheduler: Scheduler):
 
   private val cache = Scaffeine()
     .expireAfterWrite(5 minutes)

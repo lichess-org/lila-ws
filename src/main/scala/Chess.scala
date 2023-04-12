@@ -15,7 +15,7 @@ object Chess:
   private val logger = Logger(getClass)
 
   def apply(req: ClientOut.AnaMove): ClientIn =
-    Monitor.time(_.chessMoveTime) {
+    Monitor.time(_.chessMoveTime):
       try
         chess
           .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
@@ -28,10 +28,9 @@ object Chess:
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
           ClientIn.StepFailure
-    }
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
-    Monitor.time(_.chessMoveTime) {
+    Monitor.time(_.chessMoveTime):
       try
         chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.pos).toOption flatMap { (game, drop) =>
           game.sans.lastOption map { san =>
@@ -42,10 +41,9 @@ object Chess:
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
           ClientIn.StepFailure
-    }
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
-    Monitor.time(_.chessDestTime) {
+    Monitor.time(_.chessDestTime):
       ClientIn.Dests(
         path = req.path,
         dests = {
@@ -62,13 +60,11 @@ object Chess:
         },
         chapterId = req.chapterId
       )
-    }
 
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
     if (Variant.list.openingSensibleVariants(req.variant))
-      OpeningDb findByEpdFen req.fen map {
+      OpeningDb findByEpdFen req.fen map:
         ClientIn.OpeningMsg(req.path, _)
-      }
     else None
 
   private def makeNode(

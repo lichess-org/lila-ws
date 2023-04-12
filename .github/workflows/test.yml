@@ -1,4 +1,4 @@
-name: Test
+name: Continuous Integration
 
 on: [push, pull_request]
 
@@ -6,9 +6,19 @@ jobs:
   openjdk17:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+
+      - name: Checkout current branch
+        uses: actions/checkout@v3
+
+      - name: Setup JVM
+        uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: 17
-      - run: sbt compile
+          cache: sbt
+
+      - name: Build project
+        run: sbt test
+
+      - name: Check Formatting
+        run: sbt scalafmtCheckAll
