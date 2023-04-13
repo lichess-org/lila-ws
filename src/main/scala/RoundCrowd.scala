@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.Color
+import chess.{ ByColor, Color }
 import java.util.concurrent.ConcurrentHashMap
 
 import ipc.*
@@ -70,7 +70,7 @@ final class RoundCrowd(
 
 object RoundCrowd:
 
-  case class Output(room: RoomCrowd.Output, players: Color.Map[Int]):
+  case class Output(room: RoomCrowd.Output, players: ByColor[Int]):
     def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
 
   def outputOf(roomId: RoomId, round: RoundState) =
@@ -81,7 +81,7 @@ object RoundCrowd:
 
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
-      players: Color.Map[Int] = Color.Map(0, 0)
+      players: ByColor[Int] = ByColor(0, 0)
   ):
     def connect(user: Option[User.Id], player: Option[Color]) =
       copy(

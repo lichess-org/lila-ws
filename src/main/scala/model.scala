@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.Color
+import chess.{ ByColor, Color }
 import chess.format.{ Fen, Uci }
 import ornicar.scalalib.SecureRandom
 
@@ -41,7 +41,7 @@ object Game:
 
   // must only contain invariant data (no status, turns, or termination)
   // because it's cached in Mongo.scala
-  case class Round(id: Game.Id, players: Color.Map[Player], ext: Option[RoundExt]):
+  case class Round(id: Game.Id, players: ByColor[Player], ext: Option[RoundExt]):
     def player(id: PlayerId, userId: Option[User.Id]): Option[RoundPlayer] =
       Color.all.collectFirst:
         case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
