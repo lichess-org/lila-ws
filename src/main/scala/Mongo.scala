@@ -304,7 +304,7 @@ trait MongoHandlers:
   given localDateHandler: BSONHandler[LocalDateTime] with
     def readTry(bson: BSONValue): Try[LocalDateTime] =
       bson.asTry[BSONDateTime] map { dt =>
-        millisToDate(dt.value)
+        millisToDateTime(dt.value)
       }
     def writeTry(date: LocalDateTime) = Success(BSONDateTime(date.toMillis))
 
