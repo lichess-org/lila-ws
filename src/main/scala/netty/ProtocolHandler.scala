@@ -24,7 +24,7 @@ final private class ProtocolHandler(connector: ActorChannelConnector)
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: java.lang.Object): Unit =
     evt match
-      case hs: WebSocketServerProtocolHandler.HandshakeComplete =>
+      case _: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
         connector(ctx.channel.attr(key.endpoint).get, ctx.channel)
       case _ =>
