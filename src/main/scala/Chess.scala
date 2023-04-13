@@ -3,7 +3,7 @@ package lila.ws
 import play.api.libs.json.*
 import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import chess.opening.{ Opening, OpeningDb }
-import chess.Pos
+import chess.Square
 import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
 import cats.syntax.option.*
@@ -32,14 +32,14 @@ object Chess:
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime):
       try
-        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.pos).toOption flatMap { (game, drop) =>
+        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.square).toOption flatMap { (game, drop) =>
           game.sans.lastOption map { san =>
             makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
           }
         } getOrElse ClientIn.StepFailure
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.pos}", e)
+          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.square}", e)
           ClientIn.StepFailure
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
@@ -99,14 +99,14 @@ object Chess:
       def writes(uci: Uci) = JsString(uci.uci)
     given Writes[UciCharPair] with
       def writes(ucp: UciCharPair) = JsString(ucp.toString)
-    given Writes[Pos] with
-      def writes(pos: Pos) = JsString(pos.key)
+    given Writes[Square] with
+      def writes(square: Square) = JsString(square.key)
     given Writes[Opening] with
       def writes(o: Opening) = Json.obj("eco" -> o.eco, "name" -> o.name)
-    given Writes[Map[Pos, List[Pos]]] with
-      def writes(dests: Map[Pos, List[Pos]]) = JsString(destString(dests))
+    given Writes[Map[Square, List[Square]]] with
+      def writes(dests: Map[Square, List[Square]]) = JsString(destString(dests))
 
-    def destString(dests: Map[Pos, List[Pos]]): String =
+    def destString(dests: Map[Square, List[Square]]): String =
       val sb    = new java.lang.StringBuilder(80)
       var first = true
       dests foreach { (orig, dests) =>

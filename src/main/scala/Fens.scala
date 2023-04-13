@@ -21,7 +21,7 @@ object Fens:
           gameId,
           {
             case (_, null)                  => Watched(None, Set(client))
-            case (_, Watched(pos, clients)) => Watched(pos, clients + client)
+            case (_, Watched(square, clients)) => Watched(square, clients + client)
           }
         )
         .position foreach { p =>

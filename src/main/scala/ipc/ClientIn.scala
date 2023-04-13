@@ -121,9 +121,9 @@ object ClientIn:
       move: Uci.WithSan,
       fen: EpdFen,
       check: Check,
-      dests: Map[chess.Pos, List[chess.Pos]],
+      dests: Map[chess.Square, List[chess.Square]],
       opening: Option[Opening],
-      drops: Option[List[chess.Pos]],
+      drops: Option[List[chess.Square]],
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn:
