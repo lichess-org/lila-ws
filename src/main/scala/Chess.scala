@@ -32,10 +32,11 @@ object Chess:
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime):
       try
-        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.square).toOption flatMap { (game, drop) =>
-          game.sans.lastOption map { san =>
-            makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
-          }
+        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.square).toOption flatMap {
+          (game, drop) =>
+            game.sans.lastOption map { san =>
+              makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
+            }
         } getOrElse ClientIn.StepFailure
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>

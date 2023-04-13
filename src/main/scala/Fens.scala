@@ -20,7 +20,7 @@ object Fens:
         .compute(
           gameId,
           {
-            case (_, null)                  => Watched(None, Set(client))
+            case (_, null)                     => Watched(None, Set(client))
             case (_, Watched(square, clients)) => Watched(square, clients + client)
           }
         )
