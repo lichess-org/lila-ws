@@ -1,6 +1,6 @@
 package lila.ws
 
-import chess.{ ByColor, Color }
+import chess.ByColor
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
