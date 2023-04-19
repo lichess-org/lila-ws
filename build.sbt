@@ -57,7 +57,6 @@ scalacOptions := Seq(
   "-language:postfixOps",
   "-Xtarget:12",
   "-Wunused:all"
-  /* "-Wunused:nowarn" */
 
   // Warnings as errors!
   // "-Xfatal-warnings",
