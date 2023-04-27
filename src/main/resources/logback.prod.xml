@@ -5,10 +5,14 @@
     </encoder>
   </appender>
 
-  <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
-    <queueSize>1024</queueSize>
-    <neverBlock>true</neverBlock>
-    <appender-ref ref="STDOUT" />
+  <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter"><level>ERROR</level></filter>
+    <file>/var/log/lila-ws/error.log</file>
+    <encoder><pattern>%date %-5level %logger %message%n%xException</pattern></encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/lila-ws/error-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>14</maxHistory>
+    </rollingPolicy>
   </appender>
 
   <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
@@ -20,6 +24,7 @@
 
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
+    <appender-ref ref="ERROR_FILE" />
   </root>
 
 </configuration>
