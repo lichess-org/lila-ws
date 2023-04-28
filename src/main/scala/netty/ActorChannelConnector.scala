@@ -17,7 +17,7 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
     channel.attr(key.client).set(clientPromise.future)
     clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), clientPromise)
     channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
-      def operationComplete(@annotation.nowarn("msg=unused explicit parameter") f: NettyFuture[Void]): Unit =
+      def operationComplete(f: NettyFuture[Void]): Unit =
         channel.attr(key.client).get foreach { client =>
           clients ! Clients.Control.Stop(client)
         }
