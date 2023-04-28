@@ -58,19 +58,16 @@ final class LilaWsServer(
       }
     )
 
-    scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis) { () =>
+    scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis): () =>
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
-    }
 
-    scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis) { () =>
+    scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis): () =>
       val counters = lobby.pong.get
       lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
-    }
 
-    scheduler.scheduleWithFixedDelay(1.seconds, 1879.millis) { () =>
+    scheduler.scheduleWithFixedDelay(1.seconds, 1879.millis): () =>
       lila.emit.site(ipc.LilaIn.Ping(UptimeMillis.make))
       lila.emit.round(ipc.LilaIn.Ping(UptimeMillis.make))
-    }
 
     nettyServer.start() // blocks
 

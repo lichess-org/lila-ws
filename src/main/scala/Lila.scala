@@ -94,11 +94,10 @@ final class Lila(config: Config)(using Executor):
             (0 to r.parallelism).map { index =>
               connectAndSubscribe(s"${r.out}:$index", r.out)
             }
-      .map { _ =>
+      .map: _ =>
         val msg = LilaIn.WsBoot.write
         connIn.async.publish(chan in msg, msg)
         emit
-      }
 
   private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] =
     val connOut = redis.connectPubSub

@@ -281,9 +281,9 @@ object Controller:
       req: RequestHeader,
       credits: Int,
       interval: FiniteDuration
-  ) =
+  ): ResponseSync =
     Monitor.connection open name
-    Right(
+    Right:
       Endpoint(
         behavior,
         RateLimit(
@@ -293,6 +293,6 @@ object Controller:
         ),
         req
       )
-    )
 
-  type Response = Future[Either[HttpResponseStatus, Endpoint]]
+  type ResponseSync = Either[HttpResponseStatus, Endpoint]
+  type Response     = Future[ResponseSync]

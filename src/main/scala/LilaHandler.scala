@@ -91,13 +91,14 @@ final class LilaHandler(
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
       mongo.tournamentActiveUsers(roomId into Tour.Id) zip
-        mongo.tournamentPlayingUsers(roomId into Tour.Id) foreach { case (active, playing) =>
+        mongo.tournamentPlayingUsers(roomId into Tour.Id) foreach { (active, playing) =>
           val present   = roomCrowd getUsers roomId
           val standby   = active diff playing
           val allAbsent = standby diff present
           lila.emit.tour(LilaIn.WaitingUsers(roomId, present intersect standby))
           val absent =
-            if (allAbsent.sizeIs > 100) ThreadLocalRandom.shuffle(allAbsent) take 80
+            if allAbsent.sizeIs > 100
+            then ThreadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
           if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
         }
@@ -135,10 +136,9 @@ final class LilaHandler(
       publish(_ room roomId, ClientCtrl.Disconnect)
     case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
     case GameStart(users) =>
-      users.foreach { u =>
+      users.foreach: u =>
         friendList.startPlaying(u)
         publish(_ userTv u.into(UserTv), ClientIn.Resync)
-      }
     case GameFinish(gameId, winner, users) =>
       users foreach friendList.stopPlaying
       Fens.finish(gameId, winner)
@@ -180,9 +180,8 @@ final class LilaHandler(
       lilaIn: Emit[LilaIn.RoomSetVersions]
   ): Unit =
     val versions = History.room.allVersions
-    filter(mongo)(versions.map(_._1)) foreach { ids =>
+    filter(mongo)(versions.map(_._1)).foreach: ids =>
       lilaIn(LilaIn.RoomSetVersions(versions.filter(v => ids(v._1))))
-    }
 
   lila.setHandlers:
     case Lila.chans.round.out     => roundHandler

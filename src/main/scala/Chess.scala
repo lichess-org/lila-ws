@@ -20,9 +20,8 @@ object Chess:
         chess
           .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
           .toOption flatMap { (game, move) =>
-          game.sans.lastOption map { san =>
+          game.sans.lastOption.map: san =>
             makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
-          }
         } getOrElse ClientIn.StepFailure
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -34,9 +33,8 @@ object Chess:
       try
         chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.square).toOption flatMap {
           (game, drop) =>
-            game.sans.lastOption map { san =>
+            game.sans.lastOption.map: san =>
               makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
-            }
         } getOrElse ClientIn.StepFailure
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
@@ -47,23 +45,23 @@ object Chess:
     Monitor.time(_.chessDestTime):
       ClientIn.Dests(
         path = req.path,
-        dests = {
-          if (req.variant.standard && req.fen == chess.format.Fen.initial && req.path.value.isEmpty)
-            initialDests
-          else {
+        dests =
+          if req.variant.standard && req.fen == chess.format.Fen.initial && req.path.value.isEmpty
+          then initialDests
+          else
             val sit = chess.Game(req.variant.some, Some(req.fen)).situation
             if (sit.playable(false)) json.destString(sit.destinations) else ""
-          }
-        },
-        opening = {
-          if (Variant.list.openingSensibleVariants(req.variant)) OpeningDb findByEpdFen req.fen
-          else None
-        },
+        ,
+        opening =
+          if Variant.list.openingSensibleVariants(req.variant)
+          then OpeningDb findByEpdFen req.fen
+          else None,
         chapterId = req.chapterId
       )
 
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
-    if (Variant.list.openingSensibleVariants(req.variant))
+    if Variant.list.openingSensibleVariants(req.variant)
+    then
       OpeningDb findByEpdFen req.fen map:
         ClientIn.OpeningMsg(req.path, _)
     else None
@@ -85,10 +83,10 @@ object Chess:
       check = game.situation.check,
       dests = if (movable) game.situation.destinations else Map.empty,
       opening =
-        if (game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant))
-          OpeningDb findByEpdFen fen
+        if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
+        then OpeningDb findByEpdFen fen
         else None,
-      drops = if (movable) game.situation.drops else Some(Nil),
+      drops = if movable then game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
       chapterId = chapterId
     )
@@ -110,21 +108,17 @@ object Chess:
     def destString(dests: Map[Square, List[Square]]): String =
       val sb    = new java.lang.StringBuilder(80)
       var first = true
-      dests foreach { (orig, dests) =>
-        if (first) first = false
+      dests.foreach: (orig, dests) =>
+        if first then first = false
         else sb append " "
         sb append orig.asChar
         dests foreach { sb append _.asChar }
-      }
       sb.toString
 
-    given OWrites[Crazyhouse.Pocket] = OWrites { v =>
-      JsObject(
-        v.values.map { (role, count) =>
+    given OWrites[Crazyhouse.Pocket] = OWrites: v =>
+      JsObject:
+        v.values.map: (role, count) =>
           role.name -> JsNumber(count)
-        }
-      )
-    }
-    given OWrites[chess.variant.Crazyhouse.Data] = OWrites { v =>
+
+    given OWrites[chess.variant.Crazyhouse.Data] = OWrites: v =>
       Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
-    }

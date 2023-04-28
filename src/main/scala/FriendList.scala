@@ -18,24 +18,22 @@ final class FriendList(
     .buildAsyncFuture(mongo.userData)
 
   def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
-    graph.followed(userId) flatMap { entries =>
-      Future.sequence {
-        entries.collect:
-          case u if u.meta.online =>
-            userDatas
-              .get(u.id)
-              .map {
-                _ map { UserView(u.id, _, u.meta) }
-              }(parasitic)
-      } map { views =>
-        emit(Onlines(views.flatten))
-      }
-    }
+    graph
+      .followed(userId)
+      .flatMap: entries =>
+        Future.sequence {
+          entries.collect:
+            case u if u.meta.online =>
+              userDatas
+                .get(u.id)
+                .map {
+                  _ map { UserView(u.id, _, u.meta) }
+                }(parasitic)
+        } map { views =>
+          emit(Onlines(views.flatten))
+        }
 
-  def follow(left: User.Id, right: User.Id): Unit =
-    graph.follow(left, right)
-
-  def unFollow(left: User.Id, right: User.Id) = graph.unfollow(left, right)
+  export graph.{ follow, unfollow as unFollow }
 
   def startPlaying(userId: User.Id) =
     update(userId, Playing.apply)(_.withPlaying(true))

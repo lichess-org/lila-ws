@@ -19,10 +19,12 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
     val allEvents = histories.getOrDefault(key.toString, Nil)
     versionOpt
       .fold(Option(allEvents.take(5))) { since =>
-        if (allEvents.headOption.fold(true)(_.version.value <= since.value)) Some(Nil)
+        if allEvents.headOption.fold(true)(_.version.value <= since.value)
+        then Some(Nil)
         else
           val events = allEvents.takeWhile(_.version.value > since.value)
-          if (events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value) Some(events)
+          if events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value
+          then Some(events)
           else None
       }
       .map(_.reverse)
@@ -31,7 +33,7 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
   def hasEvents(key: K) = Option(histories get key.toString).exists(_.nonEmpty)
 
-  def size = histories.size
+  export histories.size
 
   def allVersions: Array[(String, SocketVersion)] =
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]

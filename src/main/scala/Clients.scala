@@ -10,7 +10,7 @@ object Clients:
     case Switch(client: Client, behavior: ClientBehavior, promise: Promise[Client])
 
   def behavior =
-    Behaviors.receive[Control] { (ctx, msg) =>
+    Behaviors.receive[Control]: (ctx, msg) =>
       msg match
         case Control.Start(behavior, promise) =>
           promise success ctx.spawnAnonymous(behavior)
@@ -22,4 +22,3 @@ object Clients:
         case Control.Stop(client) =>
           ctx.stop(client)
           Behaviors.same
-    }
