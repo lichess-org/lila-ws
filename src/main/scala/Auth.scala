@@ -60,7 +60,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         _ flatMap { _.getAsOpt[User.Id]("userId") }
 
 object Auth:
-  private val cookieName     = "lila2"
+  private val cookieName     = config.getString("cookie.name")
   private val sessionIdKey   = "sessionId"
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
   private val sidKey         = "sid"
