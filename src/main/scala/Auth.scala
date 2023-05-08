@@ -21,6 +21,11 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             case Some(bearer) => bearerAuth(bearer)
             case None         => Future successful None
 
+  def sidFromReq(req: RequestHeader): Option[String] =
+    req cookie cookieName flatMap:
+      case sidRegex(id) => Some(id)
+      case _            => None
+
   private def sessionAuth(sid: String): Future[Option[User.Id]] =
     mongo.security {
       _.find(
@@ -36,6 +41,8 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             seenAt(user)
             user
       }
+
+  private val cookieName = config.getString("cookie.name")
 
   private val bearerSigner = Algo hmac config.getString("oauth.secret")
 
@@ -59,25 +66,19 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       } map:
         _ flatMap { _.getAsOpt[User.Id]("userId") }
 
-object Auth:
-  private val cookieName     = config.getString("cookie.name")
-  private val sessionIdKey   = "sessionId"
-  private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
-  private val sidKey         = "sid"
-  private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
-  private val appealPrefix   = "appeal:"
-
-  def sessionIdFromReq(req: RequestHeader): Option[String] =
+  private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req cookie cookieName flatMap {
       case sessionIdRegex(id) => Some(id)
       case _                  => None
     } orElse
       req.queryParameter(sessionIdKey)
 
-  def sidFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap:
-      case sidRegex(id) => Some(id)
-      case _            => None
+object Auth:
+  private val sessionIdKey   = "sessionId"
+  private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+  private val sidKey         = "sid"
+  private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
+  private val appealPrefix   = "appeal:"
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]
