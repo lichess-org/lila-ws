@@ -142,7 +142,7 @@ final class Controller(
     WebSocket(req) { sri => user =>
       mongo challenger id map {
         _ map:
-          case Challenge.Challenger.Anon(secret) => Auth sidFromReq req contains secret
+          case Challenge.Challenger.Anon(secret) => auth sidFromReq req contains secret
           case Challenge.Challenger.User(userId) => user.contains(userId)
           case Challenge.Challenger.Open         => false
       } map:
@@ -201,7 +201,7 @@ final class Controller(
       Future successful:
         user.match {
           case Some(u) => Option(Racer.PlayerId.User(u))
-          case None    => Auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
+          case None    => auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
         }.match
           case None => notFound
           case Some(pid) =>
