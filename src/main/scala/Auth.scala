@@ -60,7 +60,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     mongo.oauthColl
       .flatMap {
         _.find(
-          BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:socket"),
+          BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:mobile"),
           Some(BSONDocument("_id" -> false, "userId" -> true))
         ).one[BSONDocument]
       } map:
