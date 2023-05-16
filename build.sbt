@@ -17,7 +17,7 @@ val os = sys.props.get("os.name") match {
 }
 val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
-scalaVersion := "3.3.0-RC5"
+scalaVersion := "3.3.0-RC6"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC9"
 libraryDependencies ++= (
@@ -29,8 +29,8 @@ libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
 libraryDependencies += "io.netty" % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64" classifier s"linux-aarch_64"
 libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64" classifier s"osx-aarch_64"
-libraryDependencies += "com.github.ornicar" %% "scalalib"         % "9.3.5"
-libraryDependencies += "org.lichess"        %% "scalachess"       % "15.0.0"
+libraryDependencies += "com.github.ornicar" %% "scalalib"         % "9.3.7"
+libraryDependencies += "org.lichess"        %% "scalachess"       % "15.2.5"
 libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
