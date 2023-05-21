@@ -7,3 +7,5 @@ project/.bloop
 .metals
 .vscode
 .bsp
+# docker sbt
+/?
