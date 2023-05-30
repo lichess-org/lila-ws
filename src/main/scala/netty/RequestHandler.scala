@@ -10,6 +10,7 @@ import io.netty.handler.codec.http.{
   HttpMethod,
   HttpResponseStatus
 }
+import lila.ws.util.RequestUri
 
 final private class RequestHandler(router: Router)(using Executor)
     extends SimpleChannelInboundHandler[FullHttpRequest](
@@ -17,7 +18,7 @@ final private class RequestHandler(router: Router)(using Executor)
     ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
-    router(util.RequestHeader(req.uri, req.headers)) foreach:
+    router(util.RequestHeader(RequestUri(req.uri), req.headers)) foreach:
       case Left(status) =>
         sendErrorResponse(
           ctx,

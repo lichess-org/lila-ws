@@ -234,7 +234,7 @@ object ClientIn:
 
   def racerState(data: JsonString) = payload("racerState", data)
 
-  case class SwitchResponse(uri: String, status: Int) extends ClientIn:
+  case class SwitchResponse(uri: lila.ws.util.RequestUri, status: Int) extends ClientIn:
     def write = cliMsg("switch", Json.obj("uri" -> uri, "status" -> status))
 
   private val destsRemover = ""","dests":\{[^\}]+}""".r

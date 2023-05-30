@@ -5,16 +5,19 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
 import scala.jdk.CollectionConverters.*
 
-final class RequestHeader(val uri: String, req: HttpHeaders):
+opaque type RequestUri = String
+object RequestUri extends OpaqueString[RequestUri]
 
-  def switch(uri: String): RequestHeader = RequestHeader(uri, req)
+final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
 
-  private val query = QueryStringDecoder(uri)
+  def switch(uri: RequestUri): RequestHeader = RequestHeader(uri, headers)
 
-  def path = query.path
+  val (path, parameters) =
+    val qsd = QueryStringDecoder(uri.value)
+    (qsd.path, qsd.parameters)
 
   def header(name: CharSequence): Option[String] =
-    Option(req get name).filter(_.nonEmpty)
+    Option(headers get name).filter(_.nonEmpty)
 
   def cookie(name: String): Option[String] = for
     encoded <- header(HttpHeaderNames.COOKIE)
@@ -24,7 +27,7 @@ final class RequestHeader(val uri: String, req: HttpHeaders):
   yield value
 
   def queryParameter(name: String): Option[String] =
-    Option(query.parameters.get(name)).map(_ get 0).filter(_.nonEmpty)
+    Option(parameters.get(name)).map(_ get 0).filter(_.nonEmpty)
 
   def queryParameterInt(name: String): Option[Int] =
     queryParameter(name) flatMap (_.toIntOption)
@@ -38,5 +41,3 @@ final class RequestHeader(val uri: String, req: HttpHeaders):
   def ip: Option[IpAddress] = IpAddress from header("X-Forwarded-For")
 
   def name: String = s"$uri UA: $userAgent"
-
-  def sri = Sri from queryParameter("sri")

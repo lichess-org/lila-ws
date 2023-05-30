@@ -86,7 +86,7 @@ object ClientOut:
 
   case object Ignore extends ClientOutSite
 
-  case class Switch(uri: String) extends ClientOutSite
+  case class Switch(uri: lila.ws.util.RequestUri) extends ClientOutSite
 
   // lobby
 
@@ -257,7 +257,7 @@ object ClientOut:
             case "switch" =>
               for
                 data <- o obj "d"
-                uri  <- data.get[String]("uri")
+                uri  <- data.get[lila.ws.util.RequestUri]("uri")
               yield Switch(uri)
             case "wrongHole" => Some(WrongHole)
             case _           => None

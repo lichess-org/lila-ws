@@ -19,16 +19,16 @@ final class Controller(
 
   def site(header: RequestHeader) =
     WebSocket(header): req =>
-      Future successful siteEndpoint(header, req)
+      Future successful siteEndpoint(req)
 
-  private def siteEndpoint(header: RequestHeader, req: Req) =
+  private def siteEndpoint(req: Req) =
     endpoint(
       name = "site",
       behavior = emit =>
         SiteClientActor.start:
           Deps(emit, req, services)
       ,
-      header,
+      req.header,
       credits = 50,
       interval = 20.seconds
     )
@@ -167,7 +167,7 @@ final class Controller(
             credits = 30,
             interval = 20.seconds
           )
-        else siteEndpoint(header, req)
+        else siteEndpoint(req)
       }
 
   def swiss(id: Swiss.Id, header: RequestHeader) =
@@ -188,7 +188,7 @@ final class Controller(
 
   def racer(id: Racer.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      Future successful:
+      Future.successful:
         req.user.match {
           case Some(u) => Option(Racer.PlayerId.User(u))
           case None    => auth.sidFromReq(header) map Racer.PlayerId.Anon.apply
@@ -225,8 +225,8 @@ final class Controller(
         auth(req).flatMap: authResult =>
           f(Req(req, sri, authResult))
 
-  private def ValidSri(req: RequestHeader)(f: Sri => Response): Response =
-    req.sri match
+  private def ValidSri(header: RequestHeader)(f: Sri => Response): Response =
+    Sri from header.queryParameter("sri") match
       case Some(validSri) => f(validSri)
       case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST)
 
@@ -263,7 +263,7 @@ object Controller:
   final class Endpoint(
       val behavior: ClientEmit => ClientBehavior,
       val rateLimit: RateLimit,
-      val req: RequestHeader
+      val header: RequestHeader
   )
   def endpoint(
       name: String,

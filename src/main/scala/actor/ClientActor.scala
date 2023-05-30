@@ -156,21 +156,15 @@ object ClientActor:
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
   def Req(header: util.RequestHeader, sri: Sri, auth: Option[Auth.Result]): Req =
-    Req(
-      name = header.name,
-      ip = header.ip,
-      sri = sri,
-      auth = auth,
-      flag = header.flag
-    )
+    Req(header, sri, auth, header.flag)
 
   case class Req(
-      name: String,
-      ip: Option[IpAddress],
+      header: util.RequestHeader,
       sri: Sri,
-      flag: Option[Flag],
-      auth: Option[Auth.Result]
+      auth: Option[Auth.Result],
+      flag: Option[Flag]
   ):
+    export header.{ ip, name }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
       case Auth.Result.OAuth(_) => true

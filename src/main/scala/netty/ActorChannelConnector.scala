@@ -9,6 +9,7 @@ import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
 import ipc.ClientIn
 import io.netty.handler.codec.http.websocketx.*
 import io.netty.buffer.Unpooled
+import lila.ws.util.RequestUri
 
 final private class ActorChannelConnector(router: Router, clients: ActorRef[Clients.Control])(using Executor):
 
@@ -23,12 +24,12 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
         }
     })
 
-  def switch(client: Client, endpoint: Endpoint, channel: Channel)(uri: String) =
-    val newReq = endpoint.req.switch(uri)
-    if endpoint.req.uri == newReq.uri
+  def switch(client: Client, endpoint: Endpoint, channel: Channel)(uri: RequestUri) =
+    val newHeader = endpoint.header.switch(uri)
+    if endpoint.header.uri == newHeader.uri
     then client ! ClientIn.SwitchResponse(uri, 200)
     else
-      router(newReq) foreach:
+      router(newHeader) foreach:
         case Left(status) => client ! ClientIn.SwitchResponse(uri, status.code)
         case Right(newEndpoint) =>
           val clientPromise = Promise[Client]()
