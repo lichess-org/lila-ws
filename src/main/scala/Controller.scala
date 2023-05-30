@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 import util.RequestHeader
+import ClientActor.{ Deps, Req }
 
 final class Controller(
     config: Config,
@@ -13,114 +14,107 @@ final class Controller(
 )(using Executor):
 
   import Controller.*
-  import ClientActor.{ Deps, Req }
 
   private val logger = Logger(getClass)
 
-  def site(req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      Future successful siteEndpoint(req, sri, user)
-    }
+  def site(header: RequestHeader) =
+    WebSocket(header): req =>
+      Future successful siteEndpoint(header, req)
 
-  private def siteEndpoint(req: RequestHeader, sri: Sri, user: Option[User.Id]) =
+  private def siteEndpoint(header: RequestHeader, req: Req) =
     endpoint(
       name = "site",
       behavior = emit =>
-        SiteClientActor start {
-          Deps(emit, Req(req, sri, user), services)
-        },
-      req,
+        SiteClientActor.start:
+          Deps(emit, req, services)
+      ,
+      header,
       credits = 50,
       interval = 20.seconds
     )
 
-  def lobby(req: RequestHeader) =
-    WebSocket(req) { sri => user =>
+  def lobby(header: RequestHeader) =
+    WebSocket(header): req =>
       Future successful endpoint(
         name = "lobby",
         behavior = emit =>
-          LobbyClientActor start {
-            Deps(emit, Req(req, sri, user), services)
-          },
-        req,
+          LobbyClientActor.start:
+            Deps(emit, req, services)
+        ,
+        header,
         credits = 30,
         interval = 30.seconds
       )
-    }
 
-  def simul(id: Simul.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.simulExists(id) zip mongo.troll.is(user) map:
+  def simul(id: Simul.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.simulExists(id) zip mongo.troll.is(req.user) map:
         case (true, isTroll) =>
           endpoint(
             name = "simul",
             behavior = emit =>
-              SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            req,
+              SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
+                Deps(emit, req, services)
+            ,
+            header,
             credits = 30,
             interval = 20.seconds
           )
         case _ => notFound
-    }
 
-  def tournament(id: Tour.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.tourExists(id) zip mongo.troll.is(user) map:
+  def tournament(id: Tour.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.tourExists(id) zip mongo.troll.is(req.user) map:
         case (true, isTroll) =>
           endpoint(
             name = "tour",
             behavior = emit =>
-              TourClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            req,
+              TourClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(header)):
+                Deps(emit, req, services)
+            ,
+            header,
             credits = 30,
             interval = 20.seconds
           )
         case _ => notFound
-    }
 
-  def study(id: Study.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.studyExistsFor(id, user) zip mongo.troll.is(user) map:
+  def study(id: Study.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.studyExistsFor(id, req.user) zip mongo.troll.is(req.user) map:
         case (true, isTroll) =>
           endpoint(
             name = "study",
             behavior = emit =>
-              StudyClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            req,
+              StudyClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(header)):
+                Deps(emit, req, services)
+            ,
+            header,
             credits = 60,
             interval = 15.seconds
           )
         case _ => notFound
-    }
 
-  def roundWatch(id: Game.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.gameExists(id) zip mongo.troll.is(user) map:
+  def roundWatch(id: Game.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.gameExists(id) zip mongo.troll.is(req.user) map:
         case (true, isTroll) =>
-          val userTv = UserTv.from(req queryParameter "userTv")
+          val userTv = UserTv.from(header queryParameter "userTv")
           endpoint(
             name = "round/watch",
             behavior = emit =>
               RoundClientActor
-                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(req)) {
-                  Deps(emit, Req(req, sri, user), services)
-                },
-            req,
+                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(header)):
+                  Deps(emit, req, services)
+            ,
+            header,
             credits = 50,
             interval = 20.seconds
           )
         case _ => notFound
-    }
 
-  def roundPlay(id: Game.FullId, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.player(id, user) zip mongo.troll.is(user) map:
+  def roundPlay(id: Game.FullId, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.player(id, req.user) zip mongo.troll.is(req.user) map:
         case (Some(player), isTroll) =>
           endpoint(
             name = "round/play",
@@ -129,21 +123,20 @@ final class Controller(
                 RoomActor.State(RoomId.ofPlayer(id), isTroll),
                 Some(player),
                 None,
-                fromVersion(req)
-              ) { Deps(emit, Req(req, sri, user), services) },
-            req,
+                fromVersion(header)
+              ) { Deps(emit, req, services) },
+            header,
             credits = 100,
             interval = 20.seconds
           )
         case _ => notFound
-    }
 
-  def challenge(id: Challenge.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
+  def challenge(id: Challenge.Id, header: RequestHeader) =
+    WebSocket(header): req =>
       mongo challenger id map {
         _ map:
-          case Challenge.Challenger.Anon(secret) => auth sidFromReq req contains secret
-          case Challenge.Challenger.User(userId) => user.contains(userId)
+          case Challenge.Challenger.Anon(secret) => auth sidFromReq header contains secret
+          case Challenge.Challenger.User(userId) => req.user.contains(userId)
           case Challenge.Challenger.Open         => false
       } map:
         case None => notFound
@@ -152,88 +145,85 @@ final class Controller(
             name = "challenge",
             behavior = emit =>
               ChallengeClientActor
-                .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(req)) {
-                  Deps(emit, Req(req, sri, user), services)
-                },
-            req,
+                .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(header)):
+                  Deps(emit, req, services)
+            ,
+            header,
             credits = 50,
             interval = 30.seconds
           )
-    }
 
-  def team(id: Team.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.teamView(id, user) zip mongo.troll.is(user) map { case (view, isTroll) =>
-        if (view.exists(_.yes))
+  def team(id: Team.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.teamView(id, req.user) zip mongo.troll.is(req.user) map { (view, isTroll) =>
+        if view.exists(_.yes) then
           endpoint(
             name = "team",
             behavior = emit =>
-              TeamClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            req,
+              TeamClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(header)):
+                Deps(emit, req, services)
+            ,
+            header,
             credits = 30,
             interval = 20.seconds
           )
-        else siteEndpoint(req, sri, user)
+        else siteEndpoint(header, req)
       }
-    }
 
-  def swiss(id: Swiss.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
-      mongo.swissExists(id) zip mongo.troll.is(user) map:
+  def swiss(id: Swiss.Id, header: RequestHeader) =
+    WebSocket(header): req =>
+      mongo.swissExists(id) zip mongo.troll.is(req.user) map:
         case (true, isTroll) =>
           endpoint(
             name = "swiss",
             behavior = emit =>
-              SwissClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(req)) {
-                Deps(emit, Req(req, sri, user), services)
-              },
-            req,
+              SwissClientActor.start(RoomActor.State(id into RoomId, isTroll), fromVersion(header)):
+                Deps(emit, req, services)
+            ,
+            header,
             credits = 30,
             interval = 20.seconds
           )
         case _ => notFound
-    }
 
-  def racer(id: Racer.Id, req: RequestHeader) =
-    WebSocket(req) { sri => user =>
+  def racer(id: Racer.Id, header: RequestHeader) =
+    WebSocket(header): req =>
       Future successful:
-        user.match {
+        req.user.match {
           case Some(u) => Option(Racer.PlayerId.User(u))
-          case None    => auth.sidFromReq(req) map Racer.PlayerId.Anon.apply
+          case None    => auth.sidFromReq(header) map Racer.PlayerId.Anon.apply
         }.match
           case None => notFound
           case Some(pid) =>
             endpoint(
               name = "racer",
               behavior = emit =>
-                RacerClientActor.start(RoomActor.State(id into RoomId, IsTroll(false)), pid) {
-                  Deps(emit, Req(req, sri, user), services)
-                },
-              req,
+                RacerClientActor.start(RoomActor.State(id into RoomId, IsTroll(false)), pid):
+                  Deps(emit, req, services)
+              ,
+              header,
               credits = 30,
               interval = 15.seconds
             )
-    }
 
-  def api(req: RequestHeader) =
+  def api(header: RequestHeader) =
+    val req = Req(header, Sri.random, None).copy(flag = Some(Flag.api))
     Future successful endpoint(
       name = "api",
       behavior = emit =>
-        SiteClientActor.start {
-          Deps(emit, Req(req, Sri.random, None).copy(flag = Some(Flag.api)), services)
-        },
-      req,
+        SiteClientActor.start:
+          Deps(emit, req, services)
+      ,
+      header,
       credits = 50,
       interval = 30.seconds
     )
 
-  private def WebSocket(req: RequestHeader)(f: Sri => Option[User.Id] => Response): Response =
+  private def WebSocket(req: RequestHeader)(f: Req => Response): Response =
     CSRF.check(req):
-      ValidSri(req) { sri =>
-        auth(req) flatMap f(sri)
-      }
+      ValidSri(req): sri =>
+        auth(req).flatMap: authResult =>
+          f(Req(req, sri, authResult))
 
   private def ValidSri(req: RequestHeader)(f: Sri => Response): Response =
     req.sri match
@@ -278,7 +268,7 @@ object Controller:
   def endpoint(
       name: String,
       behavior: ClientEmit => ClientBehavior,
-      req: RequestHeader,
+      header: RequestHeader,
       credits: Int,
       interval: FiniteDuration
   ): ResponseSync =
@@ -291,7 +281,7 @@ object Controller:
           intervalMillis = interval.toMillis.toInt,
           name = name
         ),
-        req
+        header
       )
 
   type ResponseSync = Either[HttpResponseStatus, Endpoint]

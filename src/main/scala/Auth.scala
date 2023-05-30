@@ -10,7 +10,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   import Auth.*
   import Mongo.given
 
-  def apply(req: RequestHeader): Future[Option[User.Id]] =
+  def apply(req: RequestHeader): Future[Option[Result]] =
     if (req.flag contains Flag.api) Future successful None
     else
       sessionIdFromReq(req) match
@@ -26,21 +26,23 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       case sidRegex(id) => Some(id)
       case _            => None
 
-  private def sessionAuth(sid: String): Future[Option[User.Id]] =
-    mongo.security {
-      _.find(
-        BSONDocument("_id" -> sid, "up" -> true),
-        Some(BSONDocument("_id" -> false, "user" -> true))
-      ).one[BSONDocument]
-    } map {
-      _ flatMap { _.getAsOpt[User.Id]("user") }
-    } map:
-      _ map { user =>
-        Impersonations
-          .get(user) getOrElse:
-            seenAt(user)
-            user
-      }
+  private def sessionAuth(sid: String): Future[Option[Result.Cookie]] =
+    mongo
+      .security:
+        _.find(
+          BSONDocument("_id" -> sid, "up" -> true),
+          Some(BSONDocument("_id" -> false, "user" -> true))
+        ).one[BSONDocument]
+      .map:
+        _ flatMap { _.getAsOpt[User.Id]("user") }
+      .map:
+        _.map: user =>
+          Result.Cookie:
+            Impersonations
+              .get(user)
+              .getOrElse:
+                seenAt(user)
+                user
 
   private val cookieName = config.getString("cookie.name")
 
@@ -56,15 +58,16 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       else None
     }
 
-  private def bearerAuth(bearer: Bearer): Future[Option[User.Id]] =
+  private def bearerAuth(bearer: Bearer): Future[Option[Result]] =
     mongo.oauthColl
-      .flatMap {
+      .flatMap:
         _.find(
           BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:mobile"),
           Some(BSONDocument("_id" -> false, "userId" -> true))
         ).one[BSONDocument]
-      } map:
-        _ flatMap { _.getAsOpt[User.Id]("userId") }
+      .map:
+        _.flatMap:
+          _.getAsOpt[User.Id]("userId").map(Result.OAuth(_))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req cookie cookieName flatMap {
@@ -79,6 +82,10 @@ object Auth:
   private val sidKey         = "sid"
   private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
   private val appealPrefix   = "appeal:"
+
+  enum Result(val user: User.Id):
+    case Cookie(u: User.Id) extends Result(u)
+    case OAuth(u: User.Id)  extends Result(u)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]

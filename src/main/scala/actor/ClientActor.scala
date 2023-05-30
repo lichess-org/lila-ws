@@ -155,13 +155,13 @@ object ClientActor:
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
-  def Req(req: util.RequestHeader, sri: Sri, user: Option[User.Id]): Req =
+  def Req(header: util.RequestHeader, sri: Sri, auth: Option[Auth.Result]): Req =
     Req(
-      name = req.name,
-      ip = req.ip,
+      name = header.name,
+      ip = header.ip,
       sri = sri,
-      user = user,
-      flag = req.flag
+      auth = auth,
+      flag = header.flag
     )
 
   case class Req(
@@ -169,8 +169,12 @@ object ClientActor:
       ip: Option[IpAddress],
       sri: Sri,
       flag: Option[Flag],
-      user: Option[User.Id]
+      auth: Option[Auth.Result]
   ):
+    def user: Option[User.Id] = auth.map(_.user)
+    def isOauth = auth.exists:
+      case Auth.Result.OAuth(_) => true
+      case _                    => false
     override def toString = s"${user.fold("Anon")(_.value)} $name"
 
   case class Deps(
