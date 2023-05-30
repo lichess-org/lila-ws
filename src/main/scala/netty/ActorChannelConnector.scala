@@ -17,12 +17,12 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
     clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), clientPromise)
-    channel.closeFuture.addListener(new GenericFutureListener[NettyFuture[Void]] {
-      def operationComplete(f: NettyFuture[Void]): Unit =
-        channel.attr(key.client).get foreach { client =>
-          clients ! Clients.Control.Stop(client)
-        }
-    })
+    channel.closeFuture.addListener:
+      new GenericFutureListener[NettyFuture[Void]]:
+        def operationComplete(f: NettyFuture[Void]): Unit =
+          channel.attr(key.client).get foreach { client =>
+            clients ! Clients.Control.Stop(client)
+          }
 
   def switch(client: Client, endpoint: Endpoint, channel: Channel)(uri: RequestUri) =
     val newHeader = endpoint.header.switch(uri)
@@ -45,4 +45,4 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
     case ipc.ClientIn.RoundPingFrameNoFlush =>
       channel.write { PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis()) }
     case in =>
-      channel.writeAndFlush { TextWebSocketFrame(in.write) }
+      channel.writeAndFlush(TextWebSocketFrame(in.write))

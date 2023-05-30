@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import ipc.*
 import chess.Centis
+import play.api.libs.json.JsObject
 
 object RoundClientActor:
 
@@ -34,7 +35,7 @@ object RoundClientActor:
       roomState: RoomActor.State,
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
-      fromVersion: Option[SocketVersion]
+      from: Either[Option[SocketVersion], JsonString]
   )(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup { ctx =>
       import deps.*
@@ -43,9 +44,12 @@ object RoundClientActor:
       req.user foreach { users.connect(_, ctx.self) }
       state.busChans foreach { Bus.subscribe(_, ctx.self) }
       roundCrowd.connect(roomState.room, req.user, player.map(_.color))
-      History.round.getFrom(roomState.room.into(Game.Id), fromVersion) match
-        case None         => clientIn(ClientIn.Resync)
-        case Some(events) => events map { versionFor(state, _) } foreach clientIn
+      from match
+        case Left(version) =>
+          History.round.getFrom(roomState.room.into(Game.Id), version) match
+            case None         => clientIn(ClientIn.Resync)
+            case Some(events) => events map { versionFor(state, _) } foreach clientIn
+        case Right(gameState) => clientIn(ClientIn.Payload(gameState))
       apply(state, deps)
     }
 
