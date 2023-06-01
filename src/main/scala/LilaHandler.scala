@@ -142,6 +142,7 @@ final class LilaHandler(
     case GameFinish(gameId, winner, users) =>
       users foreach friendList.stopPlaying
       Fens.finish(gameId, winner)
+    case LilaResponse(reqId, body) => LilaRequest.onResponse(reqId, body)
     case Pong(pingAt) =>
       val millis = Monitor.ping.record("round", pingAt)
       lila.emit.round(LilaIn.RoundLatency(millis))

@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ Behavior, PostStop }
 import ipc.*
 import chess.Centis
-import play.api.libs.json.JsObject
 
 object RoundClientActor:
 

@@ -169,6 +169,7 @@ object ClientActor:
     def isOauth = auth.exists:
       case Auth.Result.OAuth(_) => true
       case _                    => false
+    inline def isMobile   = isOauth
     override def toString = s"${user.fold("Anon")(_.value)} $name"
 
   case class Deps(

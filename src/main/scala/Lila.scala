@@ -91,9 +91,8 @@ final class Lila(config: Config)(using Executor):
         case s: SingleLaneChan => connectAndSubscribe(s.out, s.out) map { _ => emit }
         case r: RoundRobinChan =>
           connectAndSubscribe(r.out, r.out) zip Future.sequence:
-            (0 to r.parallelism).map { index =>
+            (0 to r.parallelism).map: index =>
               connectAndSubscribe(s"${r.out}:$index", r.out)
-            }
       .map: _ =>
         val msg = LilaIn.WsBoot.write
         connIn.async.publish(chan in msg, msg)
@@ -101,19 +100,20 @@ final class Lila(config: Config)(using Executor):
 
   private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] =
     val connOut = redis.connectPubSub
-    connOut.addListener(new RedisPubSubAdapter[String, String] {
-      override def message(_chan: String, msg: String): Unit = {
-        Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
-        LilaOut read msg match
-          case Some(out) => handlers(handlerName)(out)
-          case None      => logger.warn(s"Can't parse $msg on $chanName")
-      }
-    })
+    connOut.addListener(
+      new RedisPubSubAdapter[String, String]:
+        override def message(_chan: String, msg: String): Unit =
+          Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
+          LilaOut read msg match
+            case Some(out) => handlers(handlerName)(out)
+            case None      => logger.warn(s"Can't parse $msg on $chanName")
+    )
     val promise = Promise[Unit]()
 
-    connOut.async.subscribe(chanName) thenRun { () =>
-      promise success ()
-    }
+    connOut.async
+      .subscribe(chanName)
+      .thenRun: () =>
+        promise success ()
 
     promise.future
 

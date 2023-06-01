@@ -31,6 +31,7 @@ object LilaOut:
   case class Follow(left: User.Id, right: User.Id)                 extends SiteOut
   case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
   case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
+  case class LilaResponse(reqId: Int, body: String)                extends SiteOut with RoundOut
 
   // lobby
 
@@ -256,6 +257,12 @@ object LilaOut:
               JsonString(payload)
             )
           }
+        }
+
+      case "req/response" =>
+        get(args, 2) { case Array(reqId, body) =>
+          reqId.toIntOption.map:
+            LilaResponse(_, body)
         }
 
       case "tour/get/waiting" =>

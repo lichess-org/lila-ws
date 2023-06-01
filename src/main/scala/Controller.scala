@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 import util.RequestHeader
 import ClientActor.{ Deps, Req }
+import cats.syntax.option.*
 
 final class Controller(
     config: Config,
@@ -96,14 +97,21 @@ final class Controller(
 
   def roundWatch(id: Game.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo.gameExists(id) zip mongo.troll.is(req.user) map:
-        case (true, isTroll) =>
+      val fromFu: Future[Either[Option[SocketVersion], JsonString]] =
+        if req.isMobile then
+          LilaRequest[JsonString](
+            reqId => services.lila.round(ipc.LilaIn.RoundGetWatcher(reqId, id, chess.White)),
+            JsonString(_)
+          ).map(Right(_))
+        else Future.successful(Left(fromVersion(header)))
+      mongo.gameExists(id) zip mongo.troll.is(req.user) zip fromFu map:
+        case ((true, isTroll), from) =>
           val userTv = UserTv.from(header queryParameter "userTv")
           endpoint(
             name = "round/watch",
             behavior = emit =>
               RoundClientActor
-                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, fromVersion(header)):
+                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
                   Deps(emit, req, services)
             ,
             header,
@@ -116,6 +124,7 @@ final class Controller(
     WebSocket(header): req =>
       mongo.player(id, req.user) zip mongo.troll.is(req.user) map:
         case (Some(player), isTroll) =>
+          val from = None.toRight(fromVersion(header))
           endpoint(
             name = "round/play",
             behavior = emit =>
@@ -123,7 +132,7 @@ final class Controller(
                 RoomActor.State(RoomId.ofPlayer(id), isTroll),
                 Some(player),
                 None,
-                fromVersion(header)
+                from
               ) { Deps(emit, req, services) },
             header,
             credits = 100,
