@@ -100,7 +100,7 @@ final class Controller(
       LilaRequest[JsonString](
         reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
         JsonString(_)
-      ).map(Right(_))
+      ).map(Right(_))(parasitic)
     else Future.successful(Left(fromVersion(req.header)))
 
   def roundWatch(id: Game.Id, header: RequestHeader) =

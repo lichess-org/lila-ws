@@ -29,12 +29,12 @@ final private class ActorChannelConnector(router: Router, clients: ActorRef[Clie
       case Left(status) => client ! ClientIn.SwitchResponse(uri, status.code)
       case Right(newEndpoint) =>
         val clientPromise = Promise[Client]()
-        val behavior      = newEndpoint.behavior(emitToChannel(channel))
+        val emitter       = emitToChannel(channel)
+        val behavior      = newEndpoint.behavior(emitter)
         clients ! Clients.Control.Switch(client, behavior, clientPromise)
-        clientPromise.future.foreach:
-          _ ! ClientIn.SwitchResponse(uri, 200)
         channel.attr(key.endpoint).set(newEndpoint)
         channel.attr(key.client).set(clientPromise.future)
+        emitter(ClientIn.SwitchResponse(uri, 200))
 
   private def emitToChannel(channel: Channel): ClientEmit =
     case ipc.ClientIn.Disconnect =>
