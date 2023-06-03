@@ -12,9 +12,8 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
     .expireAfterWrite(1 hour)
     .build[User.Id, TrustedMillis]()
 
-  private val clientReports = groupedWithin[(User.Id, Int)](128, 947.millis) { lags =>
+  private val clientReports = groupedWithin[(User.Id, Int)](128, 947.millis): lags =>
     lilaRedis.emit.site(LilaIn.Lags(lags.toMap))
-  }
 
   def sessionLag(userId: User.Id) = trustedStats getIfPresent userId
 
@@ -22,12 +21,10 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
 
   def recordTrustedLag(millis: Int, userId: Option[User.Id]) =
     Monitor.lag.roundFrameLag(millis)
-    userId foreach { uid =>
+    userId.foreach: uid =>
       trustedStats.put(
         uid,
         sessionLag(uid)
-          .fold(millis) { prev =>
+          .fold(millis): prev =>
             (prev * (1 - trustedRefreshFactor) + millis * trustedRefreshFactor).toInt
-          }
       )
-    }
