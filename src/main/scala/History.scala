@@ -18,7 +18,7 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
   def getFrom(key: K, versionOpt: Option[SocketVersion]): Option[List[V]] =
     val allEvents = histories.getOrDefault(key.toString, Nil)
     versionOpt
-      .fold(Option(allEvents.take(5))) { since =>
+      .fold(Option(allEvents.take(5))): since =>
         if allEvents.headOption.fold(true)(_.version.value <= since.value)
         then Some(Nil)
         else
@@ -26,7 +26,6 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
           if events.sizeIs == events.headOption.fold(0)(_.version.value) - since.value
           then Some(events)
           else None
-      }
       .map(_.reverse)
 
   def stop(key: K) = histories.remove(key.toString)
@@ -37,9 +36,9 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
   def allVersions: Array[(String, SocketVersion)] =
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
-    histories.forEach { (key, events) =>
+    histories.forEach: (key, events) =>
       events.headOption foreach { event => res += (key -> event.version) }
-    }
+
     res.toArray
 
 object History:

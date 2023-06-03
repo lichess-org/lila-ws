@@ -21,17 +21,17 @@ final class FriendList(
     graph
       .followed(userId)
       .flatMap: entries =>
-        Future.sequence {
-          entries.collect:
-            case u if u.meta.online =>
-              userDatas
-                .get(u.id)
-                .map {
-                  _ map { UserView(u.id, _, u.meta) }
-                }(parasitic)
-        } map { views =>
-          emit(Onlines(views.flatten))
-        }
+        Future
+          .sequence:
+            entries.collect:
+              case u if u.meta.online =>
+                userDatas
+                  .get(u.id)
+                  .map {
+                    _ map { UserView(u.id, _, u.meta) }
+                  }(parasitic)
+          .map: views =>
+            emit(Onlines(views.flatten))
 
   export graph.{ follow, unfollow as unFollow }
 
@@ -61,10 +61,11 @@ final class FriendList(
     graph.tell(userId, update) foreach { (subject, subs) =>
       if (subs.nonEmpty)
         userDatas
-          .get(subject.id) foreach:
-            _ foreach { data =>
+          .get(subject.id)
+          .foreach:
+            _.foreach: data =>
               users.tellMany(subs, msg(UserView(subject.id, data, subject.meta)))
-            }
+
     }
 
   Bus.internal.subscribe(
