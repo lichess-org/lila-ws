@@ -10,7 +10,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   import Auth.*
   import Mongo.given
 
-  def apply(req: RequestHeader): Future[Option[Result]] =
+  def apply(req: RequestHeader): Future[Option[Success]] =
     if (req.flag contains Flag.api) Future successful None
     else
       sessionIdFromReq(req) match
@@ -26,7 +26,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       case sidRegex(id) => Some(id)
       case _            => None
 
-  private def sessionAuth(sid: String): Future[Option[Result.Cookie]] =
+  private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
       .security:
         _.find(
@@ -37,7 +37,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         _ flatMap { _.getAsOpt[User.Id]("user") }
       .map:
         _.map: user =>
-          Result.Cookie:
+          Success.Cookie:
             Impersonations
               .get(user)
               .getOrElse:
@@ -58,7 +58,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       else None
     }
 
-  private def bearerAuth(bearer: Bearer): Future[Option[Result]] =
+  private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
     mongo.oauthColl
       .flatMap:
         _.find(
@@ -67,7 +67,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         ).one[BSONDocument]
       .map:
         _.flatMap:
-          _.getAsOpt[User.Id]("userId").map(Result.OAuth(_))
+          _.getAsOpt[User.Id]("userId").map(Success.OAuth(_))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req cookie cookieName flatMap {
@@ -83,9 +83,9 @@ object Auth:
   private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
   private val appealPrefix   = "appeal:"
 
-  enum Result(val user: User.Id):
-    case Cookie(u: User.Id) extends Result(u)
-    case OAuth(u: User.Id)  extends Result(u)
+  enum Success(val user: User.Id):
+    case Cookie(u: User.Id) extends Success(u)
+    case OAuth(u: User.Id)  extends Success(u)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]
