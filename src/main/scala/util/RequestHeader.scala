@@ -41,3 +41,5 @@ final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
   def ip: Option[IpAddress] = IpAddress from header("X-Forwarded-For")
 
   def name: String = s"$uri UA: $userAgent"
+
+  override def toString = s"$name origin: $origin"

@@ -193,6 +193,8 @@ object ClientIn:
     val write = "" // not actually sent
   def roundTourStanding(data: JsonString) = payload("tourStanding", data)
 
+  def roundFull(data: JsonString) = payload("full", data)
+
   case class Palantir(userIds: Iterable[User.Id]) extends ClientIn:
     def write = cliMsg("palantir", userIds)
 
