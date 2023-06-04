@@ -145,7 +145,7 @@ object Lila:
     object team      extends SingleLaneChan("team")
     object swiss     extends SingleLaneChan("swiss")
     object study     extends SingleLaneChan("study")
-    object round     extends RoundRobinChan("r", 8)
+    object round     extends RoundRobinChan("r", 16)
     object challenge extends SingleLaneChan("chal")
     object racer     extends SingleLaneChan("racer")
 
