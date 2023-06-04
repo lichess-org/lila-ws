@@ -155,20 +155,20 @@ object ClientActor:
   private def busChansOf(req: Req) =
     Bus.channel.all :: Bus.channel.sri(req.sri) :: req.flag.map(Bus.channel.flag).toList
 
-  def Req(header: util.RequestHeader, sri: Sri, auth: Option[Auth.Result]): Req =
+  def Req(header: util.RequestHeader, sri: Sri, auth: Option[Auth.Success]): Req =
     Req(header, sri, auth, header.flag)
 
   case class Req(
       header: util.RequestHeader,
       sri: Sri,
-      auth: Option[Auth.Result],
+      auth: Option[Auth.Success],
       flag: Option[Flag]
   ):
     export header.{ ip, name }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
-      case Auth.Result.OAuth(_) => true
-      case _                    => false
+      case Auth.Success.OAuth(_) => true
+      case _                     => false
     inline def isMobile   = isOauth
     override def toString = s"${user.fold("Anon")(_.value)} $name"
 

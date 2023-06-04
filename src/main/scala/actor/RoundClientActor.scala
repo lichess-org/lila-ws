@@ -48,7 +48,7 @@ object RoundClientActor:
           History.round.getFrom(roomState.room.into(Game.Id), version) match
             case None         => clientIn(ClientIn.Resync)
             case Some(events) => events map { versionFor(state, _) } foreach clientIn
-        case Right(gameState) => clientIn(ClientIn.Payload(gameState))
+        case Right(gameState) => clientIn(ClientIn.roundFull(gameState))
       apply(state, deps)
     }
 
@@ -75,7 +75,6 @@ object RoundClientActor:
 
           case ClientOut.RoundPongFrame(lagMillis) =>
             services.lag.recordTrustedLag(lagMillis, req.user)
-
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>

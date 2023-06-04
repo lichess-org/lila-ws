@@ -34,14 +34,13 @@ final class RoundCrowd(
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
     rounds.compute(
       roomId,
-      (_, cur) => {
+      (_, cur) =>
         Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
           case None => cur
           case Some(round) =>
             publish(roomId, round)
             if (round.isEmpty) null else round
         }
-      }
     )
 
   def getUsers(roomId: RoomId): Set[User.Id] =

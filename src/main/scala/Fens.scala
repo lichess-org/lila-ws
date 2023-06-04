@@ -15,7 +15,7 @@ object Fens:
 
   // client starts watching
   def watch(gameIds: Iterable[Game.Id], client: Client): Unit =
-    gameIds foreach { gameId =>
+    gameIds.foreach: gameId =>
       games
         .compute(
           gameId,
@@ -27,7 +27,6 @@ object Fens:
         .position
         .foreach: p =>
           client ! ClientIn.Fen(gameId, p)
-    }
 
   // when a client disconnects
   def unwatch(gameIds: Iterable[Game.Id], client: Client): Unit =
@@ -44,10 +43,9 @@ object Fens:
   def finish(gameId: Game.Id, winner: Option[Color]) =
     games.computeIfPresent(
       gameId,
-      (_, watched) => {
+      (_, watched) =>
         watched.clients foreach { _ ! ClientIn.Finish(gameId, winner) }
         null
-      }
     )
 
   // move coming from the server
