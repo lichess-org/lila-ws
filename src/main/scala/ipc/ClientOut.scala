@@ -136,7 +136,7 @@ object ClientOut:
   // impl
 
   def parse(str: String): Try[ClientOut] =
-    if (str == "null" || str == """{"t":"p"}""") emptyPing
+    if (str == "p" || str == "null" || str == """{"t":"p"}""") emptyPing
     else
       Try(Json parse str) map:
         case o: JsObject =>
