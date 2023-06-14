@@ -24,21 +24,22 @@ final private class FrameHandler(connector: ActorChannelConnector)(using Executo
     anyFrame match
       case frame: TextWebSocketFrame =>
         val txt = frame.text
-        if (txt.nonEmpty)
+        if txt.nonEmpty then
           val endpoint = ctx.channel.attr(key.endpoint).get
-          if (endpoint == null || endpoint.rateLimit(txt)) ClientOut parse txt foreach:
+          if endpoint == null || endpoint.rateLimit(txt) then
+            ClientOut parse txt foreach:
 
-            case ClientOut.Switch(uri) if endpoint != null =>
-              withClientOf(ctx.channel) { connector.switch(_, endpoint, ctx.channel)(uri) }
+              case ClientOut.Switch(uri) if endpoint != null =>
+                withClientOf(ctx.channel) { connector.switch(_, endpoint, ctx.channel)(uri) }
 
-            case ClientOut.Unexpected(msg) =>
-              Monitor.clientOutUnexpected.increment()
-              logger.info(s"Unexpected $msg")
+              case ClientOut.Unexpected(msg) =>
+                Monitor.clientOutUnexpected.increment()
+                logger.info(s"Unexpected $msg")
 
-            case ClientOut.WrongHole =>
-              Monitor.clientOutWrongHole.increment()
+              case ClientOut.WrongHole =>
+                Monitor.clientOutWrongHole.increment()
 
-            case out => withClientOf(ctx.channel)(_ tell out)
+              case out => withClientOf(ctx.channel)(_ tell out)
       case frame: PongWebSocketFrame =>
         val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
         val pong      = ClientOut.RoundPongFrame(lagMillis)

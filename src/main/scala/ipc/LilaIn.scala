@@ -46,7 +46,7 @@ object LilaIn:
     def write = s"notified/batch ${commas(userIds)}"
 
   case class Lags(value: Map[User.Id, Int]) extends Site:
-    def write = s"lags ${commas(value.map { case (user, lag) => s"$user:$lag" })}"
+    def write = s"lags ${commas(value.map { (user, lag) => s"$user:$lag" })}"
 
   case class ConnectUser(user: User.Id, silently: Boolean) extends Site:
     def write = s"connect/user ${user.value}"
