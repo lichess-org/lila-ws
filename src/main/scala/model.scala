@@ -34,6 +34,9 @@ object Game:
       def gameId   = Game.Id(fullId.value take 8)
       def playerId = PlayerId(fullId.value drop 8)
 
+  opaque type IdOrFullId = String
+  object IdOrFullId extends OpaqueString[IdOrFullId]
+
   opaque type PlayerId = String
   object PlayerId extends OpaqueString[PlayerId]
 
