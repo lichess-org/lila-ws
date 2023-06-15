@@ -95,7 +95,7 @@ final class Controller(
           )
         case _ => notFound
 
-  private def roundFrom(id: Game.IdOrFullId, req: Req): Future[Either[Option[SocketVersion], JsonString]] =
+  private def roundFrom(id: Game.AnyId, req: Req): Future[Either[Option[SocketVersion], JsonString]] =
     if req.isMobile then
       LilaRequest[JsonString](
         reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
@@ -105,7 +105,7 @@ final class Controller(
 
   def roundWatch(id: Game.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo.gameExists(id) zip mongo.troll.is(req.user) zip roundFrom(id into Game.IdOrFullId, req) map:
+      mongo.gameExists(id) zip mongo.troll.is(req.user) zip roundFrom(id into Game.AnyId, req) map:
         case ((true, isTroll), from) =>
           val userTv = UserTv.from(header queryParameter "userTv")
           endpoint(
@@ -123,7 +123,7 @@ final class Controller(
 
   def roundPlay(id: Game.FullId, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo.player(id, req.user) zip mongo.troll.is(req.user) zip roundFrom(id into Game.IdOrFullId, req) map:
+      mongo.player(id, req.user) zip mongo.troll.is(req.user) zip roundFrom(id into Game.AnyId, req) map:
         case ((Some(player), isTroll), from) =>
           endpoint(
             name = "round/play",

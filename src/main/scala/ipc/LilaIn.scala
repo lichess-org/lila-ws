@@ -136,7 +136,7 @@ object LilaIn:
   case class RoundLatency(millis: Int) extends Round:
     def write = s"r/latency $millis"
 
-  case class RoundGet(reqId: Int, gameId: Game.IdOrFullId) extends Round:
+  case class RoundGet(reqId: Int, gameId: Game.AnyId) extends Round:
     def write = s"r/get $reqId $gameId"
 
   case class ChallengePings(ids: Iterable[RoomId]) extends Challenge:
