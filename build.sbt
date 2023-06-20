@@ -9,7 +9,7 @@ resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snap
 
 val akkaVersion  = "2.6.20"
 val kamonVersion = "2.6.1"
-val nettyVersion = "4.1.93.Final"
+val nettyVersion = "4.1.94.Final"
 
 val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
