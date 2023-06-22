@@ -74,16 +74,15 @@ final class Lila(config: Config)(using Executor):
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
       val chanIn = chan in msg
-      if (currentStatus.isOnline)
+      if currentStatus.isOnline then
         connIn.async.publish(chanIn, msg)
         Monitor.redis.in(chanIn, path)
-      else if (in.critical)
+      else if in.critical then
         buffer.enqueue(chanIn, msg)
         Monitor.redis.queue(chanIn, path)
-      else if (in.isInstanceOf[LilaIn.RoomSetVersions])
-        connIn.async.publish(chanIn, msg)
-      else
-        Monitor.redis.drop(chanIn, path)
+      else if in.isInstanceOf[LilaIn.RoomSetVersions]
+      then connIn.async.publish(chanIn, msg)
+      else Monitor.redis.drop(chanIn, path)
     }
 
     chan

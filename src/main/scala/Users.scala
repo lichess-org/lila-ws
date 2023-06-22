@@ -13,17 +13,16 @@ final class Users(using scheduler: Scheduler, ec: Executor):
 
   private def publish(msg: Matchable) = Bus.internal.publish("users", msg)
 
-  scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds) { () =>
+  scheduler.scheduleWithFixedDelay(7.seconds, 5.seconds): () =>
     publish(LilaIn.DisconnectUsers(disconnects.iterator.asScala.toSet))
     disconnects.clear()
-  }
 
   def connect(user: User.Id, client: Client, silently: Boolean = false): Unit =
     users.compute(
       user,
       {
         case (_, null) =>
-          if (!disconnects.remove(user)) publish(LilaIn.ConnectUser(user, silently))
+          if !disconnects.remove(user) then publish(LilaIn.ConnectUser(user, silently))
           Set(client)
         case (_, clients) =>
           clients + client
