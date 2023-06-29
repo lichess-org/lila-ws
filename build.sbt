@@ -8,7 +8,7 @@ lazy val `lila-ws` = (project in file("."))
 resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
 
 val akkaVersion  = "2.6.20"
-val kamonVersion = "2.6.1"
+val kamonVersion = "2.6.3"
 val nettyVersion = "4.1.94.Final"
 
 val os = sys.props.get("os.name") match {
