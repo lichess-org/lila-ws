@@ -117,8 +117,7 @@ object Chess:
 
     given OWrites[Crazyhouse.Pocket] = OWrites: v =>
       JsObject:
-        v.values.map: (role, count) =>
-          role.name -> JsNumber(count)
+        v.map((role, count) => role.name -> JsNumber(count))
 
     given OWrites[chess.variant.Crazyhouse.Data] = OWrites: v =>
-      Json.obj("pockets" -> List(v.pockets.white, v.pockets.black))
+      Json.obj("pockets" -> v.pockets.all)

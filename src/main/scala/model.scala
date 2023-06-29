@@ -46,8 +46,8 @@ object Game:
   // because it's cached in Mongo.scala
   case class Round(id: Game.Id, players: ByColor[Player], ext: Option[RoundExt]):
     def player(id: PlayerId, userId: Option[User.Id]): Option[RoundPlayer] =
-      Color.all.collectFirst:
-        case c if players(c).id == id && players(c).userId == userId => RoundPlayer(id, c, ext)
+      players.zipColor.collect:
+        case (c, p) if p.id == id && p.userId == userId => RoundPlayer(id, c, ext)
 
   case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
     def tourId    = ext collect { case RoundExt.InTour(id) => id }
