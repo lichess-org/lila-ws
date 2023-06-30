@@ -30,9 +30,8 @@ object Game:
 
   opaque type FullId = String
   object FullId extends OpaqueString[FullId]:
-    extension (fullId: FullId)
-      def gameId   = Game.Id(fullId.value take 8)
-      def playerId = PlayerId(fullId.value drop 8)
+    extension (fullId: FullId) def gameId = Game.Id(fullId.value take 8)
+    def playerId                          = PlayerId(fullId.value drop 8)
 
   opaque type AnyId = String
   object AnyId extends OpaqueString[AnyId]
