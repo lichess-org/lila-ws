@@ -70,7 +70,7 @@ final class RoundCrowd(
 object RoundCrowd:
 
   case class Output(room: RoomCrowd.Output, players: ByColor[Int]):
-    def isEmpty = room.members == 0 && players.white == 0 && players.black == 0
+    def isEmpty = room.members == 0 && players.forall(_ == 0)
 
   def outputOf(roomId: RoomId, round: RoundState) =
     Output(
