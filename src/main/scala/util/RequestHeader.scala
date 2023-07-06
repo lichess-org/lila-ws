@@ -34,6 +34,8 @@ final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
 
   def userAgent: String = header(HttpHeaderNames.USER_AGENT) getOrElse ""
 
+  def isLichessMobile: Boolean = userAgent.contains("Lichess Mobile/")
+
   def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
 
   def flag: Option[Flag] = queryParameter("flag") flatMap Flag.make

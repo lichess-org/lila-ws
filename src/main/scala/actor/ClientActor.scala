@@ -164,12 +164,11 @@ object ClientActor:
       auth: Option[Auth.Success],
       flag: Option[Flag]
   ):
-    export header.{ ip, name }
+    export header.{ ip, isLichessMobile, name }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
       case Auth.Success.OAuth(_) => true
       case _                     => false
-    inline def isMobile   = isOauth
     override def toString = s"${user.fold("Anon")(_.value)} $name"
 
   case class Deps(

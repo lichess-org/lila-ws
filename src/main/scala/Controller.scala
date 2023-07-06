@@ -96,7 +96,7 @@ final class Controller(
         case _ => notFound
 
   private def roundFrom(id: Game.AnyId, req: Req): Future[Either[Option[SocketVersion], JsonString]] =
-    if req.isMobile then
+    if req.isLichessMobile then
       LilaRequest[JsonString](
         reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
         JsonString(_)
