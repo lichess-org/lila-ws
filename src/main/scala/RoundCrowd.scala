@@ -52,18 +52,15 @@ final class RoundCrowd(
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
 
-  private val outputBatch = groupedWithin[Output](512, 700.millis) { outputs =>
+  private val outputBatch = groupedWithin[Output](512, 700.millis): outputs =>
     val aggregated = outputs
-      .foldLeft(Map.empty[RoomId, Output]) { case (crowds, crowd) =>
+      .foldLeft(Map.empty[RoomId, Output]): (crowds, crowd) =>
         crowds.updated(crowd.room.roomId, crowd)
-      }
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
-    aggregated foreach { output =>
+    aggregated.foreach: output =>
       json round output foreach:
         Bus.publish(_ room output.room.roomId, _)
-    }
-  }
 
   def size = rounds.size
 
@@ -72,11 +69,10 @@ object RoundCrowd:
   case class Output(room: RoomCrowd.Output, players: ByColor[Int]):
     def isEmpty = room.members == 0 && players.forall(_ == 0)
 
-  def outputOf(roomId: RoomId, round: RoundState) =
-    Output(
-      room = RoomCrowd.outputOf(roomId, round.room),
-      players = round.players
-    )
+  def outputOf(roomId: RoomId, round: RoundState) = Output(
+    room = RoomCrowd.outputOf(roomId, round.room),
+    players = round.players
+  )
 
   case class RoundState(
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
