@@ -20,16 +20,14 @@ final class ExpireCallbackMemo[K](
 
   def put(key: K): Unit = timeouts.compute(
     key,
-    (_, canc) => {
+    (_, canc) =>
       Option(canc).foreach(_.cancel())
       scheduler.scheduleOnce(
         ttl,
-        () => {
+        () =>
           remove(key)
           callback(key)
-        }
       )
-    }
   )
 
   // does not call the expiration callback

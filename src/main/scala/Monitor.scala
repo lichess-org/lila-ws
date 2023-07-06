@@ -26,7 +26,7 @@ final class Monitor(
     logger.info(s"lila-ws 3.0 netty native=$native kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
-    if (useKamon) kamon.Kamon.init()
+    if useKamon then kamon.Kamon.init()
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
 
@@ -134,7 +134,7 @@ object Monitor:
     private val frameLagHistogram = Kamon.timer("round.lag.frame").withoutTags()
 
     def roundFrameLag(millis: Int) =
-      if (millis > 1 && millis < 99999) frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
+      if millis > 1 && millis < 99999 then frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()
@@ -145,7 +145,7 @@ object Monitor:
   object evalCache:
     private val r = Kamon.counter("evalCache.request")
     def request(ply: Int, isHit: Boolean) =
-      r.withTags(TagSet.from(Map("ply" -> (if (ply < 15) ply.toString else "15+"), "hit" -> isHit)))
+      r.withTags(TagSet.from(Map("ply" -> (if ply < 15 then ply.toString else "15+"), "hit" -> isHit)))
     object upgrade:
       val count     = Kamon.counter("evalCache.upgrade.count").withoutTags()
       val members   = Kamon.gauge("evalCache.upgrade.members").withoutTags()

@@ -17,9 +17,10 @@ object EvalCacheBsonHandlers:
   given BSONHandler[NonEmptyList[Pv]] = new:
     private def scoreWrite(s: Score): String = s.value.fold(_.value.toString, m => s"#${m.value}")
     private def scoreRead(str: String): Option[Score] =
-      if (str startsWith "#") str.drop(1).toIntOption map { m =>
-        Score mate Mate(m)
-      }
+      if str startsWith "#" then
+        str.drop(1).toIntOption map { m =>
+          Score mate Mate(m)
+        }
       else
         str.toIntOption map { c =>
           Score cp Cp(c)
@@ -66,7 +67,7 @@ object EvalCacheBsonHandlers:
 
   given BSONHandler[Id] = tryHandler[Id](
     { case BSONString(value) =>
-      value split ':' match {
+      value split ':' match
         case Array(fen) => Success(Id(chess.variant.Standard, SmallFen(fen)))
         case Array(variantId, fen) =>
           import chess.variant.Variant
@@ -79,11 +80,10 @@ object EvalCacheBsonHandlers:
             )
           )
         case _ => handlerBadValue(s"Invalid evalcache id $value")
-      }
     },
     x =>
       BSONString {
-        if (x.variant.standard || x.variant.fromPosition) x.smallFen.value
+        if x.variant.standard || x.variant.fromPosition then x.smallFen.value
         else s"${x.variant.id}:${x.smallFen.value}"
       }
   )

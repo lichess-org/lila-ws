@@ -14,7 +14,7 @@ final class Lila(config: Config)(using Executor):
 
   object currentStatus:
     private var value: Status = Status.Online
-    def setOffline()          = { value = Status.Offline }
+    def setOffline()          = value = Status.Offline
     def setOnline() =
       value = Status.Online
       buffer.flush()
@@ -30,7 +30,7 @@ final class Lila(config: Config)(using Executor):
     @annotation.tailrec
     def flush(): Unit =
       val next = queue.poll()
-      if (next != null)
+      if next != null then
         connIn.async.publish(next.chan, next.msg)
         flush()
 
@@ -70,7 +70,7 @@ final class Lila(config: Config)(using Executor):
 
     val connIn = redis.connectPubSub
 
-    val emit: Emit[In] = in => {
+    val emit: Emit[In] = in =>
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
       val chanIn = chan in msg
@@ -83,7 +83,6 @@ final class Lila(config: Config)(using Executor):
       else if in.isInstanceOf[LilaIn.RoomSetVersions]
       then connIn.async.publish(chanIn, msg)
       else Monitor.redis.drop(chanIn, path)
-    }
 
     chan
       .match

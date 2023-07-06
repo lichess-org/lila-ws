@@ -12,19 +12,16 @@ final class EventBus[Event, Channel, Subscriber](
   def subscribe(channel: Channel, subscriber: Subscriber): Unit =
     entries.compute(
       channel,
-      (_, subs) => {
-        Option(subs).fold(Set(subscriber))(_ + subscriber)
-      }
+      (_, subs) => Option(subs).fold(Set(subscriber))(_ + subscriber)
     )
 
   def unsubscribe(channel: Channel, subscriber: Subscriber): Unit =
     entries.computeIfPresent(
       channel,
-      (_, subs) => {
+      (_, subs) =>
         val newSubs = subs - subscriber
-        if (newSubs.isEmpty) null
+        if newSubs.isEmpty then null
         else newSubs
-      }
     )
 
   def publish(channel: Channel, event: Event): Unit =

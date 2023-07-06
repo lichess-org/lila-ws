@@ -23,7 +23,7 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
     }
 
   private def computeTrust(user: BSONDocument): Trust =
-    if (user.getAsOpt[List[String]]("marks").exists(_.nonEmpty)) Trust(-9999)
+    if user.getAsOpt[List[String]]("marks").exists(_.nonEmpty) then Trust(-9999)
     else
       Trust:
         seniorityBonus(user) +

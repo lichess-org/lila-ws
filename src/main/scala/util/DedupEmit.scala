@@ -13,7 +13,7 @@ final class DedupEmit[A](interval: FiniteDuration)(emit: Emit[A])(using
   private var seen = Set.empty[A]
 
   def apply(a: A): Unit =
-    if (!seen(a))
+    if !seen(a) then
       seen = seen + a
       emit(a)
 

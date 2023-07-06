@@ -38,11 +38,11 @@ object LobbyClientActor:
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientIn.LobbyNonIdle(payload) =>
-            if (!state.idle) clientIn(payload)
+            if !state.idle then clientIn(payload)
             Behaviors.same
 
           case ClientIn.OnlyFor(endpoint, payload) =>
-            if (endpoint == ClientIn.OnlyFor.Endpoint.Lobby) clientIn(payload)
+            if endpoint == ClientIn.OnlyFor.Endpoint.Lobby then clientIn(payload)
             Behaviors.same
 
           case in: ClientIn =>
@@ -55,10 +55,9 @@ object LobbyClientActor:
             apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
           case ClientOut.LobbyJoin(payload) =>
-            if (
-              deps.req.user.isDefined ||
+            if deps.req.user.isDefined ||
               deps.req.ip.exists(ip => deps.services.lobby.anonJoinByIpRateLimit(ip.value))
-            ) forward(payload)
+            then forward(payload)
             Behaviors.same
 
           case ClientOut.LobbyForward(payload) =>
@@ -72,7 +71,7 @@ object LobbyClientActor:
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
-            if (siteState == state.site) Behaviors.same
+            if siteState == state.site then Behaviors.same
             else apply(state.copy(site = siteState), deps)
 
           case _ =>

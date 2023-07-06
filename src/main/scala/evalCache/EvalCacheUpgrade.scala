@@ -45,7 +45,7 @@ final private class EvalCacheUpgrade(using
     } foreach { (setupId, eval) =>
       evals += (setupId -> eval.copy(depth = input.eval.depth))
       val wms = eval.sris.withFilter(_ != fromSri) flatMap { sri => members.get(sri.value) }
-      if (wms.nonEmpty)
+      if wms.nonEmpty then
         val evalJson = EvalCacheJsonHandlers.writeEval(input.eval, input.fen)
         wms.groupBy(_.path).map { (path, wms) =>
           val hit = EvalHit(evalJson + ("path" -> JsString(path.value)))
@@ -63,7 +63,7 @@ final private class EvalCacheUpgrade(using
   private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
     evals get setupId foreach { eval =>
       val newSris = eval.sris - sri
-      if (newSris.isEmpty) evals -= setupId
+      if newSris.isEmpty then evals -= setupId
       else evals += (setupId -> eval.copy(sris = newSris))
     }
 

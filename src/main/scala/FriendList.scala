@@ -54,12 +54,12 @@ final class FriendList(
 
   private def update(userId: User.Id, msg: User.Id => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach { (subject, subs) =>
-      if (subs.nonEmpty) users.tellMany(subs, msg(subject.id))
+      if subs.nonEmpty then users.tellMany(subs, msg(subject.id))
     }
 
   private def updateView(userId: User.Id, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
     graph.tell(userId, update) foreach { (subject, subs) =>
-      if (subs.nonEmpty)
+      if subs.nonEmpty then
         userDatas
           .get(subject.id)
           .foreach:

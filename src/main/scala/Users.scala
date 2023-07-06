@@ -32,13 +32,12 @@ final class Users(using scheduler: Scheduler, ec: Executor):
   def disconnect(user: User.Id, client: Client): Unit =
     users.computeIfPresent(
       user,
-      (_, clients) => {
+      (_, clients) =>
         val newClients = clients - client
-        if (newClients.isEmpty) {
+        if newClients.isEmpty then
           disconnects add user
           null
-        } else newClients
-      }
+        else newClients
     )
 
   def tellOne(userId: User.Id, payload: ClientMsg): Unit =

@@ -34,7 +34,7 @@ object RoomActor:
     deps.roomCrowd.disconnect(state.room, deps.req.user)
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
-    if (!msg.troll.value || isTroll.value) msg.full
+    if !msg.troll.value || isTroll.value then msg.full
     else msg.skip
 
   def receive(
@@ -47,11 +47,11 @@ object RoomActor:
       None -> None
 
     case ClientIn.OnlyFor(endpoint, payload) =>
-      if (endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room)) deps.clientIn(payload)
+      if endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room) then deps.clientIn(payload)
       None -> None
 
     case crowd: ClientIn.Crowd =>
-      if (crowd == state.lastCrowd) None -> None
+      if crowd == state.lastCrowd then None -> None
       else
         Some {
           deps.clientIn(crowd)

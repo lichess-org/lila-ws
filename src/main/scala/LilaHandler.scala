@@ -100,7 +100,7 @@ final class LilaHandler(
             if allAbsent.sizeIs > 100
             then ThreadLocalRandom.shuffle(allAbsent) take 80
             else allAbsent
-          if (absent.nonEmpty) users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
+          if absent.nonEmpty then users.tellMany(absent, ClientIn.TourReminder(roomId into Tour.Id, name))
         }
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
     case msg      => roomHandler(msg)
@@ -120,7 +120,7 @@ final class LilaHandler(
       val versioned = ClientIn.RoundVersioned(version, flags, tpe, data)
       History.round.add(gameId, versioned)
       publish(_ room gameId, versioned)
-      if (tpe == "move" || tpe == "drop") Fens.move(gameId, data, flags.moveBy)
+      if tpe == "move" || tpe == "drop" then Fens.move(gameId, data, flags.moveBy)
     case TellRoom(roomId, payload) => publish(_ room roomId, ClientIn.Payload(payload))
     case RoundResyncPlayer(fullId) =>
       publish(_ room fullId.gameId, ClientIn.RoundResyncPlayer(fullId.playerId))

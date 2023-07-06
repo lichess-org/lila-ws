@@ -28,13 +28,13 @@ final class NettyServer(
     val workerThreads = config.getInt("netty.threads")
 
     val (bossGroup, workerGroup, channelClz) =
-      if (!config.getBoolean("netty.native"))
+      if !config.getBoolean("netty.native") then
         (
           NioEventLoopGroup(1),
           NioEventLoopGroup(workerThreads),
           classOf[NioServerSocketChannel]
         )
-      else if (System.getProperty("os.name").toLowerCase.startsWith("mac"))
+      else if System.getProperty("os.name").toLowerCase.startsWith("mac") then
         (
           KQueueEventLoopGroup(1),
           KQueueEventLoopGroup(workerThreads),
@@ -52,16 +52,16 @@ final class NettyServer(
       boot
         .group(bossGroup, workerGroup)
         .channel(channelClz)
-        .childHandler(new ChannelInitializer[Channel] {
-          override def initChannel(ch: Channel): Unit = {
-            val pipeline = ch.pipeline()
-            pipeline.addLast(HttpServerCodec())
-            pipeline.addLast(HttpObjectAggregator(4096))
-            pipeline.addLast(RequestHandler(router))
-            pipeline.addLast(ProtocolHandler(connector))
-            pipeline.addLast(FrameHandler(connector))
-          }
-        })
+        .childHandler(
+          new ChannelInitializer[Channel]:
+            override def initChannel(ch: Channel): Unit =
+              val pipeline = ch.pipeline()
+              pipeline.addLast(HttpServerCodec())
+              pipeline.addLast(HttpObjectAggregator(4096))
+              pipeline.addLast(RequestHandler(router))
+              pipeline.addLast(ProtocolHandler(connector))
+              pipeline.addLast(FrameHandler(connector))
+        )
 
       val server = boot.bind(port).sync().channel()
 

@@ -19,12 +19,11 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
   def disconnect(roomId: RoomId, user: Option[User.Id]): Unit =
     val room = rooms.computeIfPresent(
       roomId,
-      (_, room) => {
+      (_, room) =>
         val newRoom = room disconnect user
-        if (newRoom.isEmpty) null else newRoom
-      }
+        if newRoom.isEmpty then null else newRoom
     )
-    if (room != null) publish(roomId, room)
+    if room != null then publish(roomId, room)
 
   def getUsers(roomId: RoomId): Set[User.Id] =
     Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet)

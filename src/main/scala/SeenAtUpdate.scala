@@ -30,7 +30,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
         )
         isCoach = userDoc.exists(_.getAsOpt[List[String]]("roles").exists(_ contains "ROLE_COACH"))
         _ <-
-          if (isCoach)
+          if isCoach then
             mongo.coach(
               _.update(ordered = false).one(
                 BSONDocument("_id"  -> user),
@@ -39,7 +39,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
             )
           else Future successful {}
         _ <-
-          if (userDoc.isDefined && streamers.contains(user))
+          if userDoc.isDefined && streamers.contains(user) then
             mongo.streamer(
               _.update(ordered = false).one(
                 BSONDocument("_id"  -> user),

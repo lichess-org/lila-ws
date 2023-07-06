@@ -24,23 +24,21 @@ final class RoundCrowd(
   def disconnect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
     rounds.computeIfPresent(
       roomId,
-      (_, round) => {
+      (_, round) =>
         val newRound = round.disconnect(user, player)
         publish(roomId, newRound)
-        if (newRound.isEmpty) null else newRound
-      }
+        if newRound.isEmpty then null else newRound
     )
 
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
     rounds.compute(
       roomId,
       (_, cur) =>
-        Option(cur).getOrElse(RoundState()).botOnline(color, online) match {
+        Option(cur).getOrElse(RoundState()).botOnline(color, online) match
           case None => cur
           case Some(round) =>
             publish(roomId, round)
-            if (round.isEmpty) null else round
-        }
+            if round.isEmpty then null else round
     )
 
   def getUsers(roomId: RoomId): Set[User.Id] =
@@ -80,16 +78,16 @@ object RoundCrowd:
   ):
     def connect(user: Option[User.Id], player: Option[Color]) =
       copy(
-        room = if (player.isDefined) room else room connect user,
+        room = if player.isDefined then room else room connect user,
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
     def disconnect(user: Option[User.Id], player: Option[Color]) =
       copy(
-        room = if (player.isDefined) room else room disconnect user,
+        room = if player.isDefined then room else room disconnect user,
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
     def botOnline(color: Color, online: Boolean): Option[RoundState] = Some:
-      if (online) connect(None, Some(color))
+      if online then connect(None, Some(color))
       else disconnect(None, Some(color))
 
     def isEmpty = room.isEmpty && players.forall(1 > _)

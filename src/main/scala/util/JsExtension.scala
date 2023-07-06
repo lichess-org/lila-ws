@@ -36,7 +36,7 @@ extension (js: JsObject)
   def objs(key: String): Option[List[JsObject]] = arrAs(key)(_.asOpt[JsObject])
 
   def add(pair: (String, Boolean)): JsObject =
-    if (pair._2) js + (pair._1 -> JsBoolean(true))
+    if pair._2 then js + (pair._1 -> JsBoolean(true))
     else js
 
   def add[A: Writes](pair: (String, Option[A])): JsObject =

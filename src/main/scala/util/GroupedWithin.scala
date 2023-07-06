@@ -23,12 +23,12 @@ final class GroupedWithinStage[A](
   def apply(elem: A): Unit =
     synchronized:
       buffer += elem
-      if (buffer.size >= nb) unsafeFlush()
+      if buffer.size >= nb then unsafeFlush()
 
   private def flush(): Unit = synchronized { unsafeFlush() }
 
   private def unsafeFlush(): Unit =
-    if (buffer.nonEmpty)
+    if buffer.nonEmpty then
       emit(buffer.result())
       buffer.clear()
     scheduledFlush.cancel()

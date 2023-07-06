@@ -58,7 +58,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
-    for (s <- hash to (hash + SocialGraph.MaxStride))
+    for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
         case None => throwReturn[Slot](NewSlot(slot))
@@ -72,7 +72,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     // is lost.
     // Do not replace exceptSlot. This can be used so that a followed user
     // does not replace its follower.
-    for (s <- hash to (hash + SocialGraph.MaxStride))
+    for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
         case None => throwReturn[Slot](NewSlot(slot))
@@ -83,7 +83,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
         case _ =>
 
     // The hashtable is full. Overwrite a random entry.
-    val slot = if (hash != exceptSlot) hash else (hash + 1) & slotsMask
+    val slot = if hash != exceptSlot then hash else (hash + 1) & slotsMask
     freeSlot(slot)
 
   private def freeSlot(leftSlot: Int): NewSlot =
@@ -118,14 +118,13 @@ final class SocialGraph(mongo: Mongo, config: Config):
     graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
 
     (followed map { userId =>
-      val (rightSlot, info) = findSlot(userId, leftSlot) match {
+      val (rightSlot, info) = findSlot(userId, leftSlot) match
         case NewSlot(rightSlot) =>
           write(rightSlot, UserEntry(userId, UserMeta.stale))
           rightSlot -> UserEntry(userId, UserMeta.stale)
         case ExistingSlot(rightSlot, entry) =>
           write(rightSlot, entry)
           rightSlot -> UserEntry(userId, entry.meta)
-      }
       graph.add(leftSlot, rightSlot)
       info
     }).toList
@@ -155,7 +154,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
           case NewSlot(_) =>
             None
           case ExistingSlot(slot, entry) =>
-            if (entry.meta.fresh)
+            if entry.meta.fresh then
               write(slot, entry.update(_.withSubscribed(true)))
               Some(readFollowed(slot))
             else None
@@ -241,7 +240,7 @@ object SocialGraph:
     val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
 
     extension (flags: UserMeta)
-      private inline def toggle(flag: Int, on: Boolean) = UserMeta(if (on) flags | flag else flags & ~flag)
+      private inline def toggle(flag: Int, on: Boolean) = UserMeta(if on then flags | flag else flags & ~flag)
       private inline def has(flag: Int): Boolean        = (flags & flag) != 0
 
       inline def fresh      = flags.has(UserMeta.FRESH)

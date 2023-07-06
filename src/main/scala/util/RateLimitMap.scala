@@ -2,8 +2,7 @@ package lila.ws
 
 import com.github.blemale.scaffeine.Scaffeine
 
-/** Throttler that allows X operations per Y unit of time
-  * Not thread safe
+/** Throttler that allows X operations per Y unit of time Not thread safe
   */
 final class RateLimitMap(
     name: String,
@@ -34,7 +33,7 @@ final class RateLimitMap(
         storage.put(k, cost -> makeClearAt)
         true
       case _ if enforce =>
-        if (log) logDedup(s"$name $credits/$duration $k cost: $cost $msg")
+        if log then logDedup(s"$name $credits/$duration $k cost: $cost $msg")
         Monitor rateLimit name
         false
       case _ => true
@@ -42,6 +41,6 @@ final class RateLimitMap(
 
   private var lastLog = ""
   private def logDedup(msg: String) =
-    if (msg != lastLog)
+    if msg != lastLog then
       lastLog = msg
       logger.info(msg)

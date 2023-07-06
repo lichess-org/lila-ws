@@ -41,7 +41,7 @@ object ChallengeClientActor:
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
-            if (state.site.lastPing < oldSeconds) Behaviors.stopped
+            if state.site.lastPing < oldSeconds then Behaviors.stopped
             else
               keepAlive challenge state.room.room
               Behaviors.same
@@ -49,13 +49,13 @@ object ChallengeClientActor:
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
 
           case ClientOut.ChallengePing =>
-            if (state.owner) services.challengePing(state.room.room)
+            if state.owner then services.challengePing(state.room.room)
             Behaviors.same
 
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
-            if (siteState == state.site) Behaviors.same
+            if siteState == state.site then Behaviors.same
             else apply(state.copy(site = siteState), deps)
 
           case _ =>

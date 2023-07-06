@@ -42,7 +42,7 @@ object EvalCacheJsonHandlers:
     .add("mate" -> pv.score.mate)
 
   private def parsePv(d: JsObject): Option[Pv] =
-    for {
+    for
       movesStr <- d str "moves"
       moves <- Moves from
         movesStr
@@ -54,4 +54,4 @@ object EvalCacheJsonHandlers:
           .flatMap(_.reverse.toNel)
       score <- d.get[Cp]("cp").map(Score.cp(_)) orElse
         d.get[Mate]("mate").map(Score.mate(_))
-    } yield Pv(score, moves)
+    yield Pv(score, moves)

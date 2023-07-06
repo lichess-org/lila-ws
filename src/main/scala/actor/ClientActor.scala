@@ -20,7 +20,7 @@ object ClientActor:
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
     LilaWsServer.connections.decrementAndGet
-    if (state.watchedGames.nonEmpty) Fens.unwatch(state.watchedGames, ctx.self)
+    if state.watchedGames.nonEmpty then Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user foreach { user =>
       users.disconnect(user, ctx.self)
@@ -31,7 +31,7 @@ object ClientActor:
     msg match
 
       case ClientCtrl.Broom(oldSeconds) =>
-        if (state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api)) Behaviors.stopped
+        if state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api) then Behaviors.stopped
         else Behaviors.same
 
       case ClientCtrl.Disconnect =>
@@ -141,7 +141,7 @@ object ClientActor:
     msg match
 
       case msg: ClientIn.TourReminder =>
-        if (state.tourReminded) None
+        if state.tourReminded then None
         else
           deps clientIn msg
           Some(state.copy(tourReminded = true))

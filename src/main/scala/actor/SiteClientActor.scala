@@ -31,7 +31,7 @@ object SiteClientActor:
 
           case msg: ClientOutSite =>
             val newState = globalReceive(state, deps, ctx, msg)
-            if (newState == state) Behaviors.same
+            if newState == state then Behaviors.same
             else apply(newState, deps)
 
           case _ =>

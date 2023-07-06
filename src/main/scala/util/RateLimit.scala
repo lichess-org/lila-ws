@@ -16,15 +16,15 @@ final class RateLimit(
   private var logged: Boolean = false
 
   def apply(msg: => String = ""): Boolean =
-    if (credits > 0)
+    if credits > 0 then
       credits -= 1
       true
-    else if (clearAt < nowMillis)
+    else if clearAt < nowMillis then
       credits = maxCredits
       clearAt = makeClearAt
       true
     else
-      if (!logged)
+      if !logged then
         logged = true
         logger.info(s"$name MSG: $msg")
       Monitor rateLimit name

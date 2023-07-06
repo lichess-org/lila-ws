@@ -129,7 +129,7 @@ object LilaIn:
 
   case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round:
     private def one(r: RoundCrowd.Output): String =
-      if (r.isEmpty) r.room.roomId.value
+      if r.isEmpty then r.room.roomId.value
       else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
     def write = s"r/ons ${commas(many map one)}"
 
@@ -154,7 +154,7 @@ object LilaIn:
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site:
     def write = s"req/response $reqId $value"
 
-  private def commas(as: Iterable[Any]): String   = if (as.isEmpty) "-" else as mkString ","
-  private def boolean(b: Boolean): String         = if (b) "+" else "-"
+  private def commas(as: Iterable[Any]): String   = if as.isEmpty then "-" else as mkString ","
+  private def boolean(b: Boolean): String         = if b then "+" else "-"
   private def optional(s: Option[String]): String = s getOrElse "-"
   private def writeColor(c: Color): String        = c.fold("w", "b")

@@ -53,13 +53,12 @@ object RoundClientActor:
     }
 
   def versionFor(state: State, msg: ClientIn.RoundVersioned): ClientIn.Payload =
-    if (
-      (msg.flags.troll && !state.room.isTroll.value) ||
+    if (msg.flags.troll && !state.room.isTroll.value) ||
       (msg.flags.owner && state.player.isEmpty) ||
       (msg.flags.watcher && state.player.isDefined) ||
       msg.flags.player.exists(c => state.player.fold(true)(_.color != c))
-    ) msg.skip
-    else if (msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c))) msg.noDests
+    then msg.skip
+    else if msg.flags.moveBy.exists(c => state.player.fold(true)(_.color == c)) then msg.noDests
     else msg.full
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
@@ -78,7 +77,7 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
-            if (state.site.lastPing < oldSeconds) Behaviors.stopped
+            if state.site.lastPing < oldSeconds then Behaviors.stopped
             else Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
@@ -88,11 +87,11 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientIn.OnlyFor(endpoint, payload) =>
-            if (endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room.room)) clientIn(payload)
+            if endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room.room) then clientIn(payload)
             Behaviors.same
 
           case crowd: ClientIn.Crowd =>
-            if (crowd == state.room.lastCrowd) Behaviors.same
+            if crowd == state.room.lastCrowd then Behaviors.same
             else
               deps.clientIn(crowd)
               apply(state.copy(room = state.room.copy(lastCrowd = crowd)), deps)
@@ -101,15 +100,15 @@ object RoundClientActor:
             apply(state.copy(room = state.room.copy(isTroll = v)), deps)
 
           case resync: ClientIn.RoundResyncPlayer =>
-            if (state.player.exists(_.id == resync.playerId)) clientIn(resync)
+            if state.player.exists(_.id == resync.playerId) then clientIn(resync)
             Behaviors.same
 
           case gone: ClientIn.RoundGone =>
-            if (state.player.exists(_.id != gone.playerId)) clientIn(gone)
+            if state.player.exists(_.id != gone.playerId) then clientIn(gone)
             Behaviors.same
 
           case goneIn: ClientIn.RoundGoneIn =>
-            if (state.player.exists(_.id != goneIn.playerId)) clientIn(goneIn)
+            if state.player.exists(_.id != goneIn.playerId) then clientIn(goneIn)
             Behaviors.same
 
           case in: ClientIn =>
@@ -170,10 +169,11 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientOut.RoundBerserk(ackId) =>
-            if (state.player.isDefined) req.user foreach { u =>
-              clientIn(ClientIn.Ack(ackId))
-              lilaIn.round(LilaIn.RoundBerserk(gameId, u))
-            }
+            if state.player.isDefined then
+              req.user foreach { u =>
+                clientIn(ClientIn.Ack(ackId))
+                lilaIn.round(LilaIn.RoundBerserk(gameId, u))
+              }
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
@@ -195,7 +195,7 @@ object RoundClientActor:
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
-            if (siteState == state.site) Behaviors.same
+            if siteState == state.site then Behaviors.same
             else apply(state.copy(site = siteState), deps)
 
           case _ =>

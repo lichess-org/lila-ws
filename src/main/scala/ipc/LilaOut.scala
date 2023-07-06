@@ -125,12 +125,12 @@ object LilaOut:
               watcher = f contains 's',
               owner = f contains 'p',
               player =
-                if (f contains 'w') Some(chess.White)
-                else if (f contains 'b') Some(chess.Black)
+                if f contains 'w' then Some(chess.White)
+                else if f contains 'b' then Some(chess.Black)
                 else None,
               moveBy =
-                if (f contains 'B') Some(chess.Black)
-                else if (f contains 'W') Some(chess.White)
+                if f contains 'B' then Some(chess.Black)
+                else if f contains 'W' then Some(chess.White)
                 else None,
               troll = f contains 't'
             )
@@ -334,8 +334,8 @@ object LilaOut:
 
       case _ => None
 
-  def commas(str: String): Array[String]            = if (str == "-") Array.empty else str split ','
+  def commas(str: String): Array[String]            = if str == "-" then Array.empty else str split ','
   def boolean(str: String): Boolean                 = str == "+"
-  def optional(str: String): Option[String]         = if (str == "-") None else Some(str)
+  def optional(str: String): Option[String]         = if str == "-" then None else Some(str)
   def readColor(str: String): Color                 = Color.fromWhite(str == "w")
   def readOptionalColor(str: String): Option[Color] = optional(str) map readColor

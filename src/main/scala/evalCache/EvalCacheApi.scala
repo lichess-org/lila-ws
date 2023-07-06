@@ -72,7 +72,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private def fetchAndSetAccess(id: Id): Future[Option[EvalCacheEntry]] =
     mongo.evalCacheEntry(id) map { res =>
-      if (res.isDefined) mongo.evalCacheUsedNow(id)
+      if res.isDefined then mongo.evalCacheUsedNow(id)
       res
     }
 

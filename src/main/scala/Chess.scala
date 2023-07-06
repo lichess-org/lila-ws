@@ -50,7 +50,7 @@ object Chess:
           then initialDests
           else
             val sit = chess.Game(req.variant.some, Some(req.fen)).situation
-            if (sit.playable(false)) json.destString(sit.destinations) else ""
+            if sit.playable(false) then json.destString(sit.destinations) else ""
         ,
         opening =
           if Variant.list.openingSensibleVariants(req.variant)
@@ -81,7 +81,7 @@ object Chess:
       move = move,
       fen = fen,
       check = game.situation.check,
-      dests = if (movable) game.situation.destinations else Map.empty,
+      dests = if movable then game.situation.destinations else Map.empty,
       opening =
         if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
         then OpeningDb findByEpdFen fen

@@ -9,7 +9,7 @@ object Chronometer:
     def micros = (nanos / 1000).toInt
 
     def logIfSlow(threshold: Int)(msg: A => String) =
-      if (millis >= threshold) println(s"<${millis}ms> ${msg(result)}")
+      if millis >= threshold then println(s"<${millis}ms> ${msg(result)}")
       this
 
     def pp: A =
@@ -20,10 +20,10 @@ object Chronometer:
       println(s"chrono $msg - $showDuration")
       result
     def ppIfGt(msg: String, duration: FiniteDuration): A =
-      if (nanos > duration.toNanos) pp(msg)
+      if nanos > duration.toNanos then pp(msg)
       else result
 
-    def showDuration: String = if (millis >= 1) f"$millis ms" else s"$micros micros"
+    def showDuration: String = if millis >= 1 then f"$millis ms" else s"$micros micros"
 
   case class FuLap[A](lap: Future[Lap[A]]) extends AnyVal:
 

@@ -39,7 +39,7 @@ object StudyClientActor:
               case Some(s) => apply(state.copy(site = s), deps)
 
           case ClientCtrl.Broom(oldSeconds) =>
-            if (state.site.lastPing < oldSeconds) Behaviors.stopped
+            if state.site.lastPing < oldSeconds then Behaviors.stopped
             else
               keepAlive study state.room.room
               Behaviors.same
@@ -67,7 +67,7 @@ object StudyClientActor:
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
-            if (siteState == state.site) Behaviors.same
+            if siteState == state.site then Behaviors.same
             else apply(state.copy(site = siteState), deps)
 
           case _ =>

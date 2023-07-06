@@ -32,7 +32,7 @@ private object EvalCacheSelector:
 
   private def ranking(e: Eval): (Double, Double, Double) =
     // if well trusted, only rank on depth and tie on nodes
-    if (greatTrust(e.trust)) (99999, e.depth.value, e.knodes.value)
+    if greatTrust(e.trust) then (99999, e.depth.value, e.knodes.value)
     // else, rank on trust, and tie on depth then nodes
     else (e.trust.value, e.depth.value, e.knodes.value)
 
