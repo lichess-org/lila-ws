@@ -10,12 +10,11 @@ object SiteClientActor:
   import ClientActor.*
 
   def start(deps: Deps): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       import deps.*
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self) }
       apply(State(), deps)
-    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors

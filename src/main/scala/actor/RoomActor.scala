@@ -34,7 +34,7 @@ object RoomActor:
     deps.roomCrowd.disconnect(state.room, deps.req.user)
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =
-    if !msg.troll.value || isTroll.value then msg.full
+    if msg.troll.no || isTroll.yes then msg.full
     else msg.skip
 
   def receive(

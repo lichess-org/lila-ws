@@ -18,10 +18,9 @@ object ChallengeClientActor:
   def start(roomState: RoomActor.State, owner: Boolean, fromVersion: Option[SocketVersion])(
       deps: Deps
   ): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       RoomActor.onStart(roomState, fromVersion, deps, ctx)
       apply(State(owner, roomState), deps)
-    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
@@ -62,13 +61,13 @@ object ChallengeClientActor:
             Monitor.clientOutUnhandled("challenge").increment()
             Behaviors.same
 
-        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
-          emit foreach lilaIn.challenge.apply
-          newState.fold(Behaviors.same[ClientMsg]) { roomState =>
-            apply(state.copy(room = roomState), deps)
-          }
-        }
-
+        RoomActor
+          .receive(state.room, deps)
+          .lift(msg)
+          .fold(receive(msg)): (newState, emit) =>
+            emit foreach lilaIn.challenge.apply
+            newState.fold(Behaviors.same[ClientMsg]): roomState =>
+              apply(state.copy(room = roomState), deps)
       }
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state.site, deps, ctx)

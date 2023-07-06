@@ -20,10 +20,9 @@ object RacerClientActor:
   def start(roomState: RoomActor.State, playerId: PlayerId)(
       deps: Deps
   ): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       RoomActor.onStart(roomState, None, deps, ctx)
       apply(State(playerId, roomState), deps)
-    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
@@ -67,13 +66,13 @@ object RacerClientActor:
             Monitor.clientOutUnhandled("racer").increment()
             Behaviors.same
 
-        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
-          emit foreach lilaIn.racer
-          newState.fold(Behaviors.same[ClientMsg]) { roomState =>
-            apply(state.copy(room = roomState), deps)
-          }
-        }
-
+        RoomActor
+          .receive(state.room, deps)
+          .lift(msg)
+          .fold(receive(msg)): (newState, emit) =>
+            emit foreach lilaIn.racer
+            newState.fold(Behaviors.same[ClientMsg]): roomState =>
+              apply(state.copy(room = roomState), deps)
       }
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state.site, deps, ctx)

@@ -17,10 +17,9 @@ object SwissClientActor:
   def start(roomState: RoomActor.State, fromVersion: Option[SocketVersion])(
       deps: Deps
   ): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       RoomActor.onStart(roomState, fromVersion, deps, ctx)
       apply(State(roomState), deps)
-    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors
@@ -52,11 +51,10 @@ object SwissClientActor:
             Monitor.clientOutUnhandled("swiss").increment()
             Behaviors.same
 
-        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { case (newState, emit) =>
+        RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { (newState, emit) =>
           emit foreach lilaIn.swiss
-          newState.fold(Behaviors.same[ClientMsg]) { roomState =>
+          newState.fold(Behaviors.same[ClientMsg]): roomState =>
             apply(state.copy(room = roomState), deps)
-          }
         }
 
       }

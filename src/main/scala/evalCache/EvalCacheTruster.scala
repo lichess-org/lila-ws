@@ -12,7 +12,7 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
   private val cache: AsyncLoadingCache[User.Id, Option[Trust]] = Scaffeine()
     .initialCapacity(256)
     .expireAfterWrite(5.minutes)
-    .buildAsyncFuture { userId =>
+    .buildAsyncFuture: userId =>
       mongo.userColl
         .flatMap:
           _.find(
@@ -20,7 +20,6 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
             Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1))
           ).one[BSONDocument]
         .map(_ map computeTrust)
-    }
 
   private def computeTrust(user: BSONDocument): Trust =
     if user.getAsOpt[List[String]]("marks").exists(_.nonEmpty) then Trust(-9999)
@@ -36,14 +35,17 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
   // 1 year = 2.46
   // 2 years = 3.89
   private def seniorityBonus(user: BSONDocument): Double =
-    user.getAsOpt[LocalDateTime]("createdAt").fold(-1d) { createdAt =>
-      math.sqrt(daysBetween(createdAt, LocalDateTime.now) / 30d) - 1
-    }
+    user
+      .getAsOpt[LocalDateTime]("createdAt")
+      .fold(-1d): createdAt =>
+        math.sqrt(daysBetween(createdAt, LocalDateTime.now) / 30d) - 1
 
   private def patronBonus(user: BSONDocument): Int =
-    user.getAsOpt[BSONDocument]("plan").flatMap(_.getAsOpt[Int]("months")).fold(0) { months =>
-      math.min(months * 5, 20)
-    }
+    user
+      .getAsOpt[BSONDocument]("plan")
+      .flatMap(_.getAsOpt[Int]("months"))
+      .fold(0): months =>
+        math.min(months * 5, 20)
 
   private def titleBonus(user: BSONDocument): Int = if user.contains("title") then 20 else 0
 
@@ -52,6 +54,8 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
   // 200 games  = 0.41
   // 1000 games = 2.16
   private def nbGamesBonus(user: BSONDocument): Double =
-    user.getAsOpt[BSONDocument]("count").flatMap(_.getAsOpt[Int]("games")).fold(-1d) { games =>
-      math.sqrt(games / 100) - 1
-    }
+    user
+      .getAsOpt[BSONDocument]("count")
+      .flatMap(_.getAsOpt[Int]("games"))
+      .fold(-1d): games =>
+        math.sqrt(games / 100) - 1

@@ -22,25 +22,23 @@ object ClientActor:
     LilaWsServer.connections.decrementAndGet
     if state.watchedGames.nonEmpty then Fens.unwatch(state.watchedGames, ctx.self)
     (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
-    req.user foreach { user =>
+    req.user.foreach: user =>
       users.disconnect(user, ctx.self)
       deps.services.friends.onClientStop(user)
-    }
 
-  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] =
-    msg match
+  def socketControl(state: State, deps: Deps, msg: ClientCtrl): Behavior[ClientMsg] = msg match
 
-      case ClientCtrl.Broom(oldSeconds) =>
-        if state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api) then Behaviors.stopped
-        else Behaviors.same
+    case ClientCtrl.Broom(oldSeconds) =>
+      if state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api) then Behaviors.stopped
+      else Behaviors.same
 
-      case ClientCtrl.Disconnect =>
-        deps.clientIn(ClientIn.Disconnect)
-        Behaviors.stopped
+    case ClientCtrl.Disconnect =>
+      deps.clientIn(ClientIn.Disconnect)
+      Behaviors.stopped
 
-      case ClientCtrl.ApiDisconnect =>
-        // handled by ApiActor only
-        Behaviors.same
+    case ClientCtrl.ApiDisconnect =>
+      // handled by ApiActor only
+      Behaviors.same
 
   def sitePing(state: State, deps: Deps, msg: ClientOut.Ping): State =
     for
@@ -107,15 +105,13 @@ object ClientActor:
         state
 
       case evalPut: ClientOut.EvalPut =>
-        req.user foreach { user =>
+        req.user.foreach: user =>
           services.evalCache.put(req.sri, user, evalPut)
-        }
         state
 
       case ClientOut.MsgType(dest) =>
-        req.user foreach { orig =>
+        req.user.foreach: orig =>
           deps.users.tellOne(dest, ClientIn.MsgType(orig))
-        }
         state
 
       case ClientOut.SiteForward(payload) =>
@@ -123,9 +119,8 @@ object ClientActor:
         state
 
       case ClientOut.UserForward(payload) =>
-        req.user foreach { user =>
+        req.user.foreach: user =>
           lilaIn.site(LilaIn.TellUser(user, payload))
-        }
         state
 
       case ClientOut.StormKey(key, pad) =>
@@ -137,18 +132,17 @@ object ClientActor:
 
       case unexpected => sys error s"$this can't handle $unexpected"
 
-  def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] =
-    msg match
+  def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] = msg match
 
-      case msg: ClientIn.TourReminder =>
-        if state.tourReminded then None
-        else
-          deps clientIn msg
-          Some(state.copy(tourReminded = true))
+    case msg: ClientIn.TourReminder =>
+      if state.tourReminded then None
+      else
+        deps clientIn msg
+        Some(state.copy(tourReminded = true))
 
-      case in: ClientIn =>
-        deps clientIn in
-        None
+    case in: ClientIn =>
+      deps clientIn in
+      None
 
   private val logger = Logger("ClientActor")
 

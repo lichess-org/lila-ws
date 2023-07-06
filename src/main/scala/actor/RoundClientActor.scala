@@ -36,7 +36,7 @@ object RoundClientActor:
       userTv: Option[UserTv],
       from: Either[Option[SocketVersion], JsonString]
   )(deps: Deps): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       import deps.*
       val state = State(roomState, player, userTv)
       onStart(deps, ctx)
@@ -50,7 +50,6 @@ object RoundClientActor:
             case Some(events) => events map { versionFor(state, _) } foreach clientIn
         case Right(gameState) => clientIn(ClientIn.roundFull(gameState))
       apply(state, deps)
-    }
 
   def versionFor(state: State, msg: ClientIn.RoundVersioned): ClientIn.Payload =
     if (msg.flags.troll && !state.room.isTroll.value) ||
@@ -116,19 +115,17 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientOut.RoundMove(uci, blur, clientLag, ackId) =>
-            fullId foreach { fid =>
+            fullId.foreach: fid =>
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
               val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
               val lag            = clientLag withFrameLag frameLagCentis
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
-            }
             Behaviors.same
 
           case ClientOut.RoundPlayerForward(payload) =>
-            fullId foreach { fid =>
+            fullId.foreach: fid =>
               lilaIn.round(LilaIn.RoundPlayerDo(fid, payload))
-            }
             Behaviors.same
 
           case ClientOut.RoundFlag(color) =>
@@ -136,15 +133,14 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientOut.RoundBye =>
-            fullId foreach { fid =>
+            fullId.foreach: fid =>
               lilaIn.round(LilaIn.RoundBye(fid))
-            }
             Behaviors.same
 
           case ClientOut.ChatSay(msg) =>
             state.player match
               case None =>
-                req.user foreach:
+                req.user.foreach:
                   lilaIn round LilaIn.WatcherChatSay(state.room.room, _, msg)
               case Some(p) =>
                 import Game.RoundExt.*
@@ -170,10 +166,9 @@ object RoundClientActor:
 
           case ClientOut.RoundBerserk(ackId) =>
             if state.player.isDefined then
-              req.user foreach { u =>
+              req.user.foreach: u =>
                 clientIn(ClientIn.Ack(ackId))
                 lilaIn.round(LilaIn.RoundBerserk(gameId, u))
-              }
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>

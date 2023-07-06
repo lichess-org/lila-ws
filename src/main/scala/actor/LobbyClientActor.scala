@@ -16,14 +16,13 @@ object LobbyClientActor:
   )
 
   def start(deps: Deps): Behavior[ClientMsg] =
-    Behaviors.setup { ctx =>
+    Behaviors.setup: ctx =>
       import deps.*
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user)
       Bus.subscribe(Bus.channel.lobby, ctx.self)
       apply(State(), deps)
-    }
 
   private def apply(state: State, deps: Deps): Behavior[ClientMsg] =
     Behaviors

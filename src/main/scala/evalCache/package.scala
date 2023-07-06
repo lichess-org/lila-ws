@@ -33,8 +33,8 @@ object SmallFen extends OpaqueString[SmallFen]:
     val base = fen.value.split(' ').take(4).mkString("").filter { c =>
       c != '/' && c != '-' && c != 'w'
     }
-    variant match
-      case chess.variant.ThreeCheck => fen.value.split(' ').lift(6).foldLeft(base)(_ + _)
-      case _                        => base
+    if variant == chess.variant.ThreeCheck
+    then fen.value.split(' ').lift(6).foldLeft(base)(_ + _)
+    else base
   def validate(variant: Variant, fen: Fen.Epd): Option[SmallFen] =
     Fen.read(variant, fen).exists(_ playable false) option make(variant, fen.simple)
