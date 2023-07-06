@@ -142,25 +142,26 @@ final class Controller(
 
   def challenge(id: Challenge.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo challenger id map {
-        _ map:
-          case Challenge.Challenger.Anon(secret) => auth sidFromReq header contains secret
-          case Challenge.Challenger.User(userId) => req.user.contains(userId)
-          case Challenge.Challenger.Open         => false
-      } map:
-        case None => notFound
-        case Some(owner) =>
-          endpoint(
-            name = "challenge",
-            behavior = emit =>
-              ChallengeClientActor
-                .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(header)):
-                  Deps(emit, req, services)
-            ,
-            header,
-            credits = 50,
-            interval = 30.seconds
-          )
+      mongo
+        .challenger(id)
+        .map:
+          _ map:
+            case Challenge.Challenger.Anon(secret) => auth sidFromReq header contains secret
+            case Challenge.Challenger.User(userId) => req.user.contains(userId)
+            case Challenge.Challenger.Open         => false
+        .map:
+          _.fold(notFound): owner =>
+            endpoint(
+              name = "challenge",
+              behavior = emit =>
+                ChallengeClientActor
+                  .start(RoomActor.State(id into RoomId, IsTroll(false)), owner, fromVersion(header)):
+                    Deps(emit, req, services)
+              ,
+              header,
+              credits = 50,
+              interval = 30.seconds
+            )
 
   def team(id: Team.Id, header: RequestHeader) =
     WebSocket(header): req =>
