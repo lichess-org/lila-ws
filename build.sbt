@@ -11,16 +11,17 @@ val akkaVersion  = "2.6.20"
 val kamonVersion = "2.6.3"
 val nettyVersion = "4.1.94.Final"
 
-val os = sys.props.get("os.name") match
+val os = sys.props.get("os.name") match {
   case Some(osName) if osName.toLowerCase.startsWith("mac") => "osx"
   case _                                                    => "linux"
+}
 val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.3.0"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC9"
 libraryDependencies ++= (
-  if shaded then List("org.reactivemongo" % "reactivemongo-shaded-native" % s"1.1.0-RC6-$os-x86-64")
+  if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"1.1.0-RC6-$os-x86-64")
   else Nil
 )
 libraryDependencies += "io.lettuce" % "lettuce-core"     % "6.2.4.RELEASE"
