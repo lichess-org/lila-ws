@@ -237,7 +237,7 @@ final class Controller(
           f(Req(req, sri, authResult))
 
   private def ValidSri(header: RequestHeader)(f: Sri => Response): Response =
-    Sri from header.queryParameter("sri") match
+    Sri from header.uncheckedSri match
       case Some(validSri) => f(validSri)
       case None           => Future successful Left(HttpResponseStatus.BAD_REQUEST)
 

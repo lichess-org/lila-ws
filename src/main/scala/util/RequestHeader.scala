@@ -4,6 +4,7 @@ package util
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
 import scala.jdk.CollectionConverters.*
+import ornicar.scalalib.zeros.given
 
 opaque type RequestUri = String
 object RequestUri extends OpaqueString[RequestUri]
@@ -34,7 +35,14 @@ final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
 
   def userAgent: String = header(HttpHeaderNames.USER_AGENT) getOrElse ""
 
-  def isLichessMobile: Boolean = userAgent.contains("Lichess Mobile/")
+  def isLichessMobile: Boolean = userAgent.startsWith("Lichess Mobile/")
+
+  private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
+  private def lichessMobileSri: Option[String] = userAgent match
+    case lichessMobileSriRegex(sri) => Some(sri)
+    case _                          => None
+
+  def uncheckedSri: Option[String] = isLichessMobile.so(lichessMobileSri).orElse(queryParameter("sri"))
 
   def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
 
