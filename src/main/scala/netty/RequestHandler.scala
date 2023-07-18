@@ -18,7 +18,8 @@ final private class RequestHandler(router: Router)(using Executor)
     ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
-    router(util.RequestHeader(RequestUri(req.uri), req.headers)) foreach:
+    val request = util.RequestHeader(RequestUri(req.uri), req.headers)
+    router(request) foreach:
       case Left(status) =>
         sendErrorResponse(
           ctx,
@@ -35,6 +36,7 @@ final private class RequestHandler(router: Router)(using Executor)
         sendErrorResponse(ctx, response)
         req.release()
       case Right(endpoint) =>
+        Monitor.mobile.connect(request)
         // Forward to ProtocolHandler with endpoint attribute
         ctx.channel.attr(ProtocolHandler.key.endpoint).set(endpoint)
         ctx.fireChannelRead(req)

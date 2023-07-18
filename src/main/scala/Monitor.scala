@@ -136,6 +136,27 @@ object Monitor:
     def roundFrameLag(millis: Int) =
       if millis > 1 && millis < 99999 then frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
 
+  object mobile:
+    private val Regex   = """Lichess Mobile/(\S+) \(\d*\) as:(\S+) sri:\S+ os:(Android|iOS)/(\S+).*""".r
+    private val counter = Kamon.counter("mobile.connect")
+    def connect(req: util.RequestHeader) = if req.isLichessMobile then
+      req.userAgent match
+        case Regex(version, user, osName, osVersion) =>
+          counter
+            .withTags(
+              TagSet.from(
+                Map(
+                  "version"   -> version,
+                  "osName"    -> osName,
+                  "osVersion" -> osVersion,
+                  "auth"      -> (if user == "anon" then "anon" else "auth"),
+                  "route"     -> req.path.drop(1).takeWhile('/' !=)
+                )
+              )
+            )
+            .increment()
+        case _ => ()
+
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()
     val res   = f
