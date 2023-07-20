@@ -137,20 +137,19 @@ object Monitor:
       if millis > 1 && millis < 99999 then frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
 
   object mobile:
-    private val Regex   = """Lichess Mobile/(\S+) \(\d*\) as:(\S+) sri:\S+ os:(Android|iOS)/(\S+).*""".r
+    private val Regex   = """Lichess Mobile/(\S+)(?: \(\d*\))? as:(\S+) sri:\S+ os:(Android|iOS)/.*""".r
     private val counter = Kamon.counter("mobile.connect")
     def connect(req: util.RequestHeader) = if req.isLichessMobile then
       req.userAgent match
-        case Regex(version, user, osName, osVersion) =>
+        case Regex(version, user, osName) =>
           counter
             .withTags(
               TagSet.from(
                 Map(
-                  "version"   -> version,
-                  "osName"    -> osName,
-                  "osVersion" -> osVersion,
-                  "auth"      -> (if user == "anon" then "anon" else "auth"),
-                  "route"     -> req.path.drop(1).takeWhile('/' !=)
+                  "version" -> version,
+                  "os"      -> osName,
+                  "auth"    -> (if user == "anon" then "anon" else "auth"),
+                  "route"   -> req.path.drop(1).takeWhile('/' !=)
                 )
               )
             )
