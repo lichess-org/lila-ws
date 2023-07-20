@@ -55,7 +55,7 @@ scalacOptions := Seq(
   "-explaintypes",
   "-feature",
   "-language:postfixOps",
-  "-Xtarget:12",
+  "-Xtarget:17",
   "-Wunused:all"
   /* "-Wunused:nowarn" */
 
