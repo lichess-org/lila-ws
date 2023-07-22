@@ -5,6 +5,7 @@ import chess.{ Check, Color, Ply }
 import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
+import chess.bitboard.Bitboard
 import play.api.libs.json.*
 
 sealed trait ClientIn extends ClientMsg:
@@ -121,7 +122,7 @@ object ClientIn:
       move: Uci.WithSan,
       fen: EpdFen,
       check: Check,
-      dests: Map[chess.Square, List[chess.Square]],
+      dests: Map[chess.Square, Bitboard],
       opening: Option[Opening],
       drops: Option[List[chess.Square]],
       crazyData: Option[Crazyhouse.Data],
