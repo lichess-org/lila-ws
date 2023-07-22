@@ -4,6 +4,7 @@ import play.api.libs.json.*
 import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import chess.opening.{ Opening, OpeningDb }
 import chess.Square
+import chess.bitboard.Bitboard
 import chess.variant.{ Crazyhouse, Variant }
 import com.typesafe.scalalogging.Logger
 import cats.syntax.option.*
@@ -102,10 +103,10 @@ object Chess:
       def writes(square: Square) = JsString(square.key)
     given Writes[Opening] with
       def writes(o: Opening) = Json.obj("eco" -> o.eco, "name" -> o.name)
-    given Writes[Map[Square, List[Square]]] with
-      def writes(dests: Map[Square, List[Square]]) = JsString(destString(dests))
+    given Writes[Map[Square, Bitboard]] with
+      def writes(dests: Map[Square, Bitboard]) = JsString(destString(dests))
 
-    def destString(dests: Map[Square, List[Square]]): String =
+    def destString(dests: Map[Square, Bitboard]): String =
       val sb    = new java.lang.StringBuilder(80)
       var first = true
       dests.foreach: (orig, dests) =>
