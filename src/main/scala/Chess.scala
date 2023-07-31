@@ -20,10 +20,8 @@ object Chess:
       try
         chess
           .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
-          .toOption flatMap { (game, move) =>
-          game.sans.lastOption.map: san =>
-            makeNode(game, Uci.WithSan(Uci(move), san), req.path, req.chapterId)
-        } getOrElse ClientIn.StepFailure
+          .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
+          .getOrElse(ClientIn.StepFailure)
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
@@ -32,11 +30,11 @@ object Chess:
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime):
       try
-        chess.Game(req.variant.some, Some(req.fen)).drop(req.role, req.square).toOption flatMap {
-          (game, drop) =>
-            game.sans.lastOption.map: san =>
-              makeNode(game, Uci.WithSan(Uci(drop), san), req.path, req.chapterId)
-        } getOrElse ClientIn.StepFailure
+        chess
+          .Game(req.variant.some, Some(req.fen))
+          .drop(req.role, req.square)
+          .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
+          .getOrElse(ClientIn.StepFailure)
       catch
         case e: java.lang.ArrayIndexOutOfBoundsException =>
           logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.square}", e)
