@@ -36,6 +36,7 @@ object Bus:
     val all                       = "all"
     val lobby                     = "lobby"
     val tv                        = "tv"
+    val tvChannels                = "tv-channels"
     def userTv(u: UserTv)         = s"userTv/$u"
     def room(id: RoomId)          = s"room/$id"
     def tourStanding(id: Tour.Id) = s"tour-standing/$id"
@@ -48,7 +49,7 @@ object Bus:
   def sizeOf(chan: ChanSelect) = impl sizeOf chan(channel)
 
   // distinct bus for internal events
-  val internal = new util.EventBus[Matchable, Chan, PartialFunction[Matchable, Unit]](
+  val internal = util.EventBus[Matchable, Chan, PartialFunction[Matchable, Unit]](
     initialCapacity = 16,
     publish = (listener, event) => listener lift event
   )

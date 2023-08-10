@@ -21,7 +21,7 @@ object ClientActor:
     import deps.*
     LilaWsServer.connections.decrementAndGet
     if state.watchedGames.nonEmpty then Fens.unwatch(state.watchedGames, ctx.self)
-    (Bus.channel.mlat :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
+    (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user.foreach: user =>
       users.disconnect(user, ctx.self)
       deps.services.friends.onClientStop(user)
@@ -67,6 +67,10 @@ object ClientActor:
           Fens.watch(gameIds, ctx.self)
           state.copy(watchedGames = state.watchedGames ++ gameIds)
         else state
+
+      case ClientOut.StartWatchingTvChannels =>
+        Bus.subscribe(Bus.channel.tvChannels, ctx.self)
+        state
 
       case msg: ClientOut if deps.req.flag.contains(Flag.api) =>
         logger.info(s"API socket doesn't support $msg $req")
