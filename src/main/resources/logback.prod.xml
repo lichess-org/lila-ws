@@ -15,6 +15,26 @@
     </rollingPolicy>
   </appender>
 
+  <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter"><level>WARN</level></filter>
+    <file>/var/log/lila-ws/warn.log</file>
+    <encoder><pattern>%date %-5level %logger %message%n%xException</pattern></encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/lila-ws/warn-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>14</maxHistory>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter"><level>INFO</level></filter>
+    <file>/var/log/lila-ws/info.log</file>
+    <encoder><pattern>%date %-5level %logger %message%n%xException</pattern></encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/lila-ws/info-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
+      <maxHistory>14</maxHistory>
+    </rollingPolicy>
+  </appender>
+
   <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
     <appender-ref ref="ASYNC"/>
   </logger>
@@ -25,6 +45,8 @@
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
     <appender-ref ref="ERROR_FILE" />
+    <appender-ref ref="WARN_FILE" />
+    <appender-ref ref="INFO_FILE" />
   </root>
 
 </configuration>
