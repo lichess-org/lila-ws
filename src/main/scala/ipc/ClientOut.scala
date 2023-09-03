@@ -198,10 +198,11 @@ object ClientOut:
               Some(LobbyForward(o))
             // study
             case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |
-                "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
-                "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
-                "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "clearVariations" =>
+                "kickBroadcast" | "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" |
+                "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" |
+                "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" |
+                "explorerGame" | "requestAnalysis" | "invite" | "relaySync" | "setTopics" |
+                "clearVariations" =>
               Some(StudyForward(o))
             // round
             case "move" =>
