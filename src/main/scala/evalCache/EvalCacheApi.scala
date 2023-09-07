@@ -35,19 +35,19 @@ final class EvalCacheApi(mongo: Mongo)(using
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster
       .get(user) foreach:
-        _.filter(_.isEnough) foreach { trust =>
-          makeInput(
-            e.variant,
-            e.fen,
-            Eval(
-              pvs = e.pvs,
-              knodes = e.knodes,
-              depth = e.depth,
-              by = user,
-              trust = trust
-            )
-          ) foreach { putTrusted(sri, user, _) }
-        }
+      _.filter(_.isEnough) foreach { trust =>
+        makeInput(
+          e.variant,
+          e.fen,
+          Eval(
+            pvs = e.pvs,
+            knodes = e.knodes,
+            depth = e.depth,
+            by = user,
+            trust = trust
+          )
+        ) foreach { putTrusted(sri, user, _) }
+      }
 
   private def getEvalJson(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): Future[Option[JsObject]] =
     getEval(Id(variant, SmallFen.make(variant, fen.simple)), multiPv) map {
