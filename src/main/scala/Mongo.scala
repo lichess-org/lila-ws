@@ -206,13 +206,13 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
         selector = BSONDocument("_id" -> challengeId.value),
         projection = Some(BSONDocument("challenger" -> true))
       ).one[BSONDocument] map:
-          _.flatMap {
-            _.getAsOpt[BSONDocument]("challenger")
-          } map { c =>
-            val anon = c.getAsOpt[String]("s") map Challenge.Challenger.Anon.apply
-            val user = c.getAsOpt[User.Id]("id") map Challenge.Challenger.User.apply
-            anon orElse user getOrElse Challenge.Challenger.Open
-          }
+        _.flatMap {
+          _.getAsOpt[BSONDocument]("challenger")
+        } map { c =>
+          val anon = c.getAsOpt[String]("s") map Challenge.Challenger.Anon.apply
+          val user = c.getAsOpt[User.Id]("id") map Challenge.Challenger.User.apply
+          anon orElse user getOrElse Challenge.Challenger.Open
+        }
 
   def inquirers: Future[List[User.Id]] =
     reportColl.flatMap:

@@ -63,8 +63,8 @@ final class Lila(config: Config)(using Executor):
       connect[LilaIn.Round](chans.round) zip
       connect[LilaIn.Challenge](chans.challenge) zip
       connect[LilaIn.Racer](chans.racer) map:
-      case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge ~ racer =>
-        Emits(site, tour, lobby, simul, team, swiss, study, round, challenge, racer)
+        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge ~ racer =>
+          Emits(site, tour, lobby, simul, team, swiss, study, round, challenge, racer)
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] =
 
