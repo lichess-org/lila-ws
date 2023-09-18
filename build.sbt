@@ -40,8 +40,9 @@ libraryDependencies += "com.typesafe.play"          %% "play-json"       % "2.10
 libraryDependencies += "io.kamon"                   %% "kamon-core"      % kamonVersion
 libraryDependencies += "io.kamon"                   %% "kamon-influxdb"  % kamonVersion
 // libraryDependencies += "io.kamon"                   %% "kamon-system-metrics"         % kamonVersion
-libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.9" % "provided"
+libraryDependencies += "com.softwaremill.macwire" %% "macros" % "2.5.9"     % "provided"
 libraryDependencies += "com.roundeights"          %% "hasher" % "1.3.1"
+libraryDependencies += "org.scalameta"            %% "munit"  % "1.0.0-M10" % Test
 
 resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
