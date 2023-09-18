@@ -4,11 +4,12 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 import ipc.*
+import lila.ws.util.SmallBoundedQueueSet
 
 object ClientActor:
 
   case class State(
-      watchedGames: Set[Game.Id] = Set.empty,
+      watchedGames: SmallBoundedQueueSet[Game.Id] = SmallBoundedQueueSet.empty,
       lastPing: Int = nowSeconds,
       tourReminded: Boolean = false
   )
@@ -20,7 +21,7 @@ object ClientActor:
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
     LilaWsServer.connections.decrementAndGet
-    if state.watchedGames.nonEmpty then Fens.unwatch(state.watchedGames, ctx.self)
+    Fens.unwatch(state.watchedGames.value, ctx.self)
     (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
     req.user.foreach: user =>
       users.disconnect(user, ctx.self)
@@ -63,10 +64,10 @@ object ClientActor:
         sitePing(state, deps, msg)
 
       case ClientOut.Watch(gameIds) =>
-        if state.watchedGames.sizeIs < 100 then
-          Fens.watch(gameIds, ctx.self)
-          state.copy(watchedGames = state.watchedGames ++ gameIds)
-        else state
+        val (newWatched, evicted) = state.watchedGames.addAndReturnEvicted(gameIds, 16)
+        Fens.watch(gameIds, ctx.self)
+        Fens.unwatch(evicted, ctx.self)
+        state.copy(watchedGames = newWatched)
 
       case ClientOut.StartWatchingTvChannels =>
         Bus.subscribe(Bus.channel.tvChannels, ctx.self)
