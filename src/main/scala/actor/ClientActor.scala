@@ -1,7 +1,7 @@
 package lila.ws
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import com.typesafe.scalalogging.Logger
 import ipc.*
 import lila.ws.util.SmallBoundedQueueSet

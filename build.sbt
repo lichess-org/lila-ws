@@ -7,7 +7,7 @@ lazy val `lila-ws` = (project in file("."))
 
 resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
 
-val akkaVersion  = "2.6.20"
+val pekkoVersion = "1.0.1"
 val kamonVersion = "2.6.5"
 val nettyVersion = "4.1.100.Final"
 
@@ -19,7 +19,7 @@ val shaded = !System.getProperty("os.arch").toLowerCase.startsWith("aarch")
 
 scalaVersion := "3.3.1"
 
-libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC9"
+libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC9" exclude ("org.scala-lang.modules", "scala-java8-compat_2.13")
 libraryDependencies ++= (
   if (shaded) List("org.reactivemongo" % "reactivemongo-shaded-native" % s"1.1.0-RC6-$os-x86-64")
   else Nil
@@ -29,10 +29,12 @@ libraryDependencies += "io.netty"   % "netty-handler"    % nettyVersion
 libraryDependencies += "io.netty"   % "netty-codec-http" % nettyVersion
 libraryDependencies += "io.netty" % s"netty-transport-native-epoll" % nettyVersion classifier s"linux-x86_64" classifier s"linux-aarch_64"
 libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-x86_64" classifier s"osx-aarch_64"
-libraryDependencies += "com.github.ornicar" %% "scalalib"         % "9.5.5"
-libraryDependencies += "org.lichess"        %% "scalachess"       % "15.6.7"
-libraryDependencies += "com.typesafe.akka"  %% "akka-actor-typed" % akkaVersion
+libraryDependencies += "com.github.ornicar" %% "scalalib"            % "9.5.5"
+libraryDependencies += "org.lichess"        %% "scalachess"          % "15.6.7"
+libraryDependencies += "org.apache.pekko"    % "pekko-actor-typed_3" % pekkoVersion
+
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
+// libraryDependencies += "org.apache.pekko"           % "pekko-slf4j_3"     % pekkoVersion
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging"   % "3.9.5"
 libraryDependencies += "com.github.blemale"         %% "scaffeine"       % "5.2.1" % "compile"
 libraryDependencies += "ch.qos.logback"              % "logback-classic" % "1.4.11"

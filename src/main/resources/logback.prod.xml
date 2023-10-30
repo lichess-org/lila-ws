@@ -35,10 +35,10 @@
     </rollingPolicy>
   </appender>
 
-  <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
+  <logger name="org.apache.pekko.event.slf4j.Slf4jLogger" level="WARN">
     <appender-ref ref="ASYNC"/>
   </logger>
-  <logger name="akka.actor.DeadLetterActorRef" level="WARN">
+  <logger name="org.apache.pekko.actor.DeadLetterActorRef" level="WARN">
     <appender-ref ref="ASYNC"/>
   </logger>
 

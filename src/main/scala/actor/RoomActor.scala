@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.scaladsl.ActorContext
+import org.apache.pekko.actor.typed.scaladsl.ActorContext
 
 import ipc.*
 

@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 
 final class EvalCacheApi(mongo: Mongo)(using
     Executor,
-    akka.actor.typed.Scheduler
+    org.apache.pekko.actor.typed.Scheduler
 ):
 
   private val truster = EvalCacheTruster(mongo)

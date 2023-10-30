@@ -10,7 +10,7 @@ final class Monitor(
     config: Config,
     services: Services
 )(using
-    scheduler: akka.actor.typed.Scheduler,
+    scheduler: org.apache.pekko.actor.typed.Scheduler,
     ec: Executor
 ):
 

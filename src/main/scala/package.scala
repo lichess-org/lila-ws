@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import org.apache.pekko.actor.typed.{ ActorRef, ActorSystem, Behavior }
 
 export ornicar.scalalib.newtypes.*
 export ornicar.scalalib.zeros.*
