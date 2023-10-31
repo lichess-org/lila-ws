@@ -1,7 +1,7 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.Scaffeine
-import akka.actor.typed.Scheduler
+import org.apache.pekko.actor.typed.Scheduler
 
 final class Inquirers(mongo: Mongo)(using ec: Executor, scheduler: Scheduler):
 

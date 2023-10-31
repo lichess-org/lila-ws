@@ -1,8 +1,8 @@
 package lila.ws
 package util
 
-import akka.actor.Cancellable
-import akka.actor.typed.Scheduler
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.actor.typed.Scheduler
 import scala.collection.immutable.VectorBuilder
 
 final class GroupedWithin()(using Scheduler, Executor):

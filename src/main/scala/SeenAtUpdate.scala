@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 
 final class SeenAtUpdate(mongo: Mongo)(using
     context: Executor,
-    scheduler: akka.actor.typed.Scheduler
+    scheduler: org.apache.pekko.actor.typed.Scheduler
 ) extends MongoHandlers:
 
   private val done: Cache[User.Id, Boolean] = Scaffeine()

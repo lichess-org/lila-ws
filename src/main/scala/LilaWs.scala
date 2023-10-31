@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.{ ActorSystem, Scheduler }
+import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
 

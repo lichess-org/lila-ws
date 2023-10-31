@@ -17,7 +17,7 @@ import scala.collection.mutable
  */
 final private class EvalCacheUpgrade(using
     ec: Executor,
-    scheduler: akka.actor.typed.Scheduler
+    scheduler: org.apache.pekko.actor.typed.Scheduler
 ):
   import EvalCacheUpgrade.*
 

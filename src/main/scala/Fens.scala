@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.ActorRef
 import chess.Color
 import chess.format.{ Fen, Uci }
 import java.util.concurrent.ConcurrentHashMap

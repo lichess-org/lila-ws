@@ -2,7 +2,7 @@ package lila.ws
 package netty
 
 import lila.ws.Controller.Endpoint
-import akka.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.ActorRef
 import io.netty.channel.*
 import ProtocolHandler.key
 import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }

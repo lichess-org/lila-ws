@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.Scheduler
+import org.apache.pekko.actor.typed.Scheduler
 
 import ipc.*
 

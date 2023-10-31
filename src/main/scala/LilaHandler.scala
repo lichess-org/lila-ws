@@ -1,6 +1,6 @@
 package lila.ws
 
-import akka.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
 import ipc.*
 import ornicar.scalalib.ThreadLocalRandom
