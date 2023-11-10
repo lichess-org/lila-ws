@@ -13,7 +13,7 @@ val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.0.1"
 val kamonVersion = "2.6.5"
-val nettyVersion = "4.1.100.Final"
+val nettyVersion = "4.1.101.Final"
 
 scalaVersion := "3.3.1"
 
