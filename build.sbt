@@ -19,7 +19,7 @@ scalaVersion := "3.3.1"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC11" exclude ("org.scala-lang.modules", "scala-java8-compat_2.13")
 libraryDependencies += "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC11"
-libraryDependencies += "io.lettuce"        % "lettuce-core"                           % "6.2.7.RELEASE"
+libraryDependencies += "io.lettuce"        % "lettuce-core"                           % "6.3.0.RELEASE"
 libraryDependencies += "io.netty"          % "netty-handler"                          % nettyVersion
 libraryDependencies += "io.netty"          % "netty-codec-http"                       % nettyVersion
 libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-$arch_"
