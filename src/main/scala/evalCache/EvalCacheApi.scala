@@ -10,7 +10,7 @@ import chess.format.Fen
 import chess.ErrorStr
 import play.api.libs.json.{ JsObject, JsString }
 import com.typesafe.scalalogging.Logger
-import cats.syntax.option.*
+import cats.syntax.all.*
 import reactivemongo.api.bson.BSONDocument
 import java.time.LocalDateTime
 
@@ -81,10 +81,10 @@ final class EvalCacheApi(mongo: Mongo)(using
       chess.Game(chess.variant.Standard.some, fen.some).situation.moves.view.map(_._2.size).sum
     mongo.evalCacheColl.flatMap { c =>
       EvalCacheValidator(input) match
-        case Some(error) =>
+        case Left(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
-        case None =>
+        case _ =>
           getEntry(input.id) flatMap:
             case None =>
               val entry = EvalCacheEntry(
@@ -113,10 +113,5 @@ final class EvalCacheApi(mongo: Mongo)(using
 
 private object EvalCacheValidator:
 
-  def apply(in: EvalCacheEntry.Input): Option[ErrorStr] =
-    in.eval.pvs.toList.foldLeft(none[ErrorStr]):
-      case (None, pv) =>
-        chess.Replay
-          .boardsFromUci(pv.moves.value.toList, in.fen.some, in.id.variant)
-          .fold(Some(_), _ => none)
-      case (error, _) => error
+  def apply(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
+    in.eval.pvs.traverse_(pv => chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.id.variant))
