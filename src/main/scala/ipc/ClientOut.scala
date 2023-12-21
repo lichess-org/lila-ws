@@ -231,8 +231,9 @@ object ClientOut:
             case "flag"         => o str "d" flatMap Color.fromName map RoundFlag.apply
             case "bye2"         => Some(RoundBye)
             case "palantirPing" => Some(PalantirPing)
-            case "moretime" | "rematch-yes" | "rematch-no" | "takeback-yes" | "takeback-no" | "draw-yes" |
-                "draw-no" | "draw-claim" | "resign" | "resign-force" | "draw-force" | "abort" | "outoftime" =>
+            case "blindfold-yes" | "blindfold-no" | "moretime" | "rematch-yes" | "rematch-no" |
+                "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
+                "resign-force" | "draw-force" | "abort" | "outoftime" =>
               Some(RoundPlayerForward(o))
             // chat
             case "talk" => o str "d" map { ChatSay.apply }
