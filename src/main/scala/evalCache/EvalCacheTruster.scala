@@ -17,7 +17,7 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
         .flatMap:
           _.find(
             BSONDocument("_id" -> userId),
-            Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1))
+            Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1, "roles" -> 1))
           ).one[BSONDocument]
         .map(_ map computeTrust)
 
@@ -28,7 +28,8 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
         seniorityBonus(user) +
           patronBonus(user) +
           titleBonus(user) +
-          nbGamesBonus(user)
+          nbGamesBonus(user) +
+          rolesBonus(user)
 
   // 0 days = -1
   // 1 month = 0
@@ -59,3 +60,12 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
       .flatMap(_.getAsOpt[Int]("games"))
       .fold(-1d): games =>
         math.sqrt(games / 100) - 1
+
+  private def rolesBonus(user: BSONDocument): Int =
+    user
+      .getAsOpt[Set[String]]("roles")
+      .fold(0): roles =>
+        if roles("ROLE_LICHESS_TEAM") then 50
+        else if roles("ROLE_RELAY") then 40
+        else if roles("ROLE_BROADCAST_TIMEOUT") then 30
+        else 0
