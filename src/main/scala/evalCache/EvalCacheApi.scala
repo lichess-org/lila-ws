@@ -53,7 +53,7 @@ final class EvalCacheApi(mongo: Mongo)(using
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster
       .get(user) foreach:
-      _.filter(_.isEnough) foreach { trust =>
+      _.filter(_.isEnough) foreach: trust =>
         makeInput(
           e.variant,
           e.fen,
@@ -65,7 +65,6 @@ final class EvalCacheApi(mongo: Mongo)(using
             trust = trust
           )
         ) foreach { putTrusted(sri, user, _) }
-      }
 
   private def monitorRequest[A](fen: Fen.Epd, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
     Fen

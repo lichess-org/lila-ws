@@ -25,7 +25,7 @@ object Moves extends TotalWrapper[Moves, NonEmptyList[Uci]]:
 
 opaque type Trust = Double
 object Trust extends OpaqueDouble[Trust]:
-  extension (a: Trust) def isEnough = a > 0
+  extension (a: Trust) def isEnough = a > -1
 
 opaque type SmallFen = String
 object SmallFen extends OpaqueString[SmallFen]:
