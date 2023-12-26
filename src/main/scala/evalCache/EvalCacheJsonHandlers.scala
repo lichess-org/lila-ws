@@ -28,13 +28,22 @@ object EvalCacheJsonHandlers:
     pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
   yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
-  def writeEval(e: Eval, fen: Fen.Epd) =
-    Json.obj(
-      "fen"    -> fen,
-      "knodes" -> e.knodes,
-      "depth"  -> e.depth,
-      "pvs"    -> JsArray(e.pvs.toList.map(writePv))
-    )
+  def readGetMulti(d: JsObject) = for
+    fens <- d.get[List[Fen.Epd]]("fens")
+    variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
+  yield ipc.ClientOut.EvalGetMulti(fens take 9, variant)
+
+  def writeEval(e: Eval, fen: Fen.Epd) = Json.obj(
+    "fen"    -> fen,
+    "knodes" -> e.knodes,
+    "depth"  -> e.depth,
+    "pvs"    -> JsArray(e.pvs.toList.map(writePv))
+  )
+
+  def writeMultiHit(e: Eval, fen: Fen.Epd) = Json
+    .obj("fen" -> fen, "depth" -> e.depth)
+    .add("cp" -> e.bestPv.score.cp)
+    .add("mate" -> e.bestPv.score.mate)
 
   private def writePv(pv: Pv) = Json
     .obj("moves" -> pv.moves.value.toList.map(_.uci).mkString(" "))

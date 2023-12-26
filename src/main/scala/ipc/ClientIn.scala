@@ -235,6 +235,9 @@ object ClientIn:
   case class EvalHit(data: JsObject) extends ClientIn:
     val write = cliMsg("evalHit", data)
 
+  case class EvalHitMulti(data: JsObject) extends ClientIn:
+    val write = cliMsg("evalHitMulti", data)
+
   def racerState(data: JsonString) = payload("racerState", data)
 
   case class SwitchResponse(uri: lila.ws.util.RequestUri, status: Int) extends ClientIn:

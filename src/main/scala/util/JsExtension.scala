@@ -29,9 +29,8 @@ extension (js: JsObject)
     (js \ key).asOpt[JsArray]
 
   def arrAs[A](key: String)(as: JsValue => Option[A]): Option[List[A]] =
-    arr(key) map { j =>
+    arr(key) map: j =>
       j.value.iterator.map(as).to(List).flatten
-    }
 
   def objs(key: String): Option[List[JsObject]] = arrAs(key)(_.asOpt[JsObject])
 

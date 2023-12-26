@@ -25,12 +25,11 @@ final private class EvalCacheUpgrade(using
   private val evals         = mutable.AnyRefMap.empty[SetupId, EvalState]
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 10 minutes, expire)
 
-  private val upgradeMon = Monitor.evalCache.upgrade
+  private val upgradeMon = Monitor.evalCache.single.upgrade
 
   def register(sri: Sri, e: EvalGet): Unit =
-    members get sri.value foreach { wm =>
+    members get sri.value foreach: wm =>
       unregisterEval(wm.setupId, sri)
-    }
     val setupId = makeSetupId(e.variant, e.fen, e.multiPv)
     members += (sri.value -> WatchingMember(sri, setupId, e.path))
     evals += (setupId     -> evals.get(setupId).fold(EvalState(Set(sri), Depth(0)))(_ addSri sri))
@@ -47,10 +46,9 @@ final private class EvalCacheUpgrade(using
       val wms = eval.sris.withFilter(_ != fromSri) flatMap { sri => members.get(sri.value) }
       if wms.nonEmpty then
         val evalJson = EvalCacheJsonHandlers.writeEval(input.eval, input.fen)
-        wms.groupBy(_.path).map { (path, wms) =>
+        wms.groupBy(_.path) map: (path, wms) =>
           val hit = EvalHit(evalJson + ("path" -> JsString(path.value)))
           wms foreach { wm => Bus.publish(_ sri wm.sri, hit) }
-        }
         upgradeMon.count.increment(wms.size)
     }
 
@@ -61,27 +59,25 @@ final private class EvalCacheUpgrade(using
     }
 
   private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
-    evals get setupId foreach { eval =>
+    evals get setupId foreach: eval =>
       val newSris = eval.sris - sri
       if newSris.isEmpty then evals -= setupId
       else evals += (setupId -> eval.copy(sris = newSris))
-    }
 
-  scheduler.scheduleWithFixedDelay(1 minute, 1 minute) { () =>
+  scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
     upgradeMon.members.update(members.size)
     upgradeMon.evals.update(evals.size)
     upgradeMon.expirable.update(expirableSris.count)
-  }
 
 private object EvalCacheUpgrade:
 
-  private type SriString = String
-  private type SetupId   = String
+  type SriString = String
+  type SetupId   = String
 
-  private case class EvalState(sris: Set[Sri], depth: Depth):
+  case class EvalState(sris: Set[Sri], depth: Depth):
     def addSri(sri: Sri) = copy(sris = sris + sri)
 
-  private def makeSetupId(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): SetupId =
+  def makeSetupId(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): SetupId =
     s"${variant.id}${SmallFen.make(variant, fen.simple)}^$multiPv"
 
-  private case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)
+  case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

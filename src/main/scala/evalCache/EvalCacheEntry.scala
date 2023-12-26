@@ -10,8 +10,8 @@ import java.time.LocalDateTime
 
 case class EvalCacheEntry(
     _id: EvalCacheEntry.Id,
-    nbMoves: Int, // multipv cannot be greater than number of legal moves
-    evals: List[EvalCacheEntry.Eval],
+    nbMoves: Int,                     // multipv cannot be greater than number of legal moves
+    evals: List[EvalCacheEntry.Eval], // best ones first, by depth and nodes
     usedAt: LocalDateTime,
     updatedAt: LocalDateTime
 ):
@@ -33,6 +33,9 @@ case class EvalCacheEntry(
     evals
       .find(_.multiPv >= multiPv.atMost(nbMoves))
       .map(_ takePvs multiPv)
+
+  def makeBestSinglePvEval: Option[Eval] =
+    evals.headOption.map(_ takePvs MultiPv(1))
 
   def similarTo(other: EvalCacheEntry) =
     id == other.id && evals == other.evals
@@ -69,10 +72,12 @@ object EvalCacheEntry:
     def truncate = copy(moves = Moves truncate moves)
 
   case class Id(variant: Variant, smallFen: SmallFen)
+  object Id:
+    def make(variant: Variant, fen: Fen.Epd): Id =
+      Id(variant, SmallFen.make(variant, fen.simple))
 
   case class Input(id: Id, fen: Fen.Epd, eval: Eval)
 
   def makeInput(variant: Variant, fen: Fen.Epd, eval: Eval) =
-    SmallFen.validate(variant, fen) ifTrue eval.looksValid map { smallFen =>
+    SmallFen.validate(variant, fen) ifTrue eval.looksValid map: smallFen =>
       Input(Id(variant, smallFen), fen, eval.truncatePvs)
-    }

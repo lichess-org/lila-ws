@@ -109,6 +109,10 @@ object ClientActor:
         services.evalCache.get(req.sri, evalGet, clientIn)
         state
 
+      case evalGet: ClientOut.EvalGetMulti =>
+        services.evalCache.getMulti(req.sri, evalGet, clientIn)
+        state
+
       case evalPut: ClientOut.EvalPut =>
         req.user.foreach: user =>
           services.evalCache.put(req.sri, user, evalPut)

@@ -3,12 +3,11 @@ package evalCache
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 
-import lila.ws.ipc.ClientOut.{ EvalGet, EvalPut }
+import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
 import lila.ws.ipc.ClientIn
-import chess.variant.Variant
 import chess.format.Fen
 import chess.ErrorStr
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.JsString
 import com.typesafe.scalalogging.Logger
 import cats.syntax.all.*
 import reactivemongo.api.bson.BSONDocument
@@ -21,16 +20,35 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private val truster = EvalCacheTruster(mongo)
   private val upgrade = EvalCacheUpgrade()
+  private val multi   = EvalCacheMulti()
 
   import EvalCacheEntry.*
   import EvalCacheBsonHandlers.given
 
   def get(sri: Sri, e: EvalGet, emit: Emit[ClientIn]): Unit =
-    getEvalJson(e.variant, e.fen, e.multiPv).foreach:
-      _.foreach { json =>
-        emit(ClientIn.EvalHit(json + ("path" -> JsString(e.path.value))))
-      }
+    getEntry(Id.make(e.variant, e.fen))
+      .map:
+        _.flatMap(_ makeBestMultiPvEval e.multiPv)
+      .map(monitorRequest(e.fen, Monitor.evalCache.single))
+      .foreach:
+        _.foreach: eval =>
+          emit:
+            ClientIn.EvalHit:
+              EvalCacheJsonHandlers.writeEval(eval, e.fen) + ("path" -> JsString(e.path.value))
     if e.up then upgrade.register(sri, e)
+
+  def getMulti(sri: Sri, e: EvalGetMulti, emit: Emit[ClientIn]): Unit =
+    e.fens.foreach: fen =>
+      getEntry(Id.make(e.variant, fen))
+        .map:
+          _.flatMap(_.makeBestSinglePvEval)
+        .map(monitorRequest(fen, Monitor.evalCache.multi))
+        .foreach:
+          _.foreach: eval =>
+            emit:
+              ClientIn.EvalHitMulti:
+                EvalCacheJsonHandlers.writeMultiHit(eval, fen)
+    multi.register(sri, e)
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster
@@ -49,37 +67,29 @@ final class EvalCacheApi(mongo: Mongo)(using
         ) foreach { putTrusted(sri, user, _) }
       }
 
-  private def getEvalJson(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): Future[Option[JsObject]] =
-    getEval(Id(variant, SmallFen.make(variant, fen.simple)), multiPv) map {
-      _.map { EvalCacheJsonHandlers.writeEval(_, fen) }
-    } map { res =>
-      Fen.readPly(fen) foreach { ply =>
-        Monitor.evalCache.request(ply.value, res.isDefined).increment()
-      }
-      res
-    }
+  private def monitorRequest[A](fen: Fen.Epd, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
+    Fen
+      .readPly(fen)
+      .foreach: ply =>
+        mon.request(ply.value, res.isDefined).increment()
+    res
 
   private val cache: AsyncLoadingCache[Id, Option[EvalCacheEntry]] = Scaffeine()
-    .initialCapacity(65536)
+    .initialCapacity(65_536)
     .expireAfterWrite(5 minutes)
     .buildAsyncFuture(fetchAndSetAccess)
 
-  private def getEval(id: Id, multiPv: MultiPv): Future[Option[Eval]] =
-    getEntry(id) map:
-      _.flatMap(_ makeBestMultiPvEval multiPv)
-
-  private def getEntry(id: Id): Future[Option[EvalCacheEntry]] = cache get id
+  export cache.get as getEntry
 
   private def fetchAndSetAccess(id: Id): Future[Option[EvalCacheEntry]] =
-    mongo.evalCacheEntry(id) map { res =>
+    mongo.evalCacheEntry(id) map: res =>
       if res.isDefined then mongo.evalCacheUsedNow(id)
       res
-    }
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
     def destSize(fen: Fen.Epd): Int =
       chess.Game(chess.variant.Standard.some, fen.some).situation.moves.view.map(_._2.size).sum
-    mongo.evalCacheColl.flatMap { c =>
+    mongo.evalCacheColl.flatMap: c =>
       EvalCacheValidator(input) match
         case Left(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
@@ -97,19 +107,20 @@ final class EvalCacheApi(mongo: Mongo)(using
               c.insert
                 .one(entry)
                 .recover(mongo.ignoreDuplicateKey)
-                .map { _ =>
+                .map: _ =>
                   cache.put(input.id, Future.successful(entry.some))
                   upgrade.onEval(input, sri)
-                }
+                  multi.onEval(input, sri)
             case Some(oldEntry) =>
               val entry = oldEntry add input.eval
               if entry.similarTo(oldEntry) then Future.successful(())
               else
-                c.update.one(BSONDocument("_id" -> entry.id), entry, upsert = true).map { _ =>
-                  cache.put(input.id, Future.successful(entry.some))
-                  upgrade.onEval(input, sri)
-                }
-    }
+                c.update
+                  .one(BSONDocument("_id" -> entry.id), entry, upsert = true)
+                  .map: _ =>
+                    cache.put(input.id, Future.successful(entry.some))
+                    upgrade.onEval(input, sri)
+                    multi.onEval(input, sri)
 
 private object EvalCacheValidator:
 

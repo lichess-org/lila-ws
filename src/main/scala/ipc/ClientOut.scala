@@ -75,6 +75,8 @@ object ClientOut:
       depth: Depth
   ) extends ClientOutSite
 
+  case class EvalGetMulti(fens: List[Fen.Epd], variant: Variant) extends ClientOutSite
+
   case class MsgType(dest: User.Id) extends ClientOutSite
 
   case class SiteForward(payload: JsObject) extends ClientOutSite
@@ -189,6 +191,7 @@ object ClientOut:
               yield AnaDests(fen, path, variant, chapterId)
             case "evalGet"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGet)
             case "evalPut"             => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readPut)
+            case "evalGetMulti"        => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGetMulti)
             case "msgType"             => o.get[User.Id]("d") map MsgType.apply
             case "msgSend" | "msgRead" => Some(UserForward(o))
             // lobby
