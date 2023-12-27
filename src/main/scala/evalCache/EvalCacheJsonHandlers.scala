@@ -40,10 +40,14 @@ object EvalCacheJsonHandlers:
     "pvs"    -> JsArray(e.pvs.toList.map(writePv))
   )
 
-  def writeMultiHit(e: Eval, fen: Fen.Epd) = Json
+  def writeMultiHit(fen: Fen.Epd, e: Eval): JsObject = Json
     .obj("fen" -> fen, "depth" -> e.depth)
     .add("cp" -> e.bestPv.score.cp)
     .add("mate" -> e.bestPv.score.mate)
+
+  def writeMultiHit(evals: List[(Fen.Epd, Eval)]): JsObject = evals match
+    case List(single) => writeMultiHit.tupled(single)
+    case many         => Json.obj("multi" -> many.map(writeMultiHit.tupled))
 
   private def writePv(pv: Pv) = Json
     .obj("moves" -> pv.moves.value.toList.map(_.uci).mkString(" "))

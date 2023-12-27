@@ -45,7 +45,7 @@ final private class EvalCacheMulti(using
         val sris = oldEval.sris.filter(_ != fromSri)
         if sris.nonEmpty then
           val hit = EvalHitMulti:
-            EvalCacheJsonHandlers.writeMultiHit(input.eval, input.fen)
+            EvalCacheJsonHandlers.writeMultiHit(input.fen, input.eval)
           sris.foreach: sri =>
             Bus.publish(_ sri sri, hit)
           upgradeMon.count.increment(sris.size)
