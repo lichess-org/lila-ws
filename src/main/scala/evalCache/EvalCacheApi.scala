@@ -38,12 +38,12 @@ final class EvalCacheApi(mongo: Mongo)(using
     if e.up then upgrade.register(sri, e)
 
   def getMulti(sri: Sri, e: EvalGetMulti, emit: Emit[ClientIn]): Unit =
-    e.fens
-      .traverse: fen =>
-        getEntry(Id.make(e.variant, fen))
+    e.positions
+      .traverse: pos =>
+        getEntry(Id.make(pos.variant, pos.fen))
           .map:
-            _.flatMap(_.makeBestSinglePvEval).map(fen -> _)
-          .map(monitorRequest(fen, Monitor.evalCache.multi))
+            _.flatMap(_.makeBestSinglePvEval).map(pos -> _)
+          .map(monitorRequest(pos.fen, Monitor.evalCache.multi))
       .map(_.flatten)
       .foreach: evals =>
         if evals.nonEmpty then

@@ -8,6 +8,7 @@ import chess.variant.Variant
 
 import evalCache.EvalCacheEntry.*
 import evalCache.Eval.*
+import ipc.ClientOut.EvalGetMulti
 
 object EvalCacheJsonHandlers:
 
@@ -28,10 +29,18 @@ object EvalCacheJsonHandlers:
     pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
   yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
-  def readGetMulti(d: JsObject) = for
-    fens <- d.get[List[Fen.Epd]]("fens")
-    variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
-  yield ipc.ClientOut.EvalGetMulti(fens take 9, variant)
+  def readGetMulti(d: JsObject) =
+    import evalCache.EvalCacheMulti.Position
+    import chess.eval.WinPercent
+    def parsePosition(str: String): Position =
+      val (fen, wp, variant) = str.split('|') match
+        case Array(fen, winStr, variantStr) =>
+          (fen, winStr.toIntOption, Variant(Variant.LilaKey(variantStr)))
+        case Array(fen, winStr) => (fen, winStr.toIntOption, None)
+        case Array(fen)         => (fen, None, None)
+        case _                  => (Fen.Epd.initial, None, None)
+      Position(Fen.Epd(fen), wp.fold(WinPercent.initial)(WinPercent(_)), variant | Variant.default)
+    EvalGetMulti(d.get[List[String]]("positions").fold(Nil)(_ map parsePosition))
 
   def writeEval(e: Eval, fen: Fen.Epd) = Json.obj(
     "fen"    -> fen,
@@ -40,12 +49,13 @@ object EvalCacheJsonHandlers:
     "pvs"    -> JsArray(e.pvs.toList.map(writePv))
   )
 
-  def writeMultiHit(fen: Fen.Epd, e: Eval): JsObject = Json
-    .obj("fen" -> fen, "depth" -> e.depth)
+  def writeMultiHit(pos: evalCache.EvalCacheMulti.Position, e: Eval): JsObject = Json
+    .obj("fen" -> pos.fen, "depth" -> e.depth)
+    .add("variant" -> pos.exoticVariant.map(_.key))
     .add("cp" -> e.bestPv.score.cp)
     .add("mate" -> e.bestPv.score.mate)
 
-  def writeMultiHit(evals: List[(Fen.Epd, Eval)]): JsObject = evals match
+  def writeMultiHit(evals: List[(evalCache.EvalCacheMulti.Position, Eval)]): JsObject = evals match
     case List(single) => writeMultiHit.tupled(single)
     case many         => Json.obj("multi" -> many.map(writeMultiHit.tupled))
 

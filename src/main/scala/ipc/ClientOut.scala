@@ -75,7 +75,7 @@ object ClientOut:
       depth: Depth
   ) extends ClientOutSite
 
-  case class EvalGetMulti(fens: List[Fen.Epd], variant: Variant) extends ClientOutSite
+  case class EvalGetMulti(positions: List[evalCache.EvalCacheMulti.Position]) extends ClientOutSite
 
   case class MsgType(dest: User.Id) extends ClientOutSite
 

@@ -3,6 +3,7 @@ package evalCache
 
 import chess.format.Fen
 import chess.variant.Variant
+import chess.eval.WinPercent
 import lila.ws.util.ExpireCallbackMemo
 import lila.ws.ipc.ClientOut.EvalGetMulti
 import lila.ws.ipc.ClientIn.EvalHitMulti
@@ -28,7 +29,7 @@ final private class EvalCacheMulti(using
   def register(sri: Sri, e: EvalGetMulti): Unit =
     members get sri.value foreach: prevMember =>
       prevMember.setups.foreach(unregisterEval(_, sri))
-    val wm = WatchingMember(sri, e.variant, e.fens)
+    val wm = WatchingMember(sri, e.positions)
     members += (sri.value -> wm)
     wm.setups.foreach: setupId =>
       evals += (setupId -> evals.get(setupId).fold(EvalState(Set(sri), Depth(0)))(_ addSri sri))
@@ -66,12 +67,16 @@ final private class EvalCacheMulti(using
     upgradeMon.evals.update(evals.size)
     upgradeMon.expirable.update(expirableSris.count)
 
-private object EvalCacheMulti:
+object EvalCacheMulti:
 
   import EvalCacheUpgrade.*
+
+  case class Position(fen: Fen.Epd, win: WinPercent, variant: Variant):
+    def exoticVariant    = if variant.standard then None else Some(variant)
+    def setupId: SetupId = makeSetupId(variant, fen)
 
   def makeSetupId(variant: Variant, fen: Fen.Epd): SetupId =
     s"${variant.id}${SmallFen.make(variant, fen.simple)}"
 
-  case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Epd]):
-    def setups: List[SetupId] = fens.map(makeSetupId(variant, _))
+  case class WatchingMember(sri: Sri, positions: List[Position]):
+    def setups: List[SetupId] = positions.map(_.setupId)
