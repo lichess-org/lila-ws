@@ -16,7 +16,8 @@ final class RateLimit(
   private var logged: Boolean = false
 
   def apply(msg: => String = ""): Boolean =
-    if credits > 0 then
+    if msg == "null" then true
+    else if credits > 0 then
       credits -= 1
       true
     else if clearAt < nowMillis then
