@@ -13,12 +13,12 @@ val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.0.2"
 val kamonVersion = "2.7.0"
-val nettyVersion = "4.1.101.Final"
+val nettyVersion = "4.1.104.Final"
 
 scalaVersion := "3.3.1"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC11" exclude ("org.scala-lang.modules", "scala-java8-compat_2.13")
-libraryDependencies += "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC11"
+libraryDependencies += "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12"
 libraryDependencies += "io.lettuce"        % "lettuce-core"                           % "6.3.1.RELEASE"
 libraryDependencies += "io.netty"          % "netty-handler"                          % nettyVersion
 libraryDependencies += "io.netty"          % "netty-codec-http"                       % nettyVersion
