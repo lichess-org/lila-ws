@@ -89,8 +89,6 @@ object ClientOut:
 
   case object Ignore extends ClientOutSite
 
-  case class Switch(uri: lila.ws.util.RequestUri) extends ClientOutSite
-
   // lobby
 
   case class Idle(value: Boolean, payload: JsValue) extends ClientOutLobby
@@ -260,11 +258,6 @@ object ClientOut:
             case "racerJoin"  => Some(RacerJoin)
             case "racerStart" => Some(RacerStart)
 
-            case "switch" =>
-              for
-                data <- o obj "d"
-                uri  <- data.get[lila.ws.util.RequestUri]("uri")
-              yield Switch(uri)
             case "wrongHole" => Some(WrongHole)
             case _           => None
           } getOrElse Unexpected(o)

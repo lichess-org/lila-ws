@@ -11,8 +11,6 @@ object RequestUri extends OpaqueString[RequestUri]
 
 final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
 
-  def switch(uri: RequestUri): RequestHeader = RequestHeader(uri, headers)
-
   val (path, parameters) =
     val qsd = QueryStringDecoder(uri.value)
     (qsd.path, qsd.parameters)
@@ -51,5 +49,7 @@ final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
   def ip: Option[IpAddress] = IpAddress from header("X-Forwarded-For")
 
   def name: String = s"$uri UA: $userAgent"
+
+  def host: String = header(HttpHeaderNames.HOST) getOrElse "?"
 
   override def toString = s"$name origin: $origin"

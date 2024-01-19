@@ -29,9 +29,6 @@ final private class FrameHandler(connector: ActorChannelConnector)(using Executo
           else
             ClientOut parse txt foreach:
 
-              case ClientOut.Switch(uri) if endpoint != null =>
-                withClientOf(ctx.channel) { connector.switch(_, endpoint, ctx.channel)(uri) }
-
               case ClientOut.Unexpected(msg) =>
                 Monitor.clientOutUnexpected.increment()
                 logger.info(s"Unexpected $msg")
