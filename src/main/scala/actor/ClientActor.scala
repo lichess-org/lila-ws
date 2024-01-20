@@ -167,7 +167,7 @@ object ClientActor:
       auth: Option[Auth.Success],
       flag: Option[Flag]
   ):
-    export header.{ ip, isLichessMobile, name }
+    export header.{ domain, ip, isLichessMobile, name }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
       case Auth.Success.OAuth(_) => true
@@ -179,8 +179,4 @@ object ClientActor:
       req: Req,
       services: Services
   ):
-    def lilaIn     = services.lila
-    def users      = services.users
-    def roomCrowd  = services.roomCrowd
-    def roundCrowd = services.roundCrowd
-    def keepAlive  = services.keepAlive
+    export services.{ keepAlive, lila as lilaIn, roomCrowd, roundCrowd, users }
