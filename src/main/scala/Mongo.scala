@@ -14,6 +14,8 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
+  private type Coll = reactivemongo.api.bson.collection.BSONCollection
+
   private val mainConnection =
     MongoConnection.fromString(config.getString("mongo.uri").pp("main")) flatMap { parsedUri =>
       driver.connect(parsedUri).map(_ -> parsedUri.db)
@@ -38,25 +40,27 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     yoloConnection.flatMap: (conn, dbName) =>
       conn database dbName.getOrElse("lichess")
 
-  private def collNamed(name: String) = mainDb.map(_ collection name)(parasitic)
-  def securityColl                    = collNamed("security")
-  def userColl                        = collNamed("user4")
-  def coachColl                       = collNamed("coach")
-  def streamerColl                    = collNamed("streamer")
-  def simulColl                       = collNamed("simul")
-  def tourColl                        = collNamed("tournament2")
-  def tourPlayerColl                  = collNamed("tournament_player")
-  def tourPairingColl                 = collNamed("tournament_pairing")
-  def gameColl                        = collNamed("game5")
-  def challengeColl                   = collNamed("challenge")
-  def relationColl                    = collNamed("relation")
-  def teamColl                        = collNamed("team")
-  def teamMemberColl                  = collNamed("team_member")
-  def swissColl                       = collNamed("swiss")
-  def reportColl                      = collNamed("report2")
-  def oauthColl                       = collNamed("oauth2_access_token")
-  def studyColl                       = studyDb.map(_ collection "study")(parasitic)
-  def evalCacheColl                   = yoloDb.map(_ collection "eval_cache")(parasitic)
+  private def collNamed(name: String): Future[Coll] = mainDb.map(_ collection name)(parasitic)
+  def securityColl                                  = collNamed("security")
+  def userColl                                      = collNamed("user4")
+  def coachColl                                     = collNamed("coach")
+  def streamerColl                                  = collNamed("streamer")
+  def simulColl                                     = collNamed("simul")
+  def tourColl                                      = collNamed("tournament2")
+  def tourPlayerColl                                = collNamed("tournament_player")
+  def tourPairingColl                               = collNamed("tournament_pairing")
+  def gameColl                                      = collNamed("game5")
+  def challengeColl                                 = collNamed("challenge")
+  def relationColl                                  = collNamed("relation")
+  def teamColl                                      = collNamed("team")
+  def teamMemberColl                                = collNamed("team_member")
+  def swissColl                                     = collNamed("swiss")
+  def reportColl                                    = collNamed("report2")
+  def oauthColl                                     = collNamed("oauth2_access_token")
+  def relayTourColl                                 = collNamed("relay_tour")
+  def relayRoundColl                                = collNamed("relay")
+  def studyColl                                     = studyDb.map(_ collection "study")(parasitic)
+  def evalCacheColl                                 = yoloDb.map(_ collection "eval_cache")(parasitic)
 
   def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
   def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =

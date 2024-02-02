@@ -34,19 +34,23 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
   def filterPresent(roomId: RoomId, userIds: Set[User.Id]): Set[User.Id] =
     Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet intersect userIds)
 
+  def getNbMembers(roomIds: Set[RoomId]): Map[RoomId, Int] =
+    roomIds.view
+      .map: id =>
+        Option(rooms get id).fold(id -> 0)(id -> _.nbMembers)
+      .toMap
+
   private def publish(roomId: RoomId, room: RoomState): Unit =
     outputBatch(outputOf(roomId, room))
 
-  private val outputBatch = groupedWithin[Output](1024, 1.second) { outputs =>
+  private val outputBatch = groupedWithin[Output](1024, 1.second): outputs =>
     outputs
-      .foldLeft(Map.empty[RoomId, Output]) { (crowds, crowd) =>
+      .foldLeft(Map.empty[RoomId, Output]): (crowds, crowd) =>
         crowds.updated(crowd.roomId, crowd)
-      }
-      .values foreach { output =>
-      json room output foreach:
-        Bus.publish(_ room output.roomId, _)
-    }
-  }
+      .values
+      .foreach: output =>
+        json room output foreach:
+          Bus.publish(_ room output.roomId, _)
 
   def size = rooms.size
 
@@ -76,10 +80,8 @@ object RoomCrowd:
     def isEmpty   = nbMembers < 1
 
     def connect(user: Option[User.Id]) =
-      user.fold(copy(anons = anons + 1)) { u =>
+      user.fold(copy(anons = anons + 1)): u =>
         copy(users = users.updatedWith(u)(cur => Some(cur.fold(1)(_ + 1))))
-      }
     def disconnect(user: Option[User.Id]) =
-      user.fold(copy(anons = anons - 1)) { u =>
+      user.fold(copy(anons = anons - 1)): u =>
         copy(users = users.updatedWith(u)(_.map(_ - 1).filter(_ > 0)))
-      }

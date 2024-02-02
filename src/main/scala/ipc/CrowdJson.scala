@@ -8,9 +8,8 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if crowd.users.sizeIs > 20 then
-      keepOnlyStudyMembers(crowd) map { users =>
+      keepOnlyStudyMembers(crowd) map: users =>
         crowd.copy(users = users, anons = 0)
-      }
     else Future successful crowd
   } flatMap spectatorsOf map ClientIn.Crowd.apply
 

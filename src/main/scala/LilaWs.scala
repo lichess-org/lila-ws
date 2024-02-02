@@ -36,6 +36,7 @@ object LilaWs extends App:
   lazy val monitor       = wire[Monitor]
 
   wire[LilaHandler] // must eagerly instanciate!
+  wire[RelayCrowd]  // must eagerly instanciate!
   wire[LilaWsServer].start()
 
 final class LilaWsServer(
