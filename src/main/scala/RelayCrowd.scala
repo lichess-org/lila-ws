@@ -5,7 +5,7 @@ import cats.syntax.all.*
 
 final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Executor, scheduler: Scheduler):
 
-  scheduler.scheduleWithFixedDelay(20.seconds, 10.seconds): () =>
+  scheduler.scheduleWithFixedDelay(20.seconds, 11.seconds): () =>
     updateRelays()
 
   private def updateRelays() = for
@@ -26,6 +26,7 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
           import framework.*
           List(
             Match(BSONDocument("active" -> true, "tier" -> BSONDocument("$exists" -> true))),
+            Sort(Descending("tier")),
             PipelineOperator:
               BSONDocument(
                 "$lookup" -> BSONDocument(
@@ -47,7 +48,7 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
               )
             ,
             UnwindField("round"),
-            Limit(50),
+            Limit(100),
             Group(BSONNull)("ids" -> PushField("round._id"))
           )
         .collect[List](maxDocs = 1)
