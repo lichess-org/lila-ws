@@ -17,7 +17,7 @@ final class NettyServer(
     config: Config
 )(using Executor):
 
-  private val connector = ActorChannelConnector(router, clients)
+  private val connector = ActorChannelConnector(clients)
   private val logger    = Logger(getClass)
 
   def start(): Unit =
@@ -60,7 +60,7 @@ final class NettyServer(
               pipeline.addLast(HttpObjectAggregator(4096))
               pipeline.addLast(RequestHandler(router))
               pipeline.addLast(ProtocolHandler(connector))
-              pipeline.addLast(FrameHandler(connector))
+              pipeline.addLast(FrameHandler())
         )
 
       val server = boot.bind(port).sync().channel()
