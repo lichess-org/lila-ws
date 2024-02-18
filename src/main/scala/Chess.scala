@@ -19,7 +19,7 @@ object Chess:
     Monitor.time(_.chessMoveTime):
       try
         chess
-          .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
+          .Game(req.variant.some, req.fen.some)(req.orig, req.dest, req.promotion)
           .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
           .getOrElse(ClientIn.StepFailure)
       catch
@@ -31,7 +31,7 @@ object Chess:
     Monitor.time(_.chessMoveTime):
       try
         chess
-          .Game(req.variant.some, Some(req.fen))
+          .Game(req.variant.some, req.fen.some)
           .drop(req.role, req.square)
           .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
           .getOrElse(ClientIn.StepFailure)
