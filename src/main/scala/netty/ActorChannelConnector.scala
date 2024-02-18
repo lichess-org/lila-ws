@@ -9,9 +9,8 @@ import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
 import ipc.ClientIn
 import io.netty.handler.codec.http.websocketx.*
 import io.netty.buffer.Unpooled
-import lila.ws.util.RequestUri
 
-final private class ActorChannelConnector(router: Router, clients: ActorRef[Clients.Control])(using Executor):
+final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(using Executor):
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()

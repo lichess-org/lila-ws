@@ -9,7 +9,7 @@ import io.netty.handler.codec.http.websocketx.*
 
 import ipc.ClientOut
 
-final private class FrameHandler(connector: ActorChannelConnector)(using Executor)
+final private class FrameHandler(using Executor)
     extends SimpleChannelInboundHandler[WebSocketFrame]:
 
   import FrameHandler.*
