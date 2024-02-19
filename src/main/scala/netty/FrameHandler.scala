@@ -2,11 +2,9 @@ package lila.ws
 package netty
 
 import com.typesafe.scalalogging.Logger
-import io.netty.channel.Channel
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.SimpleChannelInboundHandler
+import io.netty.channel.*
 import io.netty.handler.codec.http.websocketx.*
-
+import io.netty.util.concurrent.GenericFutureListener
 import ipc.ClientOut
 
 final private class FrameHandler(using Executor) extends SimpleChannelInboundHandler[WebSocketFrame]:
@@ -59,7 +57,8 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
         shutdown(channel, 1011, s"no actor on $channel")
 
   private def shutdown(channel: Channel, code: Int, reason: String): Unit =
-    channel.writeAndFlush(CloseWebSocketFrame(code, reason)).addListener(_ => channel.close())
+    val close: GenericFutureListener[ChannelFuture] = _ => channel.close()
+    channel.writeAndFlush(CloseWebSocketFrame(code, reason)).addListener(close)
 
 private object FrameHandler:
 
