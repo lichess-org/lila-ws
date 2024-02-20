@@ -40,7 +40,7 @@ libraryDependencies += "io.kamon"                   %% "kamon-prometheus"     % 
 libraryDependencies += "io.kamon"                   %% "kamon-system-metrics" % kamonVersion
 libraryDependencies += "com.softwaremill.macwire"   %% "macros"               % "2.5.9"     % "provided"
 libraryDependencies += "com.roundeights"            %% "hasher"               % "1.3.1"
-libraryDependencies += "org.scalameta"              %% "munit"                % "1.0.0-M10" % Test
+libraryDependencies += "org.scalameta"              %% "munit"                % "1.0.0-M11" % Test
 
 resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
