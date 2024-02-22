@@ -38,9 +38,10 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
               case out => withClientOf(ctx.channel)(_ tell out)
 
       case frame: PongWebSocketFrame =>
-        val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
-        val pong      = ClientOut.RoundPongFrame(lagMillis)
-        Option(ctx.channel.attr(key.client).get) foreach { _.value foreach { _ foreach (_ ! pong) } }
+        if frame.content().readableBytes() >= 8 then
+          val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
+          val pong      = ClientOut.RoundPongFrame(lagMillis)
+          Option(ctx.channel.attr(key.client).get) foreach { _.value foreach { _ foreach (_ ! pong) } }
 
       case frame =>
         logger.info("unsupported frame type: " + frame.getClass.getName)
