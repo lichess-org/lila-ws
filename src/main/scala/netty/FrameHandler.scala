@@ -41,7 +41,7 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
         if frame.content().readableBytes() >= 8 then
           val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
           val pong      = ClientOut.RoundPongFrame(lagMillis)
-          Option(ctx.channel.attr(key.client).get) foreach { _.value foreach { _ foreach (_ ! pong) } }
+          Option(ctx.channel.attr(key.client).get).foreach(_.value.foreach(_.foreach(_ ! pong)))
 
       case frame =>
         logger.info("unsupported frame type: " + frame.getClass.getName)
