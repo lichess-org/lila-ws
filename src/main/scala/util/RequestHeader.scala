@@ -12,11 +12,11 @@ object RequestUri extends OpaqueString[RequestUri]
 opaque type Domain = String
 object Domain extends OpaqueString[Domain]
 
-final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
+final class RequestHeader private (val uri: RequestUri, headers: HttpHeaders):
 
-  val (path, parameters) =
-    val qsd = QueryStringDecoder(uri.value)
-    (qsd.path, qsd.parameters)
+  lazy val qsd        = QueryStringDecoder(uri.value)
+  lazy val path       = qsd.path
+  lazy val parameters = qsd.parameters
 
   def header(name: CharSequence): Option[String] =
     Option(headers get name).filter(_.nonEmpty)
@@ -56,3 +56,8 @@ final class RequestHeader(val uri: RequestUri, headers: HttpHeaders):
   def domain = Domain(header(HttpHeaderNames.HOST) getOrElse "?")
 
   override def toString = s"$name origin: $origin"
+
+object RequestHeader:
+  import cats.syntax.all.*
+  def apply(uri: RequestUri, headers: HttpHeaders): Either[Throwable, RequestHeader] =
+    Either.catchNonFatal(new RequestHeader(uri, headers))
