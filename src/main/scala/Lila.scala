@@ -8,6 +8,7 @@ import io.lettuce.core.pubsub.*
 import ipc.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.Await
+import scala.util.chaining.*
 
 final class Lila(config: Config)(using Executor):
 
@@ -65,9 +66,7 @@ final class Lila(config: Config)(using Executor):
       connect[LilaIn.Round](chans.round),
       connect[LilaIn.Challenge](chans.challenge),
       connect[LilaIn.Racer](chans.racer)
-    ).mapN:
-      case (site, tour, lobby, simul, team, swiss, study, round, challenge, racer) =>
-        Emits(site, tour, lobby, simul, team, swiss, study, round, challenge, racer)
+    ).mapN(Emits.apply(_, _, _, _, _, _, _, _, _, _))
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] =
 
