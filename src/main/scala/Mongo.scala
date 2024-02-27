@@ -59,6 +59,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def oauthColl                                     = collNamed("oauth2_access_token")
   def relayTourColl                                 = collNamed("relay_tour")
   def relayRoundColl                                = collNamed("relay")
+  def prefColl                                      = collNamed("pref")
   def studyColl                                     = studyDb.map(_ collection "study")(parasitic)
   def evalCacheColl                                 = yoloDb.map(_ collection "eval_cache")(parasitic)
 
@@ -75,6 +76,10 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
   private def isTeamMember(teamId: Team.Id, user: User.Id): Future[Boolean] =
     teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.value}@$teamId")) }
+
+  def isAppearAnon(user: Option[User.Id]): Future[Boolean] =
+    user.fold(Future successful false)(u => prefColl flatMap:
+      exists(_, BSONDocument("_id" -> u, "appearAnon" -> true)))
 
   def teamView(id: Team.Id, me: Option[User.Id]): Future[Option[Team.HasChat]] =
     teamColl

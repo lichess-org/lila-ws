@@ -15,10 +15,10 @@ final class RoundCrowd(
 
   private val rounds = ConcurrentHashMap[RoomId, RoundState](32768)
 
-  def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
+  def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color], appearAnon: Boolean): Unit =
     publish(
       roomId,
-      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
+      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player, appearAnon))
     )
 
   def disconnect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
@@ -76,9 +76,9 @@ object RoundCrowd:
       room: RoomCrowd.RoomState = RoomCrowd.RoomState(),
       players: ByColor[Int] = ByColor(0, 0)
   ):
-    def connect(user: Option[User.Id], player: Option[Color]) =
+    def connect(user: Option[User.Id], player: Option[Color], appearAnon: Boolean = false) =
       copy(
-        room = if player.isDefined then room else room connect user,
+        room = if player.isDefined then room else if appearAnon then room connectAnon user else room connect user,
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
     def disconnect(user: Option[User.Id], player: Option[Color]) =

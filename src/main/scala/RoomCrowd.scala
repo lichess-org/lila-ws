@@ -67,21 +67,28 @@ object RoomCrowd:
     Output(
       roomId = roomId,
       members = room.nbMembers,
-      users = room.users.keys,
-      anons = room.anons
+      users = room.users.filter(!_._2.appearAnon).keys,
+      anons = room.anons + room.users.count(_._2.appearAnon)
     )
 
+  case class UserStatus(
+      connected: Int,
+      appearAnon: Boolean)
   case class RoomState(
       anons: Int = 0,
-      users: Map[User.Id, Int] = Map.empty
+      users: Map[User.Id, UserStatus] = Map.empty
   ):
     def nbUsers   = users.size
     def nbMembers = anons + nbUsers
     def isEmpty   = nbMembers < 1
 
     def connect(user: Option[User.Id]) =
+      doConnect(user,false)
+    def connectAnon(user: Option[User.Id]) =
+      doConnect(user,true)
+    private def doConnect(user: Option[User.Id], appearAnon: Boolean) =
       user.fold(copy(anons = anons + 1)): u =>
-        copy(users = users.updatedWith(u)(cur => Some(cur.fold(1)(_ + 1))))
+        copy(users = users.updatedWith(u)(cur => Some(cur.fold(UserStatus(1,appearAnon))(s => UserStatus(s.connected + 1,s.appearAnon)))))
     def disconnect(user: Option[User.Id]) =
       user.fold(copy(anons = anons - 1)): u =>
-        copy(users = users.updatedWith(u)(_.map(_ - 1).filter(_ > 0)))
+        copy(users = users.updatedWith(u)(m => m.map(cur => UserStatus(cur.connected - 1, cur.appearAnon)).filter(_.connected > 0)))

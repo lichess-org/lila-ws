@@ -34,7 +34,8 @@ object RoundClientActor:
       roomState: RoomActor.State,
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
-      from: Either[Option[SocketVersion], JsonString]
+      from: Either[Option[SocketVersion], JsonString],
+      appearAnon: Boolean = false,
   )(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup: ctx =>
       import deps.*
@@ -42,7 +43,7 @@ object RoundClientActor:
       onStart(deps, ctx)
       req.user foreach { users.connect(_, ctx.self) }
       state.busChans foreach { Bus.subscribe(_, ctx.self) }
-      roundCrowd.connect(roomState.room, req.user, player.map(_.color))
+      roundCrowd.connect(roomState.room, req.user, player.map(_.color), appearAnon)
       from match
         case Left(version) =>
           History.round.getFrom(roomState.room.into(Game.Id), version) match

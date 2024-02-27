@@ -105,14 +105,14 @@ final class Controller(
 
   def roundWatch(id: Game.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo.gameExists(id) zip mongo.troll.is(req.user) zip roundFrom(id into Game.AnyId, req) map:
-        case ((true, isTroll), from) =>
+      mongo.gameExists(id) zip mongo.troll.is(req.user) zip mongo.isAppearAnon(req.user) zip roundFrom(id into Game.AnyId, req) map:
+        case (((true, isTroll), appearAnon), from) =>
           val userTv = UserTv.from(header queryParameter "userTv")
           endpoint(
             name = "round/watch",
             behavior = emit =>
               RoundClientActor
-                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
+                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from, appearAnon):
                   Deps(emit, req, services)
             ,
             header,
