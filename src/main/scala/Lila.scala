@@ -1,5 +1,6 @@
 package lila.ws
 
+import cats.syntax.all.*
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core.*
@@ -53,18 +54,20 @@ final class Lila(config: Config)(using Executor):
   )
 
   private def connectAll: Future[Emits] =
-    connect[LilaIn.Site](chans.site) zip
-      connect[LilaIn.Tour](chans.tour) zip
-      connect[LilaIn.Lobby](chans.lobby) zip
-      connect[LilaIn.Simul](chans.simul) zip
-      connect[LilaIn.Team](chans.team) zip
-      connect[LilaIn.Swiss](chans.swiss) zip
-      connect[LilaIn.Study](chans.study) zip
-      connect[LilaIn.Round](chans.round) zip
-      connect[LilaIn.Challenge](chans.challenge) zip
-      connect[LilaIn.Racer](chans.racer) map:
-        case site ~ tour ~ lobby ~ simul ~ team ~ swiss ~ study ~ round ~ challenge ~ racer =>
-          Emits(site, tour, lobby, simul, team, swiss, study, round, challenge, racer)
+    (
+      connect[LilaIn.Site](chans.site),
+      connect[LilaIn.Tour](chans.tour),
+      connect[LilaIn.Lobby](chans.lobby),
+      connect[LilaIn.Simul](chans.simul),
+      connect[LilaIn.Team](chans.team),
+      connect[LilaIn.Swiss](chans.swiss),
+      connect[LilaIn.Study](chans.study),
+      connect[LilaIn.Round](chans.round),
+      connect[LilaIn.Challenge](chans.challenge),
+      connect[LilaIn.Racer](chans.racer)
+    ).mapN:
+      case (site, tour, lobby, simul, team, swiss, study, round, challenge, racer) =>
+        Emits(site, tour, lobby, simul, team, swiss, study, round, challenge, racer)
 
   private def connect[In <: LilaIn](chan: Chan): Future[Emit[In]] =
 
