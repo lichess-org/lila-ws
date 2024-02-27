@@ -8,7 +8,6 @@ import io.lettuce.core.pubsub.*
 import ipc.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.Await
-import scala.util.chaining.*
 
 final class Lila(config: Config)(using Executor):
 
