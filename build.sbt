@@ -25,7 +25,7 @@ libraryDependencies += "io.netty"          % "netty-codec-http"                 
 libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-$arch_"
 libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-$arch_"
 libraryDependencies += "com.github.ornicar" %% "scalalib"          % "9.5.5"
-libraryDependencies += "org.lichess"        %% "scalachess"        % "15.7.9"
+libraryDependencies += "org.lichess"        %% "scalachess"        % "15.7.11"
 libraryDependencies += "org.apache.pekko"   %% "pekko-actor-typed" % pekkoVersion
 
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
