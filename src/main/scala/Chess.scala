@@ -6,39 +6,26 @@ import chess.opening.{ Opening, OpeningDb }
 import chess.Square
 import chess.bitboard.Bitboard
 import chess.variant.{ Crazyhouse, Variant }
-import com.typesafe.scalalogging.Logger
 import cats.syntax.option.*
 
 import ipc.*
 
 object Chess:
 
-  private val logger = Logger(getClass)
-
   def apply(req: ClientOut.AnaMove): ClientIn =
     Monitor.time(_.chessMoveTime):
-      try
-        chess
-          .Game(req.variant.some, req.fen.some)(req.orig, req.dest, req.promotion)
-          .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
-          .getOrElse(ClientIn.StepFailure)
-      catch
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
-          ClientIn.StepFailure
+      chess
+        .Game(req.variant.some, req.fen.some)(req.orig, req.dest, req.promotion)
+        .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
+        .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime):
-      try
-        chess
-          .Game(req.variant.some, req.fen.some)
-          .drop(req.role, req.square)
-          .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
-          .getOrElse(ClientIn.StepFailure)
-      catch
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.square}", e)
-          ClientIn.StepFailure
+      chess
+        .Game(req.variant.some, req.fen.some)
+        .drop(req.role, req.square)
+        .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
+        .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
     Monitor.time(_.chessDestTime):
