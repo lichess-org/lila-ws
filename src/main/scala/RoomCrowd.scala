@@ -82,13 +82,13 @@ object RoomCrowd:
     def nbMembers = anons + nbUsers
     def isEmpty   = nbMembers < 1
 
-    def connect(user: Option[User.Id]) =
-      doConnect(user,false)
-    def connectAnon(user: Option[User.Id]) =
-      doConnect(user,true)
-    private def doConnect(user: Option[User.Id], appearAnon: Boolean) =
+    def connect(user: Option[User.Id]): RoomState =
+      connect(user,false)
+    def connectAnon(user: Option[User.Id]): RoomState =
+      connect(user,true)
+    private def connect(user: Option[User.Id], appearAnon: Boolean): RoomState =
       user.fold(copy(anons = anons + 1)): u =>
         copy(users = users.updatedWith(u)(cur => Some(cur.fold(UserStatus(1,appearAnon))(s => UserStatus(s.connected + 1,s.appearAnon)))))
-    def disconnect(user: Option[User.Id]) =
+    def disconnect(user: Option[User.Id]): RoomState =
       user.fold(copy(anons = anons - 1)): u =>
         copy(users = users.updatedWith(u)(m => m.map(cur => UserStatus(cur.connected - 1, cur.appearAnon)).filter(_.connected > 0)))
