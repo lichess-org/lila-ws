@@ -52,7 +52,7 @@ final private class ProtocolHandler(connector: ActorChannelConnector)
         Monitor.websocketError("uriTooLong")
         ctx.close()
       case e: IllegalArgumentException
-          if Option(e.getMessage).exists(_ contains "Header value contains a prohibited character") =>
+          if Option(e.getMessage).exists(_.contains("Header value contains a prohibited character")) =>
         Monitor.websocketError("headerIllegalChar")
         ctx.close()
       case _ =>

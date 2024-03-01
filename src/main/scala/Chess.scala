@@ -113,7 +113,7 @@ object Chess:
         if first then first = false
         else sb.append(" ")
         sb.append(orig.asChar)
-        dests.foreach { sb append _.asChar }
+        dests.foreach(d => sb.append(d.asChar))
       sb.toString
 
     given OWrites[Crazyhouse.Pocket] = OWrites: v =>

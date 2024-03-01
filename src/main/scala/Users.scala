@@ -55,6 +55,6 @@ final class Users(using scheduler: Scheduler, ec: Executor):
     Option(users.get(userId)).foreach:
       _.foreach { _ ! ipc.SetTroll(v) }
 
-  def isOnline(userId: User.Id): Boolean = users containsKey userId
+  def isOnline(userId: User.Id): Boolean = users.containsKey(userId)
 
   def size = users.size

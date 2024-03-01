@@ -16,7 +16,7 @@ final class ExpireCallbackMemo[K](
 
   private val timeouts = ConcurrentHashMap[K, Cancellable](initialCapacity)
 
-  def get(key: K): Boolean = timeouts contains key
+  def get(key: K): Boolean = timeouts.contains(key)
 
   def put(key: K): Unit = timeouts.compute(
     key,

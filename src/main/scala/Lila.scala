@@ -74,7 +74,7 @@ final class Lila(config: Config)(using Executor):
     val emit: Emit[In] = in =>
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
-      val chanIn = chan in msg
+      val chanIn = chan.in(msg)
       if currentStatus.isOnline then
         connIn.async.publish(chanIn, msg)
         Monitor.redis.in(chanIn, path)
@@ -95,7 +95,7 @@ final class Lila(config: Config)(using Executor):
           )
       .map: _ =>
         val msg = LilaIn.WsBoot.write
-        connIn.async.publish(chan in msg, msg)
+        connIn.async.publish(chan `in` msg, msg)
         emit
 
   private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] =
