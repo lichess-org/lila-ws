@@ -13,31 +13,31 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
   def connect(roomId: RoomId, user: Option[User.Id]): Unit =
     publish(
       roomId,
-      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()) connect user)
+      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()).connect(user))
     )
 
   def disconnect(roomId: RoomId, user: Option[User.Id]): Unit =
     val room = rooms.computeIfPresent(
       roomId,
       (_, room) =>
-        val newRoom = room disconnect user
+        val newRoom = room.disconnect(user)
         if newRoom.isEmpty then null else newRoom
     )
     if room != null then publish(roomId, room)
 
   def getUsers(roomId: RoomId): Set[User.Id] =
-    Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet)
+    Option(rooms.get(roomId)).fold(Set.empty[User.Id])(_.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
-    Option(rooms get roomId).exists(_.users contains userId)
+    Option(rooms.get(roomId)).exists(_.users contains userId)
 
   def filterPresent(roomId: RoomId, userIds: Set[User.Id]): Set[User.Id] =
-    Option(rooms get roomId).fold(Set.empty[User.Id])(_.users.keySet intersect userIds)
+    Option(rooms.get(roomId)).fold(Set.empty[User.Id])(_.users.keySet.intersect(userIds))
 
   def getNbMembers(roomIds: Set[RoomId]): Map[RoomId, Int] =
     roomIds.view
       .map: id =>
-        Option(rooms get id).fold(id -> 0)(id -> _.nbMembers)
+        Option(rooms.get(id)).fold(id -> 0)(id -> _.nbMembers)
       .toMap
 
   private def publish(roomId: RoomId, room: RoomState): Unit =
@@ -49,8 +49,10 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
         crowds.updated(crowd.roomId, crowd)
       .values
       .foreach: output =>
-        json room output foreach:
-          Bus.publish(_ room output.roomId, _)
+        json
+          .room(output)
+          .foreach:
+            Bus.publish(_.room(output.roomId), _)
 
   def size = rooms.size
 

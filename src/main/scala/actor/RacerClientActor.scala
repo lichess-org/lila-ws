@@ -15,7 +15,7 @@ object RacerClientActor:
       room: RoomActor.State,
       site: ClientActor.State = ClientActor.State()
   ):
-    def raceId = room.room into Racer.Id
+    def raceId = room.room.into(Racer.Id)
 
   def start(roomState: RoomActor.State, playerId: PlayerId)(
       deps: Deps
@@ -70,7 +70,7 @@ object RacerClientActor:
           .receive(state.room, deps)
           .lift(msg)
           .fold(receive(msg)): (newState, emit) =>
-            emit foreach lilaIn.racer
+            emit.foreach(lilaIn.racer)
             newState.fold(Behaviors.same[ClientMsg]): roomState =>
               apply(state.copy(room = roomState), deps)
       }

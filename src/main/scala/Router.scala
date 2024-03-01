@@ -7,7 +7,7 @@ import util.RequestHeader
 final class Router(controller: Controller):
 
   def apply(req: RequestHeader): Controller.Response =
-    req.path drop 1 split '/' match
+    req.path.drop(1).split('/') match
       case Array("socket") | Array("socket", _) => controller.site(req)
       case Array("analysis", "socket")          => controller.site(req)
       case Array("analysis", "socket", _)       => controller.site(req)
@@ -23,4 +23,4 @@ final class Router(controller: Controller):
       case Array("team", id)                    => controller.team(Team.Id(id), req)
       case Array("swiss", id)                   => controller.swiss(Swiss.Id(id), req)
       case Array("racer", id)                   => controller.racer(Racer.Id(id), req)
-      case _                                    => Future successful Left(HttpResponseStatus.NOT_FOUND)
+      case _                                    => Future.successful(Left(HttpResponseStatus.NOT_FOUND))

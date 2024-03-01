@@ -53,7 +53,7 @@ object Chess:
         ,
         opening =
           if Variant.list.openingSensibleVariants(req.variant)
-          then OpeningDb findByEpdFen req.fen
+          then OpeningDb.findByEpdFen(req.fen)
           else None,
         chapterId = req.chapterId
       )
@@ -61,8 +61,10 @@ object Chess:
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
     if Variant.list.openingSensibleVariants(req.variant)
     then
-      OpeningDb findByEpdFen req.fen map:
-        ClientIn.OpeningMsg(req.path, _)
+      OpeningDb
+        .findByEpdFen(req.fen)
+        .map:
+          ClientIn.OpeningMsg(req.path, _)
     else None
 
   private def makeNode(
@@ -71,8 +73,8 @@ object Chess:
       path: UciPath,
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
-    val movable = game.situation playable false
-    val fen     = chess.format.Fen write game
+    val movable = game.situation.playable(false)
+    val fen     = chess.format.Fen.write(game)
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
@@ -83,7 +85,7 @@ object Chess:
       dests = if movable then game.situation.destinations else Map.empty,
       opening =
         if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
-        then OpeningDb findByEpdFen fen
+        then OpeningDb.findByEpdFen(fen)
         else None,
       drops = if movable then game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
@@ -109,9 +111,9 @@ object Chess:
       var first = true
       dests.foreach: (orig, dests) =>
         if first then first = false
-        else sb append " "
-        sb append orig.asChar
-        dests foreach { sb append _.asChar }
+        else sb.append(" ")
+        sb.append(orig.asChar)
+        dests.foreach { sb append _.asChar }
       sb.toString
 
     given OWrites[Crazyhouse.Pocket] = OWrites: v =>

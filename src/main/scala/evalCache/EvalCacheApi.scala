@@ -28,7 +28,7 @@ final class EvalCacheApi(mongo: Mongo)(using
   def get(sri: Sri, e: EvalGet, emit: Emit[ClientIn]): Unit =
     getEntry(Id.make(e.variant, e.fen))
       .map:
-        _.flatMap(_ makeBestMultiPvEval e.multiPv)
+        _.flatMap(_.makeBestMultiPvEval(e.multiPv))
       .map(monitorRequest(e.fen, Monitor.evalCache.single))
       .foreach:
         _.foreach: eval =>
@@ -50,23 +50,24 @@ final class EvalCacheApi(mongo: Mongo)(using
           emit:
             ClientIn.EvalHitMulti:
               EvalCacheJsonHandlers.writeMultiHit(evals)
-    multi.register(sri, e.copy(fens = e.fens take 32))
+    multi.register(sri, e.copy(fens = e.fens.take(32)))
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster
-      .get(user) foreach:
-      _.filter(_.isEnough) foreach: trust =>
-        makeInput(
-          e.variant,
-          e.fen,
-          Eval(
-            pvs = e.pvs,
-            knodes = e.knodes,
-            depth = e.depth,
-            by = user,
-            trust = trust
-          )
-        ) foreach { putTrusted(sri, user, _) }
+      .get(user)
+      .foreach:
+        _.filter(_.isEnough).foreach: trust =>
+          makeInput(
+            e.variant,
+            e.fen,
+            Eval(
+              pvs = e.pvs,
+              knodes = e.knodes,
+              depth = e.depth,
+              by = user,
+              trust = trust
+            )
+          ).foreach(putTrusted(sri, user, _))
 
   private def monitorRequest[A](fen: Fen.Epd, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
     Fen
@@ -83,9 +84,11 @@ final class EvalCacheApi(mongo: Mongo)(using
   export cache.get as getEntry
 
   private def fetchAndSetAccess(id: Id): Future[Option[EvalCacheEntry]] =
-    mongo.evalCacheEntry(id) map: res =>
-      if res.isDefined then mongo.evalCacheUsedNow(id)
-      res
+    mongo
+      .evalCacheEntry(id)
+      .map: res =>
+        if res.isDefined then mongo.evalCacheUsedNow(id)
+        res
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
     def destSize(fen: Fen.Epd): Int =
@@ -96,7 +99,7 @@ final class EvalCacheApi(mongo: Mongo)(using
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
         case _ =>
-          getEntry(input.id) flatMap:
+          getEntry(input.id).flatMap:
             case None =>
               val entry = EvalCacheEntry(
                 _id = input.id,
@@ -113,7 +116,7 @@ final class EvalCacheApi(mongo: Mongo)(using
                   upgrade.onEval(input, sri)
                   multi.onEval(input, sri)
             case Some(oldEntry) =>
-              val entry = oldEntry add input.eval
+              val entry = oldEntry.add(input.eval)
               if entry.similarTo(oldEntry) then Future.successful(())
               else
                 c.update

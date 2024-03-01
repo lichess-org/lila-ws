@@ -37,7 +37,7 @@ final class Monitor(
     val members = LilaWsServer.connections.get
     val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
-    connection.current update members.toDouble
+    connection.current.update(members.toDouble)
     historyRoomSize.update(History.room.size().toDouble)
     historyRoundSize.update(History.round.size().toDouble)
     crowdRoomSize.update(services.roomCrowd.size.toDouble)

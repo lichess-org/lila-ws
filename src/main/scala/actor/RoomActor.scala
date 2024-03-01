@@ -22,15 +22,15 @@ object RoomActor:
   ): Unit =
     import deps.*
     ClientActor.onStart(deps, ctx)
-    req.user foreach { users.connect(_, ctx.self) }
-    Bus.subscribe(Bus.channel room state.room, ctx.self)
+    req.user.foreach { users.connect(_, ctx.self) }
+    Bus.subscribe(Bus.channel.room(state.room), ctx.self)
     roomCrowd.connect(state.room, req.user)
     History.room.getFrom(state.room, fromVersion) match
       case None         => clientIn(ClientIn.Resync)
-      case Some(events) => events map { versionFor(state.isTroll, _) } foreach clientIn
+      case Some(events) => events.map { versionFor(state.isTroll, _) }.foreach(clientIn)
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
-    Bus.unsubscribe(Bus.channel room state.room, ctx.self)
+    Bus.unsubscribe(Bus.channel.room(state.room), ctx.self)
     deps.roomCrowd.disconnect(state.room, deps.req.user)
 
   def versionFor(isTroll: IsTroll, msg: ClientIn.Versioned): ClientIn.Payload =

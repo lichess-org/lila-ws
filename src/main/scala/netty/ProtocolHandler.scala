@@ -42,7 +42,7 @@ final private class ProtocolHandler(connector: ActorChannelConnector)
         Monitor.websocketError("handshake")
         super.exceptionCaught(ctx, cause)
       case e: CorruptedWebSocketFrameException
-          if Option(e.getMessage).exists(_ startsWith "Max frame length") =>
+          if Option(e.getMessage).exists(_.startsWith("Max frame length")) =>
         Monitor.websocketError("frameLength")
         ctx.close()
       case _: CorruptedWebSocketFrameException =>

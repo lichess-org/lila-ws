@@ -25,9 +25,9 @@ final class EventBus[Event, Channel, Subscriber](
     )
 
   def publish(channel: Channel, event: Event): Unit =
-    Option(entries get channel) foreach:
-      _ foreach:
+    Option(entries.get(channel)).foreach:
+      _.foreach:
         publish(_, event)
 
   def size                     = entries.size
-  def sizeOf(channel: Channel) = Option(entries get channel).fold(0)(_.size)
+  def sizeOf(channel: Channel) = Option(entries.get(channel)).fold(0)(_.size)

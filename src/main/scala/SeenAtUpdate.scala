@@ -16,7 +16,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
     .build[User.Id, Boolean]()
 
   def apply(user: User.Id): Future[Unit] =
-    if done.getIfPresent(user).isDefined then Future successful {}
+    if done.getIfPresent(user).isDefined then Future.successful {}
     else
       done.put(user, true)
       for
@@ -37,7 +37,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
                 BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
               )
             )
-          else Future successful {}
+          else Future.successful {}
         _ <-
           if userDoc.isDefined && streamers.contains(user) then
             mongo.streamer(
@@ -46,7 +46,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
                 BSONDocument("$set" -> BSONDocument("seenAt" -> now))
               )
             )
-          else Future successful ()
+          else Future.successful(())
       yield ()
 
   object streamers:
@@ -71,7 +71,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
       )
 
     scheduler.scheduleWithFixedDelay(30.seconds, 60.seconds) { () =>
-      fetch foreach { res =>
+      fetch.foreach { res =>
         ids = res
       }
     }
@@ -82,14 +82,16 @@ final class SeenAtUpdate(mongo: Mongo)(using
       modifier: BSONDocument,
       fields: BSONDocument
   ): Future[Option[BSONDocument]] =
-    coll.findAndModify(
-      selector = selector,
-      modifier = coll.updateModifier(modifier),
-      sort = None,
-      fields = Some(fields),
-      bypassDocumentValidation = false,
-      writeConcern = WriteConcern.Default,
-      maxTime = None,
-      collation = None,
-      arrayFilters = Seq.empty
-    ) map (_.result[BSONDocument])
+    coll
+      .findAndModify(
+        selector = selector,
+        modifier = coll.updateModifier(modifier),
+        sort = None,
+        fields = Some(fields),
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Default,
+        maxTime = None,
+        collation = None,
+        arrayFilters = Seq.empty
+      )
+      .map(_.result[BSONDocument])

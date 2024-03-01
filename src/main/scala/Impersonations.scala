@@ -10,11 +10,12 @@ object Impersonations:
     by match
       case Some(modId) => all = all + (modId -> user)
       case None =>
-        all collectFirst {
-          case (m, u) if u == user => m
-        } foreach { modId => all = all - modId }
+        all
+          .collectFirst:
+            case (m, u) if u == user => m
+          .foreach { modId => all = all - modId }
 
-  def get(modId: ModId): Option[User.Id] = all get modId
+  def get(modId: ModId): Option[User.Id] = all.get(modId)
 
   def reset() =
     all = Map.empty

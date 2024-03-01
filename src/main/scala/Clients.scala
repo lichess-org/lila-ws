@@ -12,7 +12,7 @@ object Clients:
     Behaviors.receive[Control]: (ctx, msg) =>
       msg match
         case Control.Start(behavior, promise) =>
-          promise success ctx.spawnAnonymous(behavior)
+          promise.success(ctx.spawnAnonymous(behavior))
           Behaviors.same
         case Control.Stop(client) =>
           ctx.stop(client)

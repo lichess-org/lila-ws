@@ -24,18 +24,20 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
           if endpoint != null && !endpoint.rateLimit(txt) then
             shutdown(ctx.channel, 1008, "rate limit exceeded")
           else
-            ClientOut parse txt foreach:
+            ClientOut
+              .parse(txt)
+              .foreach:
 
-              case ClientOut.Unexpected(msg) =>
-                Monitor.clientOutUnexpected.increment()
-                logger.info(s"Unexpected $msg")
-                shutdown(ctx.channel, 1011, "unexpected message")
+                case ClientOut.Unexpected(msg) =>
+                  Monitor.clientOutUnexpected.increment()
+                  logger.info(s"Unexpected $msg")
+                  shutdown(ctx.channel, 1011, "unexpected message")
 
-              case ClientOut.WrongHole =>
-                Monitor.clientOutWrongHole.increment()
-              // choice of hole is a personal decision
+                case ClientOut.WrongHole =>
+                  Monitor.clientOutWrongHole.increment()
+                // choice of hole is a personal decision
 
-              case out => withClientOf(ctx.channel)(_ tell out)
+                case out => withClientOf(ctx.channel)(_.tell(out))
 
       case frame: PongWebSocketFrame =>
         if frame.content().readableBytes() >= 8 then
@@ -51,8 +53,8 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
     Option(channel.attr(key.client).get) match
       case Some(clientFu) =>
         clientFu.value match
-          case Some(client) => client foreach f
-          case None         => clientFu foreach f
+          case Some(client) => client.foreach(f)
+          case None         => clientFu.foreach(f)
       case None =>
         logger.warn(s"No client actor on channel $channel")
         shutdown(channel, 1011, s"no actor on $channel")
