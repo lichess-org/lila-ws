@@ -18,7 +18,10 @@ final class RoundCrowd(
   def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color], appearAnon: Boolean): Unit =
     publish(
       roomId,
-      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player, appearAnon))
+      rounds.compute(
+        roomId,
+        (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player, appearAnon)
+      )
     )
 
   def disconnect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
@@ -78,7 +81,8 @@ object RoundCrowd:
   ):
     def connect(user: Option[User.Id], player: Option[Color], appearAnon: Boolean = false) =
       copy(
-        room = if player.isDefined then room else if appearAnon then room connectAnon user else room connect user,
+        room =
+          if player.isDefined then room else if appearAnon then room connectAnon user else room connect user,
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
     def disconnect(user: Option[User.Id], player: Option[Color]) =

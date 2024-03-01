@@ -78,8 +78,10 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     teamMemberColl flatMap { exists(_, BSONDocument("_id" -> s"${user.value}@$teamId")) }
 
   def isAppearAnon(user: Option[User.Id]): Future[Boolean] =
-    user.fold(Future successful false)(u => prefColl flatMap:
-      exists(_, BSONDocument("_id" -> u, "appearAnon" -> true)))
+    user.fold(Future successful false)(u =>
+      prefColl flatMap:
+        exists(_, BSONDocument("_id" -> u, "appearAnon" -> true))
+    )
 
   def teamView(id: Team.Id, me: Option[User.Id]): Future[Option[Team.HasChat]] =
     teamColl

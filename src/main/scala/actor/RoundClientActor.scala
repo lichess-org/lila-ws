@@ -35,7 +35,7 @@ object RoundClientActor:
       player: Option[Game.RoundPlayer],
       userTv: Option[UserTv],
       from: Either[Option[SocketVersion], JsonString],
-      appearAnon: Boolean = false,
+      appearAnon: Boolean = false
   )(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup: ctx =>
       import deps.*
