@@ -3,8 +3,7 @@ package lila.ws
 import com.typesafe.config.Config
 import java.util.concurrent.locks.ReentrantLock
 import scala.jdk.CollectionConverters.*
-import scala.util.control.NonLocalReturns.*
-import scala.util.Random
+import scala.util.{ boundary, Random }
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -54,16 +53,16 @@ final class SocialGraph(mongo: Mongo, config: Config):
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
 
-  private def findSlot(id: User.Id, exceptSlot: Int): Slot = returning[Slot]:
+  private def findSlot(id: User.Id, exceptSlot: Int): Slot = boundary[Slot]:
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None => throwReturn[Slot](NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          throwReturn[Slot](ExistingSlot(slot, existing))
+          boundary.break(ExistingSlot(slot, existing))
         case _ =>
 
     // If no existing or empty slot is available, try to replace an
@@ -75,11 +74,11 @@ final class SocialGraph(mongo: Mongo, config: Config):
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None => throwReturn[Slot](NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          throwReturn[Slot](ExistingSlot(slot, existing))
+          boundary.break(ExistingSlot(slot, existing))
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
-          throwReturn[Slot](freeSlot(slot))
+          boundary.break(freeSlot(slot))
         case _ =>
 
     // The hashtable is full. Overwrite a random entry.
