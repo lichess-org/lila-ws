@@ -15,7 +15,7 @@ val pekkoVersion = "1.0.2"
 val kamonVersion = "2.7.0"
 val nettyVersion = "4.1.107.Final"
 
-scalaVersion := "3.3.1"
+scalaVersion := "3.3.3"
 
 libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12" exclude ("org.scala-lang.modules", "scala-java8-compat_2.13")
 libraryDependencies += "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12"
