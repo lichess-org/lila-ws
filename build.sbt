@@ -1,11 +1,12 @@
 name := "lila-ws"
 
-version := "3.1"
+version := "3.2"
 
-lazy val `lila-ws` = (project in file("."))
+lazy val `lila-ws` = project
+  .in(file("."))
   .enablePlugins(JavaAppPackaging)
 
-resolvers += ("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
+resolvers += ("snapshots".at("https://oss.sonatype.org/content/repositories/snapshots"))
 
 val os    = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else "linux"
 val arch  = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch-64" else "x86-64"
@@ -15,17 +16,20 @@ val pekkoVersion = "1.0.2"
 val kamonVersion = "2.7.0"
 val nettyVersion = "4.1.107.Final"
 
-scalaVersion := "3.3.3"
+scalaVersion := "3.4.0"
 
-libraryDependencies += "org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12" exclude ("org.scala-lang.modules", "scala-java8-compat_2.13")
+libraryDependencies += ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12")
+  .exclude("org.scala-lang.modules", "scala-java8-compat_2.13")
 libraryDependencies += "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12"
 libraryDependencies += "io.lettuce"        % "lettuce-core"                           % "6.3.1.RELEASE"
 libraryDependencies += "io.netty"          % "netty-handler"                          % nettyVersion
 libraryDependencies += "io.netty"          % "netty-codec-http"                       % nettyVersion
-libraryDependencies += "io.netty" % s"netty-transport-native-epoll"  % nettyVersion classifier s"linux-$arch_"
-libraryDependencies += "io.netty" % s"netty-transport-native-kqueue" % nettyVersion classifier s"osx-$arch_"
-libraryDependencies += "com.github.ornicar" %% "scalalib"          % "9.5.5"
-libraryDependencies += "org.lichess"        %% "scalachess"        % "15.7.11"
+libraryDependencies += ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
+  .classifier(s"linux-$arch_")
+libraryDependencies += ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
+  .classifier(s"osx-$arch_")
+libraryDependencies += "com.github.ornicar" %% "scalalib"          % "9.5.6"
+libraryDependencies += "org.lichess"        %% "scalachess"        % "15.7.12"
 libraryDependencies += "org.apache.pekko"   %% "pekko-actor-typed" % pekkoVersion
 
 // libraryDependencies += "com.typesafe.akka"          %% "akka-slf4j"       % akkaVersion
@@ -43,7 +47,7 @@ libraryDependencies += "com.roundeights"            %% "hasher"               % 
 libraryDependencies += "org.scalameta"              %% "munit"                % "1.0.0-M11" % Test
 
 resolvers ++= Resolver.sonatypeOssRepos("snapshots")
-resolvers += "lila-maven" at "https://raw.githubusercontent.com/ornicar/lila-maven/master"
+resolvers += "lila-maven".at("https://raw.githubusercontent.com/ornicar/lila-maven/master")
 
 scalacOptions := Seq(
   "-encoding",
