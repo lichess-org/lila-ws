@@ -286,7 +286,7 @@ final class Controller(
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)
 
   private def fromVersion(req: RequestHeader): Option[SocketVersion] =
-    SocketVersion.from(req.`queryParameter`("v").flatMap(_.toIntOption))
+    SocketVersion.from(req.queryParameter("v").flatMap(_.toIntOption))
 
 object Controller:
 
@@ -304,7 +304,7 @@ object Controller:
       credits: Int,
       interval: FiniteDuration
   ): ResponseSync =
-    Monitor.connection.`open`(name)
+    Monitor.connection.open(name)
     Right:
       Endpoint(
         behavior,

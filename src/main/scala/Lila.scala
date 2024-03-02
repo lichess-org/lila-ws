@@ -95,7 +95,7 @@ final class Lila(config: Config)(using Executor):
           )
       .map: _ =>
         val msg = LilaIn.WsBoot.write
-        connIn.async.publish(chan `in` msg, msg)
+        connIn.async.publish(chan.in(msg), msg)
         emit
 
   private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] =
