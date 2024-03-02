@@ -19,7 +19,7 @@ object LobbyClientActor:
     Behaviors.setup: ctx =>
       import deps.*
       onStart(deps, ctx)
-      req.user foreach { users.connect(_, ctx.self, silently = true) }
+      req.user.foreach { users.connect(_, ctx.self, silently = true) }
       services.lobby.connect(req.sri -> req.user)
       Bus.subscribe(Bus.channel.lobby, ctx.self)
       apply(State(), deps)

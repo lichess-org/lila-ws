@@ -113,14 +113,14 @@ object LilaOut:
 
   def read(str: String): Option[LilaOut] =
     val parts = str.split(" ", 2)
-    val args  = parts.lift(1) getOrElse ""
+    val args  = parts.lift(1).getOrElse("")
     parts(0) match
 
-      case "mlat" => args.toDoubleOption map Mlat.apply
+      case "mlat" => args.toDoubleOption.map(Mlat.apply)
 
       case "r/ver" =>
         get(args, 5) { case Array(roomId, version, f, tpe, data) =>
-          version.toIntOption map { sv =>
+          version.toIntOption.map { sv =>
             val flags = RoundEventFlags(
               watcher = f contains 's',
               owner = f contains 'p',
@@ -140,13 +140,15 @@ object LilaOut:
 
       case "tell/flag" =>
         get(args, 2) { case Array(flag, payload) =>
-          Flag make flag map:
-            TellFlag(_, JsonString(payload))
+          Flag
+            .make(flag)
+            .map:
+              TellFlag(_, JsonString(payload))
         }
 
       case "tell/users" =>
         get(args, 2) { case Array(users, payload) =>
-          Some(TellUsers(User.Id from commas(users), JsonString(payload)))
+          Some(TellUsers(User.Id.from(commas(users)), JsonString(payload)))
         }
 
       case "tell/sri" =>
@@ -161,7 +163,7 @@ object LilaOut:
       case "lobby/pairings" =>
         Some(LobbyPairings {
           commas(args)
-            .map(_ split ':')
+            .map(_.split(':'))
             .collect { case Array(sri, fullId) =>
               (Sri(sri), Game.FullId(fullId))
             }
@@ -173,7 +175,7 @@ object LilaOut:
 
       case "tell/lobby/users" =>
         get(args, 2) { case Array(users, payload) =>
-          Some(TellLobbyUsers(User.Id from commas(users), JsonString(payload)))
+          Some(TellLobbyUsers(User.Id.from(commas(users)), JsonString(payload)))
         }
 
       case "mod/troll/set" =>
@@ -182,7 +184,7 @@ object LilaOut:
         }
       case "mod/impersonate" =>
         get(args, 2) { case Array(user, by) =>
-          Some(Impersonate(User.Id(user), User.Id from optional(by)))
+          Some(Impersonate(User.Id(user), User.Id.from(optional(by))))
         }
 
       case "rel/follow" =>
@@ -199,7 +201,7 @@ object LilaOut:
         get(args, 2) { case Array(sris, payload) =>
           Some(
             TellSris(
-              Sri from commas(sris).toSeq,
+              Sri.from(commas(sris).toSeq),
               JsonString(payload)
             )
           )
@@ -212,7 +214,7 @@ object LilaOut:
 
       case "tell/room/version" =>
         get(args, 4) { case Array(roomId, version, troll, payload) =>
-          version.toIntOption map { sv =>
+          version.toIntOption.map { sv =>
             TellRoomVersion(
               RoomId(roomId),
               SocketVersion(sv),
@@ -228,28 +230,28 @@ object LilaOut:
         }
       case "tell/room/users" =>
         get(args, 3) { case Array(roomId, userIds, payload) =>
-          Some(TellRoomUsers(RoomId(roomId), User.Id from commas(userIds), JsonString(payload)))
+          Some(TellRoomUsers(RoomId(roomId), User.Id.from(commas(userIds)), JsonString(payload)))
         }
 
       case "room/stop" => Some(RoomStop(RoomId(args)))
 
       case "room/present" =>
         get(args, 3) { case Array(reqIdS, roomId, userId) =>
-          reqIdS.toIntOption map { reqId =>
+          reqIdS.toIntOption.map { reqId =>
             RoomIsPresent(reqId, RoomId(roomId), User.Id(userId))
           }
         }
 
       case "room/filter-present" =>
         get(args, 3) { case Array(reqIdS, roomId, userIds) =>
-          reqIdS.toIntOption map { reqId =>
-            RoomFilterPresent(reqId, RoomId(roomId), User.Id from commas(userIds).toSet)
+          reqIdS.toIntOption.map { reqId =>
+            RoomFilterPresent(reqId, RoomId(roomId), User.Id.from(commas(userIds).toSet))
           }
         }
 
       case "tell/room/chat" =>
         get(args, 4) { case Array(roomId, version, troll, payload) =>
-          version.toIntOption map { sv =>
+          version.toIntOption.map { sv =>
             TellRoomChat(
               RoomId(roomId),
               SocketVersion(sv),
@@ -284,7 +286,7 @@ object LilaOut:
 
       case "r/goneIn" =>
         get(args, 2) { case Array(fullId, secS) =>
-          secS.toIntOption map:
+          secS.toIntOption.map:
             RoundGoneIn(Game.FullId(fullId), _)
         }
 
@@ -293,11 +295,11 @@ object LilaOut:
           Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
-      case "r/start" => Some(GameStart(User.Id from commas(args).toList))
+      case "r/start" => Some(GameStart(User.Id.from(commas(args).toList)))
       case "r/finish" =>
         get(args, 3) { case Array(gameId, winner, users) =>
           Some(
-            GameFinish(Game.Id(gameId), readOptionalColor(winner), User.Id from commas(users).toList)
+            GameFinish(Game.Id(gameId), readOptionalColor(winner), User.Id.from(commas(users).toList))
           )
         }
 
@@ -305,7 +307,7 @@ object LilaOut:
 
       case "tv/select" =>
         get(args, 3) { case Array(gameId, speedS, data) =>
-          chess.SpeedId.from(speedS.toIntOption) flatMap chess.Speed.apply map { speed =>
+          chess.SpeedId.from(speedS.toIntOption).flatMap(chess.Speed.apply).map { speed =>
             TvSelect(Game.Id(gameId), speed, JsonString(data))
           }
         }
@@ -324,18 +326,18 @@ object LilaOut:
           Some(ApiUserOnline(User.Id(userId), boolean(online)))
         }
 
-      case "pong" => args.toLongOption map UptimeMillis.apply map Pong.apply
+      case "pong" => args.toLongOption.map(UptimeMillis.apply).map(Pong.apply)
 
       case "boot" => Some(LilaBoot)
 
-      case "lila/stop" => args.toIntOption map LilaStop.apply
+      case "lila/stop" => args.toIntOption.map(LilaStop.apply)
 
       case "r/versioning-ready" => Some(VersioningReady)
 
       case _ => None
 
-  def commas(str: String): Array[String]            = if str == "-" then Array.empty else str split ','
+  def commas(str: String): Array[String]            = if str == "-" then Array.empty else str.split(',')
   def boolean(str: String): Boolean                 = str == "+"
   def optional(str: String): Option[String]         = if str == "-" then None else Some(str)
   def readColor(str: String): Color                 = Color.fromWhite(str == "w")
-  def readOptionalColor(str: String): Option[Color] = optional(str) map readColor
+  def readOptionalColor(str: String): Option[Color] = optional(str).map(readColor)

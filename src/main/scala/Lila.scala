@@ -26,7 +26,7 @@ final class Lila(config: Config)(using Executor):
     private val queue       = new ConcurrentLinkedQueue[Buffered]()
     private lazy val connIn = redis.connectPubSub
 
-    def enqueue(chan: String, msg: String) = queue offer Buffered(chan, msg)
+    def enqueue(chan: String, msg: String) = queue.offer(Buffered(chan, msg))
 
     @annotation.tailrec
     def flush(): Unit =
@@ -36,14 +36,14 @@ final class Lila(config: Config)(using Executor):
         flush()
 
   private val logger = Logger(getClass)
-  private val redis  = RedisClient create RedisURI.create(config.getString("redis.uri"))
+  private val redis  = RedisClient.create(RedisURI.create(config.getString("redis.uri")))
 
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
-  private var handlers: Handlers               = chan => out => futureHandlers foreach { _(chan)(out) }
+  private var handlers: Handlers               = chan => out => futureHandlers.foreach { _(chan)(out) }
   def setHandlers(hs: Handlers) =
     handlers = hs
-    handlersPromise success hs
+    handlersPromise.success(hs)
 
   val emit: Emits = Await.result(
     util.Chronometer(connectAll).lap.map { lap =>
@@ -74,7 +74,7 @@ final class Lila(config: Config)(using Executor):
     val emit: Emit[In] = in =>
       val msg    = in.write
       val path   = msg.takeWhile(' '.!=)
-      val chanIn = chan in msg
+      val chanIn = chan.in(msg)
       if currentStatus.isOnline then
         connIn.async.publish(chanIn, msg)
         Monitor.redis.in(chanIn, path)
@@ -87,14 +87,15 @@ final class Lila(config: Config)(using Executor):
 
     chan
       .match
-        case s: SingleLaneChan => connectAndSubscribe(s.out, s.out) map { _ => emit }
+        case s: SingleLaneChan => connectAndSubscribe(s.out, s.out).map { _ => emit }
         case r: RoundRobinChan =>
-          connectAndSubscribe(r.out, r.out) zip Future.sequence:
+          connectAndSubscribe(r.out, r.out).zip(Future.sequence:
             (0 to r.parallelism).map: index =>
               connectAndSubscribe(s"${r.out}:$index", r.out)
+          )
       .map: _ =>
         val msg = LilaIn.WsBoot.write
-        connIn.async.publish(chan in msg, msg)
+        connIn.async.publish(chan.in(msg), msg)
         emit
 
   private def connectAndSubscribe(chanName: String, handlerName: String): Future[Unit] =
@@ -103,7 +104,7 @@ final class Lila(config: Config)(using Executor):
       new RedisPubSubAdapter[String, String]:
         override def message(_chan: String, msg: String): Unit =
           Monitor.redis.out(chanName, msg.takeWhile(' '.!=))
-          LilaOut read msg match
+          LilaOut.read(msg) match
             case Some(out) => handlers(handlerName)(out)
             case None      => logger.warn(s"Can't parse $msg on $chanName")
     )
@@ -112,7 +113,7 @@ final class Lila(config: Config)(using Executor):
     connOut.async
       .subscribe(chanName)
       .thenRun: () =>
-        promise success ()
+        promise.success(())
 
     promise.future
 

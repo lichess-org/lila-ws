@@ -13,7 +13,7 @@ final class Inquirers(mongo: Mongo)(using ec: Executor, scheduler: Scheduler):
     cache.underlying.getIfPresent(user) == true
 
   scheduler.scheduleAtFixedRate(10 seconds, 2 seconds) { () =>
-    mongo.inquirers foreach { users =>
-      cache putAll users.view.map(_ -> true).toMap
+    mongo.inquirers.foreach { users =>
+      cache.putAll(users.view.map(_ -> true).toMap)
     }
   }

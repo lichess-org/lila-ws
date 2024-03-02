@@ -44,7 +44,7 @@ object Fens:
     games.computeIfPresent(
       gameId,
       (_, watched) =>
-        watched.clients foreach { _ ! ClientIn.Finish(gameId, winner) }
+        watched.clients.foreach { _ ! ClientIn.Finish(gameId, winner) }
         null
     )
 
@@ -62,11 +62,11 @@ object Fens:
                 wc  <- wcS.toIntOption
                 bc  <- bcS.toIntOption
               yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
-            case MoveRegex(uciS, fenS) => Uci(uciS) map { Position(_, Fen.Board(fenS), None, turnColor) }
+            case MoveRegex(uciS, fenS) => Uci(uciS).map { Position(_, Fen.Board(fenS), None, turnColor) }
             case _                     => None
           .fold(watched): position =>
             val msg = ClientIn.Fen(gameId, position)
-            watched.clients foreach { _ ! msg }
+            watched.clients.foreach { _ ! msg }
             watched.copy(position = Some(position))
     )
 

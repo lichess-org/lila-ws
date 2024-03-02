@@ -30,14 +30,14 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
   def stop(key: K) = histories.remove(key.toString)
 
-  def hasEvents(key: K) = Option(histories get key.toString).exists(_.nonEmpty)
+  def hasEvents(key: K) = Option(histories.get(key.toString)).exists(_.nonEmpty)
 
   export histories.size
 
   def allVersions: Array[(String, SocketVersion)] =
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
     histories.forEach: (key, events) =>
-      events.headOption foreach { event => res += (key -> event.version) }
+      events.headOption.foreach { event => res += (key -> event.version) }
 
     res.toArray
 

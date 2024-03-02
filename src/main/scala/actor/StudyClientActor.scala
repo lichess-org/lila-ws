@@ -40,7 +40,7 @@ object StudyClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if state.site.lastPing < oldSeconds then Behaviors.stopped
             else
-              keepAlive study state.room.room
+              keepAlive.study(state.room.room)
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
@@ -60,7 +60,7 @@ object StudyClientActor:
             Behaviors.same
 
           case ClientOut.PalantirPing =>
-            deps.req.user map { Palantir.respondToPing(state.room.room, _) } foreach clientIn
+            deps.req.user.map { Palantir.respondToPing(state.room.room, _) }.foreach(clientIn)
             Behaviors.same
 
           // default receive (site)
@@ -74,7 +74,7 @@ object StudyClientActor:
             Behaviors.same
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { (newState, emit) =>
-          emit foreach lilaIn.study
+          emit.foreach(lilaIn.study)
           newState.fold(Behaviors.same[ClientMsg]): roomState =>
             apply(state.copy(room = roomState), deps)
         }

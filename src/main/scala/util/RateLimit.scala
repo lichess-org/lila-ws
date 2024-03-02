@@ -28,7 +28,7 @@ final class RateLimit(
       if !logged then
         logged = true
         logger.info(s"$name MSG: $msg")
-      Monitor rateLimit name
+      Monitor.rateLimit(name)
       false
 
 object RateLimit:

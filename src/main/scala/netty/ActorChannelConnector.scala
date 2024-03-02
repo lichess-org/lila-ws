@@ -19,7 +19,7 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
     channel.closeFuture.addListener:
       new GenericFutureListener[NettyFuture[Void]]:
         def operationComplete(f: NettyFuture[Void]): Unit =
-          channel.attr(key.client).get foreach { client =>
+          channel.attr(key.client).get.foreach { client =>
             clients ! Clients.Control.Stop(client)
           }
 
@@ -27,6 +27,6 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
     case ipc.ClientIn.Disconnect =>
       channel.writeAndFlush(CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE)
     case ipc.ClientIn.RoundPingFrameNoFlush =>
-      channel.write { PingWebSocketFrame(Unpooled copyLong System.currentTimeMillis()) }
+      channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
     case in =>
       channel.writeAndFlush(TextWebSocketFrame(in.write))

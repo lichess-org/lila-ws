@@ -34,7 +34,7 @@ object Eval:
       inline def centipawns = cp.value
 
       inline def pawns: Float      = cp.value / 100f
-      inline def showPawns: String = "%.2f" format pawns
+      inline def showPawns: String = "%.2f".format(pawns)
 
       inline def ceiled: Cp =
         if cp.value > Cp.CEILING then Cp.CEILING

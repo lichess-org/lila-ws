@@ -52,7 +52,7 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
             Group(BSONNull)("ids" -> PushField("round._id"))
           )
         .collect[List](maxDocs = 1)
-    yield result.headOption.flatMap(_.getAsOpt[Set[RoomId]]("ids")) getOrElse Set.empty
+    yield result.headOption.flatMap(_.getAsOpt[Set[RoomId]]("ids")).getOrElse(Set.empty)
 
     // couldn't make update.many work
     def setMembers(all: Map[RoomId, Int]): Future[Unit] = mongo.relayRoundColl.flatMap: coll =>

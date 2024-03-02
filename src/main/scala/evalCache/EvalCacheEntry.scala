@@ -32,10 +32,10 @@ case class EvalCacheEntry(
   def makeBestMultiPvEval(multiPv: MultiPv): Option[Eval] =
     evals
       .find(_.multiPv >= multiPv.atMost(nbMoves))
-      .map(_ takePvs multiPv)
+      .map(_.takePvs(multiPv))
 
   def makeBestSinglePvEval: Option[Eval] =
-    evals.headOption.map(_ takePvs MultiPv(1))
+    evals.headOption.map(_.takePvs(MultiPv(1)))
 
   def similarTo(other: EvalCacheEntry) =
     id == other.id && evals == other.evals
@@ -60,7 +60,7 @@ object EvalCacheEntry:
     def takePvs(multiPv: MultiPv) =
       copy(pvs = NonEmptyList(pvs.head, pvs.tail.take(multiPv.value - 1)))
 
-    def depthAboveMin = (depth - MIN_DEPTH) atLeast 0
+    def depthAboveMin = (depth - MIN_DEPTH).atLeast(0)
 
   case class Pv(score: Score, moves: Moves):
 
@@ -69,7 +69,7 @@ object EvalCacheEntry:
         case None       => moves.value.toList.sizeIs > MIN_PV_SIZE
         case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
 
-    def truncate = copy(moves = Moves truncate moves)
+    def truncate = copy(moves = Moves.truncate(moves))
 
   case class Id(variant: Variant, smallFen: SmallFen)
   object Id:
@@ -79,5 +79,8 @@ object EvalCacheEntry:
   case class Input(id: Id, fen: Fen.Epd, eval: Eval)
 
   def makeInput(variant: Variant, fen: Fen.Epd, eval: Eval) =
-    SmallFen.validate(variant, fen) ifTrue eval.looksValid map: smallFen =>
-      Input(Id(variant, smallFen), fen, eval.truncatePvs)
+    SmallFen
+      .validate(variant, fen)
+      .ifTrue(eval.looksValid)
+      .map: smallFen =>
+        Input(Id(variant, smallFen), fen, eval.truncatePvs)

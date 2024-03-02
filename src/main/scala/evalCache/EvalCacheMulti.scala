@@ -26,13 +26,15 @@ final private class EvalCacheMulti(using
   private val upgradeMon = Monitor.evalCache.multi.upgrade
 
   def register(sri: Sri, e: EvalGetMulti): Unit =
-    members get sri.value foreach: prevMember =>
-      prevMember.setups.foreach(unregisterEval(_, sri))
+    members
+      .get(sri.value)
+      .foreach: prevMember =>
+        prevMember.setups.foreach(unregisterEval(_, sri))
     val wm = WatchingMember(sri, e.variant, e.fens)
     members += (sri.value -> wm)
     wm.setups.foreach: setupId =>
-      evals += (setupId -> evals.get(setupId).fold(EvalState(Set(sri), Depth(0)))(_ addSri sri))
-    expirableSris put sri
+      evals += (setupId -> evals.get(setupId).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+    expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
     val setupId = makeSetupId(input.id.variant, input.fen)
@@ -47,19 +49,23 @@ final private class EvalCacheMulti(using
           val hit = EvalHitMulti:
             EvalCacheJsonHandlers.writeMultiHit(input.fen, input.eval)
           sris.foreach: sri =>
-            Bus.publish(_ sri sri, hit)
+            Bus.publish(_.sri(sri), hit)
           upgradeMon.count.increment(sris.size)
 
   private def expire(sri: Sri): Unit =
-    members get sri.value foreach: wm =>
-      wm.setups.foreach(unregisterEval(_, sri))
-      members -= sri.value
+    members
+      .get(sri.value)
+      .foreach: wm =>
+        wm.setups.foreach(unregisterEval(_, sri))
+        members -= sri.value
 
   private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
-    evals get setupId foreach: eval =>
-      val newSris = eval.sris - sri
-      if newSris.isEmpty then evals -= setupId
-      else evals += (setupId -> eval.copy(sris = newSris))
+    evals
+      .get(setupId)
+      .foreach: eval =>
+        val newSris = eval.sris - sri
+        if newSris.isEmpty then evals -= setupId
+        else evals += (setupId -> eval.copy(sris = newSris))
 
   scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
     upgradeMon.members.update(members.size)

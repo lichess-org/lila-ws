@@ -28,7 +28,7 @@ final class FriendList(
                 userDatas
                   .get(u.id)
                   .map {
-                    _ map { UserView(u.id, _, u.meta) }
+                    _.map { UserView(u.id, _, u.meta) }
                   }(parasitic)
           .map: views =>
             emit(Onlines(views.flatten))
@@ -53,12 +53,12 @@ final class FriendList(
     update(userId, Leaves.apply)(_.withOnline(false))
 
   private def update(userId: User.Id, msg: User.Id => ipc.ClientIn)(update: UserMeta => UserMeta) =
-    graph.tell(userId, update) foreach { (subject, subs) =>
+    graph.tell(userId, update).foreach { (subject, subs) =>
       if subs.nonEmpty then users.tellMany(subs, msg(subject.id))
     }
 
   private def updateView(userId: User.Id, msg: UserView => ipc.ClientIn)(update: UserMeta => UserMeta) =
-    graph.tell(userId, update) foreach { (subject, subs) =>
+    graph.tell(userId, update).foreach { (subject, subs) =>
       if subs.nonEmpty then
         userDatas
           .get(subject.id)
@@ -72,7 +72,7 @@ final class FriendList(
     "users",
     {
       case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user)
-      case ipc.LilaIn.DisconnectUsers(users) => users foreach onDisconnect
+      case ipc.LilaIn.DisconnectUsers(users) => users.foreach(onDisconnect)
     }
   )
 

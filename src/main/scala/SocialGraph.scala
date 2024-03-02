@@ -87,11 +87,11 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   private def freeSlot(leftSlot: Int): NewSlot =
     // Clear all outgoing edges: A freed slot does not follow anyone.
-    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
+    graph.readOutgoing(leftSlot).foreach { graph.remove(leftSlot, _) }
 
     // Clear all incoming edges and mark everyone who followed this slot stale.
-    graph.readIncoming(leftSlot) foreach { rightSlot =>
-      read(rightSlot) foreach { rightEntry =>
+    graph.readIncoming(leftSlot).foreach { rightSlot =>
+      read(rightSlot).foreach { rightEntry =>
         write(rightSlot, rightEntry.update(_.withFresh(false)))
       }
       graph.remove(rightSlot, leftSlot)
@@ -101,22 +101,23 @@ final class SocialGraph(mongo: Mongo, config: Config):
     NewSlot(leftSlot)
 
   private def readFollowed(leftSlot: Int): List[UserEntry] =
-    graph.readOutgoing(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) map { entry =>
+    graph.readOutgoing(leftSlot).flatMap { rightSlot =>
+      read(rightSlot).map { entry =>
         UserEntry(entry.id, entry.meta)
       }
     }
 
   private def readOnlineFollowing(leftSlot: Int): List[User.Id] =
-    graph.readIncoming(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) collect:
-        case entry if entry.meta.online && entry.meta.subscribed => entry.id
-    }
+    graph
+      .readIncoming(leftSlot)
+      .flatMap: rightSlot =>
+        read(rightSlot).collect:
+          case entry if entry.meta.online && entry.meta.subscribed => entry.id
 
   private def updateFollowed(leftSlot: Int, followed: Iterable[User.Id]): List[UserEntry] =
-    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
+    graph.readOutgoing(leftSlot).foreach { graph.remove(leftSlot, _) }
 
-    (followed map { userId =>
+    followed.map { userId =>
       val (rightSlot, info) = findSlot(userId, leftSlot) match
         case NewSlot(rightSlot) =>
           write(rightSlot, UserEntry(userId, UserMeta.stale))
@@ -126,10 +127,10 @@ final class SocialGraph(mongo: Mongo, config: Config):
           rightSlot -> UserEntry(userId, entry.meta)
       graph.add(leftSlot, rightSlot)
       info
-    }).toList
+    }.toList
 
   private def doLoadFollowed(id: User.Id)(using Executor): Future[List[UserEntry]] =
-    mongo.loadFollowed(id) map { followed =>
+    mongo.loadFollowed(id).map { followed =>
       lock.lock()
       try
         val leftSlot = findSlot(id, -1) match

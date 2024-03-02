@@ -52,7 +52,7 @@ object TeamClientActor:
             Behaviors.same
 
         RoomActor.receive(state.room, deps).lift(msg).fold(receive(msg)) { (newState, emit) =>
-          emit foreach lilaIn.team
+          emit.foreach(lilaIn.team)
           newState.fold(Behaviors.same[ClientMsg]): roomState =>
             apply(state.copy(room = roomState), deps)
         }
