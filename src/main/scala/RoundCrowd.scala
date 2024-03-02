@@ -42,10 +42,10 @@ final class RoundCrowd(
     )
 
   def getUsers(roomId: RoomId): Set[User.Id] =
-    Option(rounds.get(roomId)).fold(Set.empty[User.Id])(_.room.users.keySet)
+    Option(rounds.get(roomId)).fold(Set.empty)(_.room.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
-    Option(rounds.get(roomId)).exists(_.room.users contains userId)
+    getUsers(roomId).contains(userId)
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
