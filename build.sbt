@@ -6,6 +6,8 @@ lazy val `lila-ws` = project
   .in(file("."))
   .enablePlugins(JavaAppPackaging)
 
+semanticdbEnabled := true // for scalafix
+
 resolvers += ("snapshots".at("https://oss.sonatype.org/content/repositories/snapshots"))
 
 val os    = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else "linux"
