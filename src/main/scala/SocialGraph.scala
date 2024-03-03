@@ -36,11 +36,9 @@ final class SocialGraph(mongo: Mongo, config: Config):
   // Hold this while reading, writing and modifying edge sets.
   private val lock = new ReentrantLock()
 
-  @inline
-  private def read(slot: Int): Option[UserEntry] = Option(slots(slot))
+  private inline def read(inline slot: Int): Option[UserEntry] = Option(slots(slot))
 
-  @inline
-  private def write(slot: Int, entry: UserEntry): Unit =
+  private inline def write(inline slot: Int, inline entry: UserEntry): Unit =
     slots(slot) = entry
 
   // The impact of hash collision based attacks is minimal (kicking a
@@ -240,18 +238,20 @@ object SocialGraph:
     val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
 
     extension (flags: UserMeta)
-      private inline def toggle(flag: Int, on: Boolean) = UserMeta(if on then flags | flag else flags & ~flag)
-      private inline def has(flag: Int): Boolean        = (flags & flag) != 0
+      private inline def toggle(flag: Int, inline on: Boolean) = UserMeta(
+        if on then flags | flag else flags & ~flag
+      )
+      private inline def has(inline flag: Int): Boolean = (flags & flag) != 0
 
       inline def fresh      = flags.has(UserMeta.FRESH)
       inline def subscribed = flags.has(UserMeta.SUBSCRIBED)
       inline def online     = flags.has(UserMeta.ONLINE)
       inline def playing    = flags.has(UserMeta.PLAYING)
 
-      inline def withFresh(fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
-      inline def withSubscribed(subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
-      inline def withOnline(online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
-      inline def withPlaying(playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
+      inline def withFresh(inline fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
+      inline def withSubscribed(inline subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
+      inline def withOnline(inline online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
+      inline def withPlaying(inline playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
   end UserMeta
 
   case class UserEntry(id: User.Id, meta: UserMeta):
@@ -289,5 +289,4 @@ object SocialGraph:
       incoming.remove(b, a)
 
   private object AdjacencyList:
-    @inline
-    private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
+    private inline def makePair(inline a: Int, inline b: Int): Long = (a.toLong << 32) | b.toLong
