@@ -3,8 +3,9 @@ package util
 
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
-import scala.jdk.CollectionConverters.*
 import ornicar.scalalib.zeros.given
+
+import scala.jdk.CollectionConverters.*
 
 opaque type RequestUri = String
 object RequestUri extends OpaqueString[RequestUri]

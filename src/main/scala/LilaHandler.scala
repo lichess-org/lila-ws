@@ -1,9 +1,10 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.ActorRef
 import com.typesafe.scalalogging.Logger
-import ipc.*
+import org.apache.pekko.actor.typed.ActorRef
 import ornicar.scalalib.ThreadLocalRandom
+
+import ipc.*
 
 final class LilaHandler(
     lila: Lila,

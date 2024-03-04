@@ -3,8 +3,8 @@ package evalCache
 
 import cats.syntax.all.*
 import chess.format.{ Fen, Uci, UciPath }
-import play.api.libs.json.*
 import chess.variant.Variant
+import play.api.libs.json.*
 
 import evalCache.EvalCacheEntry.*
 import evalCache.Eval.*

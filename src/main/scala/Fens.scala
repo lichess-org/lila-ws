@@ -1,9 +1,11 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.ActorRef
 import chess.Color
 import chess.format.{ Fen, Uci }
+import org.apache.pekko.actor.typed.ActorRef
+
 import java.util.concurrent.ConcurrentHashMap
+
 import lila.ws.ipc.*
 
 /* Manages subscriptions to Fen updates */

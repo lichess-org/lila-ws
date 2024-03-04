@@ -1,14 +1,16 @@
 package lila.ws
 package netty
 
-import lila.ws.Controller.Endpoint
-import org.apache.pekko.actor.typed.ActorRef
-import io.netty.channel.*
-import ProtocolHandler.key
-import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
-import ipc.ClientIn
-import io.netty.handler.codec.http.websocketx.*
 import io.netty.buffer.Unpooled
+import io.netty.channel.*
+import io.netty.handler.codec.http.websocketx.*
+import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
+import org.apache.pekko.actor.typed.ActorRef
+
+import lila.ws.Controller.Endpoint
+
+import ProtocolHandler.key
+import ipc.ClientIn
 
 final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(using Executor):
 

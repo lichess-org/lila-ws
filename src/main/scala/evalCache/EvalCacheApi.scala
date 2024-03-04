@@ -1,17 +1,18 @@
 package lila.ws
 package evalCache
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-
-import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
-import lila.ws.ipc.ClientIn
-import chess.format.Fen
-import chess.ErrorStr
-import play.api.libs.json.JsString
-import com.typesafe.scalalogging.Logger
 import cats.syntax.all.*
+import chess.ErrorStr
+import chess.format.Fen
+import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.typesafe.scalalogging.Logger
+import play.api.libs.json.JsString
 import reactivemongo.api.bson.BSONDocument
+
 import java.time.LocalDateTime
+
+import lila.ws.ipc.ClientIn
+import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
 
 final class EvalCacheApi(mongo: Mongo)(using
     Executor,

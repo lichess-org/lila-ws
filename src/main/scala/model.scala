@@ -1,7 +1,7 @@
 package lila.ws
 
-import chess.{ ByColor, Color }
 import chess.format.{ Fen, Uci }
+import chess.{ ByColor, Color }
 import ornicar.scalalib.SecureRandom
 
 object User:

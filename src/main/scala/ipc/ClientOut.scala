@@ -1,12 +1,13 @@
 package lila.ws
 package ipc
 
+import cats.data.NonEmptyList
 import chess.format.{ Fen, Uci, UciPath }
 import chess.variant.Variant
 import chess.{ Centis, Color, Square }
 import play.api.libs.json.*
+
 import scala.util.{ Success, Try }
-import cats.data.NonEmptyList
 
 sealed trait ClientOut extends ClientMsg
 

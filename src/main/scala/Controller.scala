@@ -1,11 +1,12 @@
 package lila.ws
 
+import cats.syntax.all.*
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
+
 import util.RequestHeader
 import ClientActor.{ Deps, Req }
-import cats.syntax.all.*
 
 final class Controller(
     config: Config,

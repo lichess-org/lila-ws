@@ -1,9 +1,10 @@
 package lila.ws
 
-import reactivemongo.api.bson.*
-import util.RequestHeader
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config
+import reactivemongo.api.bson.*
+
+import util.RequestHeader
 
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Executor):
 

@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import io.netty.channel.*
 import io.netty.handler.codec.http.websocketx.*
 import io.netty.util.concurrent.GenericFutureListener
+
 import ipc.ClientOut
 
 final private class FrameHandler(using Executor) extends SimpleChannelInboundHandler[WebSocketFrame]:

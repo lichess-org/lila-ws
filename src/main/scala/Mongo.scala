@@ -5,10 +5,11 @@ import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
 import reactivemongo.api.commands.WriteResult
-import scala.util.{ Success, Try }
+import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
+
 import java.time.LocalDateTime
+import scala.util.{ Success, Try }
 
 final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 

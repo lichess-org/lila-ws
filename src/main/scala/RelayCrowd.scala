@@ -1,7 +1,7 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.Scheduler
 import cats.syntax.all.*
+import org.apache.pekko.actor.typed.Scheduler
 
 final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Executor, scheduler: Scheduler):
 

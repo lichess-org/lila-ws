@@ -5,9 +5,11 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.lettuce.core.*
 import io.lettuce.core.pubsub.*
-import ipc.*
+
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.Await
+
+import ipc.*
 
 final class Lila(config: Config)(using Executor):
 
