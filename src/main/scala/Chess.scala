@@ -1,12 +1,12 @@
 package lila.ws
 
-import play.api.libs.json.*
-import chess.format.{ Fen, Uci, UciCharPair, UciPath }
-import chess.opening.{ Opening, OpeningDb }
+import cats.syntax.option.*
 import chess.Square
 import chess.bitboard.Bitboard
+import chess.format.{ Fen, Uci, UciCharPair, UciPath }
+import chess.opening.{ Opening, OpeningDb }
 import chess.variant.{ Crazyhouse, Variant }
-import cats.syntax.option.*
+import play.api.libs.json.*
 
 import ipc.*
 

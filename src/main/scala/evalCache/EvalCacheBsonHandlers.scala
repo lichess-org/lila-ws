@@ -1,12 +1,13 @@
 package lila.ws
 package evalCache
 
-import reactivemongo.api.bson.*
-import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
-import scala.util.{ Failure, Success, Try }
 import cats.data.NonEmptyList
 import cats.syntax.all.*
 import chess.format.Uci
+import reactivemongo.api.bson.*
+import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
+
+import scala.util.{ Failure, Success, Try }
 
 object EvalCacheBsonHandlers:
 

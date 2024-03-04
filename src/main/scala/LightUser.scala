@@ -2,6 +2,7 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
+
 import Mongo.given
 
 final class LightUserApi(mongo: Mongo)(using Executor):

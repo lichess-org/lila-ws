@@ -2,12 +2,12 @@ package lila.ws
 package netty
 
 import io.netty.channel.*
+import io.netty.handler.codec.TooLongFrameException
 import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http.websocketx.*
-import io.netty.handler.codec.TooLongFrameException
 import io.netty.util.AttributeKey
+
 import java.io.IOException
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler
 
 final private class ProtocolHandler(connector: ActorChannelConnector)
     extends WebSocketServerProtocolHandler(

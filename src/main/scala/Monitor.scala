@@ -4,7 +4,9 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
+
 import java.util.concurrent.TimeUnit
+
 import lila.ws.util.Domain
 
 final class Monitor(

@@ -1,7 +1,7 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.{ Behavior, PostStop }
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import org.apache.pekko.actor.typed.{ Behavior, PostStop }
 
 import ipc.*
 

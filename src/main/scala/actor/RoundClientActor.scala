@@ -1,9 +1,10 @@
 package lila.ws
 
+import chess.Centis
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ Behavior, PostStop }
+
 import ipc.*
-import chess.Centis
 
 object RoundClientActor:
 

@@ -4,6 +4,7 @@ import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
+
 import java.time.LocalDateTime
 
 final class SeenAtUpdate(mongo: Mongo)(using

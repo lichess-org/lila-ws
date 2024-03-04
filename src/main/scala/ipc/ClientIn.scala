@@ -1,11 +1,11 @@
 package lila.ws
 package ipc
 
-import chess.{ Check, Color, Ply }
+import chess.bitboard.Bitboard
 import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
-import chess.bitboard.Bitboard
+import chess.{ Check, Color, Ply }
 import play.api.libs.json.*
 
 sealed trait ClientIn extends ClientMsg:

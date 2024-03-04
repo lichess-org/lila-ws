@@ -4,11 +4,11 @@ package netty
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
 
 final class NettyServer(

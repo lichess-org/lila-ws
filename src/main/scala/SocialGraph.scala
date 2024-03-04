@@ -1,9 +1,10 @@
 package lila.ws
 
 import com.typesafe.config.Config
+
 import java.util.concurrent.locks.ReentrantLock
 import scala.jdk.CollectionConverters.*
-import scala.util.{ boundary, Random }
+import scala.util.{ Random, boundary }
 
 // Best effort fixed capacity cache for the social graph of online users.
 //

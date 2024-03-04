@@ -10,6 +10,7 @@ import io.netty.handler.codec.http.{
   HttpMethod,
   HttpResponseStatus
 }
+
 import lila.ws.util.RequestUri
 
 final private class RequestHandler(router: Router)(using Executor)

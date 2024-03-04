@@ -1,6 +1,7 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+
 import lila.ws.ipc.LilaIn
 import lila.ws.util.Domain
 

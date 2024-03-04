@@ -1,15 +1,15 @@
 package lila.ws
 package evalCache
 
-import play.api.libs.json.JsString
-
 import chess.format.{ Fen, UciPath }
 import chess.variant.Variant
-import lila.ws.util.ExpireCallbackMemo
-import lila.ws.ipc.ClientOut.EvalGet
-import lila.ws.ipc.ClientIn.EvalHit
+import play.api.libs.json.JsString
 
 import scala.collection.mutable
+
+import lila.ws.ipc.ClientIn.EvalHit
+import lila.ws.ipc.ClientOut.EvalGet
+import lila.ws.util.ExpireCallbackMemo
 
 /* Upgrades the user's eval when a better one becomes available,
  * by remembering the last evalGet of each socket member,

@@ -1,10 +1,12 @@
 package lila.ws
 
+import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import com.typesafe.scalalogging.Logger
-import ipc.*
+
 import lila.ws.util.SmallBoundedQueueSet
+
+import ipc.*
 
 object ClientActor:
 

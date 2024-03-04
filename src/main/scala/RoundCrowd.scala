@@ -1,6 +1,7 @@
 package lila.ws
 
 import chess.{ ByColor, Color }
+
 import java.util.concurrent.ConcurrentHashMap
 
 import ipc.*

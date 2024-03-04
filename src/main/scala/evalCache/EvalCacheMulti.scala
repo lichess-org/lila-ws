@@ -3,11 +3,12 @@ package evalCache
 
 import chess.format.Fen
 import chess.variant.Variant
-import lila.ws.util.ExpireCallbackMemo
-import lila.ws.ipc.ClientOut.EvalGetMulti
-import lila.ws.ipc.ClientIn.EvalHitMulti
 
 import scala.collection.mutable
+
+import lila.ws.ipc.ClientIn.EvalHitMulti
+import lila.ws.ipc.ClientOut.EvalGetMulti
+import lila.ws.util.ExpireCallbackMemo
 
 /* Compared to EvalCacheUpgrade, accepts multiple positions per member,
  * only sends cp/mate

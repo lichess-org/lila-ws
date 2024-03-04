@@ -1,12 +1,13 @@
 package lila.ws
 package evalCache
 
+import cats.data.NonEmptyList
 import chess.format.{ Fen, Uci }
 import chess.variant.Variant
-import cats.data.NonEmptyList
+
+import java.time.LocalDateTime
 
 import Eval.Score
-import java.time.LocalDateTime
 
 case class EvalCacheEntry(
     _id: EvalCacheEntry.Id,

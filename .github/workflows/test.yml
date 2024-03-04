@@ -20,4 +20,4 @@ jobs:
         run: sbt test
 
       - name: Check Formatting
-        run: sbt scalafmtCheckAll
+        run: sbt check
