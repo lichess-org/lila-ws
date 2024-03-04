@@ -27,11 +27,11 @@ lazy val `lila-ws` = project
     libraryDependencies ++= Seq(
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
-      "org.reactivemongo"                % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12",
-      "io.lettuce"                       % "lettuce-core"                           % "6.3.1.RELEASE",
-      "io.netty"                         % "netty-handler"                          % nettyVersion,
-      "io.netty"                         % "netty-codec-http"                       % nettyVersion,
-       ("io.netty" % s"netty-transport-native-epoll"          % nettyVersion)
+      "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12",
+      "io.lettuce"        % "lettuce-core"                           % "6.3.1.RELEASE",
+      "io.netty"          % "netty-handler"                          % nettyVersion,
+      "io.netty"          % "netty-codec-http"                       % nettyVersion,
+      ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
@@ -50,17 +50,24 @@ lazy val `lila-ws` = project
       "com.roundeights"            %% "hasher"               % "1.3.1",
       "org.scalameta"              %% "munit"                % "1.0.0-M11" % Test
     ),
-  scalacOptions := Seq(
-    "-encoding",
-    "utf-8",
-    "-rewrite",
-    "-source:future-migration",
-    "-indent",
-    "-explaintypes",
-    "-feature",
-    "-language:postfixOps",
-    "-Xtarget:21",
-    "-Wunused:all"
-  ),
-  javaOptions ++= Seq("-Xms32m", "-Xmx256m")
+    scalacOptions := Seq(
+      "-encoding",
+      "utf-8",
+      "-rewrite",
+      "-source:future-migration",
+      "-indent",
+      "-explaintypes",
+      "-feature",
+      "-language:postfixOps",
+      "-Xtarget:21",
+      "-Wunused:all"
+    ),
+    javaOptions ++= Seq("-Xms32m", "-Xmx256m")
+  )
+
+
+addCommandAlias("prepare", "scalafixAll; scalafmtAll")
+addCommandAlias(
+  "check",
+  "; scalafixAll --check ; scalafmtCheckAll",
 )
