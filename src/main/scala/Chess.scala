@@ -46,13 +46,10 @@ object Chess:
       )
 
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
-    if Variant.list.openingSensibleVariants(req.variant)
-    then
-      OpeningDb
-        .findByEpdFen(req.fen)
-        .map:
-          ClientIn.OpeningMsg(req.path, _)
-    else None
+    Option
+      .when(Variant.list.openingSensibleVariants(req.variant))(req.fen)
+      .flatMap(OpeningDb.findByEpdFen)
+      .map(ClientIn.OpeningMsg(req.path, _))
 
   private def makeNode(
       game: chess.Game,
