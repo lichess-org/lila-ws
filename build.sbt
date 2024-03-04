@@ -13,7 +13,7 @@ val arch  = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch
 val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.0.2"
-val kamonVersion = "2.7.0"
+val kamonVersion = "2.7.1"
 val nettyVersion = "4.1.107.Final"
 
 lazy val `lila-ws` = project
@@ -65,9 +65,8 @@ lazy val `lila-ws` = project
     javaOptions ++= Seq("-Xms32m", "-Xmx256m")
   )
 
-
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
 addCommandAlias(
   "check",
-  "; scalafixAll --check ; scalafmtCheckAll",
+  "; scalafixAll --check ; scalafmtCheckAll"
 )
