@@ -3,7 +3,6 @@ inThisBuild(
     scalaVersion      := "3.4.0",
     versionScheme     := Some("early-semver"),
     version           := "3.2",
-    run / fork        := true,
     semanticdbEnabled := true // for scalafix
   )
 )
