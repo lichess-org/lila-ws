@@ -64,7 +64,7 @@ object LilaIn:
   type SriUserId = (Sri, Option[User.Id])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby:
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
-    def write                         = s"connect/sris ${commas(sris map render)}"
+    def write                         = s"connect/sris ${commas(sris.map(render))}"
 
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby:
     def write = s"disconnect/sris ${commas(sris)}"
@@ -131,7 +131,7 @@ object LilaIn:
     private def one(r: RoundCrowd.Output): String =
       if r.isEmpty then r.room.roomId.value
       else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
-    def write = s"r/ons ${commas(many map one)}"
+    def write = s"r/ons ${commas(many.map(one))}"
 
   case class RoundLatency(millis: Int) extends Round:
     def write = s"r/latency $millis"
@@ -154,7 +154,7 @@ object LilaIn:
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site:
     def write = s"req/response $reqId $value"
 
-  private def commas(as: Iterable[Any]): String   = if as.isEmpty then "-" else as mkString ","
+  private def commas(as: Iterable[Any]): String   = if as.isEmpty then "-" else as.mkString(",")
   private def boolean(b: Boolean): String         = if b then "+" else "-"
-  private def optional(s: Option[String]): String = s getOrElse "-"
+  private def optional(s: Option[String]): String = s.getOrElse("-")
   private def writeColor(c: Color): String        = c.fold("w", "b")

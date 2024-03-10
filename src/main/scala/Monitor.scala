@@ -4,7 +4,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.tag.TagSet
+
 import java.util.concurrent.TimeUnit
+
+import lila.ws.util.Domain
 
 final class Monitor(
     config: Config,
@@ -36,7 +39,7 @@ final class Monitor(
     val members = LilaWsServer.connections.get
     val rounds  = services.roundCrowd.size
     services.lobby.pong.update(members, rounds)
-    connection.current update members.toDouble
+    connection.current.update(members.toDouble)
     historyRoomSize.update(History.room.size().toDouble)
     historyRoundSize.update(History.round.size().toDouble)
     crowdRoomSize.update(services.roomCrowd.size.toDouble)
@@ -131,10 +134,11 @@ object Monitor:
 
   object lag:
 
-    private val frameLagHistogram = Kamon.timer("round.lag.frame").withoutTags()
+    private val frameLagHistogram = Kamon.timer("round.lag.frame")
 
-    def roundFrameLag(millis: Int) =
-      if millis > 1 && millis < 99999 then frameLagHistogram.record(millis.toLong, TimeUnit.MILLISECONDS)
+    def roundFrameLag(millis: Int, domain: Domain) =
+      if millis > 1 && millis < 99999 then
+        frameLagHistogram.withTag("domain", domain.value).record(millis.toLong, TimeUnit.MILLISECONDS)
 
   object mobile:
     private val Regex   = """Lichess Mobile/(\S+)(?: \(\d*\))? as:(\S+) sri:\S+ os:(Android|iOS)/.*""".r

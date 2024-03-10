@@ -4,11 +4,11 @@ package netty
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
 
 final class NettyServer(
@@ -17,7 +17,7 @@ final class NettyServer(
     config: Config
 )(using Executor):
 
-  private val connector = ActorChannelConnector(router, clients)
+  private val connector = ActorChannelConnector(clients)
   private val logger    = Logger(getClass)
 
   def start(): Unit =
@@ -60,7 +60,7 @@ final class NettyServer(
               pipeline.addLast(HttpObjectAggregator(4096))
               pipeline.addLast(RequestHandler(router))
               pipeline.addLast(ProtocolHandler(connector))
-              pipeline.addLast(FrameHandler(connector))
+              pipeline.addLast(FrameHandler())
         )
 
       val server = boot.bind(port).sync().channel()

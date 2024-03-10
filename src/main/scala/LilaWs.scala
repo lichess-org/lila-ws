@@ -1,8 +1,8 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
+import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
 
 object LilaWs extends App:
 
@@ -36,6 +36,7 @@ object LilaWs extends App:
   lazy val monitor       = wire[Monitor]
 
   wire[LilaHandler] // must eagerly instanciate!
+  wire[RelayCrowd]  // must eagerly instanciate!
   wire[LilaWsServer].start()
 
 final class LilaWsServer(

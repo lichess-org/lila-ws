@@ -3,8 +3,8 @@ package evalCache
 
 import cats.syntax.all.*
 import chess.format.{ Fen, Uci, UciPath }
-import play.api.libs.json.*
 import chess.variant.Variant
+import play.api.libs.json.*
 
 import evalCache.EvalCacheEntry.*
 import evalCache.Eval.*
@@ -24,14 +24,14 @@ object EvalCacheJsonHandlers:
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     knodes <- d.get[Knodes]("knodes")
     depth  <- d.get[Depth]("depth")
-    pvObjs <- d objs "pvs"
+    pvObjs <- d.objs("pvs")
     pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
   yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
   def readGetMulti(d: JsObject) = for
     fens <- d.get[List[Fen.Epd]]("fens")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
-  yield ipc.ClientOut.EvalGetMulti(fens take 9, variant)
+  yield ipc.ClientOut.EvalGetMulti(fens.take(9), variant)
 
   def writeEval(e: Eval, fen: Fen.Epd) = Json.obj(
     "fen"    -> fen,
@@ -56,15 +56,15 @@ object EvalCacheJsonHandlers:
 
   private def parsePv(d: JsObject): Option[Pv] =
     for
-      movesStr <- d str "moves"
-      moves <- Moves from
+      movesStr <- d.str("moves")
+      moves <- Moves.from(
         movesStr
           .split(' ')
           .take(MAX_PV_SIZE)
           .foldLeft(List.empty[Uci].some):
-            case (Some(ucis), str) => Uci(str) map (_ :: ucis)
+            case (Some(ucis), str) => Uci(str).map(_ :: ucis)
             case _                 => None
           .flatMap(_.reverse.toNel)
-      score <- d.get[Cp]("cp").map(Score.cp(_)) orElse
-        d.get[Mate]("mate").map(Score.mate(_))
+      )
+      score <- d.get[Cp]("cp").map(Score.cp(_)).orElse(d.get[Mate]("mate").map(Score.mate(_)))
     yield Pv(score, moves)

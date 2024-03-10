@@ -1,9 +1,10 @@
 package lila.ws
 
+import chess.Centis
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ Behavior, PostStop }
+
 import ipc.*
-import chess.Centis
 
 object RoundClientActor:
 
@@ -20,7 +21,7 @@ object RoundClientActor:
         player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
           List(
             Bus.channel.tourStanding(tourId),
-            Bus.channel.externalChat(tourId into RoomId)
+            Bus.channel.externalChat(tourId.into(RoomId))
           )
         } :::
         player
@@ -40,14 +41,14 @@ object RoundClientActor:
       import deps.*
       val state = State(roomState, player, userTv)
       onStart(deps, ctx)
-      req.user foreach { users.connect(_, ctx.self) }
-      state.busChans foreach { Bus.subscribe(_, ctx.self) }
+      req.user.foreach { users.connect(_, ctx.self) }
+      state.busChans.foreach { Bus.subscribe(_, ctx.self) }
       roundCrowd.connect(roomState.room, req.user, player.map(_.color))
       from match
         case Left(version) =>
           History.round.getFrom(roomState.room.into(Game.Id), version) match
             case None         => clientIn(ClientIn.Resync)
-            case Some(events) => events map { versionFor(state, _) } foreach clientIn
+            case Some(events) => events.map { versionFor(state, _) }.foreach(clientIn)
         case Right(gameState) => clientIn(ClientIn.roundFull(gameState))
       apply(state, deps)
 
@@ -65,14 +66,14 @@ object RoundClientActor:
       .receive[ClientMsg] { (ctx, msg) =>
         import deps.*
 
-        def gameId = state.room.room into Game.Id
+        def gameId = state.room.room.into(Game.Id)
         def fullId = state.player.map: p =>
-          gameId full p.id
+          gameId.full(p.id)
 
         msg match
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.recordTrustedLag(lagMillis, req.user)
+            services.lag.recordTrustedLag(lagMillis, req.user, req.domain)
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
@@ -119,7 +120,7 @@ object RoundClientActor:
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
               val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
-              val lag            = clientLag withFrameLag frameLagCentis
+              val lag            = clientLag.withFrameLag(frameLagCentis)
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             Behaviors.same
 
@@ -149,18 +150,23 @@ object RoundClientActor:
                 p.ext match
                   case None =>
                     lilaIn.round(LilaIn.PlayerChatSay(state.room.room, req.user.toLeft(p.color), msg))
-                  case Some(InTour(id))  => extMsg(id) foreach lilaIn.tour
-                  case Some(InSwiss(id)) => extMsg(id) foreach lilaIn.swiss
-                  case Some(InSimul(id)) => extMsg(id) foreach lilaIn.simul
+                  case Some(InTour(id))  => extMsg(id).foreach(lilaIn.tour)
+                  case Some(InSwiss(id)) => extMsg(id).foreach(lilaIn.swiss)
+                  case Some(InSimul(id)) => extMsg(id).foreach(lilaIn.simul)
             Behaviors.same
 
           case ClientOut.ChatTimeout(suspect, reason, text) =>
-            deps.req.user foreach { u =>
+            deps.req.user.foreach { u =>
               def msg(id: RoomId) = LilaIn.ChatTimeout(id, u, suspect, reason, text)
-              state.player flatMap { p =>
-                p.tourId.map(_ into RoomId).map(msg).map(lilaIn.tour) orElse
-                  p.simulId.map(_ into RoomId).map(msg).map(lilaIn.simul)
-              } getOrElse lilaIn.round(msg(state.room.room))
+              state.player
+                .flatMap { p =>
+                  p.tourId
+                    .map(_.into(RoomId))
+                    .map(msg)
+                    .map(lilaIn.tour)
+                    .orElse(p.simulId.map(_.into(RoomId)).map(msg).map(lilaIn.simul))
+                }
+                .getOrElse(lilaIn.round(msg(state.room.room)))
             }
             Behaviors.same
 
@@ -172,19 +178,19 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId zip req.ip foreach { (fid, ip) =>
+            fullId.zip(req.ip).foreach { (fid, ip) =>
               lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
             }
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId zip req.ip foreach { (fid, ip) =>
+            fullId.zip(req.ip).foreach { (fid, ip) =>
               lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user, name))
             }
             Behaviors.same
 
           case ClientOut.PalantirPing =>
-            deps.req.user map { Palantir.respondToPing(state.room.room, _) } foreach clientIn
+            deps.req.user.map { Palantir.respondToPing(state.room.room, _) }.foreach(clientIn)
             Behaviors.same
 
           // default receive (site)
@@ -200,7 +206,7 @@ object RoundClientActor:
       }
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state.site, deps, ctx)
-        state.busChans foreach { Bus.unsubscribe(_, ctx.self) }
+        state.busChans.foreach { Bus.unsubscribe(_, ctx.self) }
         deps.roundCrowd.disconnect(state.room.room, deps.req.user, state.player.map(_.color))
         Behaviors.same
       }

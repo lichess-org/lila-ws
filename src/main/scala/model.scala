@@ -1,7 +1,7 @@
 package lila.ws
 
-import chess.{ ByColor, Color }
 import chess.format.{ Fen, Uci }
+import chess.{ ByColor, Color }
 import ornicar.scalalib.SecureRandom
 
 object User:
@@ -31,8 +31,8 @@ object Game:
   opaque type FullId = String
   object FullId extends OpaqueString[FullId]:
     extension (fullId: FullId)
-      def gameId   = Game.Id(fullId.value take 8)
-      def playerId = PlayerId(fullId.value drop 8)
+      def gameId   = Game.Id(fullId.value.take(8))
+      def playerId = PlayerId(fullId.value.drop(8))
 
   opaque type AnyId = String
   object AnyId extends OpaqueString[AnyId]
@@ -50,10 +50,10 @@ object Game:
         case (c, p) if p.id == id && p.userId == userId => RoundPlayer(id, c, ext)
 
   case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
-    def tourId    = ext collect { case RoundExt.InTour(id) => id }
-    def swissId   = ext collect { case RoundExt.InSwiss(id) => id }
-    def simulId   = ext collect { case RoundExt.InSimul(id) => id }
-    def extRoomId = simulId.map(_ into RoomId) orElse swissId.map(_ into RoomId)
+    def tourId    = ext.collect { case RoundExt.InTour(id) => id }
+    def swissId   = ext.collect { case RoundExt.InSwiss(id) => id }
+    def simulId   = ext.collect { case RoundExt.InSimul(id) => id }
+    def extRoomId = simulId.map(_.into(RoomId)).orElse(swissId.map(_.into(RoomId)))
 
   enum RoundExt:
     case InTour(id: Tour.Id)   extends RoundExt
@@ -106,7 +106,7 @@ object Racer:
 
 opaque type Sri = String
 object Sri extends OpaqueString[Sri]:
-  def random                         = Sri(SecureRandom nextString 12)
+  def random                         = Sri(SecureRandom.nextString(12))
   def from(str: String): Option[Sri] = if str contains ' ' then None else Some(str)
 
 opaque type Flag = String

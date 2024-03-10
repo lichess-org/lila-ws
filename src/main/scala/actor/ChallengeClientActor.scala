@@ -42,7 +42,7 @@ object ChallengeClientActor:
           case ClientCtrl.Broom(oldSeconds) =>
             if state.site.lastPing < oldSeconds then Behaviors.stopped
             else
-              keepAlive challenge state.room.room
+              keepAlive.challenge(state.room.room)
               Behaviors.same
 
           case ctrl: ClientCtrl => socketControl(state.site, deps, ctrl)
@@ -65,7 +65,7 @@ object ChallengeClientActor:
           .receive(state.room, deps)
           .lift(msg)
           .fold(receive(msg)): (newState, emit) =>
-            emit foreach lilaIn.challenge.apply
+            emit.foreach(lilaIn.challenge.apply)
             newState.fold(Behaviors.same[ClientMsg]): roomState =>
               apply(state.copy(room = roomState), deps)
       }

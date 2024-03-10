@@ -1,6 +1,7 @@
 package lila.ws
 
 import chess.{ ByColor, Color }
+
 import java.util.concurrent.ConcurrentHashMap
 
 import ipc.*
@@ -42,10 +43,10 @@ final class RoundCrowd(
     )
 
   def getUsers(roomId: RoomId): Set[User.Id] =
-    Option(rounds get roomId).fold(Set.empty[User.Id])(_.room.users.keySet)
+    Option(rounds.get(roomId)).fold(Set.empty)(_.room.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
-    Option(rounds get roomId).exists(_.room.users contains userId)
+    getUsers(roomId).contains(userId)
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
@@ -57,8 +58,10 @@ final class RoundCrowd(
       .values
     lila.emit.round(LilaIn.RoundOnlines(aggregated))
     aggregated.foreach: output =>
-      json round output foreach:
-        Bus.publish(_ room output.room.roomId, _)
+      json
+        .round(output)
+        .foreach:
+          Bus.publish(_.room(output.room.roomId), _)
 
   def size = rounds.size
 
@@ -78,12 +81,12 @@ object RoundCrowd:
   ):
     def connect(user: Option[User.Id], player: Option[Color]) =
       copy(
-        room = if player.isDefined then room else room connect user,
+        room = if player.isDefined then room else room.connect(user),
         players = player.fold(players)(c => players.update(c, _ + 1))
       )
     def disconnect(user: Option[User.Id], player: Option[Color]) =
       copy(
-        room = if player.isDefined then room else room disconnect user,
+        room = if player.isDefined then room else room.disconnect(user),
         players = player.fold(players)(c => players.update(c, nb => Math.max(0, nb - 1)))
       )
     def botOnline(color: Color, online: Boolean): Option[RoundState] = Some:

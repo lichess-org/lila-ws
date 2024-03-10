@@ -1,4 +1,5 @@
 # Lila websocket
+
 Handle incoming websocket traffic for [lichess.org](https://lichess.org).
 
 ```
@@ -28,9 +29,4 @@ Trusts `X-Forwarded-For`. Use only behind a reverse proxy!
 
 ### Code formatting
 
-This repository uses [scalafmt](https://scalameta.org/scalafmt/).
-
-Please [install it for your code editor](https://scalameta.org/scalafmt/docs/installation.html)
-if you're going to contribute to this project.
-
-If you don't install it, please run `scalafmtAll` in the sbt console before committing.
+Please `sbt prepare` before you submit a PR. This will reformats and do some auto refactoring the code.

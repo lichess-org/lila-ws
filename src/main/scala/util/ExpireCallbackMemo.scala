@@ -3,6 +3,7 @@ package util
 
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.actor.typed.Scheduler
+
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
 
@@ -16,7 +17,7 @@ final class ExpireCallbackMemo[K](
 
   private val timeouts = ConcurrentHashMap[K, Cancellable](initialCapacity)
 
-  def get(key: K): Boolean = timeouts contains key
+  def get(key: K): Boolean = timeouts.contains(key)
 
   def put(key: K): Unit = timeouts.compute(
     key,
@@ -31,7 +32,7 @@ final class ExpireCallbackMemo[K](
   )
 
   // does not call the expiration callback
-  def remove(key: K): Unit = Option(timeouts remove key).foreach(_.cancel())
+  def remove(key: K): Unit = Option(timeouts.remove(key)).foreach(_.cancel())
 
   def count: Int = timeouts.size
 

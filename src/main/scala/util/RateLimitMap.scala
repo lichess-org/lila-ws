@@ -22,7 +22,7 @@ final class RateLimitMap(
   private inline def makeClearAt = nowMillis + duration.toMillis
 
   def apply(k: String, cost: Cost = 1, msg: => String = ""): Boolean = cost < 1 || (
-    storage getIfPresent k match
+    storage.getIfPresent(k) match
       case None =>
         storage.put(k, cost -> makeClearAt)
         true
@@ -34,7 +34,7 @@ final class RateLimitMap(
         true
       case _ if enforce =>
         if log then logDedup(s"$name $credits/$duration $k cost: $cost $msg")
-        Monitor rateLimit name
+        Monitor.rateLimit(name)
         false
       case _ => true
   )

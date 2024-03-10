@@ -1,10 +1,10 @@
 package lila.ws
 
 import com.typesafe.config.Config
+
 import java.util.concurrent.locks.ReentrantLock
 import scala.jdk.CollectionConverters.*
-import scala.util.control.NonLocalReturns.*
-import scala.util.Random
+import scala.util.{ Random, boundary }
 
 // Best effort fixed capacity cache for the social graph of online users.
 //
@@ -37,11 +37,9 @@ final class SocialGraph(mongo: Mongo, config: Config):
   // Hold this while reading, writing and modifying edge sets.
   private val lock = new ReentrantLock()
 
-  @inline
-  private def read(slot: Int): Option[UserEntry] = Option(slots(slot))
+  private inline def read(inline slot: Int): Option[UserEntry] = Option(slots(slot))
 
-  @inline
-  private def write(slot: Int, entry: UserEntry): Unit =
+  private inline def write(inline slot: Int, inline entry: UserEntry): Unit =
     slots(slot) = entry
 
   // The impact of hash collision based attacks is minimal (kicking a
@@ -54,16 +52,16 @@ final class SocialGraph(mongo: Mongo, config: Config):
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
     }
 
-  private def findSlot(id: User.Id, exceptSlot: Int): Slot = returning[Slot]:
+  private def findSlot(id: User.Id, exceptSlot: Int): Slot = boundary[Slot]:
     // Try to find an existing or empty slot between hash and
     // hash + MaxStride.
     val hash = fxhash32(id) & slotsMask
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None => throwReturn[Slot](NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          throwReturn[Slot](ExistingSlot(slot, existing))
+          boundary.break(ExistingSlot(slot, existing))
         case _ =>
 
     // If no existing or empty slot is available, try to replace an
@@ -75,11 +73,11 @@ final class SocialGraph(mongo: Mongo, config: Config):
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None => throwReturn[Slot](NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
-          throwReturn[Slot](ExistingSlot(slot, existing))
+          boundary.break(ExistingSlot(slot, existing))
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
-          throwReturn[Slot](freeSlot(slot))
+          boundary.break(freeSlot(slot))
         case _ =>
 
     // The hashtable is full. Overwrite a random entry.
@@ -88,11 +86,11 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   private def freeSlot(leftSlot: Int): NewSlot =
     // Clear all outgoing edges: A freed slot does not follow anyone.
-    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
+    graph.readOutgoing(leftSlot).foreach { graph.remove(leftSlot, _) }
 
     // Clear all incoming edges and mark everyone who followed this slot stale.
-    graph.readIncoming(leftSlot) foreach { rightSlot =>
-      read(rightSlot) foreach { rightEntry =>
+    graph.readIncoming(leftSlot).foreach { rightSlot =>
+      read(rightSlot).foreach { rightEntry =>
         write(rightSlot, rightEntry.update(_.withFresh(false)))
       }
       graph.remove(rightSlot, leftSlot)
@@ -102,22 +100,23 @@ final class SocialGraph(mongo: Mongo, config: Config):
     NewSlot(leftSlot)
 
   private def readFollowed(leftSlot: Int): List[UserEntry] =
-    graph.readOutgoing(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) map { entry =>
+    graph.readOutgoing(leftSlot).flatMap { rightSlot =>
+      read(rightSlot).map { entry =>
         UserEntry(entry.id, entry.meta)
       }
     }
 
   private def readOnlineFollowing(leftSlot: Int): List[User.Id] =
-    graph.readIncoming(leftSlot) flatMap { rightSlot =>
-      read(rightSlot) collect:
-        case entry if entry.meta.online && entry.meta.subscribed => entry.id
-    }
+    graph
+      .readIncoming(leftSlot)
+      .flatMap: rightSlot =>
+        read(rightSlot).collect:
+          case entry if entry.meta.online && entry.meta.subscribed => entry.id
 
   private def updateFollowed(leftSlot: Int, followed: Iterable[User.Id]): List[UserEntry] =
-    graph.readOutgoing(leftSlot) foreach { graph.remove(leftSlot, _) }
+    graph.readOutgoing(leftSlot).foreach { graph.remove(leftSlot, _) }
 
-    (followed map { userId =>
+    followed.map { userId =>
       val (rightSlot, info) = findSlot(userId, leftSlot) match
         case NewSlot(rightSlot) =>
           write(rightSlot, UserEntry(userId, UserMeta.stale))
@@ -127,10 +126,10 @@ final class SocialGraph(mongo: Mongo, config: Config):
           rightSlot -> UserEntry(userId, entry.meta)
       graph.add(leftSlot, rightSlot)
       info
-    }).toList
+    }.toList
 
   private def doLoadFollowed(id: User.Id)(using Executor): Future[List[UserEntry]] =
-    mongo.loadFollowed(id) map { followed =>
+    mongo.loadFollowed(id).map { followed =>
       lock.lock()
       try
         val leftSlot = findSlot(id, -1) match
@@ -240,18 +239,20 @@ object SocialGraph:
     val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
 
     extension (flags: UserMeta)
-      private inline def toggle(flag: Int, on: Boolean) = UserMeta(if on then flags | flag else flags & ~flag)
-      private inline def has(flag: Int): Boolean        = (flags & flag) != 0
+      private inline def toggle(flag: Int, inline on: Boolean) = UserMeta(
+        if on then flags | flag else flags & ~flag
+      )
+      private inline def has(inline flag: Int): Boolean = (flags & flag) != 0
 
       inline def fresh      = flags.has(UserMeta.FRESH)
       inline def subscribed = flags.has(UserMeta.SUBSCRIBED)
       inline def online     = flags.has(UserMeta.ONLINE)
       inline def playing    = flags.has(UserMeta.PLAYING)
 
-      inline def withFresh(fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
-      inline def withSubscribed(subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
-      inline def withOnline(online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
-      inline def withPlaying(playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
+      inline def withFresh(inline fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
+      inline def withSubscribed(inline subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
+      inline def withOnline(inline online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
+      inline def withPlaying(inline playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
   end UserMeta
 
   case class UserEntry(id: User.Id, meta: UserMeta):
@@ -289,5 +290,4 @@ object SocialGraph:
       incoming.remove(b, a)
 
   private object AdjacencyList:
-    @inline
-    private def makePair(a: Int, b: Int): Long = (a.toLong << 32) | b.toLong
+    private inline def makePair(inline a: Int, inline b: Int): Long = (a.toLong << 32) | b.toLong

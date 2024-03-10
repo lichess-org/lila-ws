@@ -1,44 +1,31 @@
 package lila.ws
 
-import play.api.libs.json.*
-import chess.format.{ Fen, Uci, UciCharPair, UciPath }
-import chess.opening.{ Opening, OpeningDb }
+import cats.syntax.option.*
 import chess.Square
 import chess.bitboard.Bitboard
+import chess.format.{ Fen, Uci, UciCharPair, UciPath }
+import chess.opening.{ Opening, OpeningDb }
 import chess.variant.{ Crazyhouse, Variant }
-import com.typesafe.scalalogging.Logger
-import cats.syntax.option.*
+import play.api.libs.json.*
 
 import ipc.*
 
 object Chess:
 
-  private val logger = Logger(getClass)
-
   def apply(req: ClientOut.AnaMove): ClientIn =
     Monitor.time(_.chessMoveTime):
-      try
-        chess
-          .Game(req.variant.some, Some(req.fen))(req.orig, req.dest, req.promotion)
-          .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
-          .getOrElse(ClientIn.StepFailure)
-      catch
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.orig}${req.dest}", e)
-          ClientIn.StepFailure
+      chess
+        .Game(req.variant.some, req.fen.some)(req.orig, req.dest, req.promotion)
+        .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
+        .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
     Monitor.time(_.chessMoveTime):
-      try
-        chess
-          .Game(req.variant.some, Some(req.fen))
-          .drop(req.role, req.square)
-          .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
-          .getOrElse(ClientIn.StepFailure)
-      catch
-        case e: java.lang.ArrayIndexOutOfBoundsException =>
-          logger.warn(s"${req.fen} ${req.variant} ${req.role}@${req.square}", e)
-          ClientIn.StepFailure
+      chess
+        .Game(req.variant.some, req.fen.some)
+        .drop(req.role, req.square)
+        .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
+        .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
     Monitor.time(_.chessDestTime):
@@ -53,17 +40,16 @@ object Chess:
         ,
         opening =
           if Variant.list.openingSensibleVariants(req.variant)
-          then OpeningDb findByEpdFen req.fen
+          then OpeningDb.findByEpdFen(req.fen)
           else None,
         chapterId = req.chapterId
       )
 
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
-    if Variant.list.openingSensibleVariants(req.variant)
-    then
-      OpeningDb findByEpdFen req.fen map:
-        ClientIn.OpeningMsg(req.path, _)
-    else None
+    Option
+      .when(Variant.list.openingSensibleVariants(req.variant))(req.fen)
+      .flatMap(OpeningDb.findByEpdFen)
+      .map(ClientIn.OpeningMsg(req.path, _))
 
   private def makeNode(
       game: chess.Game,
@@ -71,8 +57,8 @@ object Chess:
       path: UciPath,
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
-    val movable = game.situation playable false
-    val fen     = chess.format.Fen write game
+    val movable = game.situation.playable(false)
+    val fen     = chess.format.Fen.write(game)
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),
@@ -83,7 +69,7 @@ object Chess:
       dests = if movable then game.situation.destinations else Map.empty,
       opening =
         if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
-        then OpeningDb findByEpdFen fen
+        then OpeningDb.findByEpdFen(fen)
         else None,
       drops = if movable then game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,
@@ -109,9 +95,9 @@ object Chess:
       var first = true
       dests.foreach: (orig, dests) =>
         if first then first = false
-        else sb append " "
-        sb append orig.asChar
-        dests foreach { sb append _.asChar }
+        else sb.append(" ")
+        sb.append(orig.asChar)
+        dests.foreach(d => sb.append(d.asChar))
       sb.toString
 
     given OWrites[Crazyhouse.Pocket] = OWrites: v =>

@@ -1,9 +1,10 @@
 package lila.ws
 
-import java.util.concurrent.atomic.AtomicInteger
-import com.github.blemale.scaffeine.Scaffeine
 import com.github.benmanes.caffeine.cache.RemovalCause
+import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.Logger
+
+import java.util.concurrent.atomic.AtomicInteger
 
 // send a request to lila and await a response
 object LilaRequest:
@@ -22,9 +23,9 @@ object LilaRequest:
     sendReq(id)
     val promise = Promise[String]()
     inFlight.put(id, promise)
-    promise.future map readRes
+    promise.future.map(readRes)
 
   def onResponse(reqId: Int, response: String): Unit =
-    asMap.remove(reqId).foreach(_ success response)
+    asMap.remove(reqId).foreach(_.success(response))
 
   private val logger = Logger(getClass)

@@ -1,10 +1,12 @@
 package lila.ws
 
+import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import com.typesafe.scalalogging.Logger
-import ipc.*
+
 import lila.ws.util.SmallBoundedQueueSet
+
+import ipc.*
 
 object ClientActor:
 
@@ -16,13 +18,13 @@ object ClientActor:
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     LilaWsServer.connections.incrementAndGet
-    busChansOf(deps.req) foreach { Bus.subscribe(_, ctx.self) }
+    busChansOf(deps.req).foreach { Bus.subscribe(_, ctx.self) }
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
     LilaWsServer.connections.decrementAndGet
     Fens.unwatch(state.watchedGames.value, ctx.self)
-    (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)) foreach { Bus.unsubscribe(_, ctx.self) }
+    (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)).foreach { Bus.unsubscribe(_, ctx.self) }
     req.user.foreach: user =>
       users.disconnect(user, ctx.self)
       deps.services.friends.onClientStop(user)
@@ -82,15 +84,15 @@ object ClientActor:
         state
 
       case ClientOut.Notified =>
-        req.user foreach services.notified.apply
+        req.user.foreach(services.notified.apply)
         state
 
       case ClientOut.FollowingOnline =>
-        req.user foreach { services.friends.start(_, clientIn) }
+        req.user.foreach { services.friends.start(_, clientIn) }
         state
 
       case opening: ClientOut.Opening =>
-        Chess(opening) foreach clientIn
+        Chess(opening).foreach(clientIn)
         state
 
       case anaMove: ClientOut.AnaMove =>
@@ -139,18 +141,18 @@ object ClientActor:
       case ClientOut.Ignore =>
         state
 
-      case unexpected => sys error s"$this can't handle $unexpected"
+      case unexpected => sys.error(s"$this can't handle $unexpected")
 
   def clientInReceive(state: State, deps: Deps, msg: ClientIn): Option[State] = msg match
 
     case msg: ClientIn.TourReminder =>
       if state.tourReminded then None
       else
-        deps clientIn msg
+        deps.clientIn(msg)
         Some(state.copy(tourReminded = true))
 
     case in: ClientIn =>
-      deps clientIn in
+      deps.clientIn(in)
       None
 
   private val logger = Logger("ClientActor")
@@ -167,7 +169,7 @@ object ClientActor:
       auth: Option[Auth.Success],
       flag: Option[Flag]
   ):
-    export header.{ ip, isLichessMobile, name }
+    export header.{ domain, ip, isLichessMobile, name }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
       case Auth.Success.OAuth(_) => true
@@ -179,8 +181,4 @@ object ClientActor:
       req: Req,
       services: Services
   ):
-    def lilaIn     = services.lila
-    def users      = services.users
-    def roomCrowd  = services.roomCrowd
-    def roundCrowd = services.roundCrowd
-    def keepAlive  = services.keepAlive
+    export services.{ keepAlive, lila as lilaIn, roomCrowd, roundCrowd, users }

@@ -1,9 +1,10 @@
 package lila.ws
 
-import reactivemongo.api.bson.*
-import util.RequestHeader
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config
+import reactivemongo.api.bson.*
+
+import util.RequestHeader
 
 final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Executor):
 
@@ -11,20 +12,22 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   import Mongo.given
 
   def apply(req: RequestHeader): Future[Option[Success]] =
-    if req.flag contains Flag.api then Future successful None
+    if req.flag contains Flag.api then Future.successful(None)
     else
       sessionIdFromReq(req) match
-        case Some(sid) if sid startsWith appealPrefix => Future successful None
-        case Some(sid)                                => sessionAuth(sid)
+        case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
+        case Some(sid)                                 => sessionAuth(sid)
         case None =>
           bearerFromHeader(req) match
             case Some(bearer) => bearerAuth(bearer)
-            case None         => Future successful None
+            case None         => Future.successful(None)
 
   def sidFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap:
-      case sidRegex(id) => Some(id)
-      case _            => None
+    req
+      .cookie(cookieName)
+      .flatMap:
+        case sidRegex(id) => Some(id)
+        case _            => None
 
   private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
@@ -34,7 +37,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
           Some(BSONDocument("_id" -> false, "user" -> true))
         ).one[BSONDocument]
       .map:
-        _ flatMap { _.getAsOpt[User.Id]("user") }
+        _.flatMap { _.getAsOpt[User.Id]("user") }
       .map:
         _.map: user =>
           Success.Cookie:
@@ -46,15 +49,15 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
 
   private val cookieName = config.getString("cookie.name")
 
-  private val bearerSigner = Algo hmac config.getString("oauth.secret")
+  private val bearerSigner = Algo.hmac(config.getString("oauth.secret"))
 
   private def bearerFromHeader(req: RequestHeader): Option[Auth.Bearer] =
     req.header("Authorization").flatMap { authorization =>
       val prefix = "Bearer "
       if authorization.startsWith(prefix) then
         authorization.stripPrefix(prefix).split(':') match
-          case Array(bearer, signed) if bearerSigner.sha1(bearer) hash_= signed => Some(Bearer(bearer))
-          case _                                                                => None
+          case Array(bearer, signed) if bearerSigner.sha1(bearer).hash_=(signed) => Some(Bearer(bearer))
+          case _                                                                 => None
       else None
     }
 
@@ -70,11 +73,12 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
           _.getAsOpt[User.Id]("userId").map(Success.OAuth(_))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
-    req cookie cookieName flatMap {
-      case sessionIdRegex(id) => Some(id)
-      case _                  => None
-    } orElse
-      req.queryParameter(sessionIdKey)
+    req
+      .cookie(cookieName)
+      .flatMap:
+        case sessionIdRegex(id) => Some(id)
+        case _                  => None
+      .orElse(req.queryParameter(sessionIdKey))
 
 object Auth:
   private val sessionIdKey   = "sessionId"

@@ -18,3 +18,10 @@
 
 # Scala Steward: Reformat with scalafmt 3.7.14
 9f8712ec23ee7538e81c9b10b507eb4ad455af60
+
+# Reformat with AvoidInfix rule
+b98d6a989a0e1e1704f690b5baff6285f764c60e
+036f81ec8ad580cd179b460744e57bfa480f2fc5
+
+# Apply scalafix rules
+bb9fb1481918969cab254a8532243fdf3436e4e8

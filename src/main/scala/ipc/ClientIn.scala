@@ -1,11 +1,11 @@
 package lila.ws
 package ipc
 
-import chess.{ Check, Color, Ply }
+import chess.bitboard.Bitboard
 import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
-import chess.bitboard.Bitboard
+import chess.{ Check, Color, Ply }
 import play.api.libs.json.*
 
 sealed trait ClientIn extends ClientMsg:
@@ -26,10 +26,12 @@ object ClientIn:
     val write = cliMsg("bye") // not actually sent
 
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn:
-    val write = Json stringify Json.obj(
-      "t" -> "n",
-      "d" -> members,
-      "r" -> rounds
+    val write = Json.stringify(
+      Json.obj(
+        "t" -> "n",
+        "d" -> members,
+        "r" -> rounds
+      )
     )
 
   case class Fen(gameId: Game.Id, position: Position) extends ClientIn:
@@ -56,12 +58,12 @@ object ClientIn:
     val version: SocketVersion
 
   case class Versioned(json: JsonString, version: SocketVersion, troll: IsTroll) extends HasVersion:
-    lazy val full = Payload(JsonString(s"""{"v":$version,${json.value drop 1}"""))
+    lazy val full = Payload(JsonString(s"""{"v":$version,${json.value.drop(1)}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
 
   case class Payload(json: JsonString) extends ClientIn:
     def write = json.value
-  def payload(js: JsValue)                 = Payload(JsonString(Json stringify js))
+  def payload(js: JsValue)                 = Payload(JsonString(Json.stringify(js)))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
   case class Crowd(doc: JsObject) extends ClientIn:
@@ -206,11 +208,13 @@ object ClientIn:
 
     case class Onlines(users: List[FriendList.UserView]) extends ClientIn:
       def write =
-        Json stringify Json.obj(
-          "t"       -> "following_onlines",
-          "d"       -> users.map(_.data.titleName),
-          "playing" -> users.collect { case u if u.meta.playing => u.id },
-          "patrons" -> users.collect { case u if u.data.patron.yes => u.id }
+        Json.stringify(
+          Json.obj(
+            "t"       -> "following_onlines",
+            "d"       -> users.map(_.data.titleName),
+            "playing" -> users.collect { case u if u.meta.playing => u.id },
+            "patrons" -> users.collect { case u if u.data.patron.yes => u.id }
+          )
         )
     case class Enters(user: FriendList.UserView) extends ClientIn:
       // We use 'd' for backward compatibility with the mobile client
@@ -240,13 +244,10 @@ object ClientIn:
 
   def racerState(data: JsonString) = payload("racerState", data)
 
-  case class SwitchResponse(uri: lila.ws.util.RequestUri, status: Int) extends ClientIn:
-    def write = cliMsg("switch", Json.obj("uri" -> uri, "status" -> status))
-
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String = cliMsg(t, Json.toJson(data))
-  private def cliMsg(t: String, js: JsValue): String        = s"""{"t":"$t","d":${Json stringify js}}"""
+  private def cliMsg(t: String, js: JsValue): String        = s"""{"t":"$t","d":${Json.stringify(js)}}"""
   private def cliMsg(t: String, data: JsonString): String   = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
     s"""{"t":"$t","v":$version,"d":${data.value}}"""

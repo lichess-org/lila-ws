@@ -31,16 +31,16 @@ object Chronometer:
       lap.foreach(_.logIfSlow(threshold)(msg))
       this
 
-    def pp(using Executor): Future[A]              = lap map (_.pp)
-    def pp(msg: String)(using Executor): Future[A] = lap map (_ pp msg)
+    def pp(using Executor): Future[A]              = lap.map(_.pp)
+    def pp(msg: String)(using Executor): Future[A] = lap.map(_.pp(msg))
     def ppIfGt(msg: String, duration: FiniteDuration)(using Executor): Future[A] =
-      lap map (_.ppIfGt(msg, duration))
+      lap.map(_.ppIfGt(msg, duration))
 
     def result(using Executor) = lap.map(_.result)
 
   def apply[A](f: => Future[A])(using Executor): FuLap[A] =
     val start = nowNanos
-    FuLap(f map { Lap(_, nowNanos - start) })
+    FuLap(f.map { Lap(_, nowNanos - start) })
 
   def sync[A](f: => A): Lap[A] =
     val start = nowNanos
