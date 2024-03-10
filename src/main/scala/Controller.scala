@@ -114,34 +114,31 @@ final class Controller(
 
   def roundWatch(id: Game.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo
-        .gameExists(id)
-        .zip(mongo.troll.is(req.user))
-        .zip(roundFrom(id.into(Game.AnyId), req))
-        .map:
-          case ((true, isTroll), from) =>
-            val userTv = UserTv.from(header.queryParameter("userTv"))
-            endpoint(
-              name = "round/watch",
-              behavior = emit =>
-                RoundClientActor
-                  .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
-                    Deps(emit, req, services)
-              ,
-              header,
-              credits = 50,
-              interval = 20.seconds
-            )
-          case _ => notFound
+      (
+        mongo.gameExists(id),
+        mongo.troll.is(req.user),
+        roundFrom(id.into(Game.AnyId), req)
+      ).mapN:
+        case (true, isTroll, from) =>
+          val userTv = UserTv.from(header.queryParameter("userTv"))
+          endpoint(
+            name = "round/watch",
+            behavior = emit =>
+              RoundClientActor
+                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
+                  Deps(emit, req, services)
+            ,
+            header,
+            credits = 50,
+            interval = 20.seconds
+          )
+        case _ => notFound
 
   def roundPlay(id: Game.FullId, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo
-        .player(id, req.user)
-        .zip(mongo.troll.is(req.user))
-        .zip(roundFrom(id.into(Game.AnyId), req))
-        .map:
-          case ((Some(player), isTroll), from) =>
+      (mongo.player(id, req.user), mongo.troll.is(req.user), roundFrom(id.into(Game.AnyId), req))
+        .mapN:
+          case (Some(player), isTroll, from) =>
             endpoint(
               name = "round/play",
               behavior = emit =>
@@ -182,20 +179,22 @@ final class Controller(
 
   def team(id: Team.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      mongo.teamView(id, req.user).zip(mongo.troll.is(req.user)).map { (view, isTroll) =>
-        if view.exists(_.yes) then
-          endpoint(
-            name = "team",
-            behavior = emit =>
-              TeamClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
-                Deps(emit, req, services)
-            ,
-            header,
-            credits = 30,
-            interval = 20.seconds
-          )
-        else siteEndpoint(req)
-      }
+      mongo
+        .teamView(id, req.user)
+        .zip(mongo.troll.is(req.user))
+        .map: (view, isTroll) =>
+          if view.exists(_.yes) then
+            endpoint(
+              name = "team",
+              behavior = emit =>
+                TeamClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
+                  Deps(emit, req, services)
+              ,
+              header,
+              credits = 30,
+              interval = 20.seconds
+            )
+          else siteEndpoint(req)
 
   def swiss(id: Swiss.Id, header: RequestHeader) =
     WebSocket(header): req =>
