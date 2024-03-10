@@ -49,9 +49,9 @@ final class LilaHandler(
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
-    case Impersonate(user, by) => Impersonations(user, by)
-
-    case Pong(pingAt) => Monitor.ping.record("site", pingAt)
+    case Impersonate(user, by)                                   => Impersonations(user, by)
+    case StreamersOnline(streamers: Iterable[(User.Id, String)]) => Streamer.set(streamers)
+    case Pong(pingAt)                                            => Monitor.ping.record("site", pingAt)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")

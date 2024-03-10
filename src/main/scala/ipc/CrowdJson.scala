@@ -34,11 +34,13 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
     if crowd.users.isEmpty then Future successful Json.obj("nb" -> crowd.members)
     else
       Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get) map { names =>
-        Json.obj(
+        val base = Json.obj(
           "nb"    -> crowd.members,
           "users" -> names.filterNot(isBotName),
           "anons" -> crowd.anons
         )
+        val streamers = Streamer.intersect(crowd.users.toSet)
+        if streamers.isEmpty then base else base ++ Json.obj("streams" -> Json.toJson(streamers))
       }
 
   private def isBotName(name: User.TitleName) = name.value startsWith "BOT "

@@ -32,6 +32,7 @@ object LilaOut:
   case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
   case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
   case class LilaResponse(reqId: Int, body: String)                extends SiteOut with RoundOut
+  case class StreamersOnline(streamers: Iterable[(User.Id, String)]) extends SiteOut
 
   // lobby
 
@@ -323,6 +324,15 @@ object LilaOut:
         get(args, 2) { case Array(userId, online) =>
           Some(ApiUserOnline(User.Id(userId), boolean(online)))
         }
+
+      case "streamers/online" =>
+        Some(StreamersOnline {
+          commas(args)
+            .map(_ split ':')
+            .collect { case Array(userId, name) =>
+              (User.Id(userId), name)
+            }
+        })
 
       case "pong" => args.toLongOption map UptimeMillis.apply map Pong.apply
 
