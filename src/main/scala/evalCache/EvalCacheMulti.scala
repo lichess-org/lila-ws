@@ -22,7 +22,7 @@ final private class EvalCacheMulti(using
 
   private val members       = mutable.AnyRefMap.empty[SriString, WatchingMember]
   private val evals         = mutable.AnyRefMap.empty[SetupId, EvalState]
-  private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 5 minutes, expire)
+  private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 1 minute, expire)
 
   private val upgradeMon = Monitor.evalCache.multi.upgrade
 
