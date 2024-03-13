@@ -27,12 +27,17 @@ final private class EvalCacheMulti(using
   private val upgradeMon = Monitor.evalCache.multi.upgrade
 
   def register(sri: Sri, e: EvalGetMulti): Unit =
-    Option(members.get(sri.value)).foreach:
-      _.setups.foreach(unregisterEval(_, sri))
-    val wm = WatchingMember(sri, e.variant, e.fens)
-    members.put(sri.value, wm)
-    wm.setups.foreach: setupId =>
-      evals.compute(setupId, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+    members
+      .compute(
+        sri.value,
+        (k, prev) =>
+          Option(prev).foreach:
+            _.setups.foreach(unregisterEval(_, sri))
+          WatchingMember(sri, e.variant, e.fens)
+      )
+      .setups
+      .foreach: setupId =>
+        evals.compute(setupId, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
@@ -55,8 +60,8 @@ final private class EvalCacheMulti(using
           upgradeMon.count.increment(sris.size)
 
   private def expire(sri: Sri): Unit =
-    Option(members.remove(sri.value)).foreach: wm =>
-      wm.setups.foreach(unregisterEval(_, sri))
+    Option(members.remove(sri.value)).foreach:
+      _.setups.foreach(unregisterEval(_, sri))
 
   private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
     evals.computeIfPresent(
