@@ -30,7 +30,7 @@ final private class EvalCacheMulti(using
     members
       .compute(
         sri.value,
-        (k, prev) =>
+        (_, prev) =>
           Option(prev).foreach:
             _.setups.foreach(unregisterEval(_, sri))
           WatchingMember(sri, e.variant, e.fens)
