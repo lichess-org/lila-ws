@@ -11,13 +11,14 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       keepOnlyStudyMembers(crowd).map: users =>
         crowd.copy(users = users, anons = 0)
     else Future.successful(crowd)
-  }.flatMap(spectatorsOf).map(ClientIn.Crowd.apply)
+  }.flatMap(spectatorsOf(_, crowd.users)).map(ClientIn.Crowd.apply)
 
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
     spectatorsOf(
       crowd.room.copy(
         users = if crowd.room.users.sizeIs > 20 then Nil else crowd.room.users
-      )
+      ),
+      crowd.room.users
     ).map { spectators =>
       ClientIn.Crowd(
         Json
@@ -29,7 +30,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       )
     }
 
-  private def spectatorsOf(crowd: RoomCrowd.Output): Future[JsObject] =
+  private def spectatorsOf(crowd: RoomCrowd.Output, allUsers: Iterable[User.Id]): Future[JsObject] =
     if crowd.users.isEmpty then Future.successful(Json.obj("nb" -> crowd.members))
     else
       Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get).map { names =>
@@ -38,7 +39,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
           "users" -> names.filterNot(isBotName),
           "anons" -> crowd.anons
         )
-        val streamers = Streamer.intersect(crowd.users.toSet)
+        val streamers = Streamer.intersect(allUsers)
         if streamers.isEmpty then base else base ++ Json.obj("streams" -> Json.toJson(streamers))
       }
 

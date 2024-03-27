@@ -7,8 +7,5 @@ object Streamer:
   def set(newStreams: Iterable[(User.Id, String)]): Unit =
     streams = newStreams.toMap
 
-  def intersect(userIds: Set[User.Id]): Map[User.Id, String] =
-    streams
-      .collect:
-        case (id, name) if userIds.contains(id) => id -> name
-      .toMap
+  def intersect(userIds: Iterable[User.Id]): Map[User.Id, String] =
+    streams.view.filterKeys(userIds.toSet).toMap
