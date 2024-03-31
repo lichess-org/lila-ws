@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion      := "3.4.0",
+    scalaVersion      := "3.4.1",
     versionScheme     := Some("early-semver"),
     version           := "3.2",
     semanticdbEnabled := true // for scalafix
@@ -13,7 +13,7 @@ val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.0.2"
 val kamonVersion = "2.7.1"
-val nettyVersion = "4.1.107.Final"
+val nettyVersion = "4.1.108.Final"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -27,15 +27,15 @@ lazy val `lila-ws` = project
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
       "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC12",
-      "io.lettuce"        % "lettuce-core"                           % "6.3.1.RELEASE",
+      "io.lettuce"        % "lettuce-core"                           % "6.3.2.RELEASE",
       "io.netty"          % "netty-handler"                          % nettyVersion,
       "io.netty"          % "netty-codec-http"                       % nettyVersion,
       ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "com.github.ornicar"         %% "scalalib"             % "9.5.6",
-      "org.lichess"                %% "scalachess"           % "15.7.12",
+      "com.github.ornicar"         %% "scalalib"             % "9.5.8",
+      "org.lichess"                %% "scalachess"           % "15.9.0",
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,
       "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
       "com.github.blemale"         %% "scaffeine"            % "5.2.1"     % "compile",

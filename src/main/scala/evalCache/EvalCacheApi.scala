@@ -51,7 +51,7 @@ final class EvalCacheApi(mongo: Mongo)(using
           emit:
             ClientIn.EvalHitMulti:
               EvalCacheJsonHandlers.writeMultiHit(evals)
-    multi.register(sri, e.copy(fens = e.fens.take(32)))
+    multi.register(sri, e.copy(fens = e.fens))
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     truster

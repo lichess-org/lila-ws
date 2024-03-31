@@ -30,17 +30,17 @@ object Bus:
   type ChanSelect = Bus.channel.type => Chan
 
   object channel:
-    def sri(s: Sri)               = s"sri/$s"
-    def flag(f: Flag)             = s"flag/$f"
-    val mlat                      = "mlat"
-    val all                       = "all"
-    val lobby                     = "lobby"
-    val tv                        = "tv"
-    val tvChannels                = "tv-channels"
-    def userTv(u: UserTv)         = s"userTv/$u"
-    def room(id: RoomId)          = s"room/$id"
-    def tourStanding(id: Tour.Id) = s"tour-standing/$id"
-    def externalChat(id: RoomId)  = s"external-chat/$id"
+    inline def sri(inline s: Sri)               = s"sri/$s"
+    inline def flag(inline f: Flag)             = s"flag/$f"
+    val mlat                                    = "mlat"
+    val all                                     = "all"
+    val lobby                                   = "lobby"
+    val tv                                      = "tv"
+    val tvChannels                              = "tv-channels"
+    inline def userTv(inline u: UserTv)         = s"userTv/$u"
+    inline def room(inline id: RoomId)          = s"room/$id"
+    inline def tourStanding(inline id: Tour.Id) = s"tour-standing/$id"
+    inline def externalChat(inline id: RoomId)  = s"external-chat/$id"
 
   def msg(event: ClientMsg, chan: ChanSelect) =
     Msg(event, chan(channel))

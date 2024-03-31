@@ -22,7 +22,7 @@ extension (js: JsObject)
   def obj(key: String): Option[JsObject] =
     (js \ key).asOpt[JsObject]
 
-  def get[A: Reads](key: String): Option[A] =
+  inline def get[A: Reads](inline key: String): Option[A] =
     (js \ key).asOpt[A]
 
   def arr(key: String): Option[JsArray] =

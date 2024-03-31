@@ -4,7 +4,7 @@ package evalCache
 import chess.format.Fen
 import chess.variant.Variant
 
-import scala.collection.mutable
+import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHitMulti
 import lila.ws.ipc.ClientOut.EvalGetMulti
@@ -20,32 +20,38 @@ final private class EvalCacheMulti(using
   import EvalCacheMulti.*
   import EvalCacheUpgrade.{ EvalState, SetupId, SriString }
 
-  private val members       = mutable.AnyRefMap.empty[SriString, WatchingMember]
-  private val evals         = mutable.AnyRefMap.empty[SetupId, EvalState]
-  private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 5 minutes, expire)
+  private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
+  private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
+  private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 1 minute, expire)
 
   private val upgradeMon = Monitor.evalCache.multi.upgrade
 
   def register(sri: Sri, e: EvalGetMulti): Unit =
     members
-      .get(sri.value)
-      .foreach: prevMember =>
-        prevMember.setups.foreach(unregisterEval(_, sri))
-    val wm = WatchingMember(sri, e.variant, e.fens)
-    members += (sri.value -> wm)
-    wm.setups.foreach: setupId =>
-      evals += (setupId -> evals.get(setupId).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+      .compute(
+        sri.value,
+        (_, prev) =>
+          Option(prev).foreach:
+            _.setups.foreach(unregisterEval(_, sri))
+          WatchingMember(sri, e.variant, e.fens)
+      )
+      .setups
+      .foreach: setupId =>
+        evals.compute(setupId, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
     val setupId = makeSetupId(input.id.variant, input.fen)
-    evals
-      .get(setupId)
-      .filter(_.depth < input.eval.depth)
-      .map(setupId -> _)
-      .foreach: (setupId, oldEval) =>
-        evals += (setupId -> oldEval.copy(depth = input.eval.depth))
-        val sris = oldEval.sris.filter(_ != fromSri)
+    Option(
+      evals.computeIfPresent(
+        setupId,
+        (_, ev) =>
+          if ev.depth >= input.eval.depth then ev
+          else ev.copy(depth = input.eval.depth)
+      )
+    ).filter(_.depth == input.eval.depth)
+      .foreach: eval =>
+        val sris = eval.sris.filter(_ != fromSri)
         if sris.nonEmpty then
           val hit = EvalHitMulti:
             EvalCacheJsonHandlers.writeMultiHit(input.fen, input.eval)
@@ -54,19 +60,17 @@ final private class EvalCacheMulti(using
           upgradeMon.count.increment(sris.size)
 
   private def expire(sri: Sri): Unit =
-    members
-      .get(sri.value)
-      .foreach: wm =>
-        wm.setups.foreach(unregisterEval(_, sri))
-        members -= sri.value
+    Option(members.remove(sri.value)).foreach:
+      _.setups.foreach(unregisterEval(_, sri))
 
   private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
-    evals
-      .get(setupId)
-      .foreach: eval =>
+    evals.computeIfPresent(
+      setupId,
+      (_, eval) =>
         val newSris = eval.sris - sri
-        if newSris.isEmpty then evals -= setupId
-        else evals += (setupId -> eval.copy(sris = newSris))
+        if newSris.isEmpty then null
+        else eval.copy(sris = newSris)
+    )
 
   scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
     upgradeMon.members.update(members.size)

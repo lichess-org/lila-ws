@@ -31,7 +31,7 @@ object EvalCacheJsonHandlers:
   def readGetMulti(d: JsObject) = for
     fens <- d.get[List[Fen.Epd]]("fens")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
-  yield ipc.ClientOut.EvalGetMulti(fens.take(9), variant)
+  yield ipc.ClientOut.EvalGetMulti(fens.take(32), variant)
 
   def writeEval(e: Eval, fen: Fen.Epd) = Json.obj(
     "fen"    -> fen,
