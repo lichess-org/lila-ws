@@ -70,7 +70,7 @@ final class EvalCacheApi(mongo: Mongo)(using
             )
           ).foreach(putTrusted(sri, user, _))
 
-  private def monitorRequest[A](fen: Fen.Epd, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
+  private def monitorRequest[A](fen: Fen.Full, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
     Fen
       .readPly(fen)
       .foreach: ply =>
@@ -92,7 +92,7 @@ final class EvalCacheApi(mongo: Mongo)(using
         res
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
-    def destSize(fen: Fen.Epd): Int =
+    def destSize(fen: Fen.Full): Int =
       chess.Game(chess.variant.Standard.some, fen.some).situation.moves.view.map(_._2.size).sum
     mongo.evalCacheColl.flatMap: c =>
       EvalCacheValidator(input) match

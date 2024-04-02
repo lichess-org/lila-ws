@@ -2,7 +2,7 @@ package lila.ws
 
 import chess.format.{ Fen, Uci }
 import chess.{ ByColor, Color }
-import ornicar.scalalib.SecureRandom
+import scalalib.SecureRandom
 
 object User:
   opaque type Id = String

@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import chess.bitboard.Bitboard
-import chess.format.{ EpdFen, Uci, UciCharPair, UciPath }
+import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
 import chess.{ Check, Color, Ply }
@@ -122,7 +122,7 @@ object ClientIn:
       id: UciCharPair,
       ply: Ply,
       move: Uci.WithSan,
-      fen: EpdFen,
+      fen: FullFen,
       check: Check,
       dests: Map[chess.Square, Bitboard],
       opening: Option[Opening],

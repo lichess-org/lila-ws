@@ -12,7 +12,7 @@ import evalCache.Eval.*
 object EvalCacheJsonHandlers:
 
   def readGet(d: JsObject) = for
-    fen <- d.get[Fen.Epd]("fen")
+    fen <- d.get[Fen.Full]("fen")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     multiPv = d.get[MultiPv]("mpv") | MultiPv(1)
     path <- d.get[UciPath]("path")
@@ -20,7 +20,7 @@ object EvalCacheJsonHandlers:
   yield ipc.ClientOut.EvalGet(fen, variant, multiPv, path, up)
 
   def readPut(d: JsObject) = for
-    fen <- d.get[Fen.Epd]("fen")
+    fen <- d.get[Fen.Full]("fen")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     knodes <- d.get[Knodes]("knodes")
     depth  <- d.get[Depth]("depth")
@@ -29,23 +29,23 @@ object EvalCacheJsonHandlers:
   yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
   def readGetMulti(d: JsObject) = for
-    fens <- d.get[List[Fen.Epd]]("fens")
+    fens <- d.get[List[Fen.Full]]("fens")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
   yield ipc.ClientOut.EvalGetMulti(fens.take(32), variant)
 
-  def writeEval(e: Eval, fen: Fen.Epd) = Json.obj(
+  def writeEval(e: Eval, fen: Fen.Full) = Json.obj(
     "fen"    -> fen,
     "knodes" -> e.knodes,
     "depth"  -> e.depth,
     "pvs"    -> JsArray(e.pvs.toList.map(writePv))
   )
 
-  def writeMultiHit(fen: Fen.Epd, e: Eval): JsObject = Json
+  def writeMultiHit(fen: Fen.Full, e: Eval): JsObject = Json
     .obj("fen" -> fen, "depth" -> e.depth)
     .add("cp" -> e.bestPv.score.cp)
     .add("mate" -> e.bestPv.score.mate)
 
-  def writeMultiHit(evals: List[(Fen.Epd, Eval)]): JsObject = evals match
+  def writeMultiHit(evals: List[(Fen.Full, Eval)]): JsObject = evals match
     case List(single) => writeMultiHit.tupled(single)
     case many         => Json.obj("multi" -> many.map(writeMultiHit.tupled))
 

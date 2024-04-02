@@ -2,7 +2,7 @@ package lila.ws
 
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.ActorRef
-import ornicar.scalalib.ThreadLocalRandom
+import scalalib.ThreadLocalRandom
 
 import ipc.*
 

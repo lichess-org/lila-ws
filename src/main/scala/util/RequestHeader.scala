@@ -3,7 +3,7 @@ package util
 
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder
 import io.netty.handler.codec.http.{ HttpHeaderNames, HttpHeaders, QueryStringDecoder }
-import ornicar.scalalib.zeros.given
+import scalalib.zeros.given
 
 import scala.jdk.CollectionConverters.*
 

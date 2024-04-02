@@ -2,10 +2,10 @@ package lila.ws
 
 import org.apache.pekko.actor.typed.{ ActorRef, ActorSystem, Behavior }
 
-export ornicar.scalalib.newtypes.*
-export ornicar.scalalib.zeros.*
-export ornicar.scalalib.extensions.*
-export ornicar.scalalib.time.*
+export scalalib.newtypes.*
+export scalalib.zeros.*
+export scalalib.extensions.*
+export scalalib.time.*
 export scala.concurrent.{ ExecutionContext as Executor, Future, Promise }
 export scala.concurrent.duration.{ DurationInt, FiniteDuration }
 export scala.concurrent.ExecutionContext.parasitic

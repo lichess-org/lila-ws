@@ -40,7 +40,7 @@ object Chess:
         ,
         opening =
           if Variant.list.openingSensibleVariants(req.variant)
-          then OpeningDb.findByEpdFen(req.fen)
+          then OpeningDb.findByFullFen(req.fen)
           else None,
         chapterId = req.chapterId
       )
@@ -48,7 +48,7 @@ object Chess:
   def apply(req: ClientOut.Opening): Option[ClientIn.OpeningMsg] =
     Option
       .when(Variant.list.openingSensibleVariants(req.variant))(req.fen)
-      .flatMap(OpeningDb.findByEpdFen)
+      .flatMap(OpeningDb.findByFullFen)
       .map(ClientIn.OpeningMsg(req.path, _))
 
   private def makeNode(
@@ -69,7 +69,7 @@ object Chess:
       dests = if movable then game.situation.destinations else Map.empty,
       opening =
         if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
-        then OpeningDb.findByEpdFen(fen)
+        then OpeningDb.findByFullFen(fen)
         else None,
       drops = if movable then game.situation.drops else Some(Nil),
       crazyData = game.situation.board.crazyData,

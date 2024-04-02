@@ -87,7 +87,7 @@ private object EvalCacheUpgrade:
   case class EvalState(sris: Set[Sri], depth: Depth):
     def addSri(sri: Sri) = copy(sris = sris + sri)
 
-  def makeSetupId(variant: Variant, fen: Fen.Epd, multiPv: MultiPv): SetupId =
+  def makeSetupId(variant: Variant, fen: Fen.Full, multiPv: MultiPv): SetupId =
     s"${variant.id}${SmallFen.make(variant, fen.simple)}^$multiPv"
 
   case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

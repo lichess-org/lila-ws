@@ -36,5 +36,5 @@ object SmallFen extends OpaqueString[SmallFen]:
     if variant == chess.variant.ThreeCheck
     then fen.value.split(' ').lift(6).foldLeft(base)(_ + _)
     else base
-  def validate(variant: Variant, fen: Fen.Epd): Option[SmallFen] =
+  def validate(variant: Variant, fen: Fen.Full): Option[SmallFen] =
     Fen.read(variant, fen).exists(_.playable(false)).option(make(variant, fen.simple))

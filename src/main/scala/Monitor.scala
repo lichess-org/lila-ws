@@ -53,7 +53,7 @@ final class Monitor(
     val perState = Kamon.gauge("jvm.threads.group")
     val total    = Kamon.gauge("jvm.threads.group.total")
     for
-      group <- ornicar.scalalib.Jvm.threadGroups()
+      group <- scalalib.Jvm.threadGroups()
       _ = total.withTags(TagSet.from(Map("name" -> group.name))).update(group.total)
       (state, count) <- group.states
     yield perState.withTags(TagSet.from(Map("name" -> group.name, "state" -> state.toString))).update(count)

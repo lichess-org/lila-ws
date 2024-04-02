@@ -74,12 +74,12 @@ object EvalCacheEntry:
 
   case class Id(variant: Variant, smallFen: SmallFen)
   object Id:
-    def make(variant: Variant, fen: Fen.Epd): Id =
+    def make(variant: Variant, fen: Fen.Full): Id =
       Id(variant, SmallFen.make(variant, fen.simple))
 
-  case class Input(id: Id, fen: Fen.Epd, eval: Eval)
+  case class Input(id: Id, fen: Fen.Full, eval: Eval)
 
-  def makeInput(variant: Variant, fen: Fen.Epd, eval: Eval) =
+  def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
     SmallFen
       .validate(variant, fen)
       .ifTrue(eval.looksValid)

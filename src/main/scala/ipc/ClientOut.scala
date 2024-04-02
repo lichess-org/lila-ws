@@ -30,12 +30,12 @@ object ClientOut:
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: UciPath, fen: Fen.Epd) extends ClientOutSite
+  case class Opening(variant: Variant, path: UciPath, fen: Fen.Full) extends ClientOutSite
 
   case class AnaMove(
       orig: Square,
       dest: Square,
-      fen: Fen.Epd,
+      fen: Fen.Full,
       path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId],
@@ -46,7 +46,7 @@ object ClientOut:
   case class AnaDrop(
       role: chess.Role,
       square: Square,
-      fen: Fen.Epd,
+      fen: Fen.Full,
       path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId],
@@ -54,14 +54,14 @@ object ClientOut:
   ) extends ClientOutSite
 
   case class AnaDests(
-      fen: Fen.Epd,
+      fen: Fen.Full,
       path: UciPath,
       variant: Variant,
       chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
   case class EvalGet(
-      fen: Fen.Epd,
+      fen: Fen.Full,
       variant: Variant,
       multiPv: MultiPv,
       path: UciPath,
@@ -69,14 +69,14 @@ object ClientOut:
   ) extends ClientOutSite
 
   case class EvalPut(
-      fen: Fen.Epd,
+      fen: Fen.Full,
       variant: Variant,
       pvs: NonEmptyList[evalCache.EvalCacheEntry.Pv],
       knodes: evalCache.Knodes,
       depth: Depth
   ) extends ClientOutSite
 
-  case class EvalGetMulti(fens: List[Fen.Epd], variant: Variant) extends ClientOutSite
+  case class EvalGetMulti(fens: List[Fen.Full], variant: Variant) extends ClientOutSite
 
   case class MsgType(dest: User.Id) extends ClientOutSite
 
@@ -159,7 +159,7 @@ object ClientOut:
                 for
                   d    <- o.obj("d")
                   path <- d.get[UciPath]("path")
-                  fen  <- d.get[Fen.Epd]("fen")
+                  fen  <- d.get[Fen.Full]("fen")
                   variant = dataVariant(d)
                 yield Opening(variant, path, fen)
               case "anaMove" =>
@@ -168,7 +168,7 @@ object ClientOut:
                   orig <- d.str("orig").flatMap { Square.fromKey(_) }
                   dest <- d.str("dest").flatMap { Square.fromKey(_) }
                   path <- d.get[UciPath]("path")
-                  fen  <- d.get[Fen.Epd]("fen")
+                  fen  <- d.get[Fen.Full]("fen")
                   variant   = dataVariant(d)
                   chapterId = d.get[ChapterId]("ch")
                   promotion = d.str("promotion").flatMap { chess.Role.promotable(_) }
@@ -179,7 +179,7 @@ object ClientOut:
                   role   <- d.str("role").flatMap(chess.Role.allByName.get)
                   square <- d.str("pos").flatMap { Square.fromKey(_) }
                   path   <- d.get[UciPath]("path")
-                  fen    <- d.get[Fen.Epd]("fen")
+                  fen    <- d.get[Fen.Full]("fen")
                   variant   = dataVariant(d)
                   chapterId = d.get[ChapterId]("ch")
                 yield AnaDrop(role, square, fen, path, variant, chapterId, o)
@@ -187,7 +187,7 @@ object ClientOut:
                 for
                   d    <- o.obj("d")
                   path <- d.get[UciPath]("path")
-                  fen  <- d.get[Fen.Epd]("fen")
+                  fen  <- d.get[Fen.Full]("fen")
                   variant   = dataVariant(d)
                   chapterId = d.get[ChapterId]("ch")
                 yield AnaDests(fen, path, variant, chapterId)

@@ -81,8 +81,8 @@ private object EvalCacheMulti:
 
   import EvalCacheUpgrade.*
 
-  def makeSetupId(variant: Variant, fen: Fen.Epd): SetupId =
+  def makeSetupId(variant: Variant, fen: Fen.Full): SetupId =
     s"${variant.id}${SmallFen.make(variant, fen.simple)}"
 
-  case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Epd]):
+  case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Full]):
     def setups: List[SetupId] = fens.map(makeSetupId(variant, _))
