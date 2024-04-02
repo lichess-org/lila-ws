@@ -1,12 +1,10 @@
 package lila.ws
 
 import cats.syntax.option.*
-import chess.Square
-import chess.bitboard.Bitboard
 import chess.format.{ Fen, Uci, UciCharPair, UciPath }
-import chess.opening.{ Opening, OpeningDb }
-import chess.variant.{ Crazyhouse, Variant }
-import play.api.libs.json.*
+import chess.json.Json
+import chess.opening.OpeningDb
+import chess.variant.Variant
 
 import ipc.*
 
@@ -36,7 +34,7 @@ object Chess:
           then initialDests
           else
             val sit = chess.Game(req.variant.some, Some(req.fen)).situation
-            if sit.playable(false) then json.destString(sit.destinations) else ""
+            if sit.playable(false) then Json.destString(sit.destinations) else ""
         ,
         opening =
           if Variant.list.openingSensibleVariants(req.variant)
@@ -77,32 +75,3 @@ object Chess:
     )
 
   private val initialDests = "iqy muC gvx ltB bqs pxF jrz nvD ksA owE"
-
-  object json:
-    given Writes[Uci] with
-      def writes(uci: Uci) = JsString(uci.uci)
-    given Writes[UciCharPair] with
-      def writes(ucp: UciCharPair) = JsString(ucp.toString)
-    given Writes[Square] with
-      def writes(square: Square) = JsString(square.key)
-    given Writes[Opening] with
-      def writes(o: Opening) = Json.obj("eco" -> o.eco, "name" -> o.name)
-    given Writes[Map[Square, Bitboard]] with
-      def writes(dests: Map[Square, Bitboard]) = JsString(destString(dests))
-
-    def destString(dests: Map[Square, Bitboard]): String =
-      val sb    = new java.lang.StringBuilder(80)
-      var first = true
-      dests.foreach: (orig, dests) =>
-        if first then first = false
-        else sb.append(" ")
-        sb.append(orig.asChar)
-        dests.foreach(d => sb.append(d.asChar))
-      sb.toString
-
-    given OWrites[Crazyhouse.Pocket] = OWrites: v =>
-      JsObject:
-        v.map((role, count) => role.name -> JsNumber(count))
-
-    given OWrites[chess.variant.Crazyhouse.Data] = OWrites: v =>
-      Json.obj("pockets" -> v.pockets.all)

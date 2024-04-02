@@ -13,7 +13,7 @@ sealed trait ClientIn extends ClientMsg:
 
 object ClientIn:
 
-  import Chess.json.given
+  import chess.json.Json.given
 
   case object Pong extends ClientIn:
     val write = "0"
