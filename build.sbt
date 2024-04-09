@@ -41,7 +41,7 @@ lazy val `lila-ws` = project
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,
       "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
       "com.github.blemale"         %% "scaffeine"            % "5.2.1"     % "compile",
-      "ch.qos.logback"              % "logback-classic"      % "1.5.3",
+      "ch.qos.logback"              % "logback-classic"      % "1.5.4",
       "org.playframework"          %% "play-json"            % "3.0.2",
       "io.kamon"                   %% "kamon-core"           % kamonVersion,
       "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
