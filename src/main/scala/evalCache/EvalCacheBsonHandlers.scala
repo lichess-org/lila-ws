@@ -66,7 +66,7 @@ object EvalCacheBsonHandlers:
     def readTry(bson: BSONValue) =
       bson match
         case v: BSONBinary => Success(BinaryFen(v.byteArray))
-        case _ => handlerBadType(bson)
+        case _             => handlerBadType(bson)
     def writeTry(v: BinaryFen) = Success(BSONBinary(v.value, Subtype.GenericBinarySubtype))
   given BSONHandler[Id] = Macros.handler
 

@@ -1,8 +1,7 @@
 package lila.ws
 package evalCache
 
-import chess.format.{ Fen, UciPath }
-import chess.variant.Variant
+import chess.format.UciPath
 import play.api.libs.json.JsString
 
 import java.util.concurrent.ConcurrentHashMap
@@ -28,20 +27,24 @@ final private class EvalCacheUpgrade(using
   private val upgradeMon = Monitor.evalCache.single.upgrade
 
   def register(sri: Sri, e: EvalGet): Unit =
-    members.compute(
-      sri.value,
-      (_, prev) =>
-        Option(prev).foreach: member =>
-          unregisterEval(member.setupId, sri)
-        val setupId = makeSetupId(e.variant, e.fen, e.multiPv)
-        evals.compute(setupId, (_, eval) => Option(eval).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
-        WatchingMember(sri, setupId, e.path)
-    )
-    expirableSris.put(sri)
+    EvalCacheEntry.Id
+      .from(e.variant, e.fen)
+      .foreach: entryId =>
+        members.compute(
+          sri.value,
+          (_, prev) =>
+            Option(prev).foreach: member =>
+              unregisterEval(member.setupId, sri)
+            val setupId = SetupId(entryId, e.multiPv)
+            evals
+              .compute(setupId, (_, eval) => Option(eval).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+            WatchingMember(sri, setupId, e.path)
+        )
+        expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
     (1 to input.eval.multiPv.value).foreach: multiPv =>
-      val setupId = makeSetupId(input.situation.variant, input.fen, MultiPv(multiPv))
+      val setupId = SetupId(input.id, MultiPv(multiPv))
       Option(
         evals.computeIfPresent(
           setupId,
@@ -82,12 +85,10 @@ final private class EvalCacheUpgrade(using
 private object EvalCacheUpgrade:
 
   type SriString = String
-  type SetupId   = String
+
+  case class SetupId(entryId: EvalCacheEntry.Id, multiPv: MultiPv)
 
   case class EvalState(sris: Set[Sri], depth: Depth):
     def addSri(sri: Sri) = copy(sris = sris + sri)
-
-  def makeSetupId(variant: Variant, fen: Fen.Full, multiPv: MultiPv): SetupId =
-    s"${variant.id}${SmallFen.make(variant, fen.simple)}^$multiPv"
 
   case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

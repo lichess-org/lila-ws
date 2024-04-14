@@ -18,10 +18,10 @@ final private class EvalCacheMulti(using
     scheduler: org.apache.pekko.actor.typed.Scheduler
 ):
   import EvalCacheMulti.*
-  import EvalCacheUpgrade.{ EvalState, SetupId, SriString }
+  import EvalCacheUpgrade.{ EvalState, SriString }
 
   private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
-  private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
+  private val evals         = ConcurrentHashMap[EvalCacheEntry.Id, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 1 minute, expire)
 
   private val upgradeMon = Monitor.evalCache.multi.upgrade
@@ -36,15 +36,14 @@ final private class EvalCacheMulti(using
           WatchingMember(sri, e.variant, e.fens)
       )
       .setups
-      .foreach: setupId =>
-        evals.compute(setupId, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+      .foreach: id =>
+        evals.compute(id, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
-    val setupId = makeSetupId(input.situation.variant, input.fen)
     Option(
       evals.computeIfPresent(
-        setupId,
+        input.id,
         (_, ev) =>
           if ev.depth >= input.eval.depth then ev
           else ev.copy(depth = input.eval.depth)
@@ -63,9 +62,9 @@ final private class EvalCacheMulti(using
     Option(members.remove(sri.value)).foreach:
       _.setups.foreach(unregisterEval(_, sri))
 
-  private def unregisterEval(setupId: SetupId, sri: Sri): Unit =
+  private def unregisterEval(id: EvalCacheEntry.Id, sri: Sri): Unit =
     evals.computeIfPresent(
-      setupId,
+      id,
       (_, eval) =>
         val newSris = eval.sris - sri
         if newSris.isEmpty then null
@@ -81,8 +80,5 @@ private object EvalCacheMulti:
 
   import EvalCacheUpgrade.*
 
-  def makeSetupId(variant: Variant, fen: Fen.Full): SetupId =
-    s"${variant.id}${SmallFen.make(variant, fen.simple)}"
-
   case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Full]):
-    def setups: List[SetupId] = fens.map(makeSetupId(variant, _))
+    def setups: List[EvalCacheEntry.Id] = fens.flatMap(EvalCacheEntry.Id.from(variant, _))

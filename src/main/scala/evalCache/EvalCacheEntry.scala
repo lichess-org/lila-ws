@@ -83,7 +83,8 @@ object EvalCacheEntry:
   case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
 
   def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
-    Fen.read(variant, fen)
+    Fen
+      .read(variant, fen)
       .filter(_.playable(false))
       .ifTrue(eval.looksValid)
       .map: situation =>
