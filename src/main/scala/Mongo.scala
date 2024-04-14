@@ -61,7 +61,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def relayTourColl                                 = collNamed("relay_tour")
   def relayRoundColl                                = collNamed("relay")
   def studyColl                                     = studyDb.map(_.collection("study"))(parasitic)
-  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache"))(parasitic)
+  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(parasitic)
 
   def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
   def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =

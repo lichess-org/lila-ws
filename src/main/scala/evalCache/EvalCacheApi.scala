@@ -27,21 +27,23 @@ final class EvalCacheApi(mongo: Mongo)(using
   import EvalCacheBsonHandlers.given
 
   def get(sri: Sri, e: EvalGet, emit: Emit[ClientIn]): Unit =
-    getEntry(Id.make(e.variant, e.fen))
-      .map:
-        _.flatMap(_.makeBestMultiPvEval(e.multiPv))
-      .map(monitorRequest(e.fen, Monitor.evalCache.single))
-      .foreach:
-        _.foreach: eval =>
-          emit:
-            ClientIn.EvalHit:
-              EvalCacheJsonHandlers.writeEval(eval, e.fen) + ("path" -> JsString(e.path.value))
+    Id.from(e.variant, e.fen).foreach: id =>
+      getEntry(id)
+        .map:
+          _.flatMap(_.makeBestMultiPvEval(e.multiPv))
+        .map(monitorRequest(e.fen, Monitor.evalCache.single))
+        .foreach:
+          _.foreach: eval =>
+            emit:
+              ClientIn.EvalHit:
+                EvalCacheJsonHandlers.writeEval(eval, e.fen) + ("path" -> JsString(e.path.value))
     if e.up then upgrade.register(sri, e)
 
   def getMulti(sri: Sri, e: EvalGetMulti, emit: Emit[ClientIn]): Unit =
     e.fens
-      .traverse: fen =>
-        getEntry(Id.make(e.variant, fen))
+      .flatMap(fen => Id.from(e.variant, fen).map(fen -> _))
+      .traverse: (fen, id) =>
+        getEntry(id)
           .map:
             _.flatMap(_.makeBestSinglePvEval).map(fen -> _)
           .map(monitorRequest(fen, Monitor.evalCache.multi))
@@ -92,8 +94,6 @@ final class EvalCacheApi(mongo: Mongo)(using
         res
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
-    def destSize(fen: Fen.Full): Int =
-      chess.Game(chess.variant.Standard.some, fen.some).situation.moves.view.map(_._2.size).sum
     mongo.evalCacheColl.flatMap: c =>
       EvalCacheValidator(input) match
         case Left(error) =>
@@ -104,7 +104,7 @@ final class EvalCacheApi(mongo: Mongo)(using
             case None =>
               val entry = EvalCacheEntry(
                 _id = input.id,
-                nbMoves = destSize(input.fen),
+                nbMoves = input.situation.moves.view.map(_._2.size).sum,
                 evals = List(input.eval),
                 usedAt = LocalDateTime.now,
                 updatedAt = LocalDateTime.now
@@ -130,4 +130,4 @@ final class EvalCacheApi(mongo: Mongo)(using
 private object EvalCacheValidator:
 
   def apply(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
-    in.eval.pvs.traverse_(pv => chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.id.variant))
+    in.eval.pvs.traverse_(pv => chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.situation.variant))

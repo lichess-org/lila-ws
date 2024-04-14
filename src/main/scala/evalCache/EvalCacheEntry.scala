@@ -2,7 +2,8 @@ package lila.ws
 package evalCache
 
 import cats.data.NonEmptyList
-import chess.format.{ Fen, Uci }
+import chess.Situation
+import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
 
 import java.time.LocalDateTime
@@ -72,16 +73,18 @@ object EvalCacheEntry:
 
     def truncate = copy(moves = Moves.truncate(moves))
 
-  case class Id(variant: Variant, smallFen: SmallFen)
+  case class Id(position: BinaryFen)
   object Id:
-    def make(variant: Variant, fen: Fen.Full): Id =
-      Id(variant, SmallFen.make(variant, fen.simple))
+    def apply(situation: Situation): Id =
+      Id(BinaryFen.writeNormalized(situation))
+    def from(variant: Variant, fen: Fen.Full): Option[Id] =
+      Fen.read(variant, fen).map(sit => Id(BinaryFen.writeNormalized(sit)))
 
-  case class Input(id: Id, fen: Fen.Full, eval: Eval)
+  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
 
   def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
-    SmallFen
-      .validate(variant, fen)
+    Fen.read(variant, fen)
+      .filter(_.playable(false))
       .ifTrue(eval.looksValid)
-      .map: smallFen =>
-        Input(Id(variant, smallFen), fen, eval.truncatePvs)
+      .map: situation =>
+        Input(Id(situation), fen, situation, eval.truncatePvs)

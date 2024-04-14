@@ -41,7 +41,7 @@ final private class EvalCacheUpgrade(using
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
     (1 to input.eval.multiPv.value).foreach: multiPv =>
-      val setupId = makeSetupId(input.id.variant, input.fen, MultiPv(multiPv))
+      val setupId = makeSetupId(input.situation.variant, input.fen, MultiPv(multiPv))
       Option(
         evals.computeIfPresent(
           setupId,

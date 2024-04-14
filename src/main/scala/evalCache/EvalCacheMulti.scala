@@ -41,7 +41,7 @@ final private class EvalCacheMulti(using
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
-    val setupId = makeSetupId(input.id.variant, input.fen)
+    val setupId = makeSetupId(input.situation.variant, input.fen)
     Option(
       evals.computeIfPresent(
         setupId,
