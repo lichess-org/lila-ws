@@ -27,7 +27,7 @@ final private class EvalCacheUpgrade(using
   private val upgradeMon = Monitor.evalCache.single.upgrade
 
   def register(sri: Sri, e: EvalGet): Unit =
-    EvalCacheEntry.Id
+    Id
       .from(e.variant, e.fen)
       .foreach: entryId =>
         members.compute(
@@ -86,7 +86,7 @@ private object EvalCacheUpgrade:
 
   type SriString = String
 
-  case class SetupId(entryId: EvalCacheEntry.Id, multiPv: MultiPv)
+  case class SetupId(entryId: Id, multiPv: MultiPv)
 
   case class EvalState(sris: Set[Sri], depth: Depth):
     def addSri(sri: Sri) = copy(sris = sris + sri)

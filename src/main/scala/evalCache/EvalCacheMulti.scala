@@ -21,7 +21,7 @@ final private class EvalCacheMulti(using
   import EvalCacheUpgrade.{ EvalState, SriString }
 
   private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
-  private val evals         = ConcurrentHashMap[EvalCacheEntry.Id, EvalState](1024)
+  private val evals         = ConcurrentHashMap[Id, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 1 minute, expire)
 
   private val upgradeMon = Monitor.evalCache.multi.upgrade
@@ -62,7 +62,7 @@ final private class EvalCacheMulti(using
     Option(members.remove(sri.value)).foreach:
       _.setups.foreach(unregisterEval(_, sri))
 
-  private def unregisterEval(id: EvalCacheEntry.Id, sri: Sri): Unit =
+  private def unregisterEval(id: Id, sri: Sri): Unit =
     evals.computeIfPresent(
       id,
       (_, eval) =>
@@ -81,4 +81,4 @@ private object EvalCacheMulti:
   import EvalCacheUpgrade.*
 
   case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Full]):
-    def setups: List[EvalCacheEntry.Id] = fens.flatMap(EvalCacheEntry.Id.from(variant, _))
+    def setups: List[Id] = fens.flatMap(Id.from(variant, _))

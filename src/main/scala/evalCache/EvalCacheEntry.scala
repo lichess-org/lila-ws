@@ -10,8 +10,16 @@ import java.time.LocalDateTime
 
 import Eval.Score
 
+opaque type Id = BinaryFen
+object Id:
+  def apply(fen: BinaryFen): Id       = fen
+  def apply(situation: Situation): Id = BinaryFen.writeNormalized(situation)
+  def from(variant: Variant, fen: Fen.Full): Option[Id] =
+    Fen.read(variant, fen).map(BinaryFen.writeNormalized)
+  extension (id: Id) def value: BinaryFen = id
+
 case class EvalCacheEntry(
-    _id: EvalCacheEntry.Id,
+    _id: Id,
     nbMoves: Int,                     // multipv cannot be greater than number of legal moves
     evals: List[EvalCacheEntry.Eval], // best ones first, by depth and nodes
     usedAt: LocalDateTime,
@@ -44,6 +52,8 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
+  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
+
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
     def multiPv = MultiPv(pvs.size)
@@ -72,15 +82,6 @@ object EvalCacheEntry:
         case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
 
     def truncate = copy(moves = Moves.truncate(moves))
-
-  case class Id(position: BinaryFen)
-  object Id:
-    def apply(situation: Situation): Id =
-      Id(BinaryFen.writeNormalized(situation))
-    def from(variant: Variant, fen: Fen.Full): Option[Id] =
-      Fen.read(variant, fen).map(sit => Id(BinaryFen.writeNormalized(sit)))
-
-  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
 
   def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
     Fen
