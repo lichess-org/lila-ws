@@ -62,13 +62,12 @@ object EvalCacheBsonHandlers:
   private def handlerBadType[T](b: BSONValue): Try[T] =
     Failure(TypeDoesNotMatchException("BSONValue", b.getClass.getSimpleName))
 
-  given BSONHandler[BinaryFen] = new:
+  given BSONHandler[Id] = new:
     def readTry(bson: BSONValue) =
       bson match
-        case v: BSONBinary => Success(BinaryFen(v.byteArray))
+        case v: BSONBinary => Success(Id(BinaryFen(v.byteArray)))
         case _             => handlerBadType(bson)
-    def writeTry(v: BinaryFen) = Success(BSONBinary(v.value, Subtype.GenericBinarySubtype))
-  given BSONHandler[Id] = Macros.handler
+    def writeTry(v: Id) = Success(BSONBinary(v.position.value, Subtype.GenericBinarySubtype))
 
   given BSONDocumentHandler[Eval]           = Macros.handler
   given BSONDocumentHandler[EvalCacheEntry] = Macros.handler
