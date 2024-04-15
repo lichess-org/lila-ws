@@ -3,7 +3,7 @@ package evalCache
 
 import cats.data.NonEmptyList
 import cats.syntax.all.*
-import chess.format.Uci
+import chess.format.{ BinaryFen, Uci }
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
 
@@ -61,38 +61,15 @@ object EvalCacheBsonHandlers:
 
   private def handlerBadType[T](b: BSONValue): Try[T] =
     Failure(TypeDoesNotMatchException("BSONValue", b.getClass.getSimpleName))
-  private def handlerBadValue[T](msg: String): Try[T] = Failure(new IllegalArgumentException(msg))
 
-  private def tryHandler[T](read: PartialFunction[BSONValue, Try[T]], write: T => BSONValue): BSONHandler[T] =
-    new:
-      def readTry(bson: BSONValue) = read.applyOrElse(bson, (b: BSONValue) => handlerBadType(b))
-      def writeTry(t: T)           = Success(write(t))
+  given binaryFenHandler: BSONHandler[BinaryFen] = new:
+    def readTry(bson: BSONValue) =
+      bson match
+        case v: BSONBinary => Success(BinaryFen(v.byteArray))
+        case _             => handlerBadType(bson)
+    def writeTry(v: BinaryFen) = Success(BSONBinary(v.value, Subtype.GenericBinarySubtype))
 
-  given BSONHandler[Id] = tryHandler[Id](
-    { case BSONString(value) =>
-      value.split(':') match
-        case Array(fen) => Success(Id(chess.variant.Standard, SmallFen(fen)))
-        case Array(variantId, fen) =>
-          import chess.variant.Variant
-          Success(
-            Id(
-              Variant.Id
-                .from(variantId.toIntOption)
-                .flatMap {
-                  Variant(_)
-                }
-                .getOrElse(sys.error(s"Invalid evalcache variant $variantId")),
-              SmallFen(fen)
-            )
-          )
-        case _ => handlerBadValue(s"Invalid evalcache id $value")
-    },
-    x =>
-      BSONString {
-        if x.variant.standard || x.variant.fromPosition then x.smallFen.value
-        else s"${x.variant.id}:${x.smallFen.value}"
-      }
-  )
+  given BSONHandler[Id] = binaryFenHandler.as[Id](Id.apply, _.value)
 
   given BSONDocumentHandler[Eval]           = Macros.handler
   given BSONDocumentHandler[EvalCacheEntry] = Macros.handler

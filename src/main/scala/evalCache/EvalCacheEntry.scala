@@ -2,15 +2,24 @@ package lila.ws
 package evalCache
 
 import cats.data.NonEmptyList
-import chess.format.{ Fen, Uci }
+import chess.Situation
+import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
 
 import java.time.LocalDateTime
 
 import Eval.Score
 
+opaque type Id = BinaryFen
+object Id:
+  def apply(fen: BinaryFen): Id       = fen
+  def apply(situation: Situation): Id = BinaryFen.writeNormalized(situation)
+  def from(variant: Variant, fen: Fen.Full): Option[Id] =
+    Fen.read(variant, fen).map(BinaryFen.writeNormalized)
+  extension (id: Id) def value: BinaryFen = id
+
 case class EvalCacheEntry(
-    _id: EvalCacheEntry.Id,
+    _id: Id,
     nbMoves: Int,                     // multipv cannot be greater than number of legal moves
     evals: List[EvalCacheEntry.Eval], // best ones first, by depth and nodes
     usedAt: LocalDateTime,
@@ -43,6 +52,8 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
+  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
+
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
     def multiPv = MultiPv(pvs.size)
@@ -72,16 +83,10 @@ object EvalCacheEntry:
 
     def truncate = copy(moves = Moves.truncate(moves))
 
-  case class Id(variant: Variant, smallFen: SmallFen)
-  object Id:
-    def make(variant: Variant, fen: Fen.Full): Id =
-      Id(variant, SmallFen.make(variant, fen.simple))
-
-  case class Input(id: Id, fen: Fen.Full, eval: Eval)
-
   def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
-    SmallFen
-      .validate(variant, fen)
+    Fen
+      .read(variant, fen)
+      .filter(_.playable(false))
       .ifTrue(eval.looksValid)
-      .map: smallFen =>
-        Input(Id(variant, smallFen), fen, eval.truncatePvs)
+      .map: situation =>
+        Input(Id(situation), fen, situation, eval.truncatePvs)

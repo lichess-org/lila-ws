@@ -61,7 +61,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def relayTourColl                                 = collNamed("relay_tour")
   def relayRoundColl                                = collNamed("relay")
   def studyColl                                     = studyDb.map(_.collection("study"))(parasitic)
-  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache"))(parasitic)
+  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(parasitic)
 
   def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
   def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =
@@ -179,13 +179,13 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
         }
         .map(_.getOrElse(Set.empty))
 
-  import evalCache.EvalCacheEntry
-  def evalCacheEntry(id: EvalCacheEntry.Id): Future[Option[EvalCacheEntry]] =
+  import evalCache.{ Id, EvalCacheEntry }
+  def evalCacheEntry(id: Id): Future[Option[EvalCacheEntry]] =
     import evalCache.EvalCacheBsonHandlers.given
     evalCacheColl.flatMap:
       _.find(selector = BSONDocument("_id" -> id))
         .one[EvalCacheEntry]
-  def evalCacheUsedNow(id: EvalCacheEntry.Id): Unit =
+  def evalCacheUsedNow(id: Id): Unit =
     import evalCache.EvalCacheBsonHandlers.given
     evalCacheColl.foreach:
       _.update(ordered = false, writeConcern = WriteConcern.Unacknowledged)

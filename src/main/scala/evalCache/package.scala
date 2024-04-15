@@ -2,8 +2,7 @@ package lila.ws
 package evalCache
 
 import cats.data.NonEmptyList
-import chess.format.{ Fen, Uci }
-import chess.variant.Variant
+import chess.format.Uci
 
 val MIN_KNODES   = Knodes(3000)
 val MIN_DEPTH    = Depth(20)
@@ -26,15 +25,3 @@ object Moves extends TotalWrapper[Moves, NonEmptyList[Uci]]:
 opaque type Trust = Double
 object Trust extends OpaqueDouble[Trust]:
   extension (a: Trust) def isEnough = a > -1
-
-opaque type SmallFen = String
-object SmallFen extends OpaqueString[SmallFen]:
-  def make(variant: Variant, fen: Fen.Simple): SmallFen =
-    val base = fen.value.split(' ').take(4).mkString("").filter { c =>
-      c != '/' && c != '-' && c != 'w'
-    }
-    if variant == chess.variant.ThreeCheck
-    then fen.value.split(' ').lift(6).foldLeft(base)(_ + _)
-    else base
-  def validate(variant: Variant, fen: Fen.Full): Option[SmallFen] =
-    Fen.read(variant, fen).exists(_.playable(false)).option(make(variant, fen.simple))

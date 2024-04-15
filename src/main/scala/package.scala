@@ -17,5 +17,4 @@ type ClientBehavior = Behavior[ipc.ClientMsg]
 type Client         = ActorRef[ipc.ClientMsg]
 type ClientEmit     = Emit[ipc.ClientIn]
 
-def nowSeconds: Int = (System.currentTimeMillis() / 1000).toInt
 val startedAtMillis = System.currentTimeMillis()
