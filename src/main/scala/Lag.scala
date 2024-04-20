@@ -1,6 +1,6 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import lila.ws.ipc.LilaIn
 import lila.ws.util.Domain
 
@@ -17,8 +17,9 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
 
   export trustedStats.getIfPresent as sessionLag
 
-  private val clientReports = groupedWithin[(User.Id, Int)](256, 947.millis) { lags =>
-    lilaRedis.emit.site(LilaIn.Lags(lags.toMap))
+  private val clientReports = groupedWithin[(User.Id, Int)](256, 947.millis) {
+    lags =>
+      lilaRedis.emit.site(LilaIn.Lags(lags.toMap))
   }
 
   export clientReports.apply as recordClientLag
@@ -29,7 +30,9 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
       trustedStats.put(
         uid,
         sessionLag(uid).fold(millis) { prev =>
-          val weight = if (millis < prev) trustedNormalRefreshFactor else trustedSpikeRefreshFactor
+          val weight =
+            if (millis < prev) trustedNormalRefreshFactor
+            else trustedSpikeRefreshFactor
           val cappedMillis = millis.min(maxMillis)
           (prev * (1 - weight) + cappedMillis * weight).toInt
         }
