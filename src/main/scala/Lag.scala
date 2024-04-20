@@ -16,7 +16,7 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
 
   export trustedStats.getIfPresent as sessionLag
 
-  private val clientReports = groupedWithin[(User.Id, Int)](256, 947.millis) { lags =>
+  private val clientReports = groupedWithin[(User.Id, Int)](256, 947.millis): lags =>
     lilaRedis.emit.site(LilaIn.Lags(lags.toMap))
   }
 
@@ -24,7 +24,7 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
 
   def recordTrustedLag(millis: Int, userId: Option[User.Id], domain: Domain) =
     Monitor.lag.roundFrameLag(millis, domain)
-    userId.foreach { uid =>
+    userId.foreach: uid =>
       trustedStats.put(
         uid,
         sessionLag(uid).fold(millis) { prev =>
