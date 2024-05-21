@@ -3,7 +3,9 @@ inThisBuild(
     scalaVersion      := "3.4.2",
     versionScheme     := Some("early-semver"),
     version           := "3.2",
-    semanticdbEnabled := true // for scalafix
+    semanticdbEnabled  := true, // for scalafix
+    dockerBaseImage    := "openjdk:21",
+    dockerUpdateLatest := true
   )
 )
 
@@ -18,7 +20,7 @@ val chessVersion = "16.0.3"
 
 lazy val `lila-ws` = project
   .in(file("."))
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     name         := "lila-ws",
     organization := "org.lichess",
@@ -63,7 +65,13 @@ lazy val `lila-ws` = project
       "-Xtarget:21",
       "-Wunused:all"
     ),
-    javaOptions ++= Seq("-Xms32m", "-Xmx256m")
+    javaOptions ++= Seq("-Xms32m", "-Xmx256m"),
+    Docker / packageName      := "lichess-org/lila-ws",
+    Docker / maintainer       := "lichess.org",
+    Docker / dockerRepository := Some("ghcr.io"),
+    Universal / javaOptions := Seq(
+      "-J-Dconfig.override_with_env_vars=true"
+    )
   )
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
