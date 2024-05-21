@@ -1,7 +1,10 @@
 name: Create and publish a Docker image
 on:
   push:
-    branches: ['**']
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -40,4 +43,4 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        run: sbt app/Docker/publish
+        run: sbt Docker/publish
