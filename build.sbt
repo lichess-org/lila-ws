@@ -1,8 +1,8 @@
 inThisBuild(
   Seq(
-    scalaVersion      := "3.4.2",
-    versionScheme     := Some("early-semver"),
-    version           := "3.2",
+    scalaVersion       := "3.5.0-RC1",
+    versionScheme      := Some("early-semver"),
+    version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
     dockerBaseImage    := "openjdk:21",
     dockerUpdateLatest := true
@@ -37,7 +37,7 @@ lazy val `lila-ws` = project
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "org.lichess"                %% "scalalib-lila"        % "11.1.7",
+      "org.lichess"                %% "scalalib-lila"        % "11.2.0",
       "org.lichess"                %% "scalachess"           % chessVersion,
       "org.lichess"                %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,
