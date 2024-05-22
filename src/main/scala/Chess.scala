@@ -1,7 +1,7 @@
 package lila.ws
 
 import cats.syntax.option.*
-import chess.format.{ Fen, Uci, UciCharPair, UciPath }
+import chess.format.{ Uci, UciCharPair, UciPath }
 import chess.json.Json
 import chess.opening.OpeningDb
 import chess.variant.Variant

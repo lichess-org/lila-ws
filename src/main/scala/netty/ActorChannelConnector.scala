@@ -8,9 +8,7 @@ import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
 import org.apache.pekko.actor.typed.ActorRef
 
 import lila.ws.Controller.Endpoint
-
-import ProtocolHandler.key
-import ipc.ClientIn
+import lila.ws.netty.ProtocolHandler.key
 
 final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(using Executor):
 
