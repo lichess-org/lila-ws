@@ -42,16 +42,16 @@ lazy val `lila-ws` = project
       "org.lichess"                %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,
       "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
-      "com.github.blemale"         %% "scaffeine"            % "5.2.1"     % "compile",
+      "com.github.blemale"         %% "scaffeine"            % "5.2.1" % "compile",
       "ch.qos.logback"              % "logback-classic"      % "1.5.6",
       "org.playframework"          %% "play-json"            % "3.0.3",
       "io.kamon"                   %% "kamon-core"           % kamonVersion,
       "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
       "io.kamon"                   %% "kamon-prometheus"     % kamonVersion,
       "io.kamon"                   %% "kamon-system-metrics" % kamonVersion,
-      "com.softwaremill.macwire"   %% "macros"               % "2.5.9"     % "provided",
+      "com.softwaremill.macwire"   %% "macros"               % "2.5.9" % "provided",
       "com.roundeights"            %% "hasher"               % "1.3.1",
-      "org.scalameta"              %% "munit"                % "1.0.0-RC1" % Test
+      "org.scalameta"              %% "munit"                % "1.0.0" % Test
     ),
     scalacOptions := Seq(
       "-encoding",
