@@ -14,7 +14,7 @@ val arch  = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch
 val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.0.2"
-val kamonVersion = "2.7.2"
+val kamonVersion = "2.7.3"
 val nettyVersion = "4.1.110.Final"
 val chessVersion = "16.0.3"
 
