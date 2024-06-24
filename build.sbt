@@ -44,7 +44,7 @@ lazy val `lila-ws` = project
       "com.typesafe.scala-logging" %% "scala-logging"        % "3.9.5",
       "com.github.blemale"         %% "scaffeine"            % "5.2.1" % "compile",
       "ch.qos.logback"              % "logback-classic"      % "1.5.6",
-      "org.playframework"          %% "play-json"            % "3.0.3",
+      "org.playframework"          %% "play-json"            % "3.0.4",
       "io.kamon"                   %% "kamon-core"           % kamonVersion,
       "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
       "io.kamon"                   %% "kamon-prometheus"     % kamonVersion,
