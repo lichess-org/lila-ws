@@ -287,7 +287,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     coll
       .count(
         selector = Some(selector),
-        limit = None,
+        limit = Some(1),
         skip = 0,
         hint = None,
         readConcern = ReadConcern.Local
