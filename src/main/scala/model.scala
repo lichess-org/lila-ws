@@ -113,9 +113,10 @@ opaque type Flag = String
 object Flag extends OpaqueString[Flag]:
   def make(value: String) =
     value match
-      case "simul" | "tournament" | "api" => Some(Flag(value))
-      case _                              => None
-  val api = Flag("api")
+      case "simul" | "tournament" | "api" | "embed" => Some(Flag(value))
+      case _                                        => None
+  val api   = Flag("api")
+  val embed = Flag("embed")
 
 opaque type IpAddress = String
 object IpAddress extends OpaqueString[IpAddress]

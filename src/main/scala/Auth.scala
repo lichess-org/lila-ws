@@ -12,7 +12,8 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   import Mongo.given
 
   def apply(req: RequestHeader): Future[Option[Success]] =
-    if req.flag contains Flag.api then Future.successful(None)
+    if req.flag.exists(flag => flag == Flag.api || flag == Flag.embed)
+    then Future.successful(None)
     else
       sessionIdFromReq(req) match
         case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
