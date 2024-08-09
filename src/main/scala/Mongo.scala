@@ -105,10 +105,9 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
   def studyExists(id: Study.Id): Future[Boolean] = studyColl.flatMap(idExists(id))
 
-  def gameExists(id: Game.Id): Future[Boolean] =
-    gameCache.getIfPresent(id) match
-      case None        => gameColl.flatMap(idExists(id.value))
-      case Some(entry) => entry.map(_.isDefined)(parasitic)
+  // None = no such game
+  def gameUserIds(id: Game.Id): Future[Option[List[User.Id]]] =
+    gameCache.get(id).map(_.map(_.players.mapList(_.userId).flatten))
 
   def player(fullId: Game.FullId, user: Option[User.Id]): Future[Option[Game.RoundPlayer]] =
     gameCache
@@ -148,6 +147,10 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
           }(parasitic)
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
+
+  def isGameOngoing(id: Game.Id): Future[Boolean] =
+    gameColl.flatMap:
+      exists(_, BSONDocument("_id" -> id, "s" -> BSONDocument("$lt" -> chess.Status.Aborted.id)))
 
   def studyExistsFor(id: Study.Id, user: Option[User.Id]): Future[Boolean] =
     studyColl.flatMap:
@@ -250,6 +253,15 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
         readConcern = ReadConcern.Local,
         collation = None
       )
+
+  def isBlockedByAny(id: Game.Id, by: Iterable[User.Id])(me: User.Id): Future[Boolean] =
+    if by.isEmpty then Future.successful(false)
+    else
+      relationColl
+        .flatMap:
+          exists(_, BSONDocument("_id" -> BSONDocument("$in" -> by.map(b => s"$b/$me")), "r" -> false))
+        .flatMap:
+          if _ then isGameOngoing(id) else Future.successful(false)
 
   def userData(userId: User.Id): Future[Option[FriendList.UserData]] =
     userColl.flatMap:

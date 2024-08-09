@@ -115,24 +115,29 @@ final class Controller(
   def roundWatch(id: Game.Id, header: RequestHeader) =
     WebSocket(header): req =>
       (
-        mongo.gameExists(id),
+        mongo.gameUserIds(id),
         mongo.troll.is(req.user),
         roundFrom(id.into(Game.AnyId), req)
-      ).mapN:
-        case (true, isTroll, from) =>
-          val userTv = UserTv.from(header.queryParameter("userTv"))
-          endpoint(
-            name = "round/watch",
-            behavior = emit =>
-              RoundClientActor
-                .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
-                  Deps(emit, req, services)
-            ,
-            header,
-            credits = 50,
-            interval = 20.seconds
-          )
-        case _ => notFound
+      ).flatMapN:
+        case (Some(playerUserIds), isTroll, from) =>
+          req.user
+            .fold(Future.successful(false))(mongo.isBlockedByAny(id, playerUserIds))
+            .map:
+              if _ then notFound
+              else
+                val userTv = UserTv.from(header.queryParameter("userTv"))
+                endpoint(
+                  name = "round/watch",
+                  behavior = emit =>
+                    RoundClientActor
+                      .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
+                        Deps(emit, req, services)
+                  ,
+                  header,
+                  credits = 50,
+                  interval = 20.seconds
+                )
+        case _ => Future.successful(notFound)
 
   def roundPlay(id: Game.FullId, header: RequestHeader) =
     WebSocket(header): req =>
