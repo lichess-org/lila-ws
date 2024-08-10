@@ -2,6 +2,8 @@ package lila.ws
 
 import org.apache.pekko.actor.typed.Scheduler
 
+import java.util.concurrent.atomic.AtomicReference
+
 import ipc.*
 
 final class KeepAlive(lila: Lila, scheduler: Scheduler)(using Executor):
@@ -32,11 +34,8 @@ object KeepAlive:
 
   final class AliveRooms:
 
-    private val rooms = collection.mutable.Set[RoomId]()
+    private val rooms: AtomicReference[Set[RoomId]] = AtomicReference(Set.empty)
 
-    def apply(roomId: RoomId) = rooms += roomId
+    def apply(roomId: RoomId): Unit = rooms.getAndUpdate(_ + roomId)
 
-    def getAndClear: LilaIn.KeepAlives =
-      val ret = LilaIn.KeepAlives(rooms.toSet)
-      rooms.clear()
-      ret
+    def getAndClear: LilaIn.KeepAlives = LilaIn.KeepAlives(rooms.getAndUpdate(_ => Set.empty))
