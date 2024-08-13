@@ -27,7 +27,7 @@ lazy val `lila-ws` = project
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     resolvers += "lila-maven".at("https://raw.githubusercontent.com/ornicar/lila-maven/master"),
     libraryDependencies ++= Seq(
-      ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC12")
+      ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC13")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
       "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC13",
       "io.lettuce"        % "lettuce-core"                           % "6.4.0.RELEASE",
