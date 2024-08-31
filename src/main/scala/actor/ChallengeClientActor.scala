@@ -34,7 +34,7 @@ object ChallengeClientActor:
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
 
-          case ClientCtrl.Disconnect =>
+          case ClientCtrl.Disconnect(_) =>
             // lila tries to close the round room, because there's no game with that ID yet
             // ignore it so we stay connected to the challenge
             Behaviors.same

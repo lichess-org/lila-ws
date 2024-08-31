@@ -24,8 +24,10 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
           }
 
   private def emitToChannel(channel: Channel): ClientEmit =
-    case ipc.ClientIn.Disconnect =>
-      channel.writeAndFlush(CloseWebSocketFrame()).addListener(ChannelFutureListener.CLOSE)
+    case ipc.ClientIn.Disconnect(reason) =>
+      channel
+        .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
+        .addListener(ChannelFutureListener.CLOSE)
     case ipc.ClientIn.RoundPingFrameNoFlush =>
       channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
     case in =>

@@ -50,7 +50,7 @@ final class Users(using scheduler: Scheduler, ec: Executor):
 
   def kick(userId: User.Id): Unit =
     Option(users.get(userId)).foreach:
-      _.foreach { _ ! ClientCtrl.Disconnect }
+      _.foreach { _ ! ClientCtrl.Disconnect("user kick") }
 
   def setTroll(userId: User.Id, v: IsTroll): Unit =
     Option(users.get(userId)).foreach:

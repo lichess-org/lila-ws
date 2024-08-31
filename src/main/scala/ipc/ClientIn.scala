@@ -8,6 +8,7 @@ import chess.variant.Crazyhouse
 import chess.{ Check, Color, Ply }
 import play.api.libs.json.*
 
+// messages from lila-ws to the client
 sealed trait ClientIn extends ClientMsg:
   def write: String
 
@@ -21,8 +22,9 @@ object ClientIn:
   case object Resync extends ClientIn:
     val write = cliMsg("resync")
 
-  // triggers actual disconnection
-  case object Disconnect extends ClientIn:
+  // instead of sending a message to the client,
+  // lila-ws will close the connection
+  case class Disconnect(reason: String) extends ClientIn:
     val write = cliMsg("bye") // not actually sent
 
   case class LobbyPong(members: Int, rounds: Int) extends ClientIn:

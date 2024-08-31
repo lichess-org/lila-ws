@@ -35,8 +35,8 @@ object ClientActor:
       if state.lastPing < oldSeconds && !deps.req.flag.contains(Flag.api) then Behaviors.stopped
       else Behaviors.same
 
-    case ClientCtrl.Disconnect =>
-      deps.clientIn(ClientIn.Disconnect)
+    case ClientCtrl.Disconnect(reason) =>
+      deps.clientIn(ClientIn.Disconnect(reason))
       Behaviors.stopped
 
     case ClientCtrl.ApiDisconnect =>
