@@ -9,13 +9,19 @@ import org.apache.pekko.actor.typed.ActorRef
 
 import lila.ws.Controller.Endpoint
 import lila.ws.netty.ProtocolHandler.key
+import lila.ws.util.RunPeriodically
 
-final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(using Executor):
+final private class ActorChannelConnector(
+    clients: ActorRef[Clients.Control],
+    runPeriodically: RunPeriodically
+)(using Executor):
 
-  def apply(endpoint: Endpoint, channel: Channel): Unit =
+  def apply(endpoint: Endpoint, channel: Channel, alwaysFlush: Boolean): Unit =
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
-    val channelEmit = emitToChannel(channel)
+    val channelEmit: ClientEmit =
+      if alwaysFlush then emitToChannel(channel)
+      else emitToChannelWithPeriodicFlush(channel)
     val monitoredEmit: ClientEmit = (msg: ipc.ClientIn) =>
       endpoint.emitCounter.increment()
       channelEmit(msg)
@@ -27,12 +33,25 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
             clients ! Clients.Control.Stop(client)
           }
 
+  private inline def emitDisconnect(inline channel: Channel, inline reason: String): Unit =
+    channel
+      .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
+      .addListener(ChannelFutureListener.CLOSE)
+
+  private inline def emitPingFrame(inline channel: Channel): Unit =
+    channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
+
   private def emitToChannel(channel: Channel): ClientEmit =
-    case ipc.ClientIn.Disconnect(reason) =>
-      channel
-        .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
-        .addListener(ChannelFutureListener.CLOSE)
-    case ipc.ClientIn.RoundPingFrameNoFlush =>
-      channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-    case in =>
-      channel.writeAndFlush(TextWebSocketFrame(in.write))
+    case ipc.ClientIn.Disconnect(reason)    => emitDisconnect(channel, reason)
+    case ipc.ClientIn.RoundPingFrameNoFlush => emitPingFrame(channel)
+    case in                                 => channel.writeAndFlush(TextWebSocketFrame(in.write))
+
+  private def emitToChannelWithPeriodicFlush(channel: Channel): ClientEmit =
+    val periodicFlush = runPeriodically(5, 3.seconds)(() => channel.flush())
+    msg =>
+      msg.match
+        case ipc.ClientIn.Disconnect(reason)    => emitDisconnect(channel, reason)
+        case ipc.ClientIn.RoundPingFrameNoFlush => emitPingFrame(channel)
+        case in =>
+          channel.write(TextWebSocketFrame(in.write))
+          periodicFlush.increment()

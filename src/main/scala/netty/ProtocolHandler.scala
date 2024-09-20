@@ -26,7 +26,7 @@ final private class ProtocolHandler(connector: ActorChannelConnector)
     evt match
       case _: WebSocketServerProtocolHandler.HandshakeComplete =>
         // Monitor.count.handshake.inc
-        connector(ctx.channel.attr(key.endpoint).get, ctx.channel)
+        connector(ctx.channel.attr(key.endpoint).get, ctx.channel, alwaysFlush = true)
       case _ =>
     super.userEventTriggered(ctx, evt)
 
