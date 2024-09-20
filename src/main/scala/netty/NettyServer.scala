@@ -14,10 +14,11 @@ import io.netty.handler.codec.http.*
 final class NettyServer(
     clients: ClientSystem,
     router: Router,
-    config: Config
+    config: Config,
+    runPeriodically: util.RunPeriodically
 )(using Executor):
 
-  private val connector = ActorChannelConnector(clients)
+  private val connector = ActorChannelConnector(clients, runPeriodically)
   private val logger    = Logger(getClass)
 
   def start(): Unit =
