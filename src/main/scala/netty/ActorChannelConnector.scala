@@ -15,7 +15,11 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
-    clients ! Clients.Control.Start(endpoint.behavior(emitToChannel(channel)), clientPromise)
+    val channelEmit = emitToChannel(channel)
+    val monitoredEmit: ClientEmit = (msg: ipc.ClientIn) =>
+      endpoint.emitCounter.increment()
+      channelEmit(msg)
+    clients ! Clients.Control.Start(endpoint.behavior(monitoredEmit), clientPromise)
     channel.closeFuture.addListener:
       new GenericFutureListener[NettyFuture[Void]]:
         def operationComplete(f: NettyFuture[Void]): Unit =

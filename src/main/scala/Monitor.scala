@@ -8,6 +8,7 @@ import kamon.tag.TagSet
 import java.util.concurrent.TimeUnit
 
 import lila.ws.util.Domain
+import kamon.metric.Counter
 
 final class Monitor(
     config: Config,
@@ -74,6 +75,9 @@ object Monitor:
       .counter("client.out.unhandled")
       .withTag("name", name)
       .increment()
+
+  def clientInCounter(endpointName: String): Counter =
+    Kamon.counter("client.in").withTag("name", endpointName)
 
   val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags()
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags()
