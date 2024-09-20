@@ -44,15 +44,15 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
     outputBatch(outputOf(roomId, room))
 
   private val outputBatch = groupedWithin[Output](1024, 1.second): outputs =>
-    outputs
+    val lastPerRoomId: Iterable[Output] = outputs
       .foldLeft(Map.empty[RoomId, Output]): (crowds, crowd) =>
         crowds.updated(crowd.roomId, crowd)
       .values
-      .foreach: output =>
-        json
-          .room(output)
-          .foreach:
-            Bus.publish(_.room(output.roomId), _)
+    lastPerRoomId.foreach: output =>
+      json
+        .room(output)
+        .foreach:
+          Bus.publish(_.room(output.roomId), _)
 
   def size = rooms.size
 
