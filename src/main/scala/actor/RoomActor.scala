@@ -51,12 +51,16 @@ object RoomActor:
       None -> None
 
     case crowd: ClientIn.Crowd =>
-      if crowd == state.lastCrowd then None -> None
-      else
-        Some {
-          deps.clientIn(crowd)
-          state.copy(lastCrowd = crowd)
-        } -> None
+      val shouldSend =
+        if crowd == state.lastCrowd then false
+        else if crowd.users != state.lastCrowd.users then true
+        else if crowd.members > 1000 && crowd.members % 100 != 0 then false
+        else if crowd.members > 100 && crowd.members % 10 != 0 then false
+        else true
+      if shouldSend then
+        deps.clientIn(crowd)
+        Some(state.copy(lastCrowd = crowd)) -> None
+      else None -> None
 
     case SetTroll(v) =>
       Some(state.copy(isTroll = v)) -> None
