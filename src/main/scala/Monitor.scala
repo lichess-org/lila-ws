@@ -3,12 +3,12 @@ package lila.ws
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
+import kamon.metric.Counter
 import kamon.tag.TagSet
 
 import java.util.concurrent.TimeUnit
 
 import lila.ws.util.Domain
-import kamon.metric.Counter
 
 final class Monitor(
     config: Config,
