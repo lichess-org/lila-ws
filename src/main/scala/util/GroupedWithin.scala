@@ -6,6 +6,9 @@ import org.apache.pekko.actor.typed.Scheduler
 
 import scala.collection.immutable.VectorBuilder
 
+/** Group elements into a fixed-sized buffer. The elements are emitted when the buffer is full, or
+  * periodically after a fixed time interval.
+  */
 final class GroupedWithin()(using Scheduler, Executor):
 
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
