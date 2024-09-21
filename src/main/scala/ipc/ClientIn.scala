@@ -69,7 +69,7 @@ object ClientIn:
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
   case class Crowd(doc: JsObject, members: Int, users: String) extends ClientIn:
-    lazy val write = cliMsg("crowd", doc)
+    lazy val write                 = cliMsg("crowd", doc)
     inline def sameAs(that: Crowd) = members == that.members && users == that.users
 
   object Crowd:
