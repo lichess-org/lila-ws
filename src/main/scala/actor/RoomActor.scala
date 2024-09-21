@@ -11,7 +11,7 @@ object RoomActor:
   case class State(
       room: RoomId,
       isTroll: IsTroll,
-      lastCrowd: ClientIn.Crowd = ClientIn.emptyCrowd
+      lastCrowd: ClientIn.Crowd = ClientIn.Crowd.empty
   )
 
   def onStart(
@@ -52,11 +52,12 @@ object RoomActor:
 
     case crowd: ClientIn.Crowd =>
       val shouldSend =
-        if crowd == state.lastCrowd then false
+        if crowd.sameAs(state.lastCrowd) then false
         else if crowd.users != state.lastCrowd.users then true
         else if crowd.members > 1000 && crowd.members % 100 != 0 then false
         else if crowd.members > 100 && crowd.members % 10 != 0 then false
         else true
+
       if shouldSend then
         deps.clientIn(crowd)
         Some(state.copy(lastCrowd = crowd)) -> None

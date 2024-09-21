@@ -11,7 +11,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       keepOnlyStudyMembers(crowd).map: users =>
         crowd.copy(users = users, anons = 0)
     else Future.successful(crowd)
-  }.flatMap(spectatorsOf(_, crowd.users)).map(ClientIn.Crowd(_, crowd.members, crowd.users.toSet))
+  }.flatMap(spectatorsOf(_, crowd.users)).map(ClientIn.Crowd.make(_, crowd.members, crowd.users))
 
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
     spectatorsOf(
@@ -20,7 +20,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       ),
       crowd.room.users
     ).map { spectators =>
-      ClientIn.Crowd(
+      ClientIn.Crowd.make(
         Json
           .obj(
             "white"    -> (crowd.players.white > 0),
@@ -28,7 +28,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
             "watchers" -> spectators
           ),
         crowd.room.members,
-        Set.empty
+        Nil
       )
     }
 

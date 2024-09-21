@@ -68,9 +68,14 @@ object ClientIn:
   def payload(js: JsValue)                 = Payload(JsonString(Json.stringify(js)))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
-  case class Crowd(doc: JsObject, members: Int, users: Set[User.Id]) extends ClientIn:
+  case class Crowd(doc: JsObject, members: Int, users: String) extends ClientIn:
     lazy val write = cliMsg("crowd", doc)
-  val emptyCrowd = Crowd(Json.obj(), 0, Set.empty)
+    inline def sameAs(that: Crowd) = members == that.members && users == that.users
+
+  object Crowd:
+    def make(doc: JsObject, members: Int, userIds: Iterable[User.Id]) =
+      Crowd(doc, members, User.Id.raw(userIds.toList).sorted.mkString(","))
+    val empty = make(Json.obj(), 0, Nil)
 
   case class LobbyPairing(fullId: Game.FullId) extends ClientIn:
     def write =
