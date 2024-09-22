@@ -17,7 +17,7 @@ final class RunPeriodicallyStage(counterMax: Int, interval: FiniteDuration, run:
 
   private var counter: Int = 0
 
-  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, () => run())
+  private var scheduledFlush: Cancellable = scheduler.scheduleOnce(interval, () => flush())
 
   def increment(): Unit =
     synchronized:
