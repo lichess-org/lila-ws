@@ -29,6 +29,6 @@ final class RunPeriodicallyStage(counterMax: Int, interval: FiniteDuration, run:
   private def unsafeFlush(): Unit =
     if counter > 0 then
       run()
-      counter == 0
+      counter = 0
     scheduledFlush.cancel()
     scheduledFlush = scheduler.scheduleOnce(interval, () => flush())
