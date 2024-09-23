@@ -301,7 +301,8 @@ object Controller:
       val behavior: ClientEmit => ClientBehavior,
       val rateLimit: RateLimit,
       val header: RequestHeader,
-      val emitCounter: kamon.metric.Counter
+      val emitCounter: kamon.metric.Counter,
+      val name: String
   )
   def endpoint(
       name: String,
@@ -320,7 +321,8 @@ object Controller:
           name = name
         ),
         header,
-        Monitor.clientInCounter(name)
+        Monitor.clientInCounter(name),
+        name
       )
 
   type ResponseSync = Either[HttpResponseStatus, Endpoint]

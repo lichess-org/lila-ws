@@ -10,12 +10,15 @@ import org.apache.pekko.actor.typed.ActorRef
 import lila.ws.Controller.Endpoint
 import lila.ws.netty.ProtocolHandler.key
 
-final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(using Executor):
+final private class ActorChannelConnector(clients: ActorRef[Clients.Control], loop: WorkerLoop)(using
+    Executor
+):
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
-    val channelEmit = emitToChannel(channel)
+    val channelEmit: ClientEmit =
+      emitToChannel(channel, withFlush = endpoint.name == "round/play")
     val monitoredEmit: ClientEmit = (msg: ipc.ClientIn) =>
       endpoint.emitCounter.increment()
       channelEmit(msg)
@@ -27,12 +30,19 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control])(us
             clients ! Clients.Control.Stop(client)
           }
 
-  private def emitToChannel(channel: Channel): ClientEmit =
-    case ipc.ClientIn.Disconnect(reason) =>
-      channel
-        .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
-        .addListener(ChannelFutureListener.CLOSE)
-    case ipc.ClientIn.RoundPingFrameNoFlush =>
-      channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-    case in =>
-      channel.writeAndFlush(TextWebSocketFrame(in.write))
+  private inline def emitDisconnect(inline channel: Channel, inline reason: String): Unit =
+    channel
+      .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
+      .addListener(ChannelFutureListener.CLOSE)
+
+  private inline def emitPingFrame(inline channel: Channel): Unit =
+    channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
+
+  private def emitToChannel(channel: Channel, withFlush: Boolean): ClientEmit =
+    msg =>
+      msg.match
+        case ipc.ClientIn.Disconnect(reason)    => emitDisconnect(channel, reason)
+        case ipc.ClientIn.RoundPingFrameNoFlush => emitPingFrame(channel)
+        case in =>
+          if withFlush then channel.writeAndFlush(TextWebSocketFrame(in.write))
+          else loop.writeShaped(channel, TextWebSocketFrame(in.write))

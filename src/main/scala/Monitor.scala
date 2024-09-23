@@ -24,10 +24,9 @@ final class Monitor(
 
     val version  = System.getProperty("java.version")
     val memory   = Runtime.getRuntime.maxMemory() / 1024 / 1024
-    val native   = config.getBoolean("netty.native")
     val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
 
-    logger.info(s"lila-ws 3.0 netty native=$native kamon=$useKamon")
+    logger.info(s"lila-ws 3.0 netty kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
     if useKamon then kamon.Kamon.init()

@@ -32,6 +32,7 @@ object LilaWs extends App:
   lazy val router        = wire[Router]
   lazy val seenAt        = wire[SeenAtUpdate]
   lazy val auth          = wire[Auth]
+  lazy val workerLoop    = wire[netty.WorkerLoop]
   lazy val nettyServer   = wire[netty.NettyServer]
   lazy val monitor       = wire[Monitor]
 
