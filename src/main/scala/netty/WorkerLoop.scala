@@ -2,10 +2,11 @@ package lila.ws
 package netty
 
 import com.typesafe.config.Config
-import io.netty.channel.{ Channel, EventLoopGroup }
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
 import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
+import io.netty.channel.{ Channel, EventLoopGroup }
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame
+
 import java.util.concurrent.{ ConcurrentLinkedQueue, TimeUnit }
 
 final class WorkerLoop(config: Config)(using Executor):
