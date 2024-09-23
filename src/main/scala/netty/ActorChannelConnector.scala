@@ -30,19 +30,15 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control], lo
             clients ! Clients.Control.Stop(client)
           }
 
-  private inline def emitDisconnect(inline channel: Channel, inline reason: String): Unit =
-    channel
-      .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
-      .addListener(ChannelFutureListener.CLOSE)
-
-  private inline def emitPingFrame(inline channel: Channel): Unit =
-    channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-
   private def emitToChannel(channel: Channel, withFlush: Boolean): ClientEmit =
     msg =>
       msg.match
-        case ipc.ClientIn.Disconnect(reason)    => emitDisconnect(channel, reason)
-        case ipc.ClientIn.RoundPingFrameNoFlush => emitPingFrame(channel)
+        case ipc.ClientIn.Disconnect(reason) =>
+          channel
+            .writeAndFlush(CloseWebSocketFrame(WebSocketCloseStatus(4010, reason)))
+            .addListener(ChannelFutureListener.CLOSE)
+        case ipc.ClientIn.RoundPingFrameNoFlush =>
+          channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
         case in =>
           if withFlush then channel.writeAndFlush(TextWebSocketFrame(in.write))
           else loop.writeShaped(channel, TextWebSocketFrame(in.write))
