@@ -33,11 +33,15 @@ final class WorkerLoop(config: Config)(using Executor):
     group.shutdownGracefully()
 
   private def flush(): Unit =
-    val channelsToFlush = step.atLeast((flushQ.size * maxDelayFactor).toInt)
-    val iterator        = flushQ.iterator()
-    for count <- 0 until channelsToFlush if iterator.hasNext do
-      iterator.next().flush()
-      iterator.remove()
+    var channelsToFlush = step.atLeast((flushQ.size * maxDelayFactor).toInt)
+
+    while channelsToFlush > 0 do
+      Option(flushQ.poll()) match
+        case Some(channel) =>
+          channel.eventLoop().execute(() => channel.flush())
+          channelsToFlush -= 1
+        case _ =>
+          channelsToFlush = 0
 
   private def makeGroup(n: Int): EventLoopGroup =
     if isMacOS then new KQueueEventLoopGroup(n)
