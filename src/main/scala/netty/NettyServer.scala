@@ -4,28 +4,35 @@ package netty
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
+import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
+import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
+import org.apache.pekko.actor.typed.Scheduler
 
 final class NettyServer(
     clients: ClientSystem,
     router: Router,
     config: Config,
-    workerLoop: WorkerLoop
-)(using Executor):
-
+    settings: util.SettingStore
+)(using Executor, Scheduler):
   private val logger = Logger(getClass)
 
   def start(): Unit =
 
     logger.info("Start")
 
-    val port = config.getInt("http.port")
+    val port    = config.getInt("http.port")
+    val threads = config.getInt("netty.threads")
+    val (parent, workers, channelClass) =
+      if System.getProperty("os.name").toLowerCase.startsWith("mac") then
+        (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(threads), classOf[KQueueServerSocketChannel])
+      else (new EpollEventLoopGroup(1), new EpollEventLoopGroup(threads), classOf[EpollServerSocketChannel])
     try
       val boot = new ServerBootstrap
       boot
-        .group(workerLoop.parentGroup, workerLoop.group)
-        .channel(workerLoop.channelClass)
+        .group(parent, workers)
+        .channel(channelClass)
         .childHandler(
           new ChannelInitializer[Channel]:
             override def initChannel(ch: Channel): Unit =
@@ -33,7 +40,7 @@ final class NettyServer(
               pipeline.addLast(HttpServerCodec())
               pipeline.addLast(HttpObjectAggregator(4096))
               pipeline.addLast(RequestHandler(router))
-              pipeline.addLast(ProtocolHandler(ActorChannelConnector(clients, workerLoop)))
+              pipeline.addLast(ProtocolHandler(ActorChannelConnector(clients, config, settings)))
               pipeline.addLast(FrameHandler())
         )
 
@@ -44,4 +51,6 @@ final class NettyServer(
       server.closeFuture().sync()
 
       logger.info(s"Closed $port")
-    finally workerLoop.shutdown()
+    finally
+      parent.shutdownGracefully()
+      workers.shutdownGracefully()
