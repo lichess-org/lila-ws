@@ -26,8 +26,7 @@ final private class ActorChannelConnector(
 
   private val flushQ = new java.util.concurrent.ConcurrentLinkedQueue[Channel]()
 
-  private var future =
-    scheduler.scheduleOnce(1 second, () => flush())
+  scheduler.scheduleOnce(1 second, () => flush())
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
@@ -71,4 +70,5 @@ final private class ActorChannelConnector(
         case _ =>
           channelsToFlush = 0
 
-    if !future.isCancelled then future = scheduler.scheduleOnce(interval.get.millis, () => flush())
+    val nextInterval = if interval.get <= 0 then 1.second else interval.get.millis
+    scheduler.scheduleOnce(nextInterval, () => flush())
