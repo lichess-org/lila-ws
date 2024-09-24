@@ -18,7 +18,7 @@ final private class ActorChannelConnector(clients: ActorRef[Clients.Control], lo
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
     val channelEmit: ClientEmit =
-      emitToChannel(channel, withFlush = endpoint.name == "round/play")
+      emitToChannel(channel, withFlush = endpoint.alwaysFlush)
     val monitoredEmit: ClientEmit = (msg: ipc.ClientIn) =>
       endpoint.emitCounter.increment()
       channelEmit(msg)

@@ -155,7 +155,8 @@ final class Controller(
                 ) { Deps(emit, req, services) },
               header,
               credits = 100,
-              interval = 20.seconds
+              interval = 20.seconds,
+              alwaysFlush = true
             )
           case _ => notFound
 
@@ -302,14 +303,15 @@ object Controller:
       val rateLimit: RateLimit,
       val header: RequestHeader,
       val emitCounter: kamon.metric.Counter,
-      val name: String
+      val alwaysFlush: Boolean
   )
   def endpoint(
       name: String,
       behavior: ClientEmit => ClientBehavior,
       header: RequestHeader,
       credits: Int,
-      interval: FiniteDuration
+      interval: FiniteDuration,
+      alwaysFlush: Boolean = false
   ): ResponseSync =
     Monitor.connection.open(name)
     Right:
@@ -322,7 +324,7 @@ object Controller:
         ),
         header,
         Monitor.clientInCounter(name),
-        name
+        alwaysFlush
       )
 
   type ResponseSync = Either[HttpResponseStatus, Endpoint]
