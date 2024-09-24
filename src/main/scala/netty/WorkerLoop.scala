@@ -38,7 +38,7 @@ final class WorkerLoop(config: Config)(using Executor):
     while channelsToFlush > 0 do
       Option(flushQ.poll()) match
         case Some(channel) =>
-          channel.eventLoop().execute(() => channel.flush())
+          if channel.isOpen then channel.eventLoop().execute(() => channel.flush())
           channelsToFlush -= 1
         case _ =>
           channelsToFlush = 0
