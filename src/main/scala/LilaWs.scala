@@ -12,6 +12,7 @@ object LilaWs extends App:
   given Executor                      = clientSystem.executionContext
 
   lazy val mongo         = wire[Mongo]
+  lazy val settings      = wire[util.SettingStore]
   lazy val groupedWithin = wire[util.GroupedWithin]
   lazy val lightUserApi  = wire[LightUserApi]
   lazy val lilaRedis     = wire[Lila]
