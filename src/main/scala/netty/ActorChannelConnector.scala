@@ -33,9 +33,11 @@ final private class ActorChannelConnector(
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
     channel.attr(key.client).set(clientPromise.future)
-    val channelEmit: ClientEmit = (msg: ipc.ClientIn) =>
-      endpoint.emitCounter.increment()
-      emitToChannel(channel, withFlush = endpoint.alwaysFlush)(msg)
+    val channelEmit: ClientEmit =
+      val emitter = emitToChannel(channel, withFlush = endpoint.alwaysFlush)
+      (msg: ipc.ClientIn) =>
+        endpoint.emitCounter.increment()
+        emitter(msg)
     clients ! Clients.Control.Start(endpoint.behavior(channelEmit), clientPromise)
     channel.closeFuture.addListener:
       new GenericFutureListener[NettyFuture[Void]]:
