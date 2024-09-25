@@ -25,7 +25,6 @@ final private class ActorChannelConnector(
   private val monitor  = Monitor.connector.flush
 
   scheduler.scheduleOnce(1 second, () => flush())
-
   scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
     monitor.config.step.update(step.get())
     monitor.config.interval.update(interval.get())
@@ -36,7 +35,7 @@ final private class ActorChannelConnector(
     channel.attr(key.client).set(clientPromise.future)
     val channelEmit: ClientEmit = (msg: ipc.ClientIn) =>
       endpoint.emitCounter.increment()
-      emitToChannel(channel, withFlush = endpoint.alwaysFlush)
+      emitToChannel(channel, withFlush = endpoint.alwaysFlush)(msg)
     clients ! Clients.Control.Start(endpoint.behavior(channelEmit), clientPromise)
     channel.closeFuture.addListener:
       new GenericFutureListener[NettyFuture[Void]]:
@@ -63,7 +62,7 @@ final private class ActorChannelConnector(
 
   private def flush(): Unit =
     val qSize           = flushQ.size
-    val maxDelayFactor  = maxDelay.get().toDouble / interval.get()
+    val maxDelayFactor  = interval.get().toDouble / maxDelay.get().atLeast(1)
     var channelsToFlush = step.get().atLeast((qSize * maxDelayFactor).toInt)
 
     monitor.qSize.record(qSize)

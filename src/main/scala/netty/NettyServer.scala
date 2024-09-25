@@ -16,12 +16,12 @@ final class NettyServer(
     config: Config,
     settings: util.SettingStore
 )(using Executor, Scheduler):
-  private val logger = Logger(getClass)
+  private val logger    = Logger(getClass)
+  private val connector = ActorChannelConnector(clients, config, settings)
 
   def start(): Unit =
 
     logger.info("Start")
-
     val port    = config.getInt("http.port")
     val threads = config.getInt("netty.threads")
     val (parent, workers, channelClass) =
@@ -40,7 +40,7 @@ final class NettyServer(
               pipeline.addLast(HttpServerCodec())
               pipeline.addLast(HttpObjectAggregator(4096))
               pipeline.addLast(RequestHandler(router))
-              pipeline.addLast(ProtocolHandler(ActorChannelConnector(clients, config, settings)))
+              pipeline.addLast(ProtocolHandler(connector))
               pipeline.addLast(FrameHandler())
         )
 
