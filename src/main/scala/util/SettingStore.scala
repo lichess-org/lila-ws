@@ -33,7 +33,7 @@ case class Setting[A](default: A, ttl: FiniteDuration)(fetch: () => Future[Optio
 
 final class SettingStore(mongo: Mongo)(using Executor, Scheduler):
 
-  def makeSetting[A: BSONReader](key: String, default: A, ttl: FiniteDuration = 10.seconds): Setting[A] =
+  def makeSetting[A: BSONReader](key: String, default: A, ttl: FiniteDuration = 30.seconds): Setting[A] =
     Setting[A](default, ttl): () =>
       mongo.settingColl.flatMap:
         _.find(selector = BSONDocument("_id" -> key))
