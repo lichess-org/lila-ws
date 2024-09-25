@@ -12,23 +12,25 @@ import lila.ws.netty.ProtocolHandler.key
 
 final private class ActorChannelConnector(
     clients: ActorRef[Clients.Control],
-    config: com.typesafe.config.Config,
+    staticConfig: com.typesafe.config.Config,
     settings: util.SettingStore
-)(using
-    scheduler: Scheduler,
-    ec: Executor
-):
-  private val step     = intSetting("netty.flush.step")
-  private val interval = intSetting("netty.flush.interval-millis")
-  private val maxDelay = intSetting("netty.flush.max-delay-millis")
-  private val flushQ   = new java.util.concurrent.ConcurrentLinkedQueue[Channel]()
-  private val monitor  = Monitor.connector.flush
+)(using scheduler: Scheduler, ec: Executor):
+
+  private val flushQ  = java.util.concurrent.ConcurrentLinkedQueue[Channel]()
+  private val monitor = Monitor.connector.flush
+
+  private object config:
+    private def int(key: String) = settings.makeSetting(key, staticConfig.getInt(key))
+    val step                     = int("netty.flush.step")
+    val interval                 = int("netty.flush.interval-millis")
+    val maxDelay                 = int("netty.flush.max-delay-millis")
+    inline def alwaysFlush()     = interval.get() <= 0
+    scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
+      monitor.config.step.update(step.get())
+      monitor.config.interval.update(interval.get())
+      monitor.config.maxDelay.update(maxDelay.get())
 
   scheduler.scheduleOnce(1 second, () => flush())
-  scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
-    monitor.config.step.update(step.get())
-    monitor.config.interval.update(interval.get())
-    monitor.config.maxDelay.update(maxDelay.get())
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
@@ -46,9 +48,6 @@ final private class ActorChannelConnector(
             clients ! Clients.Control.Stop(client)
           }
 
-  private def intSetting(key: String) =
-    settings.makeSetting(key, config.getInt(key))
-
   private def emitToChannel(channel: Channel, withFlush: Boolean): ClientEmit =
     case ipc.ClientIn.Disconnect(reason) =>
       channel
@@ -56,7 +55,7 @@ final private class ActorChannelConnector(
         .addListener(ChannelFutureListener.CLOSE)
     case ipc.ClientIn.RoundPingFrameNoFlush =>
       channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-    case in if withFlush || interval.get() <= 0 =>
+    case in if withFlush || config.alwaysFlush() =>
       channel.writeAndFlush(TextWebSocketFrame(in.write))
     case in =>
       channel.write(TextWebSocketFrame(in.write))
@@ -64,8 +63,8 @@ final private class ActorChannelConnector(
 
   private def flush(): Unit =
     val qSize           = flushQ.size
-    val maxDelayFactor  = interval.get().toDouble / maxDelay.get().atLeast(1)
-    var channelsToFlush = step.get().atLeast((qSize * maxDelayFactor).toInt)
+    val maxDelayFactor  = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
+    var channelsToFlush = config.step.get().atLeast((qSize * maxDelayFactor).toInt)
 
     monitor.qSize.record(qSize)
     monitor.channelsToFlush.record(channelsToFlush)
@@ -79,7 +78,7 @@ final private class ActorChannelConnector(
           channelsToFlush = 0
 
     val nextInterval =
-      if interval.get() > 0 then interval.get().millis
+      if !config.alwaysFlush() then config.interval.get().millis
       else if flushQ.isEmpty then 1.second // hibernate
       else 1.millis                        // interval is 0 but we still need to empty the queue
     scheduler.scheduleOnce(nextInterval, () => flush())
