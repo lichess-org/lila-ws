@@ -62,8 +62,12 @@ final private class ActorChannelConnector(
       flushQ.add(channel)
 
   private def flush(): Unit =
+    val qSize           = flushQ.size
     val maxDelayFactor  = maxDelay.get().toDouble / interval.get()
-    var channelsToFlush = step.get().atLeast((flushQ.size * maxDelayFactor).toInt)
+    var channelsToFlush = step.get().atLeast((qSize * maxDelayFactor).toInt)
+
+    monitor.qSize.record(qSize)
+    monitor.channelsToFlush.record(channelsToFlush)
 
     while channelsToFlush > 0 do
       Option(flushQ.poll()) match
