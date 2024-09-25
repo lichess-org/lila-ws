@@ -27,9 +27,9 @@ final private class ActorChannelConnector(
   scheduler.scheduleOnce(1 second, () => flush())
 
   scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
-    monitor.config.step.update(step.get)
-    monitor.config.interval.update(interval.get)
-    monitor.config.maxDelay.update(maxDelay.get)
+    monitor.config.step.update(step.get())
+    monitor.config.interval.update(interval.get())
+    monitor.config.maxDelay.update(maxDelay.get())
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
@@ -57,15 +57,15 @@ final private class ActorChannelConnector(
         .addListener(ChannelFutureListener.CLOSE)
     case ipc.ClientIn.RoundPingFrameNoFlush =>
       channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-    case in if withFlush || interval.get <= 0 =>
+    case in if withFlush || interval.get() <= 0 =>
       channel.writeAndFlush(TextWebSocketFrame(in.write))
     case in =>
       channel.write(TextWebSocketFrame(in.write))
       flushQ.add(channel)
 
   private def flush(): Unit =
-    val maxDelayFactor  = maxDelay.get.toDouble / interval.get
-    var channelsToFlush = step.get.atLeast((flushQ.size * maxDelayFactor).toInt)
+    val maxDelayFactor  = maxDelay.get().toDouble / interval.get()
+    var channelsToFlush = step.get().atLeast((flushQ.size * maxDelayFactor).toInt)
 
     while channelsToFlush > 0 do
       Option(flushQ.poll()) match
@@ -76,7 +76,7 @@ final private class ActorChannelConnector(
           channelsToFlush = 0
 
     val nextInterval =
-      if interval.get > 0 then interval.get.millis
+      if interval.get() > 0 then interval.get().millis
       else if flushQ.isEmpty then 1.second // hibernate
       else 1.millis                        // interval is 0 but we still need to empty the queue
     scheduler.scheduleOnce(nextInterval, () => flush())

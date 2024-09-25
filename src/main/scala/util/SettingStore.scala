@@ -23,7 +23,7 @@ case class Setting[A](default: A, ttl: FiniteDuration)(fetch: () => Future[Optio
 ):
   private var value: A = default
 
-  def get: A = value
+  def get(): A = value
 
   private def readFromDb(): Unit =
     fetch().foreach: opt =>
