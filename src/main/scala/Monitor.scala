@@ -181,3 +181,10 @@ object Monitor:
         val expirable = Kamon.gauge("evalCache.upgrade.expirable").withTag("style", key)
     val single = Style("single")
     val multi  = Style("multi")
+
+  object connector:
+    object flush:
+      object config:
+        val step     = Kamon.gauge("connector.flush.config.step").withoutTags()
+        val interval = Kamon.gauge("connector.flush.config.interval").withoutTags()
+        val maxDelay = Kamon.gauge("connector.flush.config.maxDelay").withoutTags()

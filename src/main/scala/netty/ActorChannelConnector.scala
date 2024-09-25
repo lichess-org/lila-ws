@@ -22,8 +22,14 @@ final private class ActorChannelConnector(
   private val interval = intSetting("netty.flush.interval-millis")
   private val maxDelay = intSetting("netty.flush.max-delay-millis")
   private val flushQ   = new java.util.concurrent.ConcurrentLinkedQueue[Channel]()
+  private val monitor  = Monitor.connector.flush
 
   scheduler.scheduleOnce(1 second, () => flush())
+
+  scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
+    monitor.config.step.update(step.get)
+    monitor.config.interval.update(interval.get)
+    monitor.config.maxDelay.update(maxDelay.get)
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
