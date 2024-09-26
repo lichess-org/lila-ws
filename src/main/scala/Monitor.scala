@@ -24,10 +24,9 @@ final class Monitor(
 
     val version  = System.getProperty("java.version")
     val memory   = Runtime.getRuntime.maxMemory() / 1024 / 1024
-    val native   = config.getBoolean("netty.native")
     val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
 
-    logger.info(s"lila-ws 3.0 netty native=$native kamon=$useKamon")
+    logger.info(s"lila-ws 3.0 netty kamon=$useKamon")
     logger.info(s"Java version: $version, memory: ${memory}MB")
 
     if useKamon then kamon.Kamon.init()
@@ -182,3 +181,12 @@ object Monitor:
         val expirable = Kamon.gauge("evalCache.upgrade.expirable").withTag("style", key)
     val single = Style("single")
     val multi  = Style("multi")
+
+  object connector:
+    object flush:
+      object config:
+        val step     = Kamon.gauge("connector.flush.config.step").withoutTags()
+        val interval = Kamon.gauge("connector.flush.config.interval").withoutTags()
+        val maxDelay = Kamon.gauge("connector.flush.config.maxDelay").withoutTags()
+      val qSize           = Kamon.histogram("connector.flush.qSize").withoutTags()
+      val channelsToFlush = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
