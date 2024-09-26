@@ -6,6 +6,7 @@ import io.netty.channel.*
 import io.netty.handler.codec.http.websocketx.*
 import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
 import org.apache.pekko.actor.typed.{ ActorRef, Scheduler }
+
 import java.util.concurrent.TimeUnit
 
 import lila.ws.Controller.Endpoint
@@ -81,7 +82,7 @@ final private class ActorChannelConnector(
 
     val nextIntervalMillis =
       if !config.alwaysFlush() then config.interval.get()
-      else if flushQ.isEmpty then 1 // hibernate
-      else 1                        // interval is 0 but we still need to empty the queue
+      else if flushQ.isEmpty then 1000 // hibernate
+      else 1                           // interval is 0 but we still need to empty the queue
 
     workers.schedule[Unit](() => flush(), nextIntervalMillis, TimeUnit.MILLISECONDS)
