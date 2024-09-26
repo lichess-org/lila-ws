@@ -27,7 +27,7 @@ final private class ActorChannelConnector(
     val step                     = int("netty.flush.step")
     val interval                 = int("netty.flush.interval-millis")
     val maxDelay                 = int("netty.flush.max-delay-millis")
-    inline def alwaysFlush()     = interval.get() <= 0
+    inline def isFlushQEnabled() = interval.get() > 0
     scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
       monitor.config.step.update(step.get())
       monitor.config.interval.update(interval.get())
@@ -58,7 +58,7 @@ final private class ActorChannelConnector(
         .addListener(ChannelFutureListener.CLOSE)
     case ipc.ClientIn.RoundPingFrameNoFlush =>
       channel.write { PingWebSocketFrame(Unpooled.copyLong(System.currentTimeMillis())) }
-    case in if withFlush || config.alwaysFlush() =>
+    case in if withFlush || !config.isFlushQEnabled() =>
       channel.writeAndFlush(TextWebSocketFrame(in.write))
     case in =>
       channel.write(TextWebSocketFrame(in.write))
@@ -81,7 +81,7 @@ final private class ActorChannelConnector(
           channelsToFlush = 0
 
     val nextIntervalMillis =
-      if !config.alwaysFlush() then config.interval.get()
+      if config.isFlushQEnabled() then config.interval.get()
       else if flushQ.isEmpty then 1000 // hibernate
       else 1                           // interval is 0 but we still need to empty the queue
 
