@@ -68,6 +68,12 @@ final private class ActorChannelConnector(
     val qSize           = flushQ.size
     val maxDelayFactor  = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
     var channelsToFlush = config.step.get().atLeast((qSize * maxDelayFactor).toInt)
+    val nextIntervalMillis =
+      if config.isFlushQEnabled() then config.interval.get()
+      else if qSize == 0 then 1000 // hibernate
+      else 1                       // interval is 0 but we still need to empty the queue
+
+    workers.schedule[Unit](() => flush(), nextIntervalMillis, TimeUnit.MILLISECONDS)
 
     monitor.qSize.record(qSize)
     monitor.channelsToFlush.record(channelsToFlush)
@@ -79,10 +85,3 @@ final private class ActorChannelConnector(
           channelsToFlush -= 1
         case _ =>
           channelsToFlush = 0
-
-    val nextIntervalMillis =
-      if config.isFlushQEnabled() then config.interval.get()
-      else if flushQ.isEmpty then 1000 // hibernate
-      else 1                           // interval is 0 but we still need to empty the queue
-
-    workers.schedule[Unit](() => flush(), nextIntervalMillis, TimeUnit.MILLISECONDS)
