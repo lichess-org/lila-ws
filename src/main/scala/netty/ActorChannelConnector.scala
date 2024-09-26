@@ -72,7 +72,7 @@ final private class ActorChannelConnector(
     while channelsToFlush > 0 do
       Option(flushQ.poll()) match
         case Some(channel) =>
-          if channel.isOpen then channel.eventLoop().execute(() => channel.flush())
+          if channel.isOpen then channel.flush()
           channelsToFlush -= 1
         case _ =>
           channelsToFlush = 0
