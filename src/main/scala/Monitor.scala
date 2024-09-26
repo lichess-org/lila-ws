@@ -190,4 +190,3 @@ object Monitor:
         val maxDelay = Kamon.gauge("connector.flush.config.maxDelay").withoutTags()
       val qSize           = Kamon.histogram("connector.flush.qSize").withoutTags()
       val channelsToFlush = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
-    val scheduledHit = Kamon.counter("connector.scheduledHit").withoutTags()

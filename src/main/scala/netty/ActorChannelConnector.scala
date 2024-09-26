@@ -82,8 +82,3 @@ final private class ActorChannelConnector(
       else if flushQ.isEmpty then 1.second // hibernate
       else 1.millis                        // interval is 0 but we still need to empty the queue
     scheduler.scheduleOnce(nextInterval, () => flush())
-
-  def scheduledHit(): Unit =
-    Monitor.connector.scheduledHit.increment()
-    scheduler.scheduleOnce(1 millis, () => scheduledHit())
-  scheduledHit()
