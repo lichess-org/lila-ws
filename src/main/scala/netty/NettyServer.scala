@@ -13,7 +13,8 @@ import org.apache.pekko.actor.typed.Scheduler
 final class NettyServer(
     clients: ClientSystem,
     router: Router,
-    config: Config
+    config: Config,
+    settings: util.SettingStore
 )(using Executor, Scheduler):
   private val logger  = Logger(getClass)
   private val threads = config.getInt("netty.threads")
@@ -21,7 +22,7 @@ final class NettyServer(
     if System.getProperty("os.name").toLowerCase.startsWith("mac") then
       (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(threads), classOf[KQueueServerSocketChannel])
     else (new EpollEventLoopGroup(1), new EpollEventLoopGroup(threads), classOf[EpollServerSocketChannel])
-  private val connector = ActorChannelConnector(clients)
+  private val connector = ActorChannelConnector(clients, config, settings, workers)
 
   def start(): Unit =
 
