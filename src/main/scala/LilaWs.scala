@@ -33,9 +33,8 @@ object LilaWs extends App:
   lazy val router        = wire[Router]
   lazy val seenAt        = wire[SeenAtUpdate]
   lazy val auth          = wire[Auth]
-  // `wire[netty.NettyServer]` fails in production!
-  lazy val nettyServer = netty.NettyServer(clientSystem, router, config, settings)
-  lazy val monitor     = wire[Monitor]
+  lazy val nettyServer   = wire[netty.NettyServer]
+  lazy val monitor       = wire[Monitor]
 
   wire[LilaHandler] // must eagerly instanciate!
   wire[RelayCrowd]  // must eagerly instanciate!
