@@ -63,7 +63,7 @@ final class LilaWsServer(
       Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
 
     scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis): () =>
-      val counters = lobby.pong.get
+      val counters = lobby.pong.get()
       lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
 
     scheduler.scheduleWithFixedDelay(1.seconds, 1879.millis): () =>
