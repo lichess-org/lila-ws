@@ -17,7 +17,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin):
 
     private var value = LobbyPong(0, 0)
 
-    def get = value
+    def get() = value
 
     def update(members: Int, rounds: Int): Unit =
       value = LobbyPong(members, rounds)

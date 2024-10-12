@@ -50,7 +50,7 @@ object LobbyClientActor:
               case Some(s) => apply(state.copy(site = s), deps)
 
           case msg: ClientOut.Ping =>
-            clientIn(services.lobby.pong.get)
+            clientIn(services.lobby.pong.get())
             apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
           case ClientOut.LobbyJoin(payload) =>

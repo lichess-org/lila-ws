@@ -243,7 +243,7 @@ final class Controller(
               )
 
   def api(header: RequestHeader) =
-    val req = Req(header, Sri.random, None).copy(flag = Some(Flag.api))
+    val req = Req(header, Sri.random(), None).copy(flag = Some(Flag.api))
     Future.successful(
       endpoint(
         name = "api",
