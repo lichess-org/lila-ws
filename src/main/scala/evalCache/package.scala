@@ -11,7 +11,7 @@ val MAX_PV_SIZE  = 10
 val MAX_MULTI_PV = MultiPv(5)
 
 opaque type Knodes = Int
-object Knodes extends OpaqueInt[Knodes]:
+object Knodes extends RelaxedOpaqueInt[Knodes]:
   extension (a: Knodes)
     def intNodes: Int =
       val nodes = a.value * 1000d

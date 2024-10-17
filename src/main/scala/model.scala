@@ -157,7 +157,7 @@ case class Position(lastUci: Uci, fen: Fen.Board, clock: Option[Clock], turnColo
   def fenWithColor = fen.andColor(turnColor)
 
 opaque type MultiPv = Int
-object MultiPv extends OpaqueInt[MultiPv]
+object MultiPv extends RelaxedOpaqueInt[MultiPv]
 
 opaque type Depth = Int
-object Depth extends OpaqueInt[Depth]
+object Depth extends RelaxedOpaqueInt[Depth]
