@@ -188,5 +188,6 @@ object Monitor:
         val step     = Kamon.gauge("connector.flush.config.step").withoutTags()
         val interval = Kamon.gauge("connector.flush.config.interval").withoutTags()
         val maxDelay = Kamon.gauge("connector.flush.config.maxDelay").withoutTags()
-      val qSize           = Kamon.histogram("connector.flush.qSize").withoutTags()
-      val channelsToFlush = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
+      val qSize                   = Kamon.histogram("connector.flush.qSize").withoutTags()
+      val channelsToFlush         = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
+      val loopRuntimeMicroseconds = Kamon.histogram("connector.flush.loopRuntimeMicroseconds").withoutTags()
