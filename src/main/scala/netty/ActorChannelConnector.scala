@@ -17,7 +17,7 @@ final private class ActorChannelConnector(
     workers: EventLoopGroup
 )(using scheduler: Scheduler, ec: Executor):
 
-  private val flushQ  = java.util.concurrent.ConcurrentLinkedQueue[Channel]()
+  private val flushQ  = ActorChannelConnector.FlushQueue()
   private val monitor = Monitor.connector.flush
   private val flushThread = Future:
     while !workers.isShuttingDown && !workers.isTerminated do Thread.sleep(flush())
@@ -64,12 +64,12 @@ final private class ActorChannelConnector(
 
   private def flush(): Int =
     val entryUsecs      = System.nanoTime() / 1000
-    val qSize           = flushQ.size
+    val qSize           = flushQ.estimateSize()
     val maxDelayFactor  = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
     var channelsToFlush = config.step.get().atLeast((qSize * maxDelayFactor).toInt)
 
     while channelsToFlush > 0 do
-      Option(flushQ.poll()) match
+      flushQ.poll() match
         case Some(channel) =>
           if channel.isOpen then channel.flush()
           channelsToFlush -= 1
@@ -82,3 +82,19 @@ final private class ActorChannelConnector(
     if config.isFlushQEnabled() then config.interval.get()
     else if qSize == 0 then 1000 // hibernate
     else 1                       // interval is 0 but we still need to empty the queue
+
+object ActorChannelConnector:
+  private class FlushQueue:
+    private val queue = new java.util.concurrent.ConcurrentLinkedQueue[Channel]()
+    private val size  = new java.util.concurrent.atomic.AtomicInteger()
+
+    def add(channel: Channel): Unit =
+      queue.add(channel)
+      size.getAndIncrement()
+
+    def poll(): Option[Channel] =
+      val maybeChannel = Option(queue.poll())
+      if maybeChannel.nonEmpty then size.getAndDecrement()
+      maybeChannel
+
+    def estimateSize(): Int = size.get()
