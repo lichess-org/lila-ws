@@ -23,7 +23,8 @@ final private class ActorChannelConnector(
   private val monitor = Monitor.connector.flush
   private val flushThread = Future:
     while !workers.isShuttingDown && !workers.isTerminated do
-      Thread.sleep(0, flush().timeLeft.toNanos.toInt.atLeast(0))
+      val delay = flush().timeLeft.max(0.millis)
+      Thread.sleep(delay.toMillis, (delay.toNanos % 1_000_000).toInt)
 
   private object config:
     private def int(key: String) = settings.makeSetting(key, staticConfig.getInt(key))
