@@ -36,6 +36,7 @@ final private class ActorChannelConnector(
       monitor.config.step.update(step.get())
       monitor.config.interval.update(interval.get())
       monitor.config.maxDelay.update(maxDelay.get())
+      monitor.qSizeReal.record(flushQ.realSizeWithLinearPerformance())
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
@@ -80,7 +81,7 @@ final private class ActorChannelConnector(
         case _ =>
           channelsToFlush = 0
 
-    monitor.qSize.record(qSize)
+    monitor.qSizeEstimate.record(qSize)
     monitor.channelsToFlush.record(channelsToFlush)
     monitor.loopRuntimeMicroseconds.record((Deadline.now - entered).toMicros)
 
@@ -92,8 +93,8 @@ final private class ActorChannelConnector(
 
 object ActorChannelConnector:
   private class FlushQueue:
-    private val queue = new java.util.concurrent.ConcurrentLinkedQueue[Channel]()
-    private val size  = new java.util.concurrent.atomic.AtomicInteger()
+    private val queue = java.util.concurrent.ConcurrentLinkedQueue[Channel]()
+    private val size  = java.util.concurrent.atomic.AtomicInteger()
 
     def add(channel: Channel): Unit =
       queue.add(channel)
@@ -104,4 +105,5 @@ object ActorChannelConnector:
       if maybeChannel.nonEmpty then size.getAndDecrement()
       maybeChannel
 
-    def estimateSize(): Int = size.get()
+    def estimateSize(): Int                  = size.get()
+    def realSizeWithLinearPerformance(): Int = queue.size()
