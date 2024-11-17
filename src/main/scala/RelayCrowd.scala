@@ -36,8 +36,23 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
                   "pipeline" -> List(
                     BSONDocument(
                       "$match" -> BSONDocument(
-                        "finished" -> false,
-                        "$expr"    -> BSONDocument("$eq" -> BSONArray("$tourId", "$$tourId"))
+                        "$expr" -> BSONDocument(
+                          "$and" ->
+                            BSONArray(
+                              BSONDocument(
+                                BSONDocument("$eq" -> BSONArray("$tourId", "$$tourId")),
+                                "$or" -> BSONArray(
+                                  BSONDocument("$exists" -> BSONArray("$finishedAt", false)),
+                                  BSONDocument(
+                                    "$gt" -> BSONArray(
+                                      "$finishedAt",
+                                      BSONDateTime(nowMillis - 1000 * 60 * 60 * 2) // 2 hours
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                        )
                       )
                     ),
                     BSONDocument("$sort"    -> BSONDocument("createdAt" -> 1)),
