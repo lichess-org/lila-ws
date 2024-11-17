@@ -57,7 +57,7 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
                         )
                       )
                     ),
-                    BSONDocument("$sort"    -> BSONDocument("createdAt" -> 1)),
+                    BSONDocument("$sort"    -> BSONDocument("order" -> 1)),
                     BSONDocument("$limit"   -> 1),
                     BSONDocument("$project" -> BSONDocument("_id" -> true))
                   )
