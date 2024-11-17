@@ -3,9 +3,11 @@ package lila.ws
 import cats.syntax.all.*
 import org.apache.pekko.actor.typed.Scheduler
 
+/* For ongoing broadcasts, store in the round mongodb document the current number of viewers.
+ * Lila will display it and store time stats. */
 final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Executor, scheduler: Scheduler):
 
-  scheduler.scheduleWithFixedDelay(20.seconds, 11.seconds): () =>
+  scheduler.scheduleWithFixedDelay(20.seconds, 14.seconds): () =>
     updateRelays()
 
   private def updateRelays() = for
