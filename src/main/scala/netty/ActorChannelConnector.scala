@@ -72,6 +72,7 @@ final private class ActorChannelConnector(
     val qSize           = flushQ.estimateSize()
     val maxDelayFactor  = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
     var channelsToFlush = config.step.get().atLeast((qSize * maxDelayFactor).toInt)
+    monitor.channelsToFlush.record(channelsToFlush)
 
     while channelsToFlush > 0 do
       flushQ.poll() match
@@ -82,7 +83,6 @@ final private class ActorChannelConnector(
           channelsToFlush = 0
 
     monitor.qSizeEstimate.record(qSize)
-    monitor.channelsToFlush.record(channelsToFlush)
     monitor.loopRuntimeMicroseconds.record((Deadline.now - entered).toMicros)
 
     entered + {
