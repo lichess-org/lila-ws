@@ -97,8 +97,8 @@ object ActorChannelConnector:
     private val size  = java.util.concurrent.atomic.AtomicInteger()
 
     def add(channel: Channel): Unit =
-      queue.add(channel)
       size.getAndIncrement()
+      queue.add(channel)
 
     def poll(): Option[Channel] =
       val maybeChannel = Option(queue.poll())
