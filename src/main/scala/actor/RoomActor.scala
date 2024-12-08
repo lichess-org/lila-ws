@@ -54,7 +54,8 @@ object RoomActor:
       val shouldSend =
         if crowd.sameAs(state.lastCrowd) then false
         else if crowd.users != state.lastCrowd.users then true
-        else if crowd.members > 1000 && crowd.members % 100 != 0 then false
+        else if crowd.members > 10_000 && crowd.members % 100 != 0 then false
+        else if crowd.members > 1000 && crowd.members % 50 != 0 then false
         else if crowd.members > 100 && crowd.members % 10 != 0 then false
         else true
 
