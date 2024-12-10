@@ -52,7 +52,7 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
-  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval)
+  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval, sri: Sri)
 
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
@@ -83,10 +83,10 @@ object EvalCacheEntry:
 
     def truncate = copy(moves = Moves.truncate(moves))
 
-  def makeInput(variant: Variant, fen: Fen.Full, eval: Eval) =
+  def makeInput(variant: Variant, fen: Fen.Full, eval: Eval, sri: Sri) =
     Fen
       .read(variant, fen)
       .filter(_.playable(false))
       .ifTrue(eval.looksValid)
       .map: situation =>
-        Input(Id(situation), fen, situation, eval.truncatePvs)
+        Input(Id(situation), fen, situation, eval.truncatePvs, sri)

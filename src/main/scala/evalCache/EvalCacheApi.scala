@@ -1,6 +1,7 @@
 package lila.ws
 package evalCache
 
+import com.softwaremill.macwire.*
 import cats.syntax.all.*
 import chess.ErrorStr
 import chess.format.Fen
@@ -14,13 +15,13 @@ import java.time.LocalDateTime
 import lila.ws.ipc.ClientIn
 import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
 
-final class EvalCacheApi(mongo: Mongo)(using
+final class EvalCacheApi(mongo: Mongo, settings: util.SettingStore)(using
     Executor,
     org.apache.pekko.actor.typed.Scheduler
 ):
 
-  private val truster = EvalCacheTruster(mongo)
-  private val upgrade = EvalCacheUpgrade()
+  private val truster = wire[EvalCacheTruster]
+  private val upgrade = wire[EvalCacheUpgrade]
   private val multi   = EvalCacheMulti()
 
   import EvalCacheEntry.*
@@ -72,8 +73,9 @@ final class EvalCacheApi(mongo: Mongo)(using
                 depth = e.depth,
                 by = user,
                 trust = trust
-              )
-            ).foreach(putTrusted(sri, user, _))
+              ),
+              sri
+            ).foreach(putTrusted(user, _))
 
   // reduce the number of evals stored and,
   // perhaps more importantly, distributed to subscribers
@@ -104,7 +106,7 @@ final class EvalCacheApi(mongo: Mongo)(using
         if res.isDefined then mongo.evalCacheUsedNow(id)
         res
 
-  private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
+  private def putTrusted(user: User.Id, input: Input): Future[Unit] =
     mongo.evalCacheColl.flatMap: c =>
       validate(input).match
         case Left(error) =>
@@ -124,7 +126,7 @@ final class EvalCacheApi(mongo: Mongo)(using
                 .one(entry)
                 .recover(mongo.ignoreDuplicateKey)
                 .map: _ =>
-                  afterPut(input, sri, entry)
+                  afterPut(input, entry)
             case Some(oldEntry) =>
               val entry = oldEntry.add(input.eval)
               if entry.similarTo(oldEntry) then Future.successful(())
@@ -132,13 +134,13 @@ final class EvalCacheApi(mongo: Mongo)(using
                 c.update
                   .one(BSONDocument("_id" -> entry.id), entry, upsert = true)
                   .map: _ =>
-                    afterPut(input, sri, entry)
+                    afterPut(input, entry)
 
-  private def afterPut(input: Input, sri: Sri, entry: EvalCacheEntry): Unit =
+  private def afterPut(input: Input, entry: EvalCacheEntry): Unit =
     cache.put(input.id, Future.successful(entry.some))
     // todo: debounce upgrades in hot rooms
-    upgrade.onEval(input, sri)
-    multi.onEval(input, sri)
+    upgrade.onEval(input)
+    multi.onEval(input)
 
   private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
     in.eval.pvs.traverse_ { pv =>

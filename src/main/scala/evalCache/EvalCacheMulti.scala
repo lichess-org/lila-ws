@@ -40,7 +40,7 @@ final private class EvalCacheMulti(using
         evals.compute(id, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
     expirableSris.put(sri)
 
-  def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
+  def onEval(input: EvalCacheEntry.Input): Unit =
     Option(
       evals.computeIfPresent(
         input.id,
@@ -50,7 +50,7 @@ final private class EvalCacheMulti(using
       )
     ).filter(_.depth == input.eval.depth)
       .foreach: eval =>
-        val sris = eval.sris.filter(_ != fromSri)
+        val sris = eval.sris.filter(_ != input.sri)
         if sris.nonEmpty then
           val hit = EvalHitMulti:
             EvalCacheJsonHandlers.writeMultiHit(input.fen, input.eval)

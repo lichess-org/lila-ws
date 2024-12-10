@@ -1,10 +1,10 @@
 package lila.ws
 package evalCache
 
+import java.util.concurrent.ConcurrentHashMap
 import chess.format.UciPath
 import play.api.libs.json.JsString
-
-import java.util.concurrent.ConcurrentHashMap
+import scalalib.DebouncerFunction
 
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet
@@ -14,7 +14,9 @@ import lila.ws.util.ExpireCallbackMemo
  * by remembering the last evalGet of each socket member,
  * and listening to new evals stored.
  */
-final private class EvalCacheUpgrade(using
+final private class EvalCacheUpgrade(
+    settings: util.SettingStore
+)(using
     ec: Executor,
     scheduler: org.apache.pekko.actor.typed.Scheduler
 ):
@@ -23,6 +25,11 @@ final private class EvalCacheUpgrade(using
   private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
   private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 3 minutes, expire)
+
+  private def debouncerSetting =
+    settings.makeSetting[Boolean]("lila-ws.EvalCacheUpgrade.debouncerEnable", false)
+
+  private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 
   private val upgradeMon = Monitor.evalCache.single.upgrade
 
@@ -42,27 +49,33 @@ final private class EvalCacheUpgrade(using
         )
         expirableSris.put(sri)
 
-  def onEval(input: EvalCacheEntry.Input, fromSri: Sri): Unit =
+  def onEval(input: EvalCacheEntry.Input): Unit =
     (1 to input.eval.multiPv.value).foreach: multiPv =>
       val setupId = SetupId(input.id, MultiPv(multiPv))
-      Option(
-        evals.computeIfPresent(
-          setupId,
-          (_, ev) =>
-            if ev.depth >= input.eval.depth then ev
-            else ev.copy(depth = input.eval.depth)
-        )
-      ).filter(_.depth == input.eval.depth)
-        .foreach: eval =>
-          val wms = eval.sris.withFilter(_ != fromSri).flatMap(sri => Option(members.get(sri.value)))
-          if wms.nonEmpty then
-            val evalJson = EvalCacheJsonHandlers.writeEval(input.eval, input.fen)
-            wms
-              .groupBy(_.path)
-              .map: (path, members) =>
-                val hit = EvalHit(evalJson + ("path" -> JsString(path.value)))
-                members.foreach(m => Bus.publish(_.sri(m.sri), hit))
-            upgradeMon.count.increment(wms.size)
+      if debouncerSetting.get()
+      then debouncer.push(setupId)(() => publishEval(setupId, input))
+      else publishEval(setupId, input)
+
+  private def publishEval(setupId: SetupId, input: EvalCacheEntry.Input) =
+    val newEvalState = Option:
+      evals.computeIfPresent(
+        setupId,
+        (_, stored) =>
+          if stored.depth >= input.eval.depth then stored
+          else stored.copy(depth = input.eval.depth)
+      )
+    newEvalState
+      .filter(_.depth == input.eval.depth) // ensure the new one from input
+      .foreach: eval =>
+        val wms = eval.sris.withFilter(_ != input.sri).flatMap(sri => Option(members.get(sri.value)))
+        if wms.nonEmpty then
+          val evalJson = EvalCacheJsonHandlers.writeEval(input.eval, input.fen)
+          wms
+            .groupBy(_.path)
+            .map: (path, members) =>
+              val hit = EvalHit(evalJson + ("path" -> JsString(path.value)))
+              members.foreach(m => Bus.publish(_.sri(m.sri), hit))
+              upgradeMon.count.increment(wms.size)
 
   private def expire(sri: Sri): Unit =
     Option(members.remove(sri.value)).foreach: m =>

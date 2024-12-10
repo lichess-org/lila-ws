@@ -17,7 +17,7 @@ import reactivemongo.api.bson.*
  * db.setting.updateOne({_id:'dogs'},{$set:{value:50}})
  */
 
-case class Setting[A](default: A, ttl: FiniteDuration)(fetch: () => Future[Option[A]])(using
+final class Setting[A](default: A, ttl: FiniteDuration)(fetch: () => Future[Option[A]])(using
     ec: Executor,
     scheduler: Scheduler
 ):
