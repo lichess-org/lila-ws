@@ -136,6 +136,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private def afterPut(input: Input, sri: Sri, entry: EvalCacheEntry): Unit =
     cache.put(input.id, Future.successful(entry.some))
+    // todo: debounce upgrades in hot rooms
     upgrade.onEval(input, sri)
     multi.onEval(input, sri)
 
