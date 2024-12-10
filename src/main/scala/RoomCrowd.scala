@@ -1,7 +1,6 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
-import com.github.blemale.scaffeine.Scaffeine
 
 import ipc.*
 
@@ -50,7 +49,6 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
         crowds.updated(crowd.roomId, crowd)
       .values
     lastPerRoomId.foreach: output =>
-      RoomCrowd.hot.put(output.roomId, output.members)
       json
         .room(output)
         .foreach:
@@ -60,11 +58,9 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
 
 object RoomCrowd:
 
-  type Members = Int
-
   case class Output(
       roomId: RoomId,
-      members: Members,
+      members: Int,
       users: Iterable[User.Id],
       anons: Int
   )
@@ -91,13 +87,3 @@ object RoomCrowd:
     def disconnect(user: Option[User.Id]) =
       user.fold(copy(anons = anons - 1)): u =>
         copy(users = users.updatedWith(u)(_.map(_ - 1).filter(_ > 0)))
-
-  // rooms that have an abnormal amount of members
-  object hot:
-    private val rooms = Scaffeine()
-      .expireAfterWrite(1.minute)
-      .build[RoomId, Members]()
-    def get(roomId: RoomId) = rooms.getIfPresent(roomId)
-    def put(roomId: RoomId, nb: Members) =
-      println(s"hot room put $roomId $nb")
-      if nb > 1000 then rooms.put(roomId, nb)
