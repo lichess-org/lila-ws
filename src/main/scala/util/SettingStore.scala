@@ -33,9 +33,9 @@ final class Setting[A](default: A, ttl: FiniteDuration)(fetch: () => Future[Opti
 
 final class SettingStore(mongo: Mongo)(using Executor, Scheduler):
 
-  def makeSetting[A: BSONReader](key: String, default: A, ttl: FiniteDuration = 30.seconds): Setting[A] =
+  def makeSetting[A: BSONReader](key: String, default: A, ttl: FiniteDuration = 20.seconds): Setting[A] =
     Setting[A](default, ttl): () =>
       mongo.settingColl.flatMap:
-        _.find(selector = BSONDocument("_id" -> key))
+        _.find(selector = BSONDocument("_id" -> s"lila-ws.$key"))
           .one[BSONDocument]
           .map(_.flatMap(_.getAsOpt[A]("value")))

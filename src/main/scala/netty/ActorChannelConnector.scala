@@ -27,7 +27,7 @@ final private class ActorChannelConnector(
       Thread.sleep(delay.toMillis, (delay.toNanos % 1_000_000).toInt)
 
   private object config:
-    private def int(key: String) = settings.makeSetting(s"lila-ws.$key", staticConfig.getInt(key))
+    private def int(key: String) = settings.makeSetting(key, staticConfig.getInt(key))
     val step                     = int("netty.flush.step")
     val interval                 = int("netty.flush.interval-millis")
     val maxDelay                 = int("netty.flush.max-delay-millis")
