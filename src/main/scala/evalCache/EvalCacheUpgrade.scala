@@ -26,8 +26,8 @@ final private class EvalCacheUpgrade(
   private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 3 minutes, expire)
 
-  private def debouncerSetting =
-    settings.makeSetting[Boolean]("lila-ws.EvalCacheUpgrade.debouncerEnable", false)
+  private val debouncerSetting =
+    settings.makeSetting[Boolean]("EvalCacheUpgrade.debouncerEnable", false)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 
