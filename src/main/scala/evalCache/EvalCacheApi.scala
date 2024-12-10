@@ -106,7 +106,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
     mongo.evalCacheColl.flatMap: c =>
-      validate(input) match
+      validate(input).match
         case Left(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
@@ -124,9 +124,7 @@ final class EvalCacheApi(mongo: Mongo)(using
                 .one(entry)
                 .recover(mongo.ignoreDuplicateKey)
                 .map: _ =>
-                  cache.put(input.id, Future.successful(entry.some))
-                  upgrade.onEval(input, sri)
-                  multi.onEval(input, sri)
+                  afterPut(input, sri, entry)
             case Some(oldEntry) =>
               val entry = oldEntry.add(input.eval)
               if entry.similarTo(oldEntry) then Future.successful(())
@@ -134,9 +132,12 @@ final class EvalCacheApi(mongo: Mongo)(using
                 c.update
                   .one(BSONDocument("_id" -> entry.id), entry, upsert = true)
                   .map: _ =>
-                    cache.put(input.id, Future.successful(entry.some))
-                    upgrade.onEval(input, sri)
-                    multi.onEval(input, sri)
+                    afterPut(input, sri, entry)
+
+  private def afterPut(input: Input, sri: Sri, entry: EvalCacheEntry): Unit =
+    cache.put(input.id, Future.successful(entry.some))
+    upgrade.onEval(input, sri)
+    multi.onEval(input, sri)
 
   private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
     in.eval.pvs.traverse_ { pv =>
