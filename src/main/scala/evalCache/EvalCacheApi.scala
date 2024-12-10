@@ -57,21 +57,31 @@ final class EvalCacheApi(mongo: Mongo)(using
     multi.register(sri, e.copy(fens = e.fens))
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
-    truster
-      .get(user)
-      .foreach:
-        _.filter(_.isEnough).foreach: trust =>
-          makeInput(
-            e.variant,
-            e.fen,
-            Eval(
-              pvs = e.pvs,
-              knodes = e.knodes,
-              depth = e.depth,
-              by = user,
-              trust = trust
-            )
-          ).foreach(putTrusted(sri, user, _))
+    if isStorableDepth(e.depth)
+    then
+      truster
+        .get(user)
+        .foreach:
+          _.filter(_.isEnough).foreach: trust =>
+            makeInput(
+              e.variant,
+              e.fen,
+              Eval(
+                pvs = e.pvs,
+                knodes = e.knodes,
+                depth = e.depth,
+                by = user,
+                trust = trust
+              )
+            ).foreach(putTrusted(sri, user, _))
+
+  // reduce the number of evals stored and,
+  // perhaps more importantly, distributed to subscribers
+  private def isStorableDepth(depth: Depth) =
+    if depth < 20 then false
+    else if depth < 30 then true
+    else if depth < 50 then depth.value % 2 == 0
+    else depth.value                    % 5 == 0
 
   private def monitorRequest[A](fen: Fen.Full, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
     Fen
@@ -96,7 +106,7 @@ final class EvalCacheApi(mongo: Mongo)(using
 
   private def putTrusted(sri: Sri, user: User.Id, input: Input): Future[Unit] =
     mongo.evalCacheColl.flatMap: c =>
-      EvalCacheValidator(input) match
+      validate(input) match
         case Left(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
@@ -128,9 +138,7 @@ final class EvalCacheApi(mongo: Mongo)(using
                     upgrade.onEval(input, sri)
                     multi.onEval(input, sri)
 
-private object EvalCacheValidator:
-
-  def apply(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
+  private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
     in.eval.pvs.traverse_ { pv =>
       chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.situation.variant)
     }
