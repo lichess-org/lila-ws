@@ -27,7 +27,7 @@ final private class EvalCacheUpgrade(
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 3 minutes, expire)
 
   private val debouncerSetting =
-    settings.makeSetting[Boolean]("EvalCacheUpgrade.debouncerEnable", false)
+    settings.makeSetting[Boolean]("EvalCacheUpgrade.debouncerEnable", true)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 
