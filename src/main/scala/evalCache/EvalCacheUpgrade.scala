@@ -1,10 +1,11 @@
 package lila.ws
 package evalCache
 
-import java.util.concurrent.ConcurrentHashMap
 import chess.format.UciPath
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
+
+import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet

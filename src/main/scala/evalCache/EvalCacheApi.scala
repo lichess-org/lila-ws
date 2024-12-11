@@ -1,11 +1,11 @@
 package lila.ws
 package evalCache
 
-import com.softwaremill.macwire.*
 import cats.syntax.all.*
 import chess.ErrorStr
 import chess.format.Fen
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.softwaremill.macwire.*
 import com.typesafe.scalalogging.Logger
 import play.api.libs.json.JsString
 import reactivemongo.api.bson.BSONDocument
