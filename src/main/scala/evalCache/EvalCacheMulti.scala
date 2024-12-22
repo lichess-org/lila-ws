@@ -23,7 +23,6 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
   private val evals                          = ConcurrentHashMap[Id, EvalState](1024)
   private val expirableSris: ExpireMemo[Sri] = makeExpirableSris(expire)
 
-
   def register(sri: Sri, e: EvalGetMulti): Unit =
     members
       .compute(
@@ -47,16 +46,12 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
         Bus.publish(_.sri(sri), hit)
       upgradeMon.count.increment(sris.size)
 
-  private def onEvalSrisToUpgrade(input: EvalCacheEntry.Input): Set[Sri] =
-    val newEval = Option(
-      evals.computeIfPresent(
-        input.id,
-        (_, ev) =>
-          if ev.depth >= input.eval.depth then ev
-          else ev.copy(depth = input.eval.depth)
-      )
-    ).filter(_.depth == input.eval.depth)
-    newEval.so(_.sris.filter(_ != input.sri))
+  private[evalCache] def onEvalSrisToUpgrade(input: EvalCacheEntry.Input): Set[Sri] =
+    Option(evals.get(input.id))
+      .filter(_.depth < input.eval.depth)
+      .so: prev =>
+        evals.put(input.id, prev.copy(depth = input.eval.depth))
+        prev.sris.filter(_ != input.sri)
 
   private def expire(sri: Sri): Unit =
     Option(members.remove(sri.value)).foreach:
