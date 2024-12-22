@@ -15,9 +15,7 @@ import lila.ws.util.ExpireCallbackMemo
  * by remembering the last evalGet of each socket member,
  * and listening to new evals stored.
  */
-final private class EvalCacheUpgrade(
-    settings: util.SettingStore
-)(using
+final private class EvalCacheUpgrade(using
     ec: Executor,
     scheduler: org.apache.pekko.actor.typed.Scheduler
 ):
@@ -26,9 +24,6 @@ final private class EvalCacheUpgrade(
   private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
   private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 3 minutes, expire)
-
-  private val debouncerSetting =
-    settings.makeSetting[Boolean]("EvalCacheUpgrade.debouncerEnable", true)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 
@@ -53,9 +48,7 @@ final private class EvalCacheUpgrade(
   def onEval(input: EvalCacheEntry.Input): Unit =
     (1 to input.eval.multiPv.value).foreach: multiPv =>
       val setupId = SetupId(input.id, MultiPv(multiPv))
-      if debouncerSetting.get()
-      then debouncer.push(setupId)(() => publishEval(setupId, input))
-      else publishEval(setupId, input)
+      debouncer.push(setupId)(() => publishEval(setupId, input))
 
   private def publishEval(setupId: SetupId, input: EvalCacheEntry.Input) =
     val newEvalState = Option:
