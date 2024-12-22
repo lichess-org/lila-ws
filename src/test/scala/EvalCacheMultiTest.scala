@@ -5,7 +5,7 @@ import chess.format.*
 import lila.ws.ipc.ClientOut.EvalGetMulti
 import chess.variant.Standard
 import cats.data.NonEmptyList
-import lila.ws.evalCache.Eval.{ Score, Cp }
+import chess.eval.*
 
 class EvalCacheMultiTest extends munit.FunSuite:
 
@@ -18,7 +18,7 @@ class EvalCacheMultiTest extends munit.FunSuite:
   test("onEval"):
     def makeInput(depth: Depth) =
       import EvalCacheEntry.*
-      val score = Score.cp(Cp.initial)
+      val score = Score.initial
       val moves = Moves.from(Uci.Move("e2e4").map(NonEmptyList.one)).get
       val eval = Eval(
         pvs = NonEmptyList.one(Pv(score, moves)),

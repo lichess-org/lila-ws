@@ -4,10 +4,10 @@ package evalCache
 import cats.syntax.all.*
 import chess.format.{ Fen, Uci, UciPath }
 import chess.variant.Variant
+import chess.eval.*
 import play.api.libs.json.*
 
 import evalCache.EvalCacheEntry.*
-import evalCache.Eval.*
 
 object EvalCacheJsonHandlers:
 
@@ -66,5 +66,5 @@ object EvalCacheJsonHandlers:
             case _                 => None
           .flatMap(_.reverse.toNel)
       )
-      score <- d.get[Cp]("cp").map(Score.cp(_)).orElse(d.get[Mate]("mate").map(Score.mate(_)))
+      score <- d.int("cp").map(Score.cp).orElse(d.int("mate").map(Score.mate))
     yield Pv(score, moves)

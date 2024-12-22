@@ -1,14 +1,12 @@
 package lila.ws
 package evalCache
 
+import java.time.LocalDateTime
 import cats.data.NonEmptyList
 import chess.Situation
 import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
-
-import java.time.LocalDateTime
-
-import Eval.Score
+import chess.eval.Score
 
 opaque type Id = BinaryFen
 object Id:
@@ -76,10 +74,9 @@ object EvalCacheEntry:
 
   case class Pv(score: Score, moves: Moves):
 
-    def looksValid =
-      score.mate match
-        case None       => moves.value.toList.sizeIs > MIN_PV_SIZE
-        case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
+    def looksValid = score.mate match
+      case None       => moves.value.toList.sizeIs > MIN_PV_SIZE
+      case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
 
     def truncate = copy(moves = Moves.truncate(moves))
 
