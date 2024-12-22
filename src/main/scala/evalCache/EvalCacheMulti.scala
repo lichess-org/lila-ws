@@ -87,3 +87,8 @@ private object EvalCacheMulti:
       upgradeMon.evals.update(instance.evals.size)
       upgradeMon.expirable.update(instance.expirableSris.count)
     instance
+
+  def mock() = EvalCacheMulti: _ =>
+    new ExpireMemo[Sri]:
+      def put(key: Sri): Unit = ()
+      def count: Int          = 0
