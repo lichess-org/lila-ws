@@ -36,7 +36,6 @@ final private class ActorChannelConnector(
       monitor.config.step.update(step.get())
       monitor.config.interval.update(interval.get())
       monitor.config.maxDelay.update(maxDelay.get())
-      monitor.qSizeReal.record(flushQ.realSizeWithLinearPerformance())
 
   def apply(endpoint: Endpoint, channel: Channel): Unit =
     val clientPromise = Promise[Client]()
@@ -105,5 +104,4 @@ object ActorChannelConnector:
       if maybeChannel.nonEmpty then size.getAndDecrement()
       maybeChannel
 
-    def estimateSize(): Int                  = size.get()
-    def realSizeWithLinearPerformance(): Int = queue.size()
+    def estimateSize(): Int = size.get()
