@@ -4,6 +4,7 @@ package evalCache
 import java.util.concurrent.ConcurrentHashMap
 import org.apache.pekko.actor.typed.Scheduler
 import chess.format.UciPath
+import chess.eval.{ Score, WinPercent }
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
 
@@ -36,8 +37,7 @@ final private class EvalCacheUpgrade(using ec: Executor, scheduler: Scheduler):
             Option(prev).foreach: member =>
               unregisterEval(member.setupId, sri)
             val setupId = SetupId(entryId, e.multiPv)
-            evals
-              .compute(setupId, (_, eval) => Option(eval).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+            evals.compute(setupId, (_, eval) => Option(eval).getOrElse(EvalState.initial).addSri(sri))
             WatchingMember(sri, setupId, e.path)
         )
         expirableSris.put(sri)
@@ -92,7 +92,10 @@ private object EvalCacheUpgrade:
 
   case class SetupId(entryId: Id, multiPv: MultiPv)
 
-  case class EvalState(sris: Set[Sri], depth: Depth):
+  case class EvalState(sris: Set[Sri], depth: Depth, win: WinPercent):
     def addSri(sri: Sri) = copy(sris = sris + sri)
+
+  object EvalState:
+    def initial = EvalState(Set.empty, Depth(0), WinPercent.fromScore(Score.initial))
 
   case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

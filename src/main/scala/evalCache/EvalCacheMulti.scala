@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.pekko.actor.typed.Scheduler
 import chess.format.Fen
 import chess.variant.Variant
+import chess.eval.WinPercent
 import scalalib.zeros.given
 
 import lila.ws.ipc.ClientIn.EvalHitMulti
@@ -34,7 +35,7 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
       )
       .setups
       .foreach: id =>
-        evals.compute(id, (_, prev) => Option(prev).fold(EvalState(Set(sri), Depth(0)))(_.addSri(sri)))
+        evals.compute(id, (_, prev) => Option(prev).getOrElse(EvalState.initial).addSri(sri))
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input): Unit =
@@ -50,8 +51,12 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
     Option(evals.get(input.id))
       .filter(_.depth < input.eval.depth)
       .so: prev =>
-        evals.put(input.id, prev.copy(depth = input.eval.depth))
-        prev.sris.filter(_ != input.sri)
+        val win           = WinPercent.fromScore(input.eval.bestPv.score)
+        val winHasChanged = Math.abs(win.value - prev.win.value) > 2
+        val newWin        = if winHasChanged then win else prev.win
+        evals.put(input.id, prev.copy(depth = input.eval.depth, win = newWin))
+        winHasChanged.so:
+          prev.sris.filter(_ != input.sri)
 
   private def expire(sri: Sri): Unit =
     Option(members.remove(sri.value)).foreach:
