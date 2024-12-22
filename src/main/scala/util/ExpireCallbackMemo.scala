@@ -7,13 +7,17 @@ import org.apache.pekko.actor.typed.Scheduler
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
 
+trait ExpireMemo[K]:
+  def put(key: K): Unit
+  def count: Int
+
 // calls a function when a key expires
 final class ExpireCallbackMemo[K](
-    scheduler: Scheduler,
     ttl: FiniteDuration,
     callback: K => Unit,
     initialCapacity: Int = 4096
-)(using Executor):
+)(using ec: Executor, scheduler: Scheduler)
+    extends ExpireMemo[K]:
 
   private val timeouts = ConcurrentHashMap[K, Cancellable](initialCapacity)
 

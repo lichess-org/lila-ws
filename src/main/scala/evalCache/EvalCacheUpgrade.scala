@@ -1,11 +1,11 @@
 package lila.ws
 package evalCache
 
+import java.util.concurrent.ConcurrentHashMap
+import org.apache.pekko.actor.typed.Scheduler
 import chess.format.UciPath
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
-
-import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet
@@ -15,15 +15,12 @@ import lila.ws.util.ExpireCallbackMemo
  * by remembering the last evalGet of each socket member,
  * and listening to new evals stored.
  */
-final private class EvalCacheUpgrade(using
-    ec: Executor,
-    scheduler: org.apache.pekko.actor.typed.Scheduler
-):
+final private class EvalCacheUpgrade(using ec: Executor, scheduler: Scheduler):
   import EvalCacheUpgrade.*
 
   private val members       = ConcurrentHashMap[SriString, WatchingMember](4096)
   private val evals         = ConcurrentHashMap[SetupId, EvalState](1024)
-  private val expirableSris = ExpireCallbackMemo[Sri](scheduler, 3 minutes, expire)
+  private val expirableSris = ExpireCallbackMemo[Sri](3 minutes, expire)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 

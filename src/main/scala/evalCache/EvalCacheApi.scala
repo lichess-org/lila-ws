@@ -1,6 +1,8 @@
 package lila.ws
 package evalCache
 
+import org.apache.pekko.actor.typed.Scheduler
+import java.time.LocalDateTime
 import cats.syntax.all.*
 import chess.ErrorStr
 import chess.format.Fen
@@ -10,19 +12,14 @@ import com.typesafe.scalalogging.Logger
 import play.api.libs.json.JsString
 import reactivemongo.api.bson.BSONDocument
 
-import java.time.LocalDateTime
-
 import lila.ws.ipc.ClientIn
 import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
 
-final class EvalCacheApi(mongo: Mongo, settings: util.SettingStore)(using
-    Executor,
-    org.apache.pekko.actor.typed.Scheduler
-):
+final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
 
   private val truster = wire[EvalCacheTruster]
   private val upgrade = wire[EvalCacheUpgrade]
-  private val multi   = EvalCacheMulti()
+  private val multi   = EvalCacheMulti.withMonitoring()
 
   import EvalCacheEntry.*
   import EvalCacheBsonHandlers.given
