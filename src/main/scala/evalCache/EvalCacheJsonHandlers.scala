@@ -41,7 +41,7 @@ object EvalCacheJsonHandlers:
   )
 
   def writeMultiHit(fen: Fen.Full, e: Eval): JsObject = Json
-    .obj("fen" -> fen, "depth" -> e.depth)
+    .obj("fen" -> fen)
     .add("cp" -> e.bestPv.score.cp)
     .add("mate" -> e.bestPv.score.mate)
 
