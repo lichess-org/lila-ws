@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHitMulti
 import lila.ws.ipc.ClientOut.EvalGetMulti
-import lila.ws.util.{ExpireCallbackMemo, ExpireMemo}
+import lila.ws.util.{ ExpireCallbackMemo, ExpireMemo }
 
 /* Compared to EvalCacheUpgrade, accepts multiple positions per member,
  * only sends cp/mate
