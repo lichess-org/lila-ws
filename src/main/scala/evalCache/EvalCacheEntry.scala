@@ -1,12 +1,13 @@
 package lila.ws
 package evalCache
 
-import java.time.LocalDateTime
 import cats.data.NonEmptyList
 import chess.Situation
+import chess.eval.Score
 import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
-import chess.eval.Score
+
+import java.time.LocalDateTime
 
 opaque type Id = BinaryFen
 object Id:

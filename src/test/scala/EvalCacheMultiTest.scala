@@ -1,12 +1,12 @@
 package lila.ws
 package evalCache
 
-import chess.format.*
-import lila.ws.ipc.ClientOut.EvalGetMulti
-import chess.variant.Standard
 import cats.data.NonEmptyList
 import chess.eval.*
-import chess.eval.Eval.Cp
+import chess.format.*
+import chess.variant.Standard
+
+import lila.ws.ipc.ClientOut.EvalGetMulti
 
 class EvalCacheMultiTest extends munit.FunSuite:
 

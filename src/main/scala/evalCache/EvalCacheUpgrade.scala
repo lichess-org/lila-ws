@@ -1,12 +1,13 @@
 package lila.ws
 package evalCache
 
-import java.util.concurrent.ConcurrentHashMap
-import org.apache.pekko.actor.typed.Scheduler
-import chess.format.UciPath
 import chess.eval.{ Score, WinPercent }
+import chess.format.UciPath
+import org.apache.pekko.actor.typed.Scheduler
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
+
+import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet

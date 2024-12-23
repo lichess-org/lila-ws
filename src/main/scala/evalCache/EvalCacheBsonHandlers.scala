@@ -3,8 +3,8 @@ package evalCache
 
 import cats.data.NonEmptyList
 import cats.syntax.all.*
-import chess.format.{ BinaryFen, Uci }
 import chess.eval.*
+import chess.format.{ BinaryFen, Uci }
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.exceptions.TypeDoesNotMatchException
 

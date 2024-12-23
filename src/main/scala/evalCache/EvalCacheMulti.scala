@@ -1,17 +1,17 @@
 package lila.ws
 package evalCache
 
-import java.util.concurrent.ConcurrentHashMap
-import org.apache.pekko.actor.typed.Scheduler
+import chess.eval.WinPercent
 import chess.format.Fen
 import chess.variant.Variant
-import chess.eval.WinPercent
+import org.apache.pekko.actor.typed.Scheduler
 import scalalib.zeros.given
+
+import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHitMulti
 import lila.ws.ipc.ClientOut.EvalGetMulti
-import lila.ws.util.ExpireCallbackMemo
-import lila.ws.util.ExpireMemo
+import lila.ws.util.{ExpireCallbackMemo, ExpireMemo}
 
 /* Compared to EvalCacheUpgrade, accepts multiple positions per member,
  * only sends cp/mate
