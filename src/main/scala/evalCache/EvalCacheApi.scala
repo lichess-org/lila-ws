@@ -53,7 +53,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
           emit:
             ClientIn.EvalHitMulti:
               EvalCacheJsonHandlers.writeMultiHit(evals)
-    multi.register(sri, e.copy(fens = e.fens))
+    multi.register(sri, e)
 
   def put(sri: Sri, user: User.Id, e: EvalPut): Unit =
     if isStorableDepth(e.depth)
