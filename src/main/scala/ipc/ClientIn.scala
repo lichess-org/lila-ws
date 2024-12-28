@@ -7,6 +7,7 @@ import chess.opening.Opening
 import chess.variant.Crazyhouse
 import chess.{ Check, Color, Ply }
 import play.api.libs.json.*
+import cats.data.NonEmptyList
 
 // messages from lila-ws to the client
 sealed trait ClientIn extends ClientMsg:
@@ -63,10 +64,17 @@ object ClientIn:
     lazy val full = Payload(JsonString(s"""{"v":$version,${json.value.drop(1)}"""))
     lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
 
+  case class VersionedBatch(msgs: NonEmptyList[Versioned]) extends ClientMsg
+
   case class Payload(json: JsonString) extends ClientIn:
     def write = json.value
   def payload(js: JsValue)                 = Payload(JsonString(Json.stringify(js)))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
+
+  case class PayloadBatch(jsons: List[JsonString]) extends ClientIn:
+    def write = jsons match
+      case single :: Nil => Payload(single).write
+      case multi         => s"""{"t":"batch","d":[${multi.toList.map(_.value).mkString(",")}]}"""
 
   case class Crowd(doc: JsObject, members: Int, users: String) extends ClientIn:
     lazy val write                 = cliMsg("crowd", doc)

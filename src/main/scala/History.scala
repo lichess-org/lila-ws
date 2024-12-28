@@ -1,6 +1,7 @@
 package lila.ws
 
 import java.util.concurrent.ConcurrentHashMap
+import cats.data.NonEmptyList
 
 final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
@@ -12,7 +13,13 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
   def add(key: K, event: V): Unit =
     histories.compute(
       key.toString,
-      (_, cur) => event :: Option(cur).getOrElse(Nil).take(historySize)
+      (_, cur) => (event :: Option(cur).getOrElse(Nil)).take(historySize)
+    )
+
+  def add(key: K, events: NonEmptyList[V]): Unit =
+    histories.compute(
+      key.toString,
+      (_, cur) => (events.toList ::: Option(cur).getOrElse(Nil)).take(historySize)
     )
 
   def getFrom(key: K, versionOpt: Option[SocketVersion]): Option[List[V]] =

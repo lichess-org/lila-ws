@@ -46,6 +46,13 @@ object RoomActor:
       deps.clientIn(versionFor(state.isTroll, versioned))
       None -> None
 
+    case ClientIn.VersionedBatch(msgs) =>
+      deps.clientIn:
+        ClientIn.PayloadBatch:
+          msgs.toList.reverse.map: msg =>
+            versionFor(state.isTroll, msg).json
+      None -> None
+
     case ClientIn.OnlyFor(endpoint, payload) =>
       if endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room) then deps.clientIn(payload)
       None -> None

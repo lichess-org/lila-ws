@@ -18,9 +18,8 @@ final class Services(
 
   def lila = lilaRedis.emit
 
-  val notified = groupedWithin[User.Id](40, 1001.millis) { userIds =>
+  val notified = groupedWithin[User.Id](40, 1001.millis): userIds =>
     lila.site(LilaIn.NotifiedBatch(userIds))
-  }
-  val challengePing = groupedWithin[RoomId](20, 2.seconds) { ids =>
+
+  val challengePing = groupedWithin[RoomId](20, 2.seconds): ids =>
     lila.challenge(LilaIn.ChallengePings(ids.distinct))
-  }
