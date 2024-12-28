@@ -3,8 +3,8 @@ package util
 
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.actor.typed.Scheduler
+
 import java.util.concurrent.ConcurrentHashMap
-import scala.jdk.CollectionConverters.*
 
 /* Batches elements, sends the batch when `timeout` has elapsed since the last element was added. */
 final class Batcher[Key, Elem, Batch](

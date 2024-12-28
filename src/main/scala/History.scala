@@ -1,7 +1,8 @@
 package lila.ws
 
-import java.util.concurrent.ConcurrentHashMap
 import cats.data.NonEmptyList
+
+import java.util.concurrent.ConcurrentHashMap
 
 final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,

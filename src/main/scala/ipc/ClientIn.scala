@@ -1,13 +1,13 @@
 package lila.ws
 package ipc
 
+import cats.data.NonEmptyList
 import chess.bitboard.Bitboard
 import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
 import chess.{ Check, Color, Ply }
 import play.api.libs.json.*
-import cats.data.NonEmptyList
 
 // messages from lila-ws to the client
 sealed trait ClientIn extends ClientMsg:

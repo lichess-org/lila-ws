@@ -1,12 +1,13 @@
 package lila.ws
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.{ ActorRef, Scheduler }
 import scalalib.ThreadLocalRandom
-import cats.data.NonEmptyList
+
+import lila.ws.util.Batcher
 
 import ipc.*
-import lila.ws.util.Batcher
 
 final class LilaHandler(
     lila: Lila,
