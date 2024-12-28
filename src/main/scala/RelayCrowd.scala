@@ -66,14 +66,14 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
                       )
                     ),
                     BSONDocument("$sort"    -> BSONDocument("order" -> 1)),
-                    BSONDocument("$limit"   -> 2),
+                    BSONDocument("$limit"   -> 3),
                     BSONDocument("$project" -> BSONDocument("_id" -> true))
                   )
                 )
               )
             ,
             UnwindField("round"),
-            Limit(100),
+            Limit(150),
             Group(BSONNull)("ids" -> PushField("round._id"))
           )
         .collect[List](maxDocs = 1)
