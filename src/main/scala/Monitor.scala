@@ -191,3 +191,6 @@ object Monitor:
       val qSizeEstimate           = Kamon.histogram("connector.flush.qSize.estimate").withoutTags()
       val channelsToFlush         = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
       val loopRuntimeMicroseconds = Kamon.histogram("connector.flush.loopRuntimeMicroseconds").withoutTags()
+
+  object handler:
+    val batch = Kamon.histogram("handler.batch").withoutTags()

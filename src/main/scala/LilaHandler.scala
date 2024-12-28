@@ -117,6 +117,7 @@ final class LilaHandler(
       timeout = 150.millis,
       append = (prev, elem) => prev.fold(NonEmptyList.one(elem))(_.prepend(elem)),
       emit = (roomId, batch) =>
+        Monitor.handler.batch.record(batch.size)
         if batch.tail.isEmpty then tellRoomVersion(roomId, batch.head)
         else tellRoomVersionBatch(roomId, batch)
     )
