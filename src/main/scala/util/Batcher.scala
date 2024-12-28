@@ -35,10 +35,6 @@ final class Batcher[Key, Elem, Batch](
     if newBuffer.counter >= maxBatchSize then emitAndRemove(key)
 
   private def emitAndRemove(key: Key): Unit =
-    buffers.computeIfPresent(
-      key,
-      (_, buffer) =>
-        buffer.cancel()
-        emit(key, buffer.batch)
-        null
-    )
+    Option(buffers.remove(key)).foreach: buffer =>
+      buffer.cancel()
+      emit(key, buffer.batch)
