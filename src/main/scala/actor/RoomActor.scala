@@ -47,10 +47,15 @@ object RoomActor:
       None -> None
 
     case ClientIn.VersionedBatch(msgs) =>
-      deps.clientIn:
-        ClientIn.PayloadBatch:
-          msgs.toList.reverse.map: msg =>
-            versionFor(state.isTroll, msg).json
+      if deps.req.isLichessMobile // BC, remove this in a month
+      then
+        msgs.toList.reverse.foreach: msg =>
+          deps.clientIn(versionFor(state.isTroll, msg))
+      else
+        deps.clientIn:
+          ClientIn.PayloadBatch:
+            msgs.toList.reverse.map: msg =>
+              versionFor(state.isTroll, msg).json
       None -> None
 
     case ClientIn.OnlyFor(endpoint, payload) =>
