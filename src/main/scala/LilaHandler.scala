@@ -113,8 +113,9 @@ final class LilaHandler(
   private val studyHandler: Emit[LilaOut] =
 
     val batcher = Batcher[RoomId, ClientIn.Versioned, NonEmptyList[ClientIn.Versioned]](
+      maxBatchSize = 100,
       initialCapacity = 64,
-      timeout = 150.millis,
+      timeout = 100.millis,
       append = (prev, elem) => prev.fold(NonEmptyList.one(elem))(_.prepend(elem)),
       emit = (roomId, batch) =>
         Monitor.handler.batch.record(batch.size)
