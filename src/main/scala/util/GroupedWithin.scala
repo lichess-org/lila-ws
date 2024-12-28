@@ -10,7 +10,6 @@ import scala.collection.immutable.VectorBuilder
   * periodically after a fixed time interval.
   */
 final class GroupedWithin()(using Scheduler, Executor):
-
   def apply[A](nb: Int, interval: FiniteDuration)(emit: Emit[Vector[A]]) =
     GroupedWithinStage[A](nb, interval, emit)
 
@@ -32,8 +31,8 @@ final class GroupedWithinStage[A](
   private def flush(): Unit = synchronized { unsafeFlush() }
 
   private def unsafeFlush(): Unit =
+    scheduledFlush.cancel()
     if buffer.nonEmpty then
       emit(buffer.result())
       buffer.clear()
-    scheduledFlush.cancel()
     scheduledFlush = scheduler.scheduleOnce(interval, () => flush())
