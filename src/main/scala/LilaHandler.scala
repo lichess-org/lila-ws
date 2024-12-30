@@ -125,6 +125,8 @@ final class LilaHandler(
 
     _ match
       case t: TellRoomVersion => batcher.add(t.roomId, ClientIn.Versioned(t.json, t.version, t.troll))
+      case TellRoomChat(roomId, version, troll, payload) =>
+        batcher.add(roomId, ClientIn.Versioned(payload, version, troll))
       case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
         lila.emit.study(LilaIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
       case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
