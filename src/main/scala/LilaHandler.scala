@@ -117,9 +117,7 @@ final class LilaHandler(
       initialCapacity = 64,
       timeout = 100.millis,
       append = (prev, elem) => prev.fold(NonEmptyList.one(elem))(_.prepend(elem)),
-      emit = (roomId, batch) =>
-        Monitor.handler.batch.record(batch.size)
-        tellRoomVersionBatch(roomId, batch)
+      emit = (roomId, batch) => tellRoomVersionBatch(roomId, batch)
     )
 
     _ match
@@ -194,6 +192,7 @@ final class LilaHandler(
   private def tellRoomVersionBatch(roomId: RoomId, batch: NonEmptyList[ClientIn.Versioned]): Unit =
     if batch.tail.isEmpty then tellRoomVersion(roomId, batch.head)
     else
+      Monitor.handler.batch.record(batch.size)
       History.room.add(roomId, batch)
       publish(_.room(roomId), ClientIn.VersionedBatch(batch))
 
