@@ -1,13 +1,12 @@
 package lila.ws
 package evalCache
 
+import cats.syntax.option.*
 import chess.eval.WinPercent
 import chess.format.Fen
 import chess.variant.Variant
 import org.apache.pekko.actor.typed.Scheduler
 import scalalib.zeros.given
-
-import java.util.concurrent.ConcurrentHashMap
 
 import lila.ws.ipc.ClientIn.EvalHitMulti
 import lila.ws.ipc.ClientOut.EvalGetMulti
@@ -20,22 +19,19 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
   import EvalCacheMulti.*
   import EvalCacheUpgrade.{ EvalState, SriString }
 
-  private val members                        = ConcurrentHashMap[SriString, WatchingMember](4096)
-  private val evals                          = ConcurrentHashMap[Id, EvalState](1024)
+  private val members                        = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
+  private val evals                          = scalalib.ConcurrentMap[Id, EvalState](1024)
   private val expirableSris: ExpireMemo[Sri] = makeExpirableSris(expire)
 
   def register(sri: Sri, e: EvalGetMulti): Unit =
     members
-      .compute(
-        sri.value,
-        (_, prev) =>
-          Option(prev).foreach:
-            _.setups.foreach(unregisterEval(_, sri))
-          WatchingMember(sri, e.variant, e.fens)
-      )
-      .setups
+      .compute(sri.value): prev =>
+        prev.foreach:
+          _.setups.foreach(unregisterEval(_, sri))
+        WatchingMember(sri, e.variant, e.fens).some
+      .so(_.setups)
       .foreach: id =>
-        evals.compute(id, (_, prev) => Option(prev).getOrElse(EvalState.initial).addSri(sri))
+        evals.compute(id)(_.getOrElse(EvalState.initial).addSri(sri).some)
     expirableSris.put(sri)
 
   def onEval(input: EvalCacheEntry.Input): Unit =
@@ -48,7 +44,8 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
       upgradeMon.count.increment(sris.size)
 
   private[evalCache] def onEvalSrisToUpgrade(input: EvalCacheEntry.Input): Set[Sri] =
-    Option(evals.get(input.id))
+    evals
+      .get(input.id)
       .filter(_.depth < input.eval.depth)
       .so: prev =>
         val win           = WinPercent.fromScore(input.eval.bestPv.score)
@@ -59,17 +56,12 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
           prev.sris.filter(_ != input.sri)
 
   private def expire(sri: Sri): Unit =
-    Option(members.remove(sri.value)).foreach:
-      _.setups.foreach(unregisterEval(_, sri))
+    members.remove(sri.value).foreach(_.setups.foreach(unregisterEval(_, sri)))
 
   private def unregisterEval(id: Id, sri: Sri): Unit =
-    evals.computeIfPresent(
-      id,
-      (_, eval) =>
-        val newSris = eval.sris - sri
-        if newSris.isEmpty then null
-        else eval.copy(sris = newSris)
-    )
+    evals.computeIfPresent(id): eval =>
+      val newSris = eval.sris - sri
+      Option.unless(newSris.isEmpty)(eval.copy(sris = newSris))
 
 private object EvalCacheMulti:
 
@@ -83,8 +75,8 @@ private object EvalCacheMulti:
   def withMonitoring()(using ec: Executor, scheduler: Scheduler): EvalCacheMulti =
     val instance = EvalCacheMulti(expire => ExpireCallbackMemo[Sri](1 minute, expire))
     scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
-      upgradeMon.members.update(instance.members.size)
-      upgradeMon.evals.update(instance.evals.size)
+      upgradeMon.members.update(instance.members.size())
+      upgradeMon.evals.update(instance.evals.size())
       upgradeMon.expirable.update(instance.expirableSris.count)
     instance
 

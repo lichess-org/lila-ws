@@ -37,7 +37,7 @@ lazy val `lila-ws` = project
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "org.lichess"                %% "scalalib-lila"        % "11.5.0",
+      "org.lichess"                %% "scalalib-lila"        % "11.6.0",
       "org.lichess"                %% "scalachess"           % chessVersion,
       "org.lichess"                %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,

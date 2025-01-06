@@ -37,16 +37,16 @@ final class Monitor(
 
   private def periodicMetrics() =
     val members = LilaWsServer.connections.get
-    val rounds  = services.roundCrowd.size
+    val rounds  = services.roundCrowd.size()
     services.lobby.pong.update(members, rounds)
     connection.current.update(members.toDouble)
     historyRoomSize.update(History.room.size().toDouble)
     historyRoundSize.update(History.round.size().toDouble)
-    crowdRoomSize.update(services.roomCrowd.size.toDouble)
+    crowdRoomSize.update(services.roomCrowd.size().toDouble)
     crowdRoundSize.update(rounds.toDouble)
-    usersSize.update(services.users.size.toDouble)
-    watchSize.update(Fens.size.toDouble)
-    busSize.update(Bus.size.toDouble)
+    usersSize.update(services.users.size().toDouble)
+    watchSize.update(Fens.size().toDouble)
+    busSize.update(Bus.size().toDouble)
     busAllSize.update(Bus.sizeOf(_.all).toDouble)
 
   private def jvmThreads() =

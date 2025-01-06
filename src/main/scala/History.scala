@@ -1,27 +1,24 @@
 package lila.ws
 
+import cats.syntax.option.*
 import cats.data.NonEmptyList
-
-import java.util.concurrent.ConcurrentHashMap
 
 final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
     initialCapacity: Int
 ):
 
-  private val histories = ConcurrentHashMap[String, List[V]](initialCapacity)
+  private val histories = scalalib.ConcurrentMap[String, List[V]](initialCapacity)
+
+  export histories.size
 
   def add(key: K, event: V): Unit =
-    histories.compute(
-      key.toString,
-      (_, cur) => (event :: Option(cur).getOrElse(Nil)).take(historySize)
-    )
+    histories.compute(key.toString): cur =>
+      (event :: cur.getOrElse(Nil)).take(historySize).some
 
   def add(key: K, events: NonEmptyList[V]): Unit =
-    histories.compute(
-      key.toString,
-      (_, cur) => (events.toList ::: Option(cur).getOrElse(Nil)).take(historySize)
-    )
+    histories.compute(key.toString): cur =>
+      (events.toList ::: cur.getOrElse(Nil)).take(historySize).some
 
   def getFrom(key: K, versionOpt: Option[SocketVersion]): Option[List[V]] =
     val allEvents = histories.getOrDefault(key.toString, Nil)
@@ -38,13 +35,11 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
   def stop(key: K) = histories.remove(key.toString)
 
-  def hasEvents(key: K) = Option(histories.get(key.toString)).exists(_.nonEmpty)
-
-  export histories.size
+  def hasEvents(key: K) = histories.get(key.toString).exists(_.nonEmpty)
 
   def allVersions: Array[(String, SocketVersion)] =
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
-    histories.forEach: (key, events) =>
+    histories.foreach: (key, events) =>
       events.headOption.foreach { event => res += (key -> event.version) }
 
     res.toArray

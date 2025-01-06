@@ -1,9 +1,8 @@
 package lila.ws
 package util
 
+import cats.syntax.option.*
 import org.apache.pekko.actor.typed.Scheduler
-
-import java.util.concurrent.ConcurrentHashMap
 
 /* Batches elements, sends the batch when `timeout` has elapsed since the first element was added. */
 final class Batcher[Key, Elem, Batch](
@@ -16,28 +15,21 @@ final class Batcher[Key, Elem, Batch](
 
   final private class Buffer(val batch: Batch, val counter: Int)
 
-  private val buffers = ConcurrentHashMap[Key, Buffer](initialCapacity)
+  private val buffers = scalalib.ConcurrentMap[Key, Buffer](initialCapacity)
 
   def add(key: Key, elem: Elem): Unit =
-    buffers.compute(
-      key,
-      (_, buffer) =>
-        val prev = Option(buffer)
-        if prev.isEmpty then scheduler.scheduleOnce(timeout, () => emitAndRemove(key))
-        val newBuffer = Buffer(
-          append(prev.map(_.batch), elem),
-          prev.fold(1)(_.counter + 1)
-        )
-        if newBuffer.counter >= maxBatchSize then
-          emit(key, newBuffer.batch)
-          null
-        else newBuffer
-    )
+    buffers.compute(key): prev =>
+      if prev.isEmpty then scheduler.scheduleOnce(timeout, () => emitAndRemove(key))
+      val newBuffer = Buffer(
+        append(prev.map(_.batch), elem),
+        prev.fold(1)(_.counter + 1)
+      )
+      if newBuffer.counter >= maxBatchSize then
+        emit(key, newBuffer.batch)
+        none
+      else newBuffer.some
 
   private def emitAndRemove(key: Key): Unit =
-    buffers.computeIfPresent(
-      key,
-      (_, buffer) =>
-        emit(key, buffer.batch)
-        null
-    )
+    buffers.computeIfPresent(key): buffer =>
+      emit(key, buffer.batch)
+      none

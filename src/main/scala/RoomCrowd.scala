@@ -1,43 +1,41 @@
 package lila.ws
 
-import java.util.concurrent.ConcurrentHashMap
-
+import cats.syntax.option.*
 import ipc.*
 
 final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using ec: Executor):
 
   import RoomCrowd.*
 
-  private val rooms = ConcurrentHashMap[RoomId, RoomState](1024)
+  private val rooms = scalalib.ConcurrentMap[RoomId, RoomState](1024)
+  export rooms.size
 
   def connect(roomId: RoomId, user: Option[User.Id]): Unit =
-    publish(
-      roomId,
-      rooms.compute(roomId, (_, cur) => Option(cur).getOrElse(RoomState()).connect(user))
-    )
+    rooms
+      .compute(roomId)(_.getOrElse(RoomState()).connect(user).some)
+      .foreach:
+        publish(roomId, _)
 
   def disconnect(roomId: RoomId, user: Option[User.Id]): Unit =
-    val room = rooms.computeIfPresent(
-      roomId,
-      (_, room) =>
+    rooms
+      .computeIfPresent(roomId): room =>
         val newRoom = room.disconnect(user)
-        if newRoom.isEmpty then null else newRoom
-    )
-    if room != null then publish(roomId, room)
+        Option.unless(newRoom.isEmpty)(newRoom)
+      .foreach(publish(roomId, _))
 
   def getUsers(roomId: RoomId): Set[User.Id] =
-    Option(rooms.get(roomId)).fold(Set.empty[User.Id])(_.users.keySet)
+    rooms.get(roomId).fold(Set.empty[User.Id])(_.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
-    Option(rooms.get(roomId)).exists(_.users contains userId)
+    rooms.get(roomId).exists(_.users contains userId)
 
   def filterPresent(roomId: RoomId, userIds: Set[User.Id]): Set[User.Id] =
-    Option(rooms.get(roomId)).fold(Set.empty[User.Id])(_.users.keySet.intersect(userIds))
+    rooms.get(roomId).fold(Set.empty[User.Id])(_.users.keySet.intersect(userIds))
 
   def getNbMembers(roomIds: Set[RoomId]): Map[RoomId, Int] =
     roomIds.view
       .map: id =>
-        Option(rooms.get(id)).fold(id -> 0)(id -> _.nbMembers)
+        rooms.get(id).fold(id -> 0)(id -> _.nbMembers)
       .toMap
 
   private def publish(roomId: RoomId, room: RoomState): Unit =
@@ -53,8 +51,6 @@ final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using 
         .room(output)
         .foreach:
           Bus.publish(_.room(output.roomId), _)
-
-  def size = rooms.size
 
 object RoomCrowd:
 

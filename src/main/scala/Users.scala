@@ -1,7 +1,7 @@
 package lila.ws
 
+import cats.syntax.option.*
 import org.apache.pekko.actor.typed.Scheduler
-
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
 
@@ -9,7 +9,9 @@ import ipc.*
 
 final class Users(using scheduler: Scheduler, ec: Executor):
 
-  private val users       = new ConcurrentHashMap[User.Id, Set[Client]](32768)
+  private val users = scalalib.ConcurrentMap[User.Id, Set[Client]](32768)
+  export users.{ size, containsKey as isOnline }
+
   private val disconnects = ConcurrentHashMap.newKeySet[User.Id](2048)
 
   private def publish(msg: Matchable) = Bus.internal.publish("users", msg)
@@ -19,43 +21,37 @@ final class Users(using scheduler: Scheduler, ec: Executor):
     disconnects.clear()
 
   def connect(user: User.Id, client: Client, silently: Boolean = false): Unit =
-    users.compute(
-      user,
-      {
-        case (_, null) =>
-          if !disconnects.remove(user) then publish(LilaIn.ConnectUser(user, silently))
-          Set(client)
-        case (_, clients) =>
-          clients + client
-      }
-    )
+    users.compute(user):
+      case None =>
+        if !disconnects.remove(user) then publish(LilaIn.ConnectUser(user, silently))
+        Set(client).some
+      case Some(clients) => (clients + client).some
 
   def disconnect(user: User.Id, client: Client): Unit =
-    users.computeIfPresent(
-      user,
-      (_, clients) =>
-        val newClients = clients - client
-        if newClients.isEmpty then
-          disconnects.add(user)
-          null
-        else newClients
-    )
+    users.computeIfPresent(user): clients =>
+      val newClients = clients - client
+      if newClients.isEmpty then
+        disconnects.add(user)
+        none
+      else newClients.some
 
   def tellOne(userId: User.Id, payload: ClientMsg): Unit =
-    Option(users.get(userId)).foreach:
-      _.foreach { _ ! payload }
+    users
+      .get(userId)
+      .foreach:
+        _.foreach { _ ! payload }
 
   def tellMany(userIds: Iterable[User.Id], payload: ClientMsg): Unit =
     userIds.foreach { tellOne(_, payload) }
 
   def kick(userId: User.Id): Unit =
-    Option(users.get(userId)).foreach:
-      _.foreach { _ ! ClientCtrl.Disconnect("user kick") }
+    users
+      .get(userId)
+      .foreach:
+        _.foreach { _ ! ClientCtrl.Disconnect("user kick") }
 
   def setTroll(userId: User.Id, v: IsTroll): Unit =
-    Option(users.get(userId)).foreach:
-      _.foreach { _ ! ipc.SetTroll(v) }
-
-  def isOnline(userId: User.Id): Boolean = users.containsKey(userId)
-
-  def size = users.size
+    users
+      .get(userId)
+      .foreach:
+        _.foreach { _ ! ipc.SetTroll(v) }

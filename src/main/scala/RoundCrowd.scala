@@ -1,8 +1,7 @@
 package lila.ws
 
+import cats.syntax.option.*
 import chess.{ ByColor, Color }
-
-import java.util.concurrent.ConcurrentHashMap
 
 import ipc.*
 
@@ -14,36 +13,31 @@ final class RoundCrowd(
 
   import RoundCrowd.*
 
-  private val rounds = ConcurrentHashMap[RoomId, RoundState](32768)
+  private val rounds = scalalib.ConcurrentMap[RoomId, RoundState](32768)
+  export rounds.size
 
   def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
-    publish(
-      roomId,
-      rounds.compute(roomId, (_, cur) => Option(cur).getOrElse(RoundState()).connect(user, player))
-    )
+    rounds
+      .compute(roomId)(_.getOrElse(RoundState()).connect(user, player).some)
+      .foreach(publish(roomId, _))
 
   def disconnect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
-    rounds.computeIfPresent(
-      roomId,
-      (_, round) =>
-        val newRound = round.disconnect(user, player)
-        publish(roomId, newRound)
-        if newRound.isEmpty then null else newRound
-    )
+    rounds.computeIfPresent(roomId): round =>
+      val newRound = round.disconnect(user, player)
+      publish(roomId, newRound)
+      Option.unless(newRound.isEmpty)(newRound)
 
   def botOnline(roomId: RoomId, color: Color, online: Boolean): Unit =
-    rounds.compute(
-      roomId,
-      (_, cur) =>
-        Option(cur).getOrElse(RoundState()).botOnline(color, online) match
-          case None => cur
-          case Some(round) =>
-            publish(roomId, round)
-            if round.isEmpty then null else round
-    )
+    rounds.compute(roomId): cur =>
+      cur
+        .getOrElse(RoundState())
+        .botOnline(color, online)
+        .fold(cur): round =>
+          publish(roomId, round)
+          Option.unless(round.isEmpty)(round)
 
   def getUsers(roomId: RoomId): Set[User.Id] =
-    Option(rounds.get(roomId)).fold(Set.empty)(_.room.users.keySet)
+    rounds.get(roomId).fold(Set.empty)(_.room.users.keySet)
 
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
     getUsers(roomId).contains(userId)
@@ -62,8 +56,6 @@ final class RoundCrowd(
         .round(output)
         .foreach:
           Bus.publish(_.room(output.room.roomId), _)
-
-  def size = rounds.size
 
 object RoundCrowd:
 

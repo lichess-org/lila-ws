@@ -12,9 +12,7 @@ object Bus:
     initialCapacity = 65535,
     publish = (actor, event) => actor ! event
   )
-
-  inline def subscribe   = impl.subscribe
-  inline def unsubscribe = impl.unsubscribe
+  export impl.{ size, subscribe, unsubscribe }
 
   def publish(chan: Chan, event: ClientMsg): Unit =
     impl.publish(chan, event)
@@ -45,7 +43,6 @@ object Bus:
   def msg(event: ClientMsg, chan: ChanSelect) =
     Msg(event, chan(channel))
 
-  def size                     = impl.size
   def sizeOf(chan: ChanSelect) = impl.sizeOf(chan(channel))
 
   // distinct bus for internal events
