@@ -11,7 +11,7 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
   private val trustedRefreshFactor = 0.1f
 
   private val trustedStats: Cache[User.Id, TrustedMillis] = Scaffeine()
-    .expireAfterWrite(1 hour)
+    .expireAfterWrite(1.hour)
     .build[User.Id, TrustedMillis]()
 
   export trustedStats.getIfPresent as sessionLag

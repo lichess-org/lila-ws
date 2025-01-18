@@ -21,7 +21,7 @@ final private class EvalCacheUpgrade(using ec: Executor, scheduler: Scheduler):
 
   private val members       = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
   private val evals         = scalalib.ConcurrentMap[SetupId, EvalState](1024)
-  private val expirableSris = ExpireCallbackMemo[Sri](3 minutes, expire)
+  private val expirableSris = ExpireCallbackMemo[Sri](3.minutes, expire)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)
 
@@ -69,7 +69,7 @@ final private class EvalCacheUpgrade(using ec: Executor, scheduler: Scheduler):
       val newSris = eval.sris - sri
       Option.unless(newSris.isEmpty)(eval.copy(sris = newSris))
 
-  scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
+  scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
     upgradeMon.members.update(members.size())
     upgradeMon.evals.update(evals.size())
     upgradeMon.expirable.update(expirableSris.count)

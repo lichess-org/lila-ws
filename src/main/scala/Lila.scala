@@ -93,8 +93,7 @@ final class Lila(config: Config)(using Executor):
         case r: RoundRobinChan =>
           connectAndSubscribe(r.out, r.out).zip(Future.sequence:
             (0 to r.parallelism).map: index =>
-              connectAndSubscribe(s"${r.out}:$index", r.out)
-          )
+              connectAndSubscribe(s"${r.out}:$index", r.out))
       .map: _ =>
         val msg = LilaIn.WsBoot.write
         connIn.async.publish(chan.in(msg), msg)
