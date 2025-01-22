@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.6.2",
+    scalaVersion       := "3.6.3",
     versionScheme      := Some("early-semver"),
     version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
