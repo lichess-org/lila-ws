@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.6.2",
+    scalaVersion       := "3.6.3",
     versionScheme      := Some("early-semver"),
     version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
@@ -15,7 +15,7 @@ val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.1.3"
 val kamonVersion = "2.7.5"
-val nettyVersion = "4.1.116.Final"
+val nettyVersion = "4.1.117.Final"
 val chessVersion = "17.2.0"
 
 lazy val `lila-ws` = project
@@ -30,7 +30,7 @@ lazy val `lila-ws` = project
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC13")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
       "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC14",
-      "io.lettuce"        % "lettuce-core"                           % "6.5.1.RELEASE",
+      "io.lettuce"        % "lettuce-core"                           % "6.5.2.RELEASE",
       "io.netty"          % "netty-handler"                          % nettyVersion,
       "io.netty"          % "netty-codec-http"                       % nettyVersion,
       ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
@@ -49,7 +49,7 @@ lazy val `lila-ws` = project
       "io.kamon"                   %% "kamon-influxdb"       % kamonVersion,
       "io.kamon"                   %% "kamon-prometheus"     % kamonVersion,
       "io.kamon"                   %% "kamon-system-metrics" % kamonVersion,
-      "com.softwaremill.macwire"   %% "macros"               % "2.6.4" % "provided",
+      "com.softwaremill.macwire"   %% "macros"               % "2.6.5" % "provided",
       "com.roundeights"            %% "hasher"               % "1.3.1",
       "org.scalameta"              %% "munit"                % "1.0.3" % Test
     ),
