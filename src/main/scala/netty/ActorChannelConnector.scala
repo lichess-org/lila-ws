@@ -32,7 +32,7 @@ final private class ActorChannelConnector(
     val interval                 = int("netty.flush.interval-millis")
     val maxDelay                 = int("netty.flush.max-delay-millis")
     inline def isFlushQEnabled() = interval.get() > 0
-    scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
+    scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
       monitor.config.step.update(step.get())
       monitor.config.interval.update(interval.get())
       monitor.config.maxDelay.update(maxDelay.get())

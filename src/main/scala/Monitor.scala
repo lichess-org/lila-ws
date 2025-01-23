@@ -33,7 +33,7 @@ final class Monitor(
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
 
-    scheduler.scheduleWithFixedDelay(1 minute, 1 minute) { () => jvmThreads() }
+    scheduler.scheduleWithFixedDelay(1.minute, 1.minute) { () => jvmThreads() }
 
   private def periodicMetrics() =
     val members = LilaWsServer.connections.get

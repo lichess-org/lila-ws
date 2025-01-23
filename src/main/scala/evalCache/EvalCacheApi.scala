@@ -92,7 +92,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
 
   private val cache: AsyncLoadingCache[Id, Option[EvalCacheEntry]] = Scaffeine()
     .initialCapacity(65_536)
-    .expireAfterWrite(5 minutes)
+    .expireAfterWrite(5.minutes)
     .buildAsyncFuture(fetchAndSetAccess)
 
   export cache.get as getEntry

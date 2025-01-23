@@ -73,8 +73,8 @@ private object EvalCacheMulti:
   private val upgradeMon = Monitor.evalCache.multi.upgrade
 
   def withMonitoring()(using ec: Executor, scheduler: Scheduler): EvalCacheMulti =
-    val instance = EvalCacheMulti(expire => ExpireCallbackMemo[Sri](1 minute, expire))
-    scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
+    val instance = EvalCacheMulti(expire => ExpireCallbackMemo[Sri](1.minute, expire))
+    scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
       upgradeMon.members.update(instance.members.size())
       upgradeMon.evals.update(instance.evals.size())
       upgradeMon.expirable.update(instance.expirableSris.count)

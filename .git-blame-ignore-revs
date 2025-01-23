@@ -25,3 +25,6 @@ b98d6a989a0e1e1704f690b5baff6285f764c60e
 
 # Apply scalafix rules
 bb9fb1481918969cab254a8532243fdf3436e4e8
+
+# Scala Steward: Reformat with scalafmt 3.8.5
+dcff3226d2e357b4a4da428c49b3bbeda7ef5125
