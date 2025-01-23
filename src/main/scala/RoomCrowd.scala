@@ -1,6 +1,7 @@
 package lila.ws
 
 import cats.syntax.option.*
+
 import ipc.*
 
 final class RoomCrowd(json: CrowdJson, groupedWithin: util.GroupedWithin)(using ec: Executor):

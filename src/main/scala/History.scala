@@ -1,7 +1,7 @@
 package lila.ws
 
-import cats.syntax.option.*
 import cats.data.NonEmptyList
+import cats.syntax.option.*
 
 final class History[K, V <: ipc.ClientIn.HasVersion](
     historySize: Int,
