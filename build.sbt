@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.6.2",
+    scalaVersion       := "3.6.3",
     versionScheme      := Some("early-semver"),
     version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
@@ -30,7 +30,7 @@ lazy val `lila-ws` = project
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC13")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
       "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC14",
-      "io.lettuce"        % "lettuce-core"                           % "6.5.1.RELEASE",
+      "io.lettuce"        % "lettuce-core"                           % "6.5.2.RELEASE",
       "io.netty"          % "netty-handler"                          % nettyVersion,
       "io.netty"          % "netty-codec-http"                       % nettyVersion,
       ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
