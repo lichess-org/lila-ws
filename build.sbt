@@ -71,7 +71,8 @@ lazy val `lila-ws` = project
     Docker / dockerRepository := Some("ghcr.io"),
     Universal / javaOptions := Seq(
       "-J-Dconfig.override_with_env_vars=true"
-    )
+    ),
+    Compile / doc / sources := Seq.empty
   )
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
