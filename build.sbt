@@ -51,7 +51,7 @@ lazy val `lila-ws` = project
       "io.kamon"                   %% "kamon-system-metrics" % kamonVersion,
       "com.softwaremill.macwire"   %% "macros"               % "2.6.5" % "provided",
       "com.roundeights"            %% "hasher"               % "1.3.1",
-      "org.scalameta"              %% "munit"                % "1.0.4" % Test
+      "org.scalameta"              %% "munit"                % "1.1.0" % Test
     ),
     scalacOptions := Seq(
       "-encoding",
