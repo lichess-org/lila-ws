@@ -22,12 +22,13 @@ final class Monitor(
 
   def start(): Unit =
 
-    val version  = System.getProperty("java.version")
-    val memory   = Runtime.getRuntime.maxMemory() / 1024 / 1024
-    val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
+    val version   = System.getProperty("java.version")
+    val memory    = Runtime.getRuntime.maxMemory() / 1024 / 1024
+    val useKamon  = config.getString("kamon.influxdb.hostname").nonEmpty
+    val gitCommit = BuildInfo.gitHeadCommit.take(7)
 
     logger.info(s"lila-ws 3.0 netty kamon=$useKamon")
-    logger.info(s"Java version: $version, memory: ${memory}MB")
+    logger.info(s"Git commit: ${gitCommit}, java version: $version, memory: ${memory}MB")
 
     if useKamon then kamon.Kamon.initWithoutAttaching()
 
