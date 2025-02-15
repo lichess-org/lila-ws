@@ -20,7 +20,7 @@ val chessVersion = "17.2.0"
 
 lazy val `lila-ws` = project
   .in(file("."))
-  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin, BuildInfoPlugin)
   .settings(
     name         := "lila-ws",
     organization := "org.lichess",
@@ -72,7 +72,11 @@ lazy val `lila-ws` = project
     Universal / javaOptions := Seq(
       "-J-Dconfig.override_with_env_vars=true"
     ),
-    Compile / doc / sources := Seq.empty
+    Compile / doc / sources := Seq.empty,
+    buildInfoPackage := "lila.ws",
+    buildInfoKeys := Seq[BuildInfoKey](
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") },
+    ),
   )
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
