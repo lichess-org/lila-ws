@@ -73,10 +73,10 @@ lazy val `lila-ws` = project
       "-J-Dconfig.override_with_env_vars=true"
     ),
     Compile / doc / sources := Seq.empty,
-    buildInfoPackage := "lila.ws",
+    buildInfoPackage        := "lila.ws",
     buildInfoKeys := Seq[BuildInfoKey](
-      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") },
-    ),
+      BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") }
+    )
   )
 
 addCommandAlias("prepare", "scalafixAll; scalafmtAll")
