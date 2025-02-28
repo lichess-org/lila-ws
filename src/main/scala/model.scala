@@ -19,7 +19,8 @@ object User:
   object Patron extends YesNo[Patron]
 
 opaque type RoomId = String
-object RoomId extends OpaqueString[RoomId]
+object RoomId extends OpaqueString[RoomId]:
+  def ofPlayer(id: Game.FullId): RoomId = id.gameId.value
 
 object Game:
 
@@ -30,16 +31,11 @@ object Game:
   opaque type FullId = String
   object FullId extends OpaqueString[FullId]:
     extension (fullId: FullId)
-      def gameId   = Game.Id(fullId.take(8))
-      def playerId = PlayerId(fullId.drop(8))
+      def gameId   = Game.Id(fullId.value.take(8))
+      def playerId = PlayerId(fullId.value.drop(8))
 
   opaque type AnyId = String
-  object AnyId extends OpaqueString[AnyId]:
-    extension (id: AnyId)
-      def gameId = Game.Id(id.take(8))
-      def fold[A](f: Game.Id => A, g: Game.FullId => A): A =
-        if id.length == 12 then g(Game.FullId(id))
-        else f(Game.Id(id))
+  object AnyId extends OpaqueString[AnyId]
 
   opaque type PlayerId = String
   object PlayerId extends OpaqueString[PlayerId]
@@ -52,9 +48,6 @@ object Game:
     def player(id: PlayerId, userId: Option[User.Id]): Option[RoundPlayer] =
       players.zipColor.collect:
         case (c, p) if p.id == id && p.userId == userId => RoundPlayer(id, c, ext)
-    def player(userId: User.Id): Option[RoundPlayer] =
-      players.zipColor.collect:
-        case (c, p) if p.userId.has(userId) => RoundPlayer(id, c, ext)
 
   case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
     def tourId    = ext.collect { case RoundExt.InTour(id) => id }
