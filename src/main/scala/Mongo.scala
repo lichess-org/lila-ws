@@ -110,13 +110,21 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def gameUserIds(id: Game.Id): Future[Option[List[User.Id]]] =
     gameCache.get(id).map(_.map(_.players.mapList(_.userId).flatten))
 
-  def player(fullId: Game.FullId, user: Option[User.Id]): Future[Option[Game.RoundPlayer]] =
-    gameCache
-      .get(fullId.gameId)
-      .map {
-        _.flatMap:
-          _.player(fullId.playerId, user)
-      }(parasitic)
+  def player(anyId: Game.AnyId, user: Option[User.Id]): Future[Option[Game.RoundPlayer]] = anyId.fold(
+    gameId =>
+      user.fold(Future.successful(None)): user =>
+        gameCache
+          .get(gameId)
+          .map {
+            _.flatMap(_.player(user))
+          }(parasitic),
+    fullId =>
+      gameCache
+        .get(fullId.gameId)
+        .map {
+          _.flatMap(_.player(fullId.playerId, user))
+        }(parasitic)
+  )
 
   private val gameCacheProjection =
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)

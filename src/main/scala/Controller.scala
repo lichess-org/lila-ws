@@ -139,16 +139,16 @@ final class Controller(
                 )
         case _ => Future.successful(notFound)
 
-  def roundPlay(id: Game.FullId, header: RequestHeader) =
+  def roundPlay(id: Game.AnyId, header: RequestHeader) =
     WebSocket(header): req =>
-      (mongo.player(id, req.user), mongo.troll.is(req.user), roundFrom(id.into(Game.AnyId), req))
+      (mongo.player(id, req.user), mongo.troll.is(req.user), roundFrom(id, req))
         .mapN:
           case (Some(player), isTroll, from) =>
             endpoint(
               name = "round/play",
               behavior = emit =>
                 RoundClientActor.start(
-                  RoomActor.State(RoomId.ofPlayer(id), isTroll),
+                  RoomActor.State(id.gameId.into(RoomId), isTroll),
                   Some(player),
                   None,
                   from
