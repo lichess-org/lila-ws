@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.6.3",
+    scalaVersion       := "3.6.4",
     versionScheme      := Some("early-semver"),
     version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
@@ -16,7 +16,7 @@ val arch_ = arch.replace("-", "_")
 val pekkoVersion = "1.1.3"
 val kamonVersion = "2.7.5"
 val nettyVersion = "4.1.119.Final"
-val chessVersion = "17.2.0"
+val chessVersion = "17.2.2"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -37,7 +37,7 @@ lazy val `lila-ws` = project
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "org.lichess"                %% "scalalib-lila"        % "11.6.0",
+      "org.lichess"                %% "scalalib-lila"        % "11.7.0",
       "org.lichess"                %% "scalachess"           % chessVersion,
       "org.lichess"                %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko"           %% "pekko-actor-typed"    % pekkoVersion,
@@ -66,6 +66,7 @@ lazy val `lila-ws` = project
       "-Wunused:all"
     ),
     javaOptions ++= Seq("-Xms32m", "-Xmx256m"),
+    javacOptions ++= Seq("--release", "21"),
     Docker / packageName      := "lichess-org/lila-ws",
     Docker / maintainer       := "lichess.org",
     Docker / dockerRepository := Some("ghcr.io"),
