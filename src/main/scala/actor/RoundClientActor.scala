@@ -18,15 +18,13 @@ object RoundClientActor:
   ):
     def busChans: List[Bus.Chan] =
       Bus.channel.room(room.room) ::
-        player.flatMap(_.tourId).fold(List.empty[Bus.Chan]) { tourId =>
-          List(
-            Bus.channel.tourStanding(tourId),
-            Bus.channel.externalChat(tourId.into(RoomId))
-          )
+        player.fold(List.empty)(_ => List(Bus.channel.roundPlayer)) :::
+        player.flatMap(_.tourId).fold(List.empty) { tourId =>
+          List(Bus.channel.tourStanding(tourId))
         } :::
         player
           .flatMap(_.extRoomId)
-          .fold(List.empty[Bus.Chan]) { roomId =>
+          .fold(List.empty) { roomId =>
             List(Bus.channel.externalChat(roomId))
           } :::
         userTv.map(Bus.channel.userTv).toList

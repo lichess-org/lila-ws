@@ -32,6 +32,7 @@ object Bus:
     inline def flag(inline f: Flag)             = s"flag/$f"
     val mlat                                    = "mlat"
     val all                                     = "all"
+    val roundPlayer                             = "roundPlayer"
     val lobby                                   = "lobby"
     val tv                                      = "tv"
     val tvChannels                              = "tv-channels"

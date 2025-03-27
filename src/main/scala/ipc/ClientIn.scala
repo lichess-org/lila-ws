@@ -23,6 +23,9 @@ object ClientIn:
   case object Resync extends ClientIn:
     val write = cliMsg("resync")
 
+  case object ServerRestart extends ClientIn:
+    val write = cliMsg("serverRestart")
+
   // instead of sending a message to the client,
   // lila-ws will close the connection
   case class Disconnect(reason: String) extends ClientIn:

@@ -61,6 +61,7 @@ final class LilaHandler(
       logger.info("******************** LILA STOP ********************")
       lila.emit.site(LilaIn.ReqResponse(reqId, "See you on the other side"))
       lila.currentStatus.setOffline()
+      publish(_.roundPlayer, ClientIn.ServerRestart)
 
     case msg => logger.warn(s"Unhandled site: $msg")
 

@@ -91,9 +91,10 @@ final class Lila(config: Config)(using Executor):
       .match
         case s: SingleLaneChan => connectAndSubscribe(s.out, s.out).map { _ => emit }
         case r: RoundRobinChan =>
-          connectAndSubscribe(r.out, r.out).zip(Future.sequence:
-            (0 to r.parallelism).map: index =>
-              connectAndSubscribe(s"${r.out}:$index", r.out))
+          connectAndSubscribe(r.out, r.out).zip:
+            Future.sequence:
+              (0 to r.parallelism).map: index =>
+                connectAndSubscribe(s"${r.out}:$index", r.out)
       .map: _ =>
         val msg = LilaIn.WsBoot.write
         connIn.async.publish(chan.in(msg), msg)
