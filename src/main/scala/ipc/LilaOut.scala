@@ -1,6 +1,8 @@
 package lila.ws
 package ipc
 
+import play.api.libs.json.*
+
 import chess.Color
 
 sealed trait LilaOut
@@ -32,7 +34,7 @@ object LilaOut:
   case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
   case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
   case class LilaResponse(reqId: Int, body: String)                extends SiteOut with RoundOut
-  case class StreamersOnline(streamers: Iterable[(User.Id, String)]) extends SiteOut
+  case class StreamersOnline(streamers: Iterable[(User.Id, JsValue)]) extends SiteOut
 
   // lobby
 
@@ -328,10 +330,16 @@ object LilaOut:
         }
 
       case "streamers/online" =>
+        // we should be ignorant. unfortunately we need to parse for userId
         Some(StreamersOnline {
-          commas(args)
-            .map(_.split(':'))
-            .collect { case Array(userId, name) => (User.Id(userId), name) }
+          Json
+            .parse(args)
+            .as[JsArray]
+            .value
+            .collect { case JsObject(field) =>
+              val (userId, info) = field.head
+              User.Id(userId) -> info
+            }
         })
 
       case "pong" => args.toLongOption.map(UptimeMillis.apply).map(Pong.apply)

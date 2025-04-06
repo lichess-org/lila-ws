@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.{ ActorRef, Scheduler }
 import scalalib.ThreadLocalRandom
+import play.api.libs.json.JsValue
 
 import lila.ws.util.Batcher
 
@@ -53,9 +54,9 @@ final class LilaHandler(
       )
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
-    case Impersonate(user, by)                                   => Impersonations(user, by)
-    case StreamersOnline(streamers: Iterable[(User.Id, String)]) => Streamer.set(streamers)
-    case Pong(pingAt)                                            => Monitor.ping.record("site", pingAt)
+    case Impersonate(user, by)                                    => Impersonations(user, by)
+    case StreamersOnline(streamers: Iterable[(User.Id, JsValue)]) => Streamer.set(streamers)
+    case Pong(pingAt)                                             => Monitor.ping.record("site", pingAt)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")
