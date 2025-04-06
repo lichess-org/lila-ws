@@ -329,7 +329,6 @@ object LilaOut:
         }
 
       case "streamers/online" =>
-        // we should be ignorant. unfortunately we need to parse for userId
         Some(StreamersOnline {
           Json
             .parse(args)
