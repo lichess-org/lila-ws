@@ -1,9 +1,8 @@
 package lila.ws
 package ipc
 
-import play.api.libs.json.*
-
 import chess.Color
+import play.api.libs.json.*
 
 sealed trait LilaOut
 

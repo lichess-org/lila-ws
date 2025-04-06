@@ -3,8 +3,8 @@ package lila.ws
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.{ ActorRef, Scheduler }
-import scalalib.ThreadLocalRandom
 import play.api.libs.json.JsValue
+import scalalib.ThreadLocalRandom
 
 import lila.ws.util.Batcher
 
