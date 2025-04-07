@@ -2,6 +2,7 @@ package lila.ws
 package ipc
 
 import chess.Color
+import play.api.libs.json.*
 
 sealed trait LilaOut
 
@@ -32,7 +33,7 @@ object LilaOut:
   case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
   case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
   case class LilaResponse(reqId: Int, body: String)                extends SiteOut with RoundOut
-  case class StreamersOnline(streamers: Iterable[(User.Id, String)]) extends SiteOut
+  case class StreamersOnline(streamers: Map[User.Id, JsValue])     extends SiteOut
 
   // lobby
 
@@ -327,12 +328,7 @@ object LilaOut:
           Some(ApiUserOnline(User.Id(userId), boolean(online)))
         }
 
-      case "streamers/online" =>
-        Some(StreamersOnline {
-          commas(args)
-            .map(_.split(':'))
-            .collect { case Array(userId, name) => (User.Id(userId), name) }
-        })
+      case "streamers/online" => Json.parse(args).asOpt[Map[User.Id, JsValue]].map(StreamersOnline.apply)
 
       case "pong" => args.toLongOption.map(UptimeMillis.apply).map(Pong.apply)
 
