@@ -14,7 +14,7 @@ object Chess:
     Monitor.time(_.chessMoveTime):
       chess
         .Game(req.variant.some, req.fen.some)(req.orig, req.dest, req.promotion)
-        .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.san), req.path, req.chapterId))
+        .map((game, move) => makeNode(game, Uci.WithSan(Uci(move), move.toSanStr), req.path, req.chapterId))
         .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDrop): ClientIn =
@@ -22,7 +22,7 @@ object Chess:
       chess
         .Game(req.variant.some, req.fen.some)
         .drop(req.role, req.square)
-        .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.san), req.path, req.chapterId))
+        .map((game, drop) => makeNode(game, Uci.WithSan(Uci(drop), drop.toSanStr), req.path, req.chapterId))
         .getOrElse(ClientIn.StepFailure)
 
   def apply(req: ClientOut.AnaDests): ClientIn.Dests =
