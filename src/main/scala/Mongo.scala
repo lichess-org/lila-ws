@@ -102,7 +102,11 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
 
   def swissExists(id: Swiss.Id): Future[Boolean] = swissColl.flatMap(idExists(id))
 
-  def tourExists(id: Tour.Id): Future[Boolean] = tourColl.flatMap(idExists(id))
+  object tourExists:
+    private val cache: AsyncLoadingCache[Tour.Id, Boolean] = Scaffeine()
+      .expireAfterWrite(2.seconds)
+      .buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
+    def apply(id: Tour.Id): Future[Boolean] = cache.get(id)
 
   def studyExists(id: Study.Id): Future[Boolean] = studyColl.flatMap(idExists(id))
 
