@@ -66,11 +66,11 @@ object Chess:
       check = game.situation.check,
       dests = if movable then game.situation.destinations else Map.empty,
       opening =
-        if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
+        if game.ply <= 30 && Variant.list.openingSensibleVariants(game.situation.variant)
         then OpeningDb.findByFullFen(fen)
         else None,
       drops = if movable then game.situation.drops else Some(Nil),
-      crazyData = game.situation.board.crazyData,
+      crazyData = game.situation.crazyData,
       chapterId = chapterId
     )
 

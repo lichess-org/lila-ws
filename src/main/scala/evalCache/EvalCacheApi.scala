@@ -142,5 +142,5 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
 
   private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
     in.eval.pvs.traverse_ { pv =>
-      chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.situation.variant)
+      chess.Replay.situationsFromUci(pv.moves.value.toList, in.fen.some, in.situation.variant)
     }
