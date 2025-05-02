@@ -2,7 +2,7 @@ package lila.ws
 package evalCache
 
 import cats.data.NonEmptyList
-import chess.Situation
+import chess.Board
 import chess.eval.Score
 import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
@@ -12,8 +12,8 @@ import java.time.LocalDateTime
 
 opaque type Id = BinaryFen
 object Id:
-  def apply(fen: BinaryFen): Id       = fen
-  def apply(situation: Situation): Id = BinaryFen.writeNormalized(situation)
+  def apply(fen: BinaryFen): Id   = fen
+  def apply(situation: Board): Id = BinaryFen.writeNormalized(situation)
   object from:
     private val standardCache: LoadingCache[Fen.Full, Option[Id]] =
       Scaffeine().expireAfterWrite(1.minute).build(compute(chess.variant.Standard, _))
@@ -57,7 +57,7 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
-  case class Input(id: Id, fen: Fen.Full, situation: Situation, eval: Eval, sri: Sri)
+  case class Input(id: Id, fen: Fen.Full, situation: Board, eval: Eval, sri: Sri)
 
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 

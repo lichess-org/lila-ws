@@ -33,7 +33,7 @@ object Chess:
           if req.variant.standard && req.fen == chess.format.Fen.initial && req.path.value.isEmpty
           then initialDests
           else
-            val sit = chess.Game(req.variant.some, Some(req.fen)).situation
+            val sit = chess.Game(req.variant.some, Some(req.fen)).board
             if sit.playable(false) then Json.destString(sit.destinations) else ""
         ,
         opening =
@@ -55,7 +55,7 @@ object Chess:
       path: UciPath,
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
-    val movable = game.situation.playable(false)
+    val movable = game.board.playable(false)
     val fen     = chess.format.Fen.write(game)
     ClientIn.Node(
       path = path,
@@ -63,14 +63,14 @@ object Chess:
       ply = game.ply,
       move = move,
       fen = fen,
-      check = game.situation.check,
-      dests = if movable then game.situation.destinations else Map.empty,
+      check = game.board.check,
+      dests = if movable then game.board.destinations else Map.empty,
       opening =
-        if game.ply <= 30 && Variant.list.openingSensibleVariants(game.situation.variant)
+        if game.ply <= 30 && Variant.list.openingSensibleVariants(game.board.variant)
         then OpeningDb.findByFullFen(fen)
         else None,
-      drops = if movable then game.situation.drops else Some(Nil),
-      crazyData = game.situation.crazyData,
+      drops = if movable then game.board.drops else Some(Nil),
+      crazyData = game.board.crazyData,
       chapterId = chapterId
     )
 
