@@ -2,11 +2,10 @@ package lila.ws
 package ipc
 
 import cats.data.NonEmptyList
-import chess.bitboard.Bitboard
 import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
-import chess.{ Check, Color, Ply }
+import chess.{ Bitboard, Check, Color, Ply }
 import play.api.libs.json.*
 
 // messages from lila-ws to the client

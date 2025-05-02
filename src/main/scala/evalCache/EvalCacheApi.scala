@@ -115,7 +115,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
             case None =>
               val entry = EvalCacheEntry(
                 _id = input.id,
-                nbMoves = input.situation.moves.view.map(_._2.size).sum,
+                nbMoves = input.position.moves.view.map(_._2.size).sum,
                 evals = List(input.eval),
                 usedAt = LocalDateTime.now,
                 updatedAt = LocalDateTime.now
@@ -142,5 +142,5 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
 
   private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
     in.eval.pvs.traverse_ { pv =>
-      chess.Replay.situationsFromUci(pv.moves.value.toList, in.fen.some, in.situation.variant)
+      chess.Replay.boardsFromUci(pv.moves.value.toList, in.fen.some, in.position.variant)
     }
