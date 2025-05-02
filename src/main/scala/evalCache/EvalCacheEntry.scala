@@ -12,8 +12,8 @@ import java.time.LocalDateTime
 
 opaque type Id = BinaryFen
 object Id:
-  def apply(fen: BinaryFen): Id      = fen
-  def apply(situation: Position): Id = BinaryFen.writeNormalized(situation)
+  def apply(fen: BinaryFen): Id     = fen
+  def apply(position: Position): Id = BinaryFen.writeNormalized(position)
   object from:
     private val standardCache: LoadingCache[Fen.Full, Option[Id]] =
       Scaffeine().expireAfterWrite(1.minute).build(compute(chess.variant.Standard, _))
@@ -57,7 +57,7 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
-  case class Input(id: Id, fen: Fen.Full, situation: Position, eval: Eval, sri: Sri)
+  case class Input(id: Id, fen: Fen.Full, position: Position, eval: Eval, sri: Sri)
 
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
@@ -92,5 +92,5 @@ object EvalCacheEntry:
       .read(variant, fen)
       .filter(_.playable(false))
       .ifTrue(eval.looksValid)
-      .map: situation =>
-        Input(Id(situation), fen, situation, eval.truncatePvs, sri)
+      .map: position =>
+        Input(Id(position), fen, position, eval.truncatePvs, sri)

@@ -23,8 +23,8 @@ class EvalCacheMultiTest extends munit.FunSuite:
       by = User.Id("user"),
       trust = Trust(1)
     )
-    val situation = Fen.read(Standard, fen).get
-    Input(Id(situation), fen, situation, eval.truncatePvs, Sri.random())
+    val position = Fen.read(Standard, fen).get
+    Input(Id(position), fen, position, eval.truncatePvs, Sri.random())
 
   test("onEval, only send when depth has changed"):
     val inst = EvalCacheMulti.mock()
