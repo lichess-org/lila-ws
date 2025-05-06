@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.6.4",
+    scalaVersion       := "3.7.0",
     versionScheme      := Some("early-semver"),
     version            := "3.3",
     semanticdbEnabled  := true, // for scalafix
@@ -57,7 +57,7 @@ lazy val `lila-ws` = project
       "-encoding",
       "utf-8",
       "-rewrite",
-      "-source:3.7",
+      "-source:3.7-migration",
       "-indent",
       "-explaintypes",
       "-feature",
