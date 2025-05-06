@@ -65,8 +65,6 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
 
 private object EvalCacheMulti:
 
-  import EvalCacheUpgrade.*
-
   case class WatchingMember(sri: Sri, variant: Variant, fens: List[Fen.Full]):
     def setups: List[Id] = fens.flatMap(Id.from(variant, _))
 

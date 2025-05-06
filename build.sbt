@@ -57,7 +57,7 @@ lazy val `lila-ws` = project
       "-encoding",
       "utf-8",
       "-rewrite",
-      "-source:3.7-migration",
+      "-source:3.7",
       "-indent",
       "-explaintypes",
       "-feature",
