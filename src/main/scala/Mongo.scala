@@ -41,7 +41,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     yoloConnection.flatMap: (conn, dbName) =>
       conn.database(dbName.getOrElse("lichess"))
 
-  private def collNamed(name: String): Future[Coll] = mainDb.map(_.collection(name))(parasitic)
+  private def collNamed(name: String): Future[Coll] = mainDb.map(_.collection(name))(using parasitic)
   def securityColl                                  = collNamed("security")
   def userColl                                      = collNamed("user4")
   def coachColl                                     = collNamed("coach")
@@ -61,8 +61,8 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def relayTourColl                                 = collNamed("relay_tour")
   def relayRoundColl                                = collNamed("relay")
   def settingColl                                   = collNamed("setting")
-  def studyColl                                     = studyDb.map(_.collection("study"))(parasitic)
-  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(parasitic)
+  def studyColl                                     = studyDb.map(_.collection("study"))(using parasitic)
+  def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(using parasitic)
 
   def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
   def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =
@@ -120,7 +120,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
       .map {
         _.flatMap:
           _.player(fullId.playerId, user)
-      }(parasitic)
+      }(using parasitic)
 
   private val gameCacheProjection =
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
@@ -149,7 +149,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
                   .orElse(doc.getAsOpt[Swiss.Id]("iid").map(Game.RoundExt.InSwiss.apply))
                   .orElse(doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply))
             yield Game.Round(id, players, ext)
-          }(parasitic)
+          }(using parasitic)
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
@@ -309,7 +309,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
         hint = None,
         readConcern = ReadConcern.Local
       )
-      .map(0 < _)(parasitic)
+      .map(0 < _)(using parasitic)
 
   private def filterIds(ids: Iterable[String])(coll: BSONCollection): Future[Set[String]] =
     coll.distinct[String, Set](
