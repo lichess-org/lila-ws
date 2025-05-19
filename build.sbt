@@ -16,7 +16,7 @@ val arch_ = arch.replace("-", "_")
 val pekkoVersion = "1.1.3"
 val kamonVersion = "2.7.7"
 val nettyVersion = "4.2.1.Final"
-val chessVersion = "17.6.2"
+val chessVersion = "17.6.3"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -26,6 +26,7 @@ lazy val `lila-ws` = project
     organization := "org.lichess",
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     resolvers += "jitpack".at("https://jitpack.io"),
+    resolvers += "lila-maven".at("https://raw.githubusercontent.com/ornicar/lila-maven/master"),
     libraryDependencies ++= Seq(
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC13")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
