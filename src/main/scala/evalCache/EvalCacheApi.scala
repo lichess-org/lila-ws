@@ -141,6 +141,4 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
     multi.onEval(input)
 
   private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
-    in.eval.pvs.traverse_ { pv =>
-      in.position.validate(pv.moves.value)
-    }
+    in.eval.pvs.traverse_(pv => in.position.validate(pv.moves.value))
