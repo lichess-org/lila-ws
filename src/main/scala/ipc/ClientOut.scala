@@ -144,7 +144,7 @@ object ClientOut:
         case o: JsObject =>
           o.str("t")
             .flatMap:
-              case "p" => Some(Ping(o.int("l")))
+              case "p"             => Some(Ping(o.int("l")))
               case "startWatching" =>
                 o.str("d")
                   .map { d =>
@@ -155,7 +155,7 @@ object ClientOut:
               case "moveLat"                 => Some(MoveLat)
               case "notified"                => Some(Notified)
               case "following_onlines"       => Some(FollowingOnline)
-              case "opening" =>
+              case "opening"                 =>
                 for
                   d    <- o.obj("d")
                   path <- d.get[UciPath]("path")
@@ -241,7 +241,7 @@ object ClientOut:
                   "resign-force" | "draw-force" | "abort" | "outoftime" =>
                 Some(RoundPlayerForward(o))
               // chat
-              case "talk" => o.str("d").map { ChatSay.apply }
+              case "talk"    => o.str("d").map { ChatSay.apply }
               case "timeout" =>
                 for
                   data   <- o.obj("d")

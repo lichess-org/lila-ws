@@ -64,12 +64,12 @@ object Monitor:
   private val logger = Logger(getClass)
 
   object connection:
-    val current = Kamon.gauge("connection.current").withoutTags()
+    val current                = Kamon.gauge("connection.current").withoutTags()
     def open(endpoint: String) =
       Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
 
-  def clientOutWrongHole  = Kamon.counter("client.out.wrongHole").withoutTags()
-  def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags()
+  def clientOutWrongHole               = Kamon.counter("client.out.wrongHole").withoutTags()
+  def clientOutUnexpected              = Kamon.counter("client.out.unexpected").withoutTags()
   def clientOutUnhandled(name: String) =
     Kamon
       .counter("client.out.unhandled")
@@ -105,9 +105,9 @@ object Monitor:
       .increment()
 
   object redis:
-    val publishTime      = Kamon.timer("redis.publish.time").withoutTags()
-    private val countIn  = Kamon.counter("redis.in")
-    private val countOut = Kamon.counter("redis.out")
+    val publishTime                    = Kamon.timer("redis.publish.time").withoutTags()
+    private val countIn                = Kamon.counter("redis.in")
+    private val countOut               = Kamon.counter("redis.out")
     def in(chan: String, path: String) =
       countIn
         .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))

@@ -71,12 +71,12 @@ lazy val `lila-ws` = project
     Docker / packageName      := "lichess-org/lila-ws",
     Docker / maintainer       := "lichess.org",
     Docker / dockerRepository := Some("ghcr.io"),
-    Universal / javaOptions := Seq(
+    Universal / javaOptions   := Seq(
       "-J-Dconfig.override_with_env_vars=true"
     ),
     Compile / doc / sources := Seq.empty,
     buildInfoPackage        := "lila.ws",
-    buildInfoKeys := Seq[BuildInfoKey](
+    buildInfoKeys           := Seq[BuildInfoKey](
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") }
     )
   )

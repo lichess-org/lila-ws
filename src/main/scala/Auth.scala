@@ -18,7 +18,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       sessionIdFromReq(req) match
         case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
         case Some(sid)                                 => sessionAuth(sid)
-        case None =>
+        case None                                      =>
           bearerFromHeader(req) match
             case Some(bearer) => bearerAuth(bearer)
             case None         => Future.successful(None)

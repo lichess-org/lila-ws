@@ -24,7 +24,7 @@ object ApiActor:
       .receive[ClientMsg]: (_, msg) =>
         msg match
           case ClientCtrl.ApiDisconnect => Behaviors.stopped
-          case _ =>
+          case _                        =>
             Monitor.clientOutUnhandled("api").increment()
             Behaviors.same
       .receiveSignal { case (ctx, PostStop) =>
