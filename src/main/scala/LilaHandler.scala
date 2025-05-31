@@ -33,8 +33,8 @@ final class LilaHandler(
     case TellSris(sris, payload) => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
     case TellAll(payload)        => publish(_.all, ClientIn.Payload(payload))
 
-    case TellUsers(us, json)  => users.tellMany(us, ClientIn.Payload(json))
-    case DisconnectUser(user) => users.kick(user)
+    case TellUsers(us, json)              => users.tellMany(us, ClientIn.Payload(json))
+    case DisconnectUser(user)             => users.kick(user)
     case TellRoomUser(roomId, user, json) =>
       users.tellOne(user, ClientIn.onlyFor(_.Room(roomId), ClientIn.Payload(json)))
     case TellRoomUsers(roomId, us, json) =>
@@ -73,7 +73,7 @@ final class LilaHandler(
     case TellLobby(payload)       => publish(_.lobby, ClientIn.Payload(payload))
     case TellLobbyActive(payload) => publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload)  => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
-    case LobbyPairings(pairings) =>
+    case LobbyPairings(pairings)  =>
       pairings.foreach { (sri, fullId) => publish(_.sri(sri), ClientIn.LobbyPairing(fullId)) }
 
     case site: SiteOut => siteHandler(site)
@@ -149,12 +149,12 @@ final class LilaHandler(
       publish(_.room(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
     case RoundTourStanding(tourId, data) =>
       publish(_.tourStanding(tourId), ClientIn.roundTourStanding(data))
-    case o: TvSelect => Tv.select(o)
+    case o: TvSelect          => Tv.select(o)
     case o @ RoomStop(roomId) =>
       History.round.stop(Game.Id(roomId.value))
       publish(_.room(roomId), ClientCtrl.Disconnect(o.toString))
     case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
-    case GameStart(users) =>
+    case GameStart(users)                 =>
       users.foreach: u =>
         friendList.startPlaying(u)
         publish(_.userTv(u.into(UserTv)), ClientIn.Resync)
@@ -162,7 +162,7 @@ final class LilaHandler(
       users.foreach(friendList.stopPlaying)
       Fens.finish(gameId, winner)
     case LilaResponse(reqId, body) => LilaRequest.onResponse(reqId, body)
-    case Pong(pingAt) =>
+    case Pong(pingAt)              =>
       val millis = Monitor.ping.record("round", pingAt)
       lila.emit.round(LilaIn.RoundLatency(millis))
     case LilaBoot =>
@@ -199,7 +199,7 @@ final class LilaHandler(
 
   private val roomHandler: Emit[LilaOut] =
     case TellRoomVersion(roomId, version, troll, payload) => tellRoomVersion(roomId, version, troll, payload)
-    case TellRoomChat(roomId, version, troll, payload) =>
+    case TellRoomChat(roomId, version, troll, payload)    =>
       tellRoomVersion(roomId, version, troll, payload)
       publish(_.externalChat(roomId), ClientIn.Payload(payload))
     case TellRoom(roomId, payload) => publish(_.room(roomId), ClientIn.Payload(payload))

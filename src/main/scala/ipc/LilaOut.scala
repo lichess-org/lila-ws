@@ -297,7 +297,7 @@ object LilaOut:
           Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
-      case "r/start" => Some(GameStart(User.Id.from(commas(args).toList)))
+      case "r/start"  => Some(GameStart(User.Id.from(commas(args).toList)))
       case "r/finish" =>
         get(args, 3) { case Array(gameId, winner, users) =>
           Some(

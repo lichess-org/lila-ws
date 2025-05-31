@@ -229,7 +229,7 @@ final class Controller(
             case Some(u) => Option(Racer.PlayerId.User(u))
             case None    => auth.sidFromReq(header).map(Racer.PlayerId.Anon.apply)
           .match
-            case None => notFound
+            case None      => notFound
             case Some(pid) =>
               endpoint(
                 name = "racer",

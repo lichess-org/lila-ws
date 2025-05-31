@@ -19,8 +19,8 @@ final private class ActorChannelConnector(
     workers: EventLoopGroup
 )(using scheduler: Scheduler, ec: Executor):
 
-  private val flushQ  = ActorChannelConnector.FlushQueue()
-  private val monitor = Monitor.connector.flush
+  private val flushQ      = ActorChannelConnector.FlushQueue()
+  private val monitor     = Monitor.connector.flush
   private val flushThread = Future:
     while !workers.isShuttingDown && !workers.isTerminated do
       val delay = flush().timeLeft.max(0.millis)

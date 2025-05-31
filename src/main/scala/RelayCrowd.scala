@@ -35,9 +35,9 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
             PipelineOperator:
               BSONDocument(
                 "$lookup" -> BSONDocument(
-                  "from" -> roundColl.name,
-                  "as"   -> "round",
-                  "let"  -> BSONDocument("tourId" -> "$_id"),
+                  "from"     -> roundColl.name,
+                  "as"       -> "round",
+                  "let"      -> BSONDocument("tourId" -> "$_id"),
                   "pipeline" -> List(
                     BSONDocument(
                       "$match" -> BSONDocument(

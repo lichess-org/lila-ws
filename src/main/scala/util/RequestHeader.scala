@@ -39,7 +39,7 @@ final class RequestHeader private (val uri: RequestUri, headers: HttpHeaders):
 
   def isLichessMobile: Boolean = userAgent.startsWith("Lichess Mobile/")
 
-  private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
+  private val lichessMobileSriRegex            = """sri:(\S+)""".r.unanchored
   private def lichessMobileSri: Option[String] = userAgent match
     case lichessMobileSriRegex(sri) => Some(sri)
     case _                          => None
