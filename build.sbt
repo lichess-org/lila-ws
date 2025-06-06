@@ -1,11 +1,12 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.7.1",
-    versionScheme      := Some("early-semver"),
-    version            := "3.3",
-    semanticdbEnabled  := true, // for scalafix
-    dockerBaseImage    := "openjdk:21",
-    dockerUpdateLatest := true
+    scalaVersion          := "3.7.1",
+    versionScheme         := Some("early-semver"),
+    version               := "3.3",
+    semanticdbEnabled     := true, // for scalafix
+    dockerBaseImage       := "openjdk:21",
+    dockerUpdateLatest    := true,
+    dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64")
   )
 )
 
