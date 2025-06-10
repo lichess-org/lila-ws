@@ -57,7 +57,7 @@ object EvalCacheJsonHandlers:
   private def parsePv(d: JsObject): Option[Pv] =
     for
       movesStr <- d.str("moves")
-      moves <- Moves.from(
+      moves    <- Moves.from(
         movesStr
           .split(' ')
           .take(MAX_PV_SIZE)

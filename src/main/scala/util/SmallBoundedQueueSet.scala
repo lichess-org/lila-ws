@@ -15,7 +15,7 @@ object SmallBoundedQueueSet:
   def empty[A]: SmallBoundedQueueSet[A] = List.empty
 
   extension [A](q: SmallBoundedQueueSet[A])
-    def value: List[A] = q
+    def value: List[A]                                                                                 = q
     def addAndReturnEvicted(newElements: Iterable[A], maxSize: Int): (SmallBoundedQueueSet[A], Set[A]) =
       val curSet    = q.toSet
       val newSet    = (newElements.toSet -- curSet).take(maxSize)

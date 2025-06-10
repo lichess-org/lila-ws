@@ -64,7 +64,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def studyColl                                     = studyDb.map(_.collection("study"))(using parasitic)
   def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(using parasitic)
 
-  def isDuplicateKey(wr: WriteResult) = wr.code.contains(11000)
+  def isDuplicateKey(wr: WriteResult)                      = wr.code.contains(11000)
   def ignoreDuplicateKey: PartialFunction[Throwable, Unit] =
     case wr: WriteResult if isDuplicateKey(wr) => ()
 
@@ -88,8 +88,8 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
       .zip:
         me.fold(Future.successful(false)) { isTeamMember(id, _) }
       .map:
-        case (None, _)  => None
-        case (_, false) => Some(Team.HasChat(false))
+        case (None, _)             => None
+        case (_, false)            => Some(Team.HasChat(false))
         case (Some(teamDoc), true) =>
           Some:
             Team.HasChat:
@@ -137,7 +137,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
             for
               doc       <- docOpt
               playerIds <- doc.getAsOpt[String]("is")
-              users = doc.getAsOpt[List[User.Id]]("us").getOrElse(Nil)
+              users   = doc.getAsOpt[List[User.Id]]("us").getOrElse(Nil)
               players = ByColor(
                 Game.Player(Game.PlayerId(playerIds.take(4)), users.headOption.filter(_.value.nonEmpty)),
                 Game.Player(Game.PlayerId(playerIds.drop(4)), users.lift(1))

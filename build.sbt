@@ -1,11 +1,12 @@
 inThisBuild(
   Seq(
-    scalaVersion       := "3.7.0",
-    versionScheme      := Some("early-semver"),
-    version            := "3.3",
-    semanticdbEnabled  := true, // for scalafix
-    dockerBaseImage    := "openjdk:21",
-    dockerUpdateLatest := true
+    scalaVersion          := "3.7.1",
+    versionScheme         := Some("early-semver"),
+    version               := "3.3",
+    semanticdbEnabled     := true, // for scalafix
+    dockerBaseImage       := "openjdk:21",
+    dockerUpdateLatest    := true,
+    dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64")
   )
 )
 
@@ -15,8 +16,8 @@ val arch_ = arch.replace("-", "_")
 
 val pekkoVersion = "1.1.3"
 val kamonVersion = "2.7.7"
-val nettyVersion = "4.2.1.Final"
-val chessVersion = "17.6.3"
+val nettyVersion = "4.2.2.Final"
+val chessVersion = "17.8.1"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -31,14 +32,14 @@ lazy val `lila-ws` = project
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC13")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
       "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC15",
-      "io.lettuce"        % "lettuce-core"                           % "6.6.0.RELEASE",
+      "io.lettuce"        % "lettuce-core"                           % "6.7.1.RELEASE",
       "io.netty"          % "netty-handler"                          % nettyVersion,
       "io.netty"          % "netty-codec-http"                       % nettyVersion,
       ("io.netty"         % s"netty-transport-native-epoll"          % nettyVersion)
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "com.github.lichess-org.scalalib"   %% "scalalib-lila"        % "11.8.6",
+      "com.github.lichess-org.scalalib"   %% "scalalib-lila"        % "11.8.7",
       "com.github.lichess-org.scalachess" %% "scalachess"           % chessVersion,
       "com.github.lichess-org.scalachess" %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko"                  %% "pekko-actor-typed"    % pekkoVersion,
@@ -71,12 +72,12 @@ lazy val `lila-ws` = project
     Docker / packageName      := "lichess-org/lila-ws",
     Docker / maintainer       := "lichess.org",
     Docker / dockerRepository := Some("ghcr.io"),
-    Universal / javaOptions := Seq(
+    Universal / javaOptions   := Seq(
       "-J-Dconfig.override_with_env_vars=true"
     ),
     Compile / doc / sources := Seq.empty,
     buildInfoPackage        := "lila.ws",
-    buildInfoKeys := Seq[BuildInfoKey](
+    buildInfoKeys           := Seq[BuildInfoKey](
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") }
     )
   )

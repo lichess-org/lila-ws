@@ -18,7 +18,7 @@ final class Lila(config: Config)(using Executor):
   object currentStatus:
     private var value: Status = Status.Online
     def setOffline()          = value = Status.Offline
-    def setOnline() =
+    def setOnline()           =
       value = Status.Online
       buffer.flush()
     def isOnline: Boolean = value == Status.Online
@@ -43,7 +43,7 @@ final class Lila(config: Config)(using Executor):
   private val handlersPromise                  = Promise[Handlers]()
   private val futureHandlers: Future[Handlers] = handlersPromise.future
   private var handlers: Handlers               = chan => out => futureHandlers.foreach { _(chan)(out) }
-  def setHandlers(hs: Handlers) =
+  def setHandlers(hs: Handlers)                =
     handlers = hs
     handlersPromise.success(hs)
 

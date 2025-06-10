@@ -50,9 +50,9 @@ object Game:
         case (c, p) if p.id == id && p.userId == userId => RoundPlayer(id, c, ext)
 
   case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
-    def tourId  = ext.collect { case RoundExt.InTour(id) => id }
-    def swissId = ext.collect { case RoundExt.InSwiss(id) => id }
-    def simulId = ext.collect { case RoundExt.InSimul(id) => id }
+    def tourId    = ext.collect { case RoundExt.InTour(id) => id }
+    def swissId   = ext.collect { case RoundExt.InSwiss(id) => id }
+    def simulId   = ext.collect { case RoundExt.InSimul(id) => id }
     def extRoomId =
       tourId.map(_.into(RoomId)).orElse(simulId.map(_.into(RoomId))).orElse(swissId.map(_.into(RoomId)))
 
