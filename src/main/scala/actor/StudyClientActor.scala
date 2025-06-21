@@ -59,8 +59,8 @@ object StudyClientActor:
             forward(anaDrop.payload)
             Behaviors.same
 
-          case ClientOut.PalantirPing =>
-            deps.req.user.map { Palantir.respondToPing(state.room.room, _) }.foreach(clientIn)
+          case ClientOut.VoiceChatPing =>
+            deps.req.user.map { VoiceChat.respondToPing(state.room.room, _) }.foreach(clientIn)
             Behaviors.same
 
           // default receive (site)

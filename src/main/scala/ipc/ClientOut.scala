@@ -121,9 +121,9 @@ object ClientOut:
 
   case object ChallengePing extends ClientOut
 
-  // palantir
+  // voiceChat
 
-  case object PalantirPing extends ClientOut
+  case object VoiceChatPing extends ClientOut
 
   // storm
 
@@ -231,11 +231,11 @@ object ClientOut:
                   mean <- d.int("mean")
                   sd   <- d.int("sd")
                 yield RoundHold(mean, sd)
-              case "berserk"      => Some(RoundBerserk(o.obj("d").flatMap(_.int("a"))))
-              case "rep"          => o.obj("d").flatMap(_.str("n")).map(RoundSelfReport.apply)
-              case "flag"         => o.str("d").flatMap(Color.fromName).map(RoundFlag.apply)
-              case "bye2"         => Some(RoundBye)
-              case "palantirPing" => Some(PalantirPing)
+              case "berserk"       => Some(RoundBerserk(o.obj("d").flatMap(_.int("a"))))
+              case "rep"           => o.obj("d").flatMap(_.str("n")).map(RoundSelfReport.apply)
+              case "flag"          => o.str("d").flatMap(Color.fromName).map(RoundFlag.apply)
+              case "bye2"          => Some(RoundBye)
+              case "voiceChatPing" => Some(VoiceChatPing)
               case "blindfold-yes" | "blindfold-no" | "moretime" | "rematch-yes" | "rematch-no" |
                   "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
                   "resign-force" | "draw-force" | "abort" | "outoftime" =>
