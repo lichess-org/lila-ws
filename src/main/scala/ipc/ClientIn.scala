@@ -215,8 +215,8 @@ object ClientIn:
 
   def roundFull(data: JsonString) = payload("full", data)
 
-  case class Palantir(userIds: Iterable[User.Id]) extends ClientIn:
-    def write = cliMsg("palantir", userIds)
+  case class VoiceChat(userIds: Iterable[User.Id]) extends ClientIn:
+    def write = cliMsg("voiceChat", userIds)
 
   case class MsgType(orig: User.Id) extends ClientIn:
     def write = cliMsg("msgType", orig)
