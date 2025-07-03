@@ -176,15 +176,13 @@ object RoundClientActor:
             Behaviors.same
 
           case ClientOut.RoundHold(mean, sd) =>
-            fullId.zip(req.ip).foreach { (fid, ip) =>
-              lilaIn.round(LilaIn.RoundHold(fid, ip, mean, sd))
-            }
+            fullId.foreach: fid =>
+              lilaIn.round(LilaIn.RoundHold(fid, req.ip, mean, sd))
             Behaviors.same
 
           case ClientOut.RoundSelfReport(name) =>
-            fullId.zip(req.ip).foreach { (fid, ip) =>
-              lilaIn.round(LilaIn.RoundSelfReport(fid, ip, req.user, name))
-            }
+            fullId.foreach: fid =>
+              lilaIn.round(LilaIn.RoundSelfReport(fid, req.ip, req.user, name))
             Behaviors.same
 
           case ClientOut.VoiceChatPing =>

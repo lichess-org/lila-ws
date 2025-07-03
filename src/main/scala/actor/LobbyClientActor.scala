@@ -55,7 +55,7 @@ object LobbyClientActor:
 
           case ClientOut.LobbyJoin(payload) =>
             if deps.req.user.isDefined ||
-              deps.req.ip.exists(ip => deps.services.lobby.anonJoinByIpRateLimit(ip.value))
+              deps.services.lobby.anonJoinByIpRateLimit(deps.req.ip.value)
             then forward(payload)
             Behaviors.same
 
