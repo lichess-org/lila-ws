@@ -45,6 +45,7 @@ object LobbyClientActor:
             Behaviors.same
 
           case in: ClientIn =>
+            deps.services.lobby.anonJoin.tapLobbyClientIn(deps.req.header, in)
             clientInReceive(state.site, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
@@ -53,9 +54,8 @@ object LobbyClientActor:
             clientIn(services.lobby.pong.get())
             apply(state.copy(site = sitePing(state.site, deps, msg)), deps)
 
-          case ClientOut.LobbyJoin(payload) =>
-            if deps.req.user.isDefined ||
-              deps.services.lobby.anonJoinByIpRateLimit(deps.req.ip.value)
+          case msg @ ClientOut.LobbyJoin(payload) =>
+            if deps.req.user.isDefined || deps.services.lobby.anonJoin.canJoin(deps.req)
             then forward(payload)
             Behaviors.same
 

@@ -144,6 +144,7 @@ final class Controller(
       (mongo.player(id, req.user), mongo.troll.is(req.user), roundFrom(id.into(Game.AnyId), req))
         .mapN:
           case (Some(player), isTroll, from) =>
+            services.lobby.anonJoin.onRoundPlayConnect(req, id.gameId)
             endpoint(
               name = "round/play",
               behavior = emit =>
