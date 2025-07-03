@@ -13,7 +13,7 @@ object RequestUri extends OpaqueString[RequestUri]
 opaque type Domain = String
 object Domain extends OpaqueString[Domain]
 
-final class RequestHeader private (val uri: RequestUri, headers: HttpHeaders):
+final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, headers: HttpHeaders):
 
   lazy val qsd        = QueryStringDecoder(uri.value)
   lazy val path       = qsd.path
@@ -39,18 +39,15 @@ final class RequestHeader private (val uri: RequestUri, headers: HttpHeaders):
 
   def isLichessMobile: Boolean = userAgent.startsWith("Lichess Mobile/")
 
-  private val lichessMobileSriRegex            = """sri:(\S+)""".r.unanchored
   private def lichessMobileSri: Option[String] = userAgent match
-    case lichessMobileSriRegex(sri) => Some(sri)
-    case _                          => None
+    case RequestHeader.lichessMobileSriRegex(sri) => Some(sri)
+    case _                                        => None
 
   def uncheckedSri: Option[String] = isLichessMobile.so(lichessMobileSri).orElse(queryParameter("sri"))
 
   def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
 
   def flag: Option[Flag] = queryParameter("flag").flatMap(Flag.make)
-
-  def ip: Option[IpAddress] = IpAddress.from(header("X-Forwarded-For"))
 
   def name: String = s"$uri UA: $userAgent"
 
@@ -59,6 +56,12 @@ final class RequestHeader private (val uri: RequestUri, headers: HttpHeaders):
   override def toString = s"$name origin: $origin"
 
 object RequestHeader:
-  import cats.syntax.all.*
+
   def apply(uri: RequestUri, headers: HttpHeaders): Either[Throwable, RequestHeader] =
-    Either.catchNonFatal(new RequestHeader(uri, headers))
+    Option(headers.get("X-Forwarded-For"))
+      .filter(_.nonEmpty)
+      .toRight(new IllegalArgumentException("Missing X-Forwarded-For header"))
+      .map: ip =>
+        new RequestHeader(uri, IpAddress(ip), headers)
+
+  private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
