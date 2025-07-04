@@ -6,7 +6,6 @@ import scalalib.zeros.given
 
 import ipc.ClientIn.LobbyPong
 import ipc.{ LilaIn, ClientIn }
-import lila.ws.util.RequestHeader
 
 final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
 
@@ -42,13 +41,15 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     def onRoundPlayConnect(req: ClientActor.Req, gameId: Game.Id): Unit =
       if req.auth.isEmpty then PendingGamesPerIp.registerPlayed(req.ip, gameId)
 
-    def tapLobbyClientIn(req: RequestHeader, msg: ClientIn): Unit = msg.match
-      case ClientIn.Payload(json) =>
-        json.value.match
-          case redirectToGameIdRegex(gameId) =>
-            PendingGamesPerIp.redirectToGame(req.ip, Game.Id(gameId))
+    def tapLobbyClientIn(req: ClientActor.Req, msg: ClientIn): Unit =
+      if req.auth.isEmpty then
+        msg.match
+          case ClientIn.Payload(json) =>
+            json.value.match
+              case redirectToGameIdRegex(gameId) =>
+                PendingGamesPerIp.redirectToGame(req.ip, Game.Id(gameId))
+              case _ =>
           case _ =>
-      case _ =>
 
     private val redirectToGameIdRegex = """t":"redirect",.+"id":"(\w{8})""".r.unanchored
 
@@ -71,15 +72,8 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
             false
           case _ => true
 
-      def redirectToGame(ip: IpAddress, gameId: Game.Id): Boolean =
-        val pending = pendingGames.getIfPresent(ip).orZero
-        if pending.size > maxPendingGames then
-          logger.info:
-            s"Anon $ip can't join a lobby game, too many unplayed games: ${pending.mkString(", ")}"
-          false
-        else
-          pendingGames.put(ip, pending + gameId)
-          true
+      def redirectToGame(ip: IpAddress, gameId: Game.Id): Unit =
+        pendingGames.put(ip, pendingGames.getIfPresent(ip).orZero + gameId)
 
       def registerPlayed(ip: IpAddress, gameId: Game.Id): Unit =
         pendingGames

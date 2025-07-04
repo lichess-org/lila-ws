@@ -45,7 +45,7 @@ object LobbyClientActor:
             Behaviors.same
 
           case in: ClientIn =>
-            deps.services.lobby.anonJoin.tapLobbyClientIn(deps.req.header, in)
+            deps.services.lobby.anonJoin.tapLobbyClientIn(deps.req, in)
             clientInReceive(state.site, deps, in) match
               case None    => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
