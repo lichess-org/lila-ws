@@ -61,6 +61,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   def relayTourColl                                 = collNamed("relay_tour")
   def relayRoundColl                                = collNamed("relay")
   def settingColl                                   = collNamed("setting")
+  def cacheColl                                     = collNamed("cache")
   def studyColl                                     = studyDb.map(_.collection("study"))(using parasitic)
   def evalCacheColl                                 = yoloDb.map(_.collection("eval_cache2"))(using parasitic)
 
@@ -296,6 +297,17 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     val simul: IdFilter = ids => simulColl.flatMap(filterIds(ids))
     val team: IdFilter  = ids => teamColl.flatMap(filterIds(ids))
     val swiss: IdFilter = ids => swissColl.flatMap(filterIds(ids))
+
+  object cache:
+    def get[A: BSONReader](key: String): Future[Option[A]] = for
+      coll <- cacheColl
+      res  <- coll
+        .find(BSONDocument("_id" -> key))
+        .one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
+    yield for
+      doc <- res
+      v   <- doc.getAsOpt[A]("v")
+    yield v
 
   private def idExists[Id: BSONWriter](id: Id)(coll: BSONCollection): Future[Boolean] =
     exists(coll, BSONDocument("_id" -> id))

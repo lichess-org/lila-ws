@@ -8,7 +8,7 @@ import ipc.ClientIn.LobbyPong
 import ipc.{ LilaIn, ClientIn }
 import lila.ws.util.RequestHeader
 
-final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin):
+final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
 
   private val lilaIn = lila.emit.lobby
 
@@ -33,7 +33,10 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin):
 
     def canJoin(req: ClientActor.Req): Boolean =
       byIpRateLimit(req.ip.value) && {
-        req.auth.isDefined || PendingGamesPerIp.canJoin(req.ip)
+        req.auth.isDefined || {
+          !tor.isExitNode(req.ip) &&
+          PendingGamesPerIp.canJoin(req.ip)
+        }
       }
 
     def onRoundPlayConnect(req: ClientActor.Req, gameId: Game.Id): Unit =
@@ -52,7 +55,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin):
     private object PendingGamesPerIp:
 
       private val maxPendingGames = 5
-      private val logger          = Logger(getClass)
+      private val logger          = Logger("PendingGamesPerIp")
 
       private val pendingGames: Cache[IpAddress, Set[Game.Id]] = Scaffeine()
         .initialCapacity(8_192)

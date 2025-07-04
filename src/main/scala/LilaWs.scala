@@ -28,6 +28,7 @@ object LilaWs extends App:
   lazy val stormSign     = wire[StormSign]
   lazy val lag           = wire[Lag]
   lazy val evalCache     = wire[lila.ws.evalCache.EvalCacheApi]
+  lazy val tor           = wire[Tor]
   lazy val services      = wire[Services]
   lazy val controller    = wire[Controller]
   lazy val router        = wire[Router]
