@@ -1,7 +1,7 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.Scheduler
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.actor.typed.Scheduler
 
 final private class Tor(mongo: Mongo)(using Executor)(using scheduler: Scheduler):
 
