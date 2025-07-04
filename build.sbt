@@ -25,7 +25,7 @@ lazy val `lila-ws` = project
   .settings(
     name         := "lila-ws",
     organization := "org.lichess",
-    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    resolvers += Resolver.sonatypeCentralSnapshots,
     resolvers += "jitpack".at("https://jitpack.io"),
     resolvers += "lila-maven".at("https://raw.githubusercontent.com/ornicar/lila-maven/master"),
     libraryDependencies ++= Seq(
