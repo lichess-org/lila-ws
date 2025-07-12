@@ -67,10 +67,12 @@ object EvalCacheEntry:
 
     def bestMove: Uci = bestPv.moves.value.head
 
-    def looksValid = pvs.forall(_.looksValid) && uniqueFirstMoves &&
-      pvs.forall(_.score.mateFound) || (knodes >= MIN_KNODES || depth >= MIN_DEPTH)
+    def looksValid = pvs.forall(_.looksValid) && uniqueFirstMoves && isSufficientlyAnalysed
 
     private def uniqueFirstMoves = pvs.map(_.moves.value.head.uci).distinct.size == pvs.size
+
+    private def isSufficientlyAnalysed =
+      pvs.forall(_.score.mateFound) || (knodes >= MIN_KNODES || depth >= MIN_DEPTH)
 
     def truncatePvs = copy(pvs = pvs.map(_.truncate))
 
