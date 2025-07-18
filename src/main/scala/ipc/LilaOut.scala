@@ -28,12 +28,12 @@ object LilaOut:
   case class DisconnectUser(user: User.Id)                         extends SiteOut
   case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
   case class SetTroll(user: User.Id, v: IsTroll)                   extends SiteOut
-  case class Impersonate(user: User.Id, by: Option[User.Id])       extends SiteOut
-  case class Follow(left: User.Id, right: User.Id)                 extends SiteOut
-  case class UnFollow(left: User.Id, right: User.Id)               extends SiteOut
-  case class Pong(pingAt: UptimeMillis)                            extends SiteOut with RoundOut
-  case class LilaResponse(reqId: Int, body: String)                extends SiteOut with RoundOut
-  case class StreamersOnline(streamers: Map[User.Id, JsValue])     extends SiteOut
+  case class Impersonate(mod: User.ModId, user: User.Id, v: Boolean) extends SiteOut
+  case class Follow(left: User.Id, right: User.Id)                   extends SiteOut
+  case class UnFollow(left: User.Id, right: User.Id)                 extends SiteOut
+  case class Pong(pingAt: UptimeMillis)                              extends SiteOut with RoundOut
+  case class LilaResponse(reqId: Int, body: String)                  extends SiteOut with RoundOut
+  case class StreamersOnline(streamers: Map[User.Id, JsValue])       extends SiteOut
 
   // lobby
 
@@ -185,8 +185,8 @@ object LilaOut:
           Some(SetTroll(User.Id(user), IsTroll(boolean(v))))
         }
       case "mod/impersonate" =>
-        get(args, 2) { case Array(user, by) =>
-          Some(Impersonate(User.Id(user), User.Id.from(optional(by))))
+        get(args, 3) { case Array(mod, user, v) =>
+          Some(Impersonate(User.ModId(mod), User.Id(user), boolean(v)))
         }
 
       case "rel/follow" =>

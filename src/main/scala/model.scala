@@ -18,6 +18,9 @@ object User:
   opaque type Patron = Boolean
   object Patron extends YesNo[Patron]
 
+  opaque type ModId = String
+  object ModId extends OpaqueString[ModId]
+
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
   def ofPlayer(id: Game.FullId): RoomId = id.gameId.value

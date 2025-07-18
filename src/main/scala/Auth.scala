@@ -43,7 +43,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         _.map: user =>
           Success.Cookie:
             Impersonations
-              .get(user)
+              .get(user.into(User.ModId))
               .getOrElse:
                 seenAt(user)
                 user
