@@ -27,7 +27,8 @@ final class NettyServer(
   def start(): Unit =
 
     logger.info("Start")
-    val port = config.getInt("http.port")
+    val port                = config.getInt("http.port")
+    val useNginxForwardedIp = config.getBoolean("http.use-nginx-forwarded-ip")
     try
       val boot = new ServerBootstrap
       boot
@@ -39,7 +40,7 @@ final class NettyServer(
               val pipeline = ch.pipeline()
               pipeline.addLast(HttpServerCodec())
               pipeline.addLast(HttpObjectAggregator(4096))
-              pipeline.addLast(RequestHandler(router))
+              pipeline.addLast(RequestHandler(router, useNginxForwardedIp))
               pipeline.addLast(ProtocolHandler(connector))
               pipeline.addLast(FrameHandler())
         )

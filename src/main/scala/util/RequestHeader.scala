@@ -13,7 +13,7 @@ object RequestUri extends OpaqueString[RequestUri]
 opaque type Domain = String
 object Domain extends OpaqueString[Domain]
 
-final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, headers: HttpHeaders):
+final class RequestHeader(val uri: RequestUri, val ip: IpAddress, headers: HttpHeaders):
 
   lazy val qsd        = QueryStringDecoder(uri.value)
   lazy val path       = qsd.path
@@ -56,12 +56,5 @@ final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, heade
   override def toString = s"$name origin: $origin"
 
 object RequestHeader:
-
-  def apply(uri: RequestUri, headers: HttpHeaders): Either[Throwable, RequestHeader] =
-    Option(headers.get("X-Forwarded-For"))
-      .filter(_.nonEmpty)
-      .toRight(new IllegalArgumentException("Missing X-Forwarded-For header"))
-      .map: ip =>
-        new RequestHeader(uri, IpAddress(ip), headers)
 
   private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
