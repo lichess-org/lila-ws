@@ -14,10 +14,10 @@ val os    = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else
 val arch  = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch-64" else "x86-64"
 val arch_ = arch.replace("-", "_")
 
-val pekkoVersion = "1.1.4"
+val pekkoVersion = "1.1.5"
 val kamonVersion = "2.7.7"
 val nettyVersion = "4.2.3.Final"
-val chessVersion = "17.8.5"
+val chessVersion = "17.9.0"
 
 lazy val `lila-ws` = project
   .in(file("."))
