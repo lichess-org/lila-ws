@@ -6,39 +6,39 @@ import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
 
 object LilaWs extends App:
 
-  lazy val config: Config             = ConfigFactory.load
+  lazy val config: Config = ConfigFactory.load
   lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
-  given Scheduler                     = clientSystem.scheduler
-  given Executor                      = clientSystem.executionContext
+  given Scheduler = clientSystem.scheduler
+  given Executor = clientSystem.executionContext
 
-  lazy val mongo         = wire[Mongo]
-  lazy val settings      = wire[util.SettingStore]
+  lazy val mongo = wire[Mongo]
+  lazy val settings = wire[util.SettingStore]
   lazy val groupedWithin = wire[util.GroupedWithin]
-  lazy val lightUserApi  = wire[LightUserApi]
-  lazy val lilaRedis     = wire[Lila]
-  lazy val inquirers     = wire[Inquirers]
-  lazy val roundCrowd    = wire[RoundCrowd]
-  lazy val roomCrowd     = wire[RoomCrowd]
-  lazy val crowdJson     = wire[ipc.CrowdJson]
-  lazy val users         = wire[Users]
-  lazy val keepAlive     = wire[KeepAlive]
-  lazy val lobby         = wire[Lobby]
-  lazy val socialGraph   = wire[SocialGraph]
-  lazy val friendList    = wire[FriendList]
-  lazy val stormSign     = wire[StormSign]
-  lazy val lag           = wire[Lag]
-  lazy val evalCache     = wire[lila.ws.evalCache.EvalCacheApi]
-  lazy val tor           = wire[Tor]
-  lazy val services      = wire[Services]
-  lazy val controller    = wire[Controller]
-  lazy val router        = wire[Router]
-  lazy val seenAt        = wire[SeenAtUpdate]
-  lazy val auth          = wire[Auth]
-  lazy val nettyServer   = wire[netty.NettyServer]
-  lazy val monitor       = wire[Monitor]
+  lazy val lightUserApi = wire[LightUserApi]
+  lazy val lilaRedis = wire[Lila]
+  lazy val inquirers = wire[Inquirers]
+  lazy val roundCrowd = wire[RoundCrowd]
+  lazy val roomCrowd = wire[RoomCrowd]
+  lazy val crowdJson = wire[ipc.CrowdJson]
+  lazy val users = wire[Users]
+  lazy val keepAlive = wire[KeepAlive]
+  lazy val lobby = wire[Lobby]
+  lazy val socialGraph = wire[SocialGraph]
+  lazy val friendList = wire[FriendList]
+  lazy val stormSign = wire[StormSign]
+  lazy val lag = wire[Lag]
+  lazy val evalCache = wire[lila.ws.evalCache.EvalCacheApi]
+  lazy val tor = wire[Tor]
+  lazy val services = wire[Services]
+  lazy val controller = wire[Controller]
+  lazy val router = wire[Router]
+  lazy val seenAt = wire[SeenAtUpdate]
+  lazy val auth = wire[Auth]
+  lazy val nettyServer = wire[netty.NettyServer]
+  lazy val monitor = wire[Monitor]
 
   wire[LilaHandler] // must eagerly instanciate!
-  wire[RelayCrowd]  // must eagerly instanciate!
+  wire[RelayCrowd] // must eagerly instanciate!
   wire[LilaWsServer].start()
 
 final class LilaWsServer(
@@ -57,7 +57,7 @@ final class LilaWsServer(
       "users",
       {
         case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
-        case msg: ipc.LilaIn.Site            => lila.emit.site(msg)
+        case msg: ipc.LilaIn.Site => lila.emit.site(msg)
       }
     )
 

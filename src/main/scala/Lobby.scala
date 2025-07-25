@@ -56,7 +56,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     private object PendingGamesPerIp:
 
       private val maxPendingGames = 5
-      private val logger          = Logger("PendingGamesPerIp")
+      private val logger = Logger("PendingGamesPerIp")
 
       private val pendingGames: Cache[IpAddress, Set[Game.Id]] = Scaffeine()
         .initialCapacity(8_192)

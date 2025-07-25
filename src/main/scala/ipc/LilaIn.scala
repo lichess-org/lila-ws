@@ -16,15 +16,15 @@ object LilaIn:
 
   sealed trait Lobby extends LilaIn
 
-  sealed trait Room      extends LilaIn
-  sealed trait Simul     extends Room
-  sealed trait Team      extends Room
-  sealed trait Swiss     extends Room
-  sealed trait Tour      extends Room
-  sealed trait Study     extends Room
-  sealed trait Round     extends Room
+  sealed trait Room extends LilaIn
+  sealed trait Simul extends Room
+  sealed trait Team extends Room
+  sealed trait Swiss extends Room
+  sealed trait Tour extends Room
+  sealed trait Study extends Room
+  sealed trait Round extends Room
   sealed trait Challenge extends Room
-  sealed trait Racer     extends Room
+  sealed trait Racer extends Room
 
   sealed trait AnyRoom
       extends Simul
@@ -55,7 +55,7 @@ object LilaIn:
     def write = s"disconnect/users ${commas(userIds)}"
 
   case object WsBoot extends Site:
-    def write             = "boot"
+    def write = "boot"
     override def critical = true
 
   case class Ping(at: UptimeMillis) extends Site with Round:
@@ -64,7 +64,7 @@ object LilaIn:
   type SriUserId = (Sri, Option[User.Id])
   case class ConnectSris(sris: Iterable[SriUserId]) extends Lobby:
     private def render(su: SriUserId) = s"${su._1}${su._2.fold("")(" " + _)}"
-    def write                         = s"connect/sris ${commas(sris.map(render))}"
+    def write = s"connect/sris ${commas(sris.map(render))}"
 
   case class DisconnectSris(sris: Iterable[Sri]) extends Lobby:
     def write = s"disconnect/sris ${commas(sris)}"
@@ -98,7 +98,7 @@ object LilaIn:
 
   case class RoundMove(fullId: Game.FullId, uci: Uci, blur: Boolean, lag: MoveMetrics) extends Round:
     private def centis(c: Option[Centis]) = optional(c.map(_.centis.toString))
-    def write                             =
+    def write =
       s"r/move $fullId ${uci.uci} ${boolean(blur)} ${centis(lag.clientLag)} ${centis(lag.clientMoveTime)} ${centis(lag.frameLag)}"
     override def critical = true
 
@@ -123,7 +123,7 @@ object LilaIn:
 
   case class PlayerChatSay(roomId: RoomId, userIdOrColor: Either[User.Id, Color], msg: String) extends Round:
     def author = userIdOrColor.fold(identity, writeColor)
-    def write  = s"chat/say $roomId $author $msg"
+    def write = s"chat/say $roomId $author $msg"
   case class WatcherChatSay(roomId: RoomId, userId: User.Id, msg: String) extends Round:
     def write = s"chat/say/w $roomId $userId $msg"
 
@@ -154,7 +154,7 @@ object LilaIn:
   case class ReqResponse(reqId: Int, value: String) extends Study with Simul with Site:
     def write = s"req/response $reqId $value"
 
-  private def commas(as: Iterable[Any]): String   = if as.isEmpty then "-" else as.mkString(",")
-  private def boolean(b: Boolean): String         = if b then "+" else "-"
+  private def commas(as: Iterable[Any]): String = if as.isEmpty then "-" else as.mkString(",")
+  private def boolean(b: Boolean): String = if b then "+" else "-"
   private def optional(s: Option[String]): String = s.getOrElse("-")
-  private def writeColor(c: Color): String        = c.fold("w", "b")
+  private def writeColor(c: Color): String = c.fold("w", "b")

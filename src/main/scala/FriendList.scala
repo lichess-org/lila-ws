@@ -71,7 +71,7 @@ final class FriendList(
   Bus.internal.subscribe(
     "users",
     {
-      case ipc.LilaIn.ConnectUser(user, _)   => onConnect(user)
+      case ipc.LilaIn.ConnectUser(user, _) => onConnect(user)
       case ipc.LilaIn.DisconnectUsers(users) => users.foreach(onDisconnect)
     }
   )

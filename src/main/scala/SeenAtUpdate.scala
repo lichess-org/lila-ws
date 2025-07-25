@@ -34,7 +34,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
           if isCoach then
             mongo.coach(
               _.update(ordered = false).one(
-                BSONDocument("_id"  -> user),
+                BSONDocument("_id" -> user),
                 BSONDocument("$set" -> BSONDocument("user.seenAt" -> now))
               )
             )
@@ -43,7 +43,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
           if userDoc.isDefined && streamers.contains(user) then
             mongo.streamer(
               _.update(ordered = false).one(
-                BSONDocument("_id"  -> user),
+                BSONDocument("_id" -> user),
                 BSONDocument("$set" -> BSONDocument("seenAt" -> now))
               )
             )
@@ -62,7 +62,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
           key = "_id",
           selector = Some(
             BSONDocument(
-              "listed"           -> true,
+              "listed" -> true,
               "approval.granted" -> true
             )
           ),

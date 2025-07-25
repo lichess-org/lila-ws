@@ -16,16 +16,16 @@ object EvalCacheBsonHandlers:
   import EvalCacheEntry.*
 
   given BSONHandler[NonEmptyList[Pv]] = new:
-    private def scoreWrite(s: Score): String          = s.fold(_.value.toString, m => s"#${m.value}")
+    private def scoreWrite(s: Score): String = s.fold(_.value.toString, m => s"#${m.value}")
     private def scoreRead(str: String): Option[Score] =
       if str.headOption.contains('#')
       then str.drop(1).toIntOption.map(Score.mate(_))
       else str.toIntOption.map(Score.cp(_))
-    private def movesWrite(moves: Moves): String      = Uci.writeListChars(moves.value.toList)
+    private def movesWrite(moves: Moves): String = Uci.writeListChars(moves.value.toList)
     private def movesRead(str: String): Option[Moves] = Moves.from:
       Uci.readListChars(str).flatMap(_.toNel)
     private val scoreSeparator = ':'
-    private val pvSeparator    = '/'
+    private val pvSeparator = '/'
     private val pvSeparatorStr = pvSeparator.toString
 
     def readTry(bs: BSONValue) =
@@ -61,10 +61,10 @@ object EvalCacheBsonHandlers:
     def readTry(bson: BSONValue) =
       bson match
         case v: BSONBinary => Success(BinaryFen(v.byteArray))
-        case _             => handlerBadType(bson)
+        case _ => handlerBadType(bson)
     def writeTry(v: BinaryFen) = Success(BSONBinary(v.value, Subtype.GenericBinarySubtype))
 
   given BSONHandler[Id] = binaryFenHandler.as[Id](Id.apply, _.value)
 
-  given BSONDocumentHandler[Eval]           = Macros.handler
+  given BSONDocumentHandler[Eval] = Macros.handler
   given BSONDocumentHandler[EvalCacheEntry] = Macros.handler

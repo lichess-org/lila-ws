@@ -4,10 +4,10 @@ package evalCache
 import cats.data.NonEmptyList
 import chess.format.Uci
 
-val MIN_KNODES   = Knodes(3000)
-val MIN_DEPTH    = Depth(20)
-val MIN_PV_SIZE  = 6
-val MAX_PV_SIZE  = 10
+val MIN_KNODES = Knodes(3000)
+val MIN_DEPTH = Depth(20)
+val MIN_PV_SIZE = 6
+val MAX_PV_SIZE = 10
 val MAX_MULTI_PV = MultiPv(5)
 
 opaque type Knodes = Int

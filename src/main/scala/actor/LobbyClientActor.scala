@@ -47,7 +47,7 @@ object LobbyClientActor:
           case in: ClientIn =>
             deps.services.lobby.anonJoin.tapLobbyClientIn(deps.req, in)
             clientInReceive(state.site, deps, in) match
-              case None    => Behaviors.same
+              case None => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
 
           case msg: ClientOut.Ping =>

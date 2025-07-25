@@ -45,8 +45,8 @@ object ClientIn:
         "fen",
         Json
           .obj(
-            "id"  -> gameId.value,
-            "lm"  -> position.lastUci,
+            "id" -> gameId.value,
+            "lm" -> position.lastUci,
             "fen" -> position.fenWithColor
           )
           .add("wc" -> position.clock.map(_.white))
@@ -70,16 +70,16 @@ object ClientIn:
 
   case class Payload(json: JsonString) extends ClientIn:
     def write = json.value
-  def payload(js: JsValue)                 = Payload(JsonString(Json.stringify(js)))
+  def payload(js: JsValue) = Payload(JsonString(Json.stringify(js)))
   def payload(tpe: String, js: JsonString) = Payload(JsonString(cliMsg(tpe, js)))
 
   case class PayloadBatch(jsons: List[JsonString]) extends ClientIn:
     def write = jsons match
       case single :: Nil => Payload(single).write
-      case multi         => s"""{"t":"batch","d":[${multi.toList.map(_.value).mkString(",")}]}"""
+      case multi => s"""{"t":"batch","d":[${multi.toList.map(_.value).mkString(",")}]}"""
 
   case class Crowd(doc: JsObject, members: Int, users: String) extends ClientIn:
-    lazy val write                 = cliMsg("crowd", doc)
+    lazy val write = cliMsg("crowd", doc)
     inline def sameAs(that: Crowd) = members == that.members && users == that.users
 
   object Crowd:
@@ -92,7 +92,7 @@ object ClientIn:
       cliMsg(
         "redirect",
         Json.obj(
-          "id"  -> fullId.value,
+          "id" -> fullId.value,
           "url" -> s"/$fullId"
         )
       )
@@ -114,7 +114,7 @@ object ClientIn:
     lazy val write = cliMsg(
       "tournamentReminder",
       Json.obj(
-        "id"   -> tourId,
+        "id" -> tourId,
         "name" -> tourName
       )
     )
@@ -126,7 +126,7 @@ object ClientIn:
       cliMsg(
         "opening",
         Json.obj(
-          "path"    -> path,
+          "path" -> path,
           "opening" -> opening
         )
       )
@@ -155,12 +155,12 @@ object ClientIn:
             "path" -> path,
             "node" -> Json
               .obj(
-                "ply"      -> ply,
-                "fen"      -> fen,
-                "id"       -> id,
-                "uci"      -> move.uci,
-                "san"      -> move.san,
-                "dests"    -> dests,
+                "ply" -> ply,
+                "fen" -> fen,
+                "id" -> id,
+                "uci" -> move.uci,
+                "san" -> move.san,
+                "dests" -> dests,
                 "children" -> JsArray()
               )
               .add("opening" -> opening)
@@ -185,7 +185,7 @@ object ClientIn:
         Json
           .obj(
             "dests" -> dests,
-            "path"  -> path
+            "path" -> path
           )
           .add("opening" -> opening)
           .add("ch" -> chapterId)
@@ -206,8 +206,8 @@ object ClientIn:
       tpe: String,
       data: JsonString
   ) extends HasVersion:
-    val full         = Payload(JsonString(cliMsg(tpe, data, version)))
-    lazy val skip    = Payload(JsonString(s"""{"v":$version}"""))
+    val full = Payload(JsonString(cliMsg(tpe, data, version)))
+    lazy val skip = Payload(JsonString(s"""{"v":$version}"""))
     lazy val noDests = Payload(JsonString(destsRemover.replaceAllIn(full.write, "")))
   case object RoundPingFrameNoFlush extends ClientIn:
     val write = "" // not actually sent
@@ -227,8 +227,8 @@ object ClientIn:
       def write =
         Json.stringify(
           Json.obj(
-            "t"       -> "following_onlines",
-            "d"       -> users.map(_.data.titleName),
+            "t" -> "following_onlines",
+            "d" -> users.map(_.data.titleName),
             "playing" -> users.collect { case u if u.meta.playing => u.id },
             "patrons" -> users.collect { case u if u.data.patron.yes => u.id }
           )
@@ -246,8 +246,8 @@ object ClientIn:
     abstract class Event(key: String) extends ClientIn:
       def user: User.Id
       def write = cliMsg(s"following_$key", user)
-    case class Leaves(user: User.Id)         extends Event("leaves")
-    case class Playing(user: User.Id)        extends Event("playing")
+    case class Leaves(user: User.Id) extends Event("leaves")
+    case class Playing(user: User.Id) extends Event("playing")
     case class StoppedPlaying(user: User.Id) extends Event("stopped_playing")
 
   case class StormKey(signed: String) extends ClientIn:
@@ -264,10 +264,10 @@ object ClientIn:
   private val destsRemover = ""","dests":\{[^\}]+}""".r
 
   private def cliMsg[A: Writes](t: String, data: A): String = cliMsg(t, Json.toJson(data))
-  private def cliMsg(t: String, js: JsValue): String        = s"""{"t":"$t","d":${Json.stringify(js)}}"""
-  private def cliMsg(t: String, data: JsonString): String   = s"""{"t":"$t","d":${data.value}}"""
+  private def cliMsg(t: String, js: JsValue): String = s"""{"t":"$t","d":${Json.stringify(js)}}"""
+  private def cliMsg(t: String, data: JsonString): String = s"""{"t":"$t","d":${data.value}}"""
   private def cliMsg(t: String, data: JsonString, version: SocketVersion): String =
     s"""{"t":"$t","v":$version,"d":${data.value}}"""
-  private def cliMsg(t: String, int: Int): String      = s"""{"t":"$t","d":$int}"""
+  private def cliMsg(t: String, int: Int): String = s"""{"t":"$t","d":$int}"""
   private def cliMsg(t: String, bool: Boolean): String = s"""{"t":"$t","d":$bool}"""
-  private def cliMsg(t: String): String                = s"""{"t":"$t"}"""
+  private def cliMsg(t: String): String = s"""{"t":"$t"}"""

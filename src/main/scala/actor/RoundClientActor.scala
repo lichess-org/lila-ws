@@ -45,7 +45,7 @@ object RoundClientActor:
       from match
         case Left(version) =>
           History.round.getFrom(roomState.room.into(Game.Id), version) match
-            case None         => clientIn(ClientIn.Resync)
+            case None => clientIn(ClientIn.Resync)
             case Some(events) => events.map { versionFor(state, _) }.foreach(clientIn)
         case Right(gameState) => clientIn(ClientIn.roundFull(gameState))
       apply(state, deps)
@@ -118,7 +118,7 @@ object RoundClientActor:
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
               val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
-              val lag            = clientLag.withFrameLag(frameLagCentis)
+              val lag = clientLag.withFrameLag(frameLagCentis)
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             Behaviors.same
 
@@ -148,7 +148,7 @@ object RoundClientActor:
                 p.ext match
                   case None =>
                     lilaIn.round(LilaIn.PlayerChatSay(state.room.room, req.user.toLeft(p.color), msg))
-                  case Some(InTour(id))  => extMsg(id).foreach(lilaIn.tour)
+                  case Some(InTour(id)) => extMsg(id).foreach(lilaIn.tour)
                   case Some(InSwiss(id)) => extMsg(id).foreach(lilaIn.swiss)
                   case Some(InSimul(id)) => extMsg(id).foreach(lilaIn.simul)
             Behaviors.same

@@ -31,8 +31,8 @@ object Chronometer:
       lap.foreach(_.logIfSlow(threshold)(msg))
       this
 
-    def pp(using Executor): Future[A]                                            = lap.map(_.pp)
-    def pp(msg: String)(using Executor): Future[A]                               = lap.map(_.pp(msg))
+    def pp(using Executor): Future[A] = lap.map(_.pp)
+    def pp(msg: String)(using Executor): Future[A] = lap.map(_.pp(msg))
     def ppIfGt(msg: String, duration: FiniteDuration)(using Executor): Future[A] =
       lap.map(_.ppIfGt(msg, duration))
 
@@ -44,7 +44,7 @@ object Chronometer:
 
   def sync[A](f: => A): Lap[A] =
     val start = nowNanos
-    val res   = f
+    val res = f
     Lap(res, nowNanos - start)
 
   def syncEffect[A](f: => A)(effect: Lap[A] => Unit): A =

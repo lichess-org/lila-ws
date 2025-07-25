@@ -14,7 +14,7 @@ final private class Tor(mongo: Mongo)(using Executor)(using scheduler: Scheduler
       .get[String]("security.torNodes")
       .map:
         case Some(str) if str.nonEmpty => ips = IpAddress.from(str.split(' ').toSet)
-        case _                         =>
+        case _ =>
       .map: _ =>
         Logger(getClass).info(s"Updated Tor exit nodes: ${ips.size} found")
 

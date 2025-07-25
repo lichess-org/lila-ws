@@ -15,8 +15,8 @@ object Domain extends OpaqueString[Domain]
 
 final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, headers: HttpHeaders):
 
-  lazy val qsd        = QueryStringDecoder(uri.value)
-  lazy val path       = qsd.path
+  lazy val qsd = QueryStringDecoder(uri.value)
+  lazy val path = qsd.path
   lazy val parameters = qsd.parameters
 
   def header(name: CharSequence): Option[String] =
@@ -26,7 +26,7 @@ final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, heade
     encoded <- header(HttpHeaderNames.COOKIE)
     cookies = ServerCookieDecoder.LAX.decode(encoded)
     cookie <- cookies.asScala.find(_.name.contains(name))
-    value  <- Some(cookie.value).filter(_.nonEmpty)
+    value <- Some(cookie.value).filter(_.nonEmpty)
   yield value
 
   def queryParameter(name: String): Option[String] =
@@ -41,7 +41,7 @@ final class RequestHeader private (val uri: RequestUri, val ip: IpAddress, heade
 
   private def lichessMobileSri: Option[String] = userAgent match
     case RequestHeader.lichessMobileSriRegex(sri) => Some(sri)
-    case _                                        => None
+    case _ => None
 
   def uncheckedSri: Option[String] = isLichessMobile.so(lichessMobileSri).orElse(queryParameter("sri"))
 

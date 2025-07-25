@@ -11,7 +11,7 @@ class EvalCacheTest extends munit.FunSuite:
 
   test("Multiple repeated lines should be invalid"):
     val moves = Moves.from(Uci.Move("e2e4").map(NonEmptyList.one)).get
-    val eval  = Eval(
+    val eval = Eval(
       pvs = NonEmptyList
         .one(Pv(Score.cp(40), moves))
         .concat(

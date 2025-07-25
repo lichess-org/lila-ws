@@ -16,7 +16,7 @@ class EvalCacheMultiTest extends munit.FunSuite:
   def makeInput(depth: Depth, score: Score) =
     import EvalCacheEntry.*
     val moves = Moves.from(Uci.Move("e2e4").map(NonEmptyList.one)).get
-    val eval  = Eval(
+    val eval = Eval(
       pvs = NonEmptyList.one(Pv(score, moves)),
       knodes = MIN_KNODES,
       depth = depth,

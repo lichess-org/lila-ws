@@ -74,9 +74,9 @@ object RoomCrowd:
       anons: Int = 0,
       users: Map[User.Id, Int] = Map.empty
   ):
-    def nbUsers   = users.size
+    def nbUsers = users.size
     def nbMembers = anons + nbUsers
-    def isEmpty   = nbMembers < 1
+    def isEmpty = nbMembers < 1
 
     def connect(user: Option[User.Id]) =
       user.fold(copy(anons = anons + 1)): u =>

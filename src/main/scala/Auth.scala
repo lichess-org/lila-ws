@@ -17,18 +17,18 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     else
       sessionIdFromReq(req) match
         case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
-        case Some(sid)                                 => sessionAuth(sid)
-        case None                                      =>
+        case Some(sid) => sessionAuth(sid)
+        case None =>
           bearerFromHeader(req) match
             case Some(bearer) => bearerAuth(bearer)
-            case None         => Future.successful(None)
+            case None => Future.successful(None)
 
   def sidFromReq(req: RequestHeader): Option[String] =
     req
       .cookie(cookieName)
       .flatMap:
         case sidRegex(id) => Some(id)
-        case _            => None
+        case _ => None
 
   private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
@@ -58,7 +58,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       if authorization.startsWith(prefix) then
         authorization.stripPrefix(prefix).split(':') match
           case Array(bearer, signed) if bearerSigner.sha1(bearer).hash_=(signed) => Some(Bearer(bearer))
-          case _                                                                 => None
+          case _ => None
       else None
     }
 
@@ -78,19 +78,19 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       .cookie(cookieName)
       .flatMap:
         case sessionIdRegex(id) => Some(id)
-        case _                  => None
+        case _ => None
       .orElse(req.queryParameter(sessionIdKey))
 
 object Auth:
-  private val sessionIdKey   = "sessionId"
+  private val sessionIdKey = "sessionId"
   private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
-  private val sidKey         = "sid"
-  private val sidRegex       = s"""$sidKey=(\\w+)""".r.unanchored
-  private val appealPrefix   = "appeal:"
+  private val sidKey = "sid"
+  private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
+  private val appealPrefix = "appeal:"
 
   enum Success(val user: User.Id):
     case Cookie(u: User.Id) extends Success(u)
-    case OAuth(u: User.Id)  extends Success(u)
+    case OAuth(u: User.Id) extends Success(u)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]

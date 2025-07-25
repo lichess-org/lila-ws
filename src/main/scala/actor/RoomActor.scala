@@ -26,7 +26,7 @@ object RoomActor:
     Bus.subscribe(Bus.channel.room(state.room), ctx.self)
     roomCrowd.connect(state.room, req.user)
     History.room.getFrom(state.room, fromVersion) match
-      case None         => clientIn(ClientIn.Resync)
+      case None => clientIn(ClientIn.Resync)
       case Some(events) => events.map { versionFor(state.isTroll, _) }.foreach(clientIn)
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =

@@ -11,13 +11,13 @@ import java.io.IOException
 
 final private class ProtocolHandler(connector: ActorChannelConnector)
     extends WebSocketServerProtocolHandler(
-      "",    // path
-      null,  // subprotocols (?)
+      "", // path
+      null, // subprotocols (?)
       false, // allowExtensions (?)
-      8192,  // max frame size - /inbox allows sending 8000 chars
+      8192, // max frame size - /inbox allows sending 8000 chars
       false, // allowMaskMismatch (?)
-      true,  // checkStartsWith
-      false  // dropPongFrames
+      true, // checkStartsWith
+      false // dropPongFrames
     ):
 
   import ProtocolHandler.*
@@ -63,4 +63,4 @@ private object ProtocolHandler:
 
   object key:
     val endpoint = AttributeKey.valueOf[Controller.Endpoint]("endpoint")
-    val client   = AttributeKey.valueOf[Future[Client]]("client")
+    val client = AttributeKey.valueOf[Future[Client]]("client")

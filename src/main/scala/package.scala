@@ -12,9 +12,9 @@ export scala.concurrent.ExecutionContext.parasitic
 
 type Emit[A] = Function[A, Unit]
 
-type ClientSystem   = ActorSystem[Clients.Control]
+type ClientSystem = ActorSystem[Clients.Control]
 type ClientBehavior = Behavior[ipc.ClientMsg]
-type Client         = ActorRef[ipc.ClientMsg]
-type ClientEmit     = Emit[ipc.ClientIn]
+type Client = ActorRef[ipc.ClientMsg]
+type ClientEmit = Emit[ipc.ClientIn]
 
 val startedAtMillis = System.currentTimeMillis()

@@ -169,7 +169,7 @@ final class Controller(
           _.map:
             case Challenge.Challenger.Anon(secret) => auth.sidFromReq(header).contains(secret)
             case Challenge.Challenger.User(userId) => req.user.contains(userId)
-            case Challenge.Challenger.Open         => false
+            case Challenge.Challenger.Open => false
         .map:
           _.fold(notFound): owner =>
             endpoint(
@@ -228,9 +228,9 @@ final class Controller(
         req.user
           .match
             case Some(u) => Option(Racer.PlayerId.User(u))
-            case None    => auth.sidFromReq(header).map(Racer.PlayerId.Anon.apply)
+            case None => auth.sidFromReq(header).map(Racer.PlayerId.Anon.apply)
           .match
-            case None      => notFound
+            case None => notFound
             case Some(pid) =>
               endpoint(
                 name = "racer",
@@ -267,16 +267,16 @@ final class Controller(
   private def ValidSri(header: RequestHeader)(f: Sri => Response): Response =
     Sri.from(header.uncheckedSri) match
       case Some(validSri) => f(validSri)
-      case None           => Future.successful(Left(HttpResponseStatus.BAD_REQUEST))
+      case None => Future.successful(Left(HttpResponseStatus.BAD_REQUEST))
 
   private object CSRF:
 
     val csrfOrigin = config.getString("csrf.origin")
     val appOrigins = Set(
-      "ionic://localhost",     // ios
+      "ionic://localhost", // ios
       "capacitor://localhost", // capacitor (ios next)
-      "http://localhost",      // android
-      "http://localhost:8080"  // local app dev
+      "http://localhost", // android
+      "http://localhost:8080" // local app dev
     )
     val apiOrigins = Set("https://www.lichess4545.com")
 
@@ -284,7 +284,7 @@ final class Controller(
       req.origin match
         case None => f // for exotic clients and acid ape chess
         case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case _                                                          => block(req)
+        case _ => block(req)
 
     private def block(req: RequestHeader): Response =
       logger.info(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
@@ -329,4 +329,4 @@ object Controller:
       )
 
   type ResponseSync = Either[HttpResponseStatus, Endpoint]
-  type Response     = Future[ResponseSync]
+  type Response = Future[ResponseSync]

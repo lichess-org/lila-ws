@@ -23,7 +23,7 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
     /* selects the last non-finished round of each active broadcast.
      * or the last round that was finished less than 2 hours ago. */
     def ongoingIds: Future[Set[RoomId]] = for
-      tourColl  <- mongo.relayTourColl
+      tourColl <- mongo.relayTourColl
       roundColl <- mongo.relayRoundColl
       now = nowInstant
       result <- tourColl
@@ -35,9 +35,9 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
             PipelineOperator:
               BSONDocument(
                 "$lookup" -> BSONDocument(
-                  "from"     -> roundColl.name,
-                  "as"       -> "round",
-                  "let"      -> BSONDocument("tourId" -> "$_id"),
+                  "from" -> roundColl.name,
+                  "as" -> "round",
+                  "let" -> BSONDocument("tourId" -> "$_id"),
                   "pipeline" -> List(
                     BSONDocument(
                       "$match" -> BSONDocument(
@@ -65,8 +65,8 @@ final private class RelayCrowd(roomCrowd: RoomCrowd, mongo: Mongo)(using ex: Exe
                         )
                       )
                     ),
-                    BSONDocument("$sort"    -> BSONDocument("order" -> 1)),
-                    BSONDocument("$limit"   -> 5),
+                    BSONDocument("$sort" -> BSONDocument("order" -> 1)),
+                    BSONDocument("$limit" -> 5),
                     BSONDocument("$project" -> BSONDocument("_id" -> true))
                   )
                 )

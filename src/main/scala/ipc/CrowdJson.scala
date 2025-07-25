@@ -25,8 +25,8 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       ClientIn.Crowd.make(
         Json
           .obj(
-            "white"    -> (crowd.players.white > 0),
-            "black"    -> (crowd.players.black > 0),
+            "white" -> (crowd.players.white > 0),
+            "black" -> (crowd.players.black > 0),
             "watchers" -> spectators
           ),
         crowd.room.members,
@@ -39,7 +39,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
     else
       Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get).map { names =>
         val base = Json.obj(
-          "nb"    -> crowd.members,
+          "nb" -> crowd.members,
           "users" -> names.filterNot(isBotName),
           "anons" -> crowd.anons
         )
@@ -59,4 +59,4 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
       .get(crowd.roomId.into(Study.Id))
       .flatMap:
         case false => Future.successful(Nil)
-        case true  => mongo.studyMembers(crowd.roomId.into(Study.Id)).map(crowd.users.toSet.intersect)
+        case true => mongo.studyMembers(crowd.roomId.into(Study.Id)).map(crowd.users.toSet.intersect)

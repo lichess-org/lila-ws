@@ -22,9 +22,9 @@ final class Monitor(
 
   def start(): Unit =
 
-    val version   = System.getProperty("java.version")
-    val memory    = Runtime.getRuntime.maxMemory() / 1024 / 1024
-    val useKamon  = config.getString("kamon.influxdb.hostname").nonEmpty
+    val version = System.getProperty("java.version")
+    val memory = Runtime.getRuntime.maxMemory() / 1024 / 1024
+    val useKamon = config.getString("kamon.influxdb.hostname").nonEmpty
     val gitCommit = BuildInfo.gitHeadCommit.take(7)
 
     logger.info(s"lila-ws 3.0 netty kamon=$useKamon")
@@ -38,7 +38,7 @@ final class Monitor(
 
   private def periodicMetrics() =
     val members = LilaWsServer.connections.get
-    val rounds  = services.roundCrowd.size()
+    val rounds = services.roundCrowd.size()
     services.lobby.pong.update(members, rounds)
     connection.current.update(members.toDouble)
     historyRoomSize.update(History.room.size().toDouble)
@@ -52,7 +52,7 @@ final class Monitor(
 
   private def jvmThreads() =
     val perState = Kamon.gauge("jvm.threads.group")
-    val total    = Kamon.gauge("jvm.threads.group.total")
+    val total = Kamon.gauge("jvm.threads.group.total")
     for
       group <- scalalib.Jvm.threadGroups()
       _ = total.withTags(TagSet.from(Map("name" -> group.name))).update(group.total)
@@ -64,12 +64,12 @@ object Monitor:
   private val logger = Logger(getClass)
 
   object connection:
-    val current                = Kamon.gauge("connection.current").withoutTags()
+    val current = Kamon.gauge("connection.current").withoutTags()
     def open(endpoint: String) =
       Kamon.counter("connection.open").withTag("endpoint", endpoint).increment()
 
-  def clientOutWrongHole               = Kamon.counter("client.out.wrongHole").withoutTags()
-  def clientOutUnexpected              = Kamon.counter("client.out.unexpected").withoutTags()
+  def clientOutWrongHole = Kamon.counter("client.out.wrongHole").withoutTags()
+  def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags()
   def clientOutUnhandled(name: String) =
     Kamon
       .counter("client.out.unhandled")
@@ -79,17 +79,17 @@ object Monitor:
   def clientInCounter(endpointName: String): Counter =
     Kamon.counter("client.in").withTag("name", endpointName)
 
-  val historyRoomSize  = Kamon.gauge("history.room.size").withoutTags()
+  val historyRoomSize = Kamon.gauge("history.room.size").withoutTags()
   val historyRoundSize = Kamon.gauge("history.round.size").withoutTags()
 
-  val crowdRoomSize  = Kamon.gauge("crowd.room.size").withoutTags()
+  val crowdRoomSize = Kamon.gauge("crowd.room.size").withoutTags()
   val crowdRoundSize = Kamon.gauge("crowd.round.size").withoutTags()
-  val usersSize      = Kamon.gauge("users.size").withoutTags()
-  val watchSize      = Kamon.gauge("watch.size").withoutTags()
+  val usersSize = Kamon.gauge("users.size").withoutTags()
+  val watchSize = Kamon.gauge("watch.size").withoutTags()
 
   val voiceChatChannels = Kamon.gauge("voiceChat.channels.size").withoutTags()
 
-  val busSize    = Kamon.gauge("bus.size").withoutTags()
+  val busSize = Kamon.gauge("bus.size").withoutTags()
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags()
 
   val chessMoveTime = Kamon.timer("chess.analysis.move.time").withoutTags()
@@ -105,9 +105,9 @@ object Monitor:
       .increment()
 
   object redis:
-    val publishTime                    = Kamon.timer("redis.publish.time").withoutTags()
-    private val countIn                = Kamon.counter("redis.in")
-    private val countOut               = Kamon.counter("redis.out")
+    val publishTime = Kamon.timer("redis.publish.time").withoutTags()
+    private val countIn = Kamon.counter("redis.in")
+    private val countOut = Kamon.counter("redis.out")
     def in(chan: String, path: String) =
       countIn
         .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
@@ -145,7 +145,7 @@ object Monitor:
         frameLagHistogram.withTag("domain", domain.value).record(millis.toLong, TimeUnit.MILLISECONDS)
 
   object mobile:
-    private val Regex   = """Lichess Mobile/(\S+)(?: \(\d*\))? as:(\S+) sri:\S+ os:(Android|iOS)/.*""".r
+    private val Regex = """Lichess Mobile/(\S+)(?: \(\d*\))? as:(\S+) sri:\S+ os:(Android|iOS)/.*""".r
     private val counter = Kamon.counter("mobile.connect")
     def connect(req: util.RequestHeader) = if req.isLichessMobile then
       req.userAgent match
@@ -155,9 +155,9 @@ object Monitor:
               TagSet.from(
                 Map(
                   "version" -> version,
-                  "os"      -> osName,
-                  "auth"    -> (if user == "anon" then "anon" else "auth"),
-                  "route"   -> req.path.drop(1).takeWhile('/' !=)
+                  "os" -> osName,
+                  "auth" -> (if user == "anon" then "anon" else "auth"),
+                  "route" -> req.path.drop(1).takeWhile('/' !=)
                 )
               )
             )
@@ -166,7 +166,7 @@ object Monitor:
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()
-    val res   = f
+    val res = f
     timer.stop()
     res
 
@@ -176,21 +176,21 @@ object Monitor:
       def request(ply: Int, isHit: Boolean) = requests.withTags:
         TagSet.from(Map("ply" -> (if ply < 15 then ply.toString else "15+"), "hit" -> isHit, "style" -> key))
       object upgrade:
-        val count     = Kamon.counter("evalCache.upgrade.count").withTag("style", key)
-        val members   = Kamon.gauge("evalCache.upgrade.members").withTag("style", key)
-        val evals     = Kamon.gauge("evalCache.upgrade.evals").withTag("style", key)
+        val count = Kamon.counter("evalCache.upgrade.count").withTag("style", key)
+        val members = Kamon.gauge("evalCache.upgrade.members").withTag("style", key)
+        val evals = Kamon.gauge("evalCache.upgrade.evals").withTag("style", key)
         val expirable = Kamon.gauge("evalCache.upgrade.expirable").withTag("style", key)
     val single = Style("single")
-    val multi  = Style("multi")
+    val multi = Style("multi")
 
   object connector:
     object flush:
       object config:
-        val step     = Kamon.gauge("connector.flush.config.step").withoutTags()
+        val step = Kamon.gauge("connector.flush.config.step").withoutTags()
         val interval = Kamon.gauge("connector.flush.config.interval").withoutTags()
         val maxDelay = Kamon.gauge("connector.flush.config.maxDelay").withoutTags()
-      val qSizeEstimate           = Kamon.histogram("connector.flush.qSize.estimate").withoutTags()
-      val channelsToFlush         = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
+      val qSizeEstimate = Kamon.histogram("connector.flush.qSize.estimate").withoutTags()
+      val channelsToFlush = Kamon.histogram("connector.flush.channelsToFlush").withoutTags()
       val loopRuntimeMicroseconds = Kamon.histogram("connector.flush.loopRuntimeMicroseconds").withoutTags()
 
   object handler:

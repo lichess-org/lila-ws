@@ -6,11 +6,11 @@ import play.api.libs.json.*
 
 sealed trait LilaOut
 
-sealed trait SiteOut  extends LilaOut
+sealed trait SiteOut extends LilaOut
 sealed trait LobbyOut extends LilaOut
-sealed trait RoomOut  extends LilaOut
+sealed trait RoomOut extends LilaOut
 sealed trait SimulOut extends RoomOut
-sealed trait TourOut  extends RoomOut
+sealed trait TourOut extends RoomOut
 sealed trait StudyOut extends RoomOut
 sealed trait RoundOut extends RoomOut
 sealed trait RacerOut extends RoomOut
@@ -21,25 +21,25 @@ object LilaOut:
 
   // site
 
-  case class Mlat(millis: Double)                                  extends SiteOut
-  case class TellFlag(flag: Flag, json: JsonString)                extends SiteOut
+  case class Mlat(millis: Double) extends SiteOut
+  case class TellFlag(flag: Flag, json: JsonString) extends SiteOut
   case class TellUsers(users: Iterable[User.Id], json: JsonString) extends SiteOut
-  case class TellAll(json: JsonString)                             extends SiteOut
-  case class DisconnectUser(user: User.Id)                         extends SiteOut
-  case class TellSri(sri: Sri, json: JsonString)                   extends SiteOut with LobbyOut with StudyOut
-  case class SetTroll(user: User.Id, v: IsTroll)                   extends SiteOut
+  case class TellAll(json: JsonString) extends SiteOut
+  case class DisconnectUser(user: User.Id) extends SiteOut
+  case class TellSri(sri: Sri, json: JsonString) extends SiteOut with LobbyOut with StudyOut
+  case class SetTroll(user: User.Id, v: IsTroll) extends SiteOut
   case class Impersonate(mod: User.ModId, user: User.Id, v: Boolean) extends SiteOut
-  case class Follow(left: User.Id, right: User.Id)                   extends SiteOut
-  case class UnFollow(left: User.Id, right: User.Id)                 extends SiteOut
-  case class Pong(pingAt: UptimeMillis)                              extends SiteOut with RoundOut
-  case class LilaResponse(reqId: Int, body: String)                  extends SiteOut with RoundOut
-  case class StreamersOnline(streamers: Map[User.Id, JsValue])       extends SiteOut
+  case class Follow(left: User.Id, right: User.Id) extends SiteOut
+  case class UnFollow(left: User.Id, right: User.Id) extends SiteOut
+  case class Pong(pingAt: UptimeMillis) extends SiteOut with RoundOut
+  case class LilaResponse(reqId: Int, body: String) extends SiteOut with RoundOut
+  case class StreamersOnline(streamers: Map[User.Id, JsValue]) extends SiteOut
 
   // lobby
 
-  case class LobbyPairings(pairings: List[(Sri, Game.FullId)])          extends LobbyOut
-  case class TellLobby(json: JsonString)                                extends LobbyOut
-  case class TellLobbyActive(json: JsonString)                          extends LobbyOut
+  case class LobbyPairings(pairings: List[(Sri, Game.FullId)]) extends LobbyOut
+  case class TellLobby(json: JsonString) extends LobbyOut
+  case class TellLobbyActive(json: JsonString) extends LobbyOut
   case class TellLobbyUsers(users: Iterable[User.Id], json: JsonString) extends LobbyOut
 
   case class TellSris(sri: Seq[Sri], json: JsonString) extends LobbyOut
@@ -88,22 +88,22 @@ object LilaOut:
       tpe: String,
       data: JsonString
   ) extends RoundOut
-  case class RoundTourStanding(tourId: Tour.Id, data: JsonString)                     extends RoundOut
-  case class RoundResyncPlayer(fullId: Game.FullId)                                   extends RoundOut
-  case class RoundGone(fullId: Game.FullId, v: Boolean)                               extends RoundOut
-  case class RoundGoneIn(fullId: Game.FullId, seconds: Int)                           extends RoundOut
-  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean)                extends RoundOut
-  case class GameStart(users: List[User.Id])                                          extends RoundOut
+  case class RoundTourStanding(tourId: Tour.Id, data: JsonString) extends RoundOut
+  case class RoundResyncPlayer(fullId: Game.FullId) extends RoundOut
+  case class RoundGone(fullId: Game.FullId, v: Boolean) extends RoundOut
+  case class RoundGoneIn(fullId: Game.FullId, seconds: Int) extends RoundOut
+  case class RoundBotOnline(gameId: Game.Id, color: Color, v: Boolean) extends RoundOut
+  case class GameStart(users: List[User.Id]) extends RoundOut
   case class GameFinish(gameId: Game.Id, winner: Option[Color], users: List[User.Id]) extends RoundOut
-  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString)          extends RoundOut
+  case class TvSelect(gameId: Game.Id, speed: chess.Speed, json: JsonString) extends RoundOut
 
   // racer
 
   case class RacerState(raceId: Racer.Id, state: JsonString) extends TourOut
 
   case class ApiUserOnline(userId: User.Id, online: Boolean) extends AnyRoomOut
-  case object LilaBoot                                       extends AnyRoomOut
-  case class LilaStop(reqId: Int)                            extends AnyRoomOut
+  case object LilaBoot extends AnyRoomOut
+  case class LilaStop(reqId: Int) extends AnyRoomOut
   case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
   // impl
@@ -115,7 +115,7 @@ object LilaOut:
 
   def read(str: String): Option[LilaOut] =
     val parts = str.split(" ", 2)
-    val args  = parts.lift(1).getOrElse("")
+    val args = parts.lift(1).getOrElse("")
     parts(0) match
 
       case "mlat" => args.toDoubleOption.map(Mlat.apply)
@@ -172,7 +172,7 @@ object LilaOut:
             .toList
         })
 
-      case "tell/lobby"        => Some(TellLobby(JsonString(args)))
+      case "tell/lobby" => Some(TellLobby(JsonString(args)))
       case "tell/lobby/active" => Some(TellLobbyActive(JsonString(args)))
 
       case "tell/lobby/users" =>
@@ -297,7 +297,7 @@ object LilaOut:
           Some(RoundBotOnline(Game.Id(gameId), readColor(color), boolean(v)))
         }
 
-      case "r/start"  => Some(GameStart(User.Id.from(commas(args).toList)))
+      case "r/start" => Some(GameStart(User.Id.from(commas(args).toList)))
       case "r/finish" =>
         get(args, 3) { case Array(gameId, winner, users) =>
           Some(
@@ -340,8 +340,8 @@ object LilaOut:
 
       case _ => None
 
-  def commas(str: String): Array[String]            = if str == "-" then Array.empty else str.split(',')
-  def boolean(str: String): Boolean                 = str == "+"
-  def optional(str: String): Option[String]         = if str == "-" then None else Some(str)
-  def readColor(str: String): Color                 = Color.fromWhite(str == "w")
+  def commas(str: String): Array[String] = if str == "-" then Array.empty else str.split(',')
+  def boolean(str: String): Boolean = str == "+"
+  def optional(str: String): Option[String] = if str == "-" then None else Some(str)
+  def readColor(str: String): Color = Color.fromWhite(str == "w")
   def readOptionalColor(str: String): Option[Color] = optional(str).map(readColor)

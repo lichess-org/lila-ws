@@ -20,7 +20,7 @@ object Fens:
     gameIds.foreach: gameId =>
       games
         .compute(gameId):
-          case None                           => Watched(None, Set(client)).some
+          case None => Watched(None, Set(client)).some
           case Some(Watched(square, clients)) => Watched(square, clients + client).some
         .flatMap(_.position)
         .foreach: p =>
@@ -48,11 +48,11 @@ object Fens:
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
             for
               uci <- Uci(uciS)
-              wc  <- wcS.toIntOption
-              bc  <- bcS.toIntOption
+              wc <- wcS.toIntOption
+              bc <- bcS.toIntOption
             yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
           case MoveRegex(uciS, fenS) => Uci(uciS).map { Position(_, Fen.Board(fenS), None, turnColor) }
-          case _                     => None
+          case _ => None
         .fold(watched): position =>
           val msg = ClientIn.Fen(gameId, position)
           watched.clients.foreach { _ ! msg }
@@ -60,5 +60,5 @@ object Fens:
         .some
 
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"clock":{"white":121.88,"black":120.94}
-  private val MoveRegex      = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
+  private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
   private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+white":(\d+).+black":(\d+)""".r.unanchored

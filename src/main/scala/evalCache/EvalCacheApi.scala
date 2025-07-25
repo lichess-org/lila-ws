@@ -20,7 +20,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
 
   private val truster = wire[EvalCacheTruster]
   private val upgrade = wire[EvalCacheUpgrade]
-  private val multi   = EvalCacheMulti.withMonitoring()
+  private val multi = EvalCacheMulti.withMonitoring()
 
   import EvalCacheEntry.*
   import EvalCacheBsonHandlers.given
@@ -81,7 +81,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
     if depth < 20 then false
     else if depth < 30 then true
     else if depth < 50 then depth.value % 2 == 0
-    else depth.value                    % 5 == 0
+    else depth.value % 5 == 0
 
   private def monitorRequest[A](fen: Fen.Full, mon: Monitor.evalCache.Style)(res: Option[A]): Option[A] =
     Fen

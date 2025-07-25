@@ -10,13 +10,13 @@ final class KeepAlive(lila: Lila, scheduler: Scheduler)(using Executor):
 
   import KeepAlive.*
 
-  val study     = new AliveRooms
-  val tour      = new AliveRooms
-  val simul     = new AliveRooms
+  val study = new AliveRooms
+  val tour = new AliveRooms
+  val simul = new AliveRooms
   val challenge = new AliveRooms
-  val team      = new AliveRooms
-  val swiss     = new AliveRooms
-  val racer     = new AliveRooms
+  val team = new AliveRooms
+  val swiss = new AliveRooms
+  val racer = new AliveRooms
 
   scheduler.scheduleWithFixedDelay(15.seconds, 15.seconds) { () =>
     lila.emit.study(study.getAndClear)

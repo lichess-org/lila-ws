@@ -27,14 +27,14 @@ final class LilaHandler(
 
   private val siteHandler: Emit[LilaOut] =
 
-    case Mlat(millis)            => publish(_.mlat, ClientIn.Mlat(millis))
+    case Mlat(millis) => publish(_.mlat, ClientIn.Mlat(millis))
     case TellFlag(flag, payload) => publish(_.flag(flag), ClientIn.Payload(payload))
-    case TellSri(sri, payload)   => publish(_.sri(sri), ClientIn.Payload(payload))
+    case TellSri(sri, payload) => publish(_.sri(sri), ClientIn.Payload(payload))
     case TellSris(sris, payload) => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
-    case TellAll(payload)        => publish(_.all, ClientIn.Payload(payload))
+    case TellAll(payload) => publish(_.all, ClientIn.Payload(payload))
 
-    case TellUsers(us, json)              => users.tellMany(us, ClientIn.Payload(json))
-    case DisconnectUser(user)             => users.kick(user)
+    case TellUsers(us, json) => users.tellMany(us, ClientIn.Payload(json))
+    case DisconnectUser(user) => users.kick(user)
     case TellRoomUser(roomId, user, json) =>
       users.tellOne(user, ClientIn.onlyFor(_.Room(roomId), ClientIn.Payload(json)))
     case TellRoomUsers(roomId, us, json) =>
@@ -43,7 +43,7 @@ final class LilaHandler(
       users.setTroll(user, v)
       mongo.troll.set(user, v)
 
-    case Follow(left, right)   => friendList.follow(left, right)
+    case Follow(left, right) => friendList.follow(left, right)
     case UnFollow(left, right) => friendList.unFollow(left, right)
 
     case ApiUserOnline(user, true) =>
@@ -54,9 +54,9 @@ final class LilaHandler(
     case ApiUserOnline(user, false) => users.tellOne(user, ClientCtrl.ApiDisconnect)
 
     case Impersonate(mod, user, true) => Impersonations.start(mod, user)
-    case Impersonate(mod, _, false)   => Impersonations.stop(mod)
-    case StreamersOnline(streamers)   => Streamer.set(streamers)
-    case Pong(pingAt)                 => Monitor.ping.record("site", pingAt)
+    case Impersonate(mod, _, false) => Impersonations.stop(mod)
+    case StreamersOnline(streamers) => Streamer.set(streamers)
+    case Pong(pingAt) => Monitor.ping.record("site", pingAt)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")
@@ -71,28 +71,28 @@ final class LilaHandler(
     case TellLobbyUsers(us, json) =>
       users.tellMany(us, ClientIn.onlyFor(_.Lobby, ClientIn.Payload(json)))
 
-    case TellLobby(payload)       => publish(_.lobby, ClientIn.Payload(payload))
+    case TellLobby(payload) => publish(_.lobby, ClientIn.Payload(payload))
     case TellLobbyActive(payload) => publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
-    case TellSris(sris, payload)  => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
-    case LobbyPairings(pairings)  =>
+    case TellSris(sris, payload) => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
+    case LobbyPairings(pairings) =>
       pairings.foreach { (sri, fullId) => publish(_.sri(sri), ClientIn.LobbyPairing(fullId)) }
 
     case site: SiteOut => siteHandler(site)
-    case msg           => logger.warn(s"Unhandled lobby: $msg")
+    case msg => logger.warn(s"Unhandled lobby: $msg")
 
   private val simulHandler: Emit[LilaOut] =
     case LilaOut.RoomFilterPresent(reqId, roomId, userIds) =>
       lila.emit.simul(LilaIn.ReqResponse(reqId, roomCrowd.filterPresent(roomId, userIds).mkString(",")))
     case LilaBoot => roomBoot(_.idFilter.simul, lila.emit.simul)
-    case msg      => roomHandler(msg)
+    case msg => roomHandler(msg)
 
   private val teamHandler: Emit[LilaOut] =
     case LilaBoot => roomBoot(_.idFilter.team, lila.emit.team)
-    case msg      => roomHandler(msg)
+    case msg => roomHandler(msg)
 
   private val swissHandler: Emit[LilaOut] =
     case LilaBoot => roomBoot(_.idFilter.swiss, lila.emit.swiss)
-    case msg      => roomHandler(msg)
+    case msg => roomHandler(msg)
 
   private val tourHandler: Emit[LilaOut] =
     case GetWaitingUsers(roomId, name) =>
@@ -100,8 +100,8 @@ final class LilaHandler(
         .tournamentActiveUsers(roomId.into(Tour.Id))
         .zip(mongo.tournamentPlayingUsers(roomId.into(Tour.Id)))
         .foreach: (active, playing) =>
-          val present   = roomCrowd.getUsers(roomId)
-          val standby   = active.diff(playing)
+          val present = roomCrowd.getUsers(roomId)
+          val standby = active.diff(playing)
           val allAbsent = standby.diff(present)
           lila.emit.tour(LilaIn.WaitingUsers(roomId, present.intersect(standby)))
           val absent =
@@ -110,7 +110,7 @@ final class LilaHandler(
             else allAbsent
           if absent.nonEmpty then users.tellMany(absent, ClientIn.TourReminder(roomId.into(Tour.Id), name))
     case LilaBoot => roomBoot(_.idFilter.tour, lila.emit.tour)
-    case msg      => roomHandler(msg)
+    case msg => roomHandler(msg)
 
   private val studyHandler: Emit[LilaOut] =
 
@@ -129,7 +129,7 @@ final class LilaHandler(
       case LilaOut.RoomIsPresent(reqId, roomId, userId) =>
         lila.emit.study(LilaIn.ReqResponse(reqId, roomCrowd.isPresent(roomId, userId).toString))
       case LilaBoot => roomBoot(_.idFilter.study, lila.emit.study)
-      case lilaOut  => roomHandler(lilaOut)
+      case lilaOut => roomHandler(lilaOut)
 
   import scala.language.implicitConversions
   private given Conversion[Game.Id, RoomId] with
@@ -150,12 +150,12 @@ final class LilaHandler(
       publish(_.room(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
     case RoundTourStanding(tourId, data) =>
       publish(_.tourStanding(tourId), ClientIn.roundTourStanding(data))
-    case o: TvSelect          => Tv.select(o)
+    case o: TvSelect => Tv.select(o)
     case o @ RoomStop(roomId) =>
       History.round.stop(Game.Id(roomId.value))
       publish(_.room(roomId), ClientCtrl.Disconnect(o.toString))
     case RoundBotOnline(gameId, color, v) => roundCrowd.botOnline(gameId, color, v)
-    case GameStart(users)                 =>
+    case GameStart(users) =>
       users.foreach: u =>
         friendList.startPlaying(u)
         publish(_.userTv(u.into(UserTv)), ClientIn.Resync)
@@ -163,7 +163,7 @@ final class LilaHandler(
       users.foreach(friendList.stopPlaying)
       Fens.finish(gameId, winner)
     case LilaResponse(reqId, body) => LilaRequest.onResponse(reqId, body)
-    case Pong(pingAt)              =>
+    case Pong(pingAt) =>
       val millis = Monitor.ping.record("round", pingAt)
       lila.emit.round(LilaIn.RoundLatency(millis))
     case LilaBoot =>
@@ -177,7 +177,7 @@ final class LilaHandler(
 
   private val racerHandler: Emit[LilaOut] =
     case RacerState(raceId, data) => publish(_.room(raceId.into(RoomId)), ClientIn.racerState(data))
-    case msg                      => roomHandler(msg)
+    case msg => roomHandler(msg)
 
   private def tellRoomVersion(
       roomId: RoomId,
@@ -200,14 +200,14 @@ final class LilaHandler(
 
   private val roomHandler: Emit[LilaOut] =
     case TellRoomVersion(roomId, version, troll, payload) => tellRoomVersion(roomId, version, troll, payload)
-    case TellRoomChat(roomId, version, troll, payload)    =>
+    case TellRoomChat(roomId, version, troll, payload) =>
       tellRoomVersion(roomId, version, troll, payload)
       publish(_.externalChat(roomId), ClientIn.Payload(payload))
     case TellRoom(roomId, payload) => publish(_.room(roomId), ClientIn.Payload(payload))
-    case RoomStop(roomId)          => History.room.stop(roomId)
+    case RoomStop(roomId) => History.room.stop(roomId)
 
     case site: SiteOut => siteHandler(site)
-    case msg           => logger.warn(s"Unhandled room: $msg")
+    case msg => logger.warn(s"Unhandled room: $msg")
 
   private def roomBoot(
       filter: Mongo => Mongo.IdFilter,
@@ -218,14 +218,14 @@ final class LilaHandler(
       lilaIn(LilaIn.RoomSetVersions(versions.filter(v => ids(v._1))))
 
   lila.setHandlers:
-    case Lila.chans.round.out     => roundHandler
-    case Lila.chans.site.out      => siteHandler
-    case Lila.chans.lobby.out     => lobbyHandler
-    case Lila.chans.tour.out      => tourHandler
-    case Lila.chans.swiss.out     => swissHandler
-    case Lila.chans.simul.out     => simulHandler
-    case Lila.chans.study.out     => studyHandler
-    case Lila.chans.team.out      => teamHandler
+    case Lila.chans.round.out => roundHandler
+    case Lila.chans.site.out => siteHandler
+    case Lila.chans.lobby.out => lobbyHandler
+    case Lila.chans.tour.out => tourHandler
+    case Lila.chans.swiss.out => swissHandler
+    case Lila.chans.simul.out => simulHandler
+    case Lila.chans.study.out => studyHandler
+    case Lila.chans.team.out => teamHandler
     case Lila.chans.challenge.out => roomHandler
-    case Lila.chans.racer.out     => racerHandler
-    case chan                     => in => logger.warn(s"Unknown channel $chan sent $in")
+    case Lila.chans.racer.out => racerHandler
+    case chan => in => logger.warn(s"Unknown channel $chan sent $in")

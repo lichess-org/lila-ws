@@ -19,8 +19,8 @@ import lila.ws.util.ExpireCallbackMemo
 final private class EvalCacheUpgrade(using ec: Executor, scheduler: Scheduler):
   import EvalCacheUpgrade.*
 
-  private val members       = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
-  private val evals         = scalalib.ConcurrentMap[SetupId, EvalState](1024)
+  private val members = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
+  private val evals = scalalib.ConcurrentMap[SetupId, EvalState](1024)
   private val expirableSris = ExpireCallbackMemo[Sri](3.minutes, expire)
 
   private val debouncer = DebouncerFunction[SetupId](scheduler.scheduleOnce(5.seconds, _), 64)

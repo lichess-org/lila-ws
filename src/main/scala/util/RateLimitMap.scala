@@ -39,7 +39,7 @@ final class RateLimitMap(
       case _ => true
   )
 
-  private var lastLog               = ""
+  private var lastLog = ""
   private def logDedup(msg: String) =
     if msg != lastLog then
       lastLog = msg

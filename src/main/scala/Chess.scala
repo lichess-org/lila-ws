@@ -56,7 +56,7 @@ object Chess:
       chapterId: Option[ChapterId]
   ): ClientIn.Node =
     val movable = game.position.playable(false)
-    val fen     = chess.format.Fen.write(game)
+    val fen = chess.format.Fen.write(game)
     ClientIn.Node(
       path = path,
       id = UciCharPair(move.uci),

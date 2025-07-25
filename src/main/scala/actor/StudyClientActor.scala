@@ -34,7 +34,7 @@ object StudyClientActor:
 
           case in: ClientIn =>
             clientInReceive(state.site, deps, in) match
-              case None    => Behaviors.same
+              case None => Behaviors.same
               case Some(s) => apply(state.copy(site = s), deps)
 
           case ClientCtrl.Broom(oldSeconds) =>

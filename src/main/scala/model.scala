@@ -34,7 +34,7 @@ object Game:
   opaque type FullId = String
   object FullId extends OpaqueString[FullId]:
     extension (fullId: FullId)
-      def gameId   = Game.Id(fullId.value.take(8))
+      def gameId = Game.Id(fullId.value.take(8))
       def playerId = PlayerId(fullId.value.drop(8))
 
   opaque type AnyId = String
@@ -53,14 +53,14 @@ object Game:
         case (c, p) if p.id == id && p.userId == userId => RoundPlayer(id, c, ext)
 
   case class RoundPlayer(id: PlayerId, color: Color, ext: Option[RoundExt]):
-    def tourId    = ext.collect { case RoundExt.InTour(id) => id }
-    def swissId   = ext.collect { case RoundExt.InSwiss(id) => id }
-    def simulId   = ext.collect { case RoundExt.InSimul(id) => id }
+    def tourId = ext.collect { case RoundExt.InTour(id) => id }
+    def swissId = ext.collect { case RoundExt.InSwiss(id) => id }
+    def simulId = ext.collect { case RoundExt.InSimul(id) => id }
     def extRoomId =
       tourId.map(_.into(RoomId)).orElse(simulId.map(_.into(RoomId))).orElse(swissId.map(_.into(RoomId)))
 
   enum RoundExt:
-    case InTour(id: Tour.Id)   extends RoundExt
+    case InTour(id: Tour.Id) extends RoundExt
     case InSwiss(id: Swiss.Id) extends RoundExt
     case InSimul(id: Simul.Id) extends RoundExt
 end Game
@@ -89,7 +89,7 @@ object Team:
   object HasChat extends YesNo[HasChat]
 
   enum Access(val id: Int):
-    case None    extends Access(0)
+    case None extends Access(0)
     case Leaders extends Access(10)
     case Members extends Access(20)
 
@@ -106,11 +106,11 @@ object Racer:
   object Id extends OpaqueString[Id]
   enum PlayerId(val key: String):
     case User(user: lila.ws.User.Id) extends PlayerId(user.value)
-    case Anon(sid: String)           extends PlayerId(s"@$sid")
+    case Anon(sid: String) extends PlayerId(s"@$sid")
 
 opaque type Sri = String
 object Sri extends OpaqueString[Sri]:
-  def random()                       = Sri(SecureRandom.nextString(12))
+  def random() = Sri(SecureRandom.nextString(12))
   def from(str: String): Option[Sri] = Option.unless(str.contains(' '))(str)
 
 opaque type Flag = String
@@ -118,8 +118,8 @@ object Flag extends OpaqueString[Flag]:
   def make(value: String) =
     value match
       case "simul" | "tournament" | "api" | "embed" => Some(Flag(value))
-      case _                                        => None
-  val api   = Flag("api")
+      case _ => None
+  val api = Flag("api")
   val embed = Flag("embed")
 
 opaque type IpAddress = String

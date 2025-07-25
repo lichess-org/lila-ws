@@ -23,9 +23,9 @@ object EvalCacheJsonHandlers:
     fen <- d.get[Fen.Full]("fen")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     knodes <- d.get[Knodes]("knodes")
-    depth  <- d.get[Depth]("depth")
+    depth <- d.get[Depth]("depth")
     pvObjs <- d.objs("pvs")
-    pvs    <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
+    pvs <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
   yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
 
   def readGetMulti(d: JsObject) = for
@@ -34,10 +34,10 @@ object EvalCacheJsonHandlers:
   yield ipc.ClientOut.EvalGetMulti(fens.take(32), variant)
 
   def writeEval(e: Eval, fen: Fen.Full) = Json.obj(
-    "fen"    -> fen,
+    "fen" -> fen,
     "knodes" -> e.knodes,
-    "depth"  -> e.depth,
-    "pvs"    -> JsArray(e.pvs.toList.map(writePv))
+    "depth" -> e.depth,
+    "pvs" -> JsArray(e.pvs.toList.map(writePv))
   )
 
   def writeMultiHit(fen: Fen.Full, e: Eval): JsObject = Json
@@ -47,7 +47,7 @@ object EvalCacheJsonHandlers:
 
   def writeMultiHit(evals: List[(Fen.Full, Eval)]): JsObject = evals match
     case List(single) => writeMultiHit.tupled(single)
-    case many         => Json.obj("multi" -> many.map(writeMultiHit.tupled))
+    case many => Json.obj("multi" -> many.map(writeMultiHit.tupled))
 
   private def writePv(pv: Pv) = Json
     .obj("moves" -> pv.moves.value.toList.map(_.uci).mkString(" "))
@@ -57,13 +57,13 @@ object EvalCacheJsonHandlers:
   private def parsePv(d: JsObject): Option[Pv] =
     for
       movesStr <- d.str("moves")
-      moves    <- Moves.from(
+      moves <- Moves.from(
         movesStr
           .split(' ')
           .take(MAX_PV_SIZE)
           .foldLeft(List.empty[Uci].some):
             case (Some(ucis), str) => Uci(str).map(_ :: ucis)
-            case _                 => None
+            case _ => None
           .flatMap(_.reverse.toNel)
       )
       score <- d.int("cp").map(Score.cp).orElse(d.int("mate").map(Score.mate))

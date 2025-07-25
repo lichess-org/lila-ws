@@ -19,8 +19,8 @@ final private class ActorChannelConnector(
     workers: EventLoopGroup
 )(using scheduler: Scheduler, ec: Executor):
 
-  private val flushQ      = ActorChannelConnector.FlushQueue()
-  private val monitor     = Monitor.connector.flush
+  private val flushQ = ActorChannelConnector.FlushQueue()
+  private val monitor = Monitor.connector.flush
   private val flushThread = Future:
     while !workers.isShuttingDown && !workers.isTerminated do
       val delay = flush().timeLeft.max(0.millis)
@@ -28,9 +28,9 @@ final private class ActorChannelConnector(
 
   private object config:
     private def int(key: String) = settings.makeSetting(key, staticConfig.getInt(key))
-    val step                     = int("netty.flush.step")
-    val interval                 = int("netty.flush.interval-millis")
-    val maxDelay                 = int("netty.flush.max-delay-millis")
+    val step = int("netty.flush.step")
+    val interval = int("netty.flush.interval-millis")
+    val maxDelay = int("netty.flush.max-delay-millis")
     inline def isFlushQEnabled() = interval.get() > 0
     scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
       monitor.config.step.update(step.get())
@@ -67,9 +67,9 @@ final private class ActorChannelConnector(
       flushQ.add(channel)
 
   private def flush(): Deadline =
-    val entered         = Deadline.now
-    val qSize           = flushQ.estimateSize()
-    val maxDelayFactor  = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
+    val entered = Deadline.now
+    val qSize = flushQ.estimateSize()
+    val maxDelayFactor = config.interval.get().toDouble / config.maxDelay.get().atLeast(1)
     var channelsToFlush = config.step.get().atLeast((qSize * maxDelayFactor).toInt)
     monitor.channelsToFlush.record(channelsToFlush)
 
@@ -87,13 +87,13 @@ final private class ActorChannelConnector(
     entered + {
       if config.isFlushQEnabled() then config.interval.get().millis
       else if qSize == 0 then 1000.millis // hibernate
-      else 1.millis                       // interval is 0 but we still need to empty the queue
+      else 1.millis // interval is 0 but we still need to empty the queue
     }
 
 object ActorChannelConnector:
   private class FlushQueue:
     private val queue = java.util.concurrent.ConcurrentLinkedQueue[Channel]()
-    private val size  = java.util.concurrent.atomic.AtomicInteger()
+    private val size = java.util.concurrent.atomic.AtomicInteger()
 
     def add(channel: Channel): Unit =
       size.getAndIncrement()

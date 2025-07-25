@@ -43,7 +43,7 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
       case frame: PongWebSocketFrame =>
         if frame.content().readableBytes() >= 8 then
           val lagMillis = (System.currentTimeMillis() - frame.content().getLong(0)).toInt
-          val pong      = ClientOut.RoundPongFrame(lagMillis)
+          val pong = ClientOut.RoundPongFrame(lagMillis)
           Option(ctx.channel.attr(key.client).get).foreach(_.value.foreach(_.foreach(_ ! pong)))
 
       case frame =>
@@ -55,7 +55,7 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
       case Some(clientFu) =>
         clientFu.value match
           case Some(client) => client.foreach(f)
-          case None         => clientFu.foreach(f)
+          case None => clientFu.foreach(f)
       case None =>
         logger.warn(s"No client actor on channel $channel")
         shutdown(channel, 1011, s"no actor on $channel")

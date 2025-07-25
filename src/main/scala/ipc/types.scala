@@ -9,10 +9,10 @@ sealed trait ClientCtrl extends ClientMsg
 
 object ClientCtrl:
   case class Disconnect(reason: String) extends ClientCtrl
-  case object ApiDisconnect             extends ClientCtrl
-  case class Broom(oldSeconds: Int)     extends ClientCtrl
+  case object ApiDisconnect extends ClientCtrl
+  case class Broom(oldSeconds: Int) extends ClientCtrl
 
-object ClientNull               extends ClientMsg
+object ClientNull extends ClientMsg
 case class SetTroll(v: IsTroll) extends ClientMsg
 
 case class ClientMoveMetrics(

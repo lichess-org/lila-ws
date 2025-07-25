@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 
 opaque type Id = BinaryFen
 object Id:
-  def apply(fen: BinaryFen): Id     = fen
+  def apply(fen: BinaryFen): Id = fen
   def apply(position: Position): Id = BinaryFen.writeNormalized(position)
   object from:
     private val standardCache: LoadingCache[Fen.Full, Option[Id]] =
@@ -25,7 +25,7 @@ object Id:
 
 case class EvalCacheEntry(
     _id: Id,
-    nbMoves: Int,                     // multipv cannot be greater than number of legal moves
+    nbMoves: Int, // multipv cannot be greater than number of legal moves
     evals: List[EvalCacheEntry.Eval], // best ones first, by depth and nodes
     usedAt: LocalDateTime,
     updatedAt: LocalDateTime
@@ -84,7 +84,7 @@ object EvalCacheEntry:
   case class Pv(score: Score, moves: Moves):
 
     def looksValid = score.mate match
-      case None       => moves.value.toList.sizeIs > MIN_PV_SIZE
+      case None => moves.value.toList.sizeIs > MIN_PV_SIZE
       case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
 
     def truncate = copy(moves = Moves.truncate(moves))

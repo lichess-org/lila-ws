@@ -25,7 +25,7 @@ object SiteClientActor:
 
           case in: ClientIn =>
             clientInReceive(state, deps, in) match
-              case None    => Behaviors.same
+              case None => Behaviors.same
               case Some(s) => apply(s, deps)
 
           case msg: ClientOutSite =>

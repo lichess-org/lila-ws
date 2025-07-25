@@ -16,8 +16,8 @@ final class NettyServer(
     config: Config,
     settings: util.SettingStore
 )(using Executor, Scheduler):
-  private val logger                          = Logger(getClass)
-  private val threads                         = config.getInt("netty.threads")
+  private val logger = Logger(getClass)
+  private val threads = config.getInt("netty.threads")
   private val (parent, workers, channelClass) =
     if System.getProperty("os.name").toLowerCase.startsWith("mac") then
       (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(threads), classOf[KQueueServerSocketChannel])

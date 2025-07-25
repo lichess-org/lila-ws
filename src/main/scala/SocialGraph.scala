@@ -31,7 +31,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
   // A linear probing, open addressing hash table. A custom implementation is
   // used, so that we know the index of an entry in the hash table is stable
   // (at least until it is replaced).
-  private val slotsMask: Int          = (1 << logCapacity) - 1
+  private val slotsMask: Int = (1 << logCapacity) - 1
   private val slots: Array[UserEntry] = new Array(1 << logCapacity)
 
   // Hold this while reading, writing and modifying edge sets.
@@ -46,7 +46,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
   // particular slot from the graph, as if they were offline). So instead of
   // using a cryptographically secure and randomized hash, just make it
   // slightly more inconvenient to exploit than String.hashCode().
-  private val seed                         = Random.nextInt()
+  private val seed = Random.nextInt()
   private def fxhash32(user: User.Id): Int =
     user.value.foldLeft(seed) { case (state, ch) =>
       (Integer.rotateLeft(state, 5) ^ ch.toInt) * 0x9e3779b9
@@ -59,7 +59,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None                                => boundary.break(NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
           boundary.break(ExistingSlot(slot, existing))
         case _ =>
@@ -73,7 +73,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
     for s <- hash to (hash + SocialGraph.MaxStride) do
       val slot = s & slotsMask
       read(slot) match
-        case None                                => boundary.break(NewSlot(slot))
+        case None => boundary.break(NewSlot(slot))
         case Some(existing) if existing.id == id =>
           boundary.break(ExistingSlot(slot, existing))
         case Some(existing) if !existing.meta.online && slot != exceptSlot =>
@@ -231,12 +231,12 @@ object SocialGraph:
   opaque type UserMeta = Int
   object UserMeta extends OpaqueInt[UserMeta]:
 
-    private val FRESH      = 1
+    private val FRESH = 1
     private val SUBSCRIBED = 2
-    private val ONLINE     = 4
-    private val PLAYING    = 8
-    val stale              = UserMeta(0)
-    val freshSubscribed    = UserMeta(FRESH | SUBSCRIBED)
+    private val ONLINE = 4
+    private val PLAYING = 8
+    val stale = UserMeta(0)
+    val freshSubscribed = UserMeta(FRESH | SUBSCRIBED)
 
     extension (flags: UserMeta)
       private inline def toggle(flag: Int, inline on: Boolean) = UserMeta(
@@ -244,15 +244,15 @@ object SocialGraph:
       )
       private inline def has(inline flag: Int): Boolean = (flags & flag) != 0
 
-      inline def fresh      = flags.has(UserMeta.FRESH)
+      inline def fresh = flags.has(UserMeta.FRESH)
       inline def subscribed = flags.has(UserMeta.SUBSCRIBED)
-      inline def online     = flags.has(UserMeta.ONLINE)
-      inline def playing    = flags.has(UserMeta.PLAYING)
+      inline def online = flags.has(UserMeta.ONLINE)
+      inline def playing = flags.has(UserMeta.PLAYING)
 
-      inline def withFresh(inline fresh: Boolean)           = flags.toggle(UserMeta.FRESH, fresh)
+      inline def withFresh(inline fresh: Boolean) = flags.toggle(UserMeta.FRESH, fresh)
       inline def withSubscribed(inline subscribed: Boolean) = flags.toggle(UserMeta.SUBSCRIBED, subscribed)
-      inline def withOnline(inline online: Boolean)         = flags.toggle(UserMeta.ONLINE, online)
-      inline def withPlaying(inline playing: Boolean)       = flags.toggle(UserMeta.PLAYING, playing)
+      inline def withOnline(inline online: Boolean) = flags.toggle(UserMeta.ONLINE, online)
+      inline def withPlaying(inline playing: Boolean) = flags.toggle(UserMeta.PLAYING, playing)
   end UserMeta
 
   case class UserEntry(id: User.Id, meta: UserMeta):
@@ -261,7 +261,7 @@ object SocialGraph:
   private class AdjacencyList:
     private val inner: java.util.TreeSet[Long] = new java.util.TreeSet()
 
-    def add(a: Int, b: Int): Unit    = inner.add(AdjacencyList.makePair(a, b))
+    def add(a: Int, b: Int): Unit = inner.add(AdjacencyList.makePair(a, b))
     def remove(a: Int, b: Int): Unit = inner.remove(AdjacencyList.makePair(a, b))
 
     def read(a: Int): List[Int] =

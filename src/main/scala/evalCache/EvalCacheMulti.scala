@@ -19,8 +19,8 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
   import EvalCacheMulti.*
   import EvalCacheUpgrade.{ EvalState, SriString }
 
-  private val members                        = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
-  private val evals                          = scalalib.ConcurrentMap[Id, EvalState](1024)
+  private val members = scalalib.ConcurrentMap[SriString, WatchingMember](4096)
+  private val evals = scalalib.ConcurrentMap[Id, EvalState](1024)
   private val expirableSris: ExpireMemo[Sri] = makeExpirableSris(expire)
 
   def register(sri: Sri, e: EvalGetMulti): Unit =
@@ -48,9 +48,9 @@ final private class EvalCacheMulti private (makeExpirableSris: (Sri => Unit) => 
       .get(input.id)
       .filter(_.depth < input.eval.depth)
       .so: prev =>
-        val win           = WinPercent.fromScore(input.eval.bestPv.score)
+        val win = WinPercent.fromScore(input.eval.bestPv.score)
         val winHasChanged = Math.abs(win.value - prev.win.value) > 2
-        val newWin        = if winHasChanged then win else prev.win
+        val newWin = if winHasChanged then win else prev.win
         evals.put(input.id, prev.copy(depth = input.eval.depth, win = newWin))
         winHasChanged.so:
           prev.sris.filter(_ != input.sri)
@@ -81,4 +81,4 @@ private object EvalCacheMulti:
   def mock() = EvalCacheMulti: _ =>
     new ExpireMemo[Sri]:
       def put(key: Sri): Unit = ()
-      def count: Int          = 0
+      def count: Int = 0

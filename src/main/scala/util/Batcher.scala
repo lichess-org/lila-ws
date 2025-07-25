@@ -6,11 +6,11 @@ import org.apache.pekko.actor.typed.Scheduler
 
 /* Batches elements, sends the batch when `timeout` has elapsed since the first element was added. */
 final class Batcher[Key, Elem, Batch](
-    maxBatchSize: Int,                      // approx. max number of elements in a batch
-    initialCapacity: Int,                   // number of keys to expect
-    timeout: FiniteDuration,                // how long to wait for more elements before emitting
+    maxBatchSize: Int, // approx. max number of elements in a batch
+    initialCapacity: Int, // number of keys to expect
+    timeout: FiniteDuration, // how long to wait for more elements before emitting
     append: (Option[Batch], Elem) => Batch, // how batches are built
-    emit: (Key, Batch) => Unit              // callback to emit a batch on timeout or maxBatchSize reached
+    emit: (Key, Batch) => Unit // callback to emit a batch on timeout or maxBatchSize reached
 )(using scheduler: Scheduler, ec: Executor):
 
   final private class Buffer(val batch: Batch, val counter: Int)
