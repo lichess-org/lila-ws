@@ -19,7 +19,7 @@ final private class RequestHandler(router: Router, useNginxForwardedIp: Boolean)
     ):
 
   override def channelRead0(ctx: ChannelHandlerContext, req: FullHttpRequest): Unit =
-    val ip      = findClientIpAddressOrBreak(ctx, req)
+    val ip = findClientIpAddressOrBreak(ctx, req)
     val request = util.RequestHeader(RequestUri(req.uri), ip, req.headers)
     router(request).foreach:
       case Left(status) =>
