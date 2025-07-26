@@ -27,7 +27,7 @@ final class NettyServer(
   def start(): Unit =
 
     logger.info("Start")
-    val port                = config.getInt("http.port")
+    val port = config.getInt("http.port")
     val useNginxForwardedIp = config.getBoolean("http.use-nginx-forwarded-ip")
     try
       val boot = new ServerBootstrap
