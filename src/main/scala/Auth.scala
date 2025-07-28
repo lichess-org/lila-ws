@@ -1,5 +1,6 @@
 package lila.ws
 
+import scala.jdk.CollectionConverters.given
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
@@ -50,14 +51,15 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
 
   private val cookieName = config.getString("cookie.name")
 
-  private val bearerSigner = Algo.hmac(config.getString("oauth.secret"))
+  private val bearerSigners = config.getStringList("oauth.secrets").asScala.toList.map(Algo.hmac)
 
   private def bearerFromHeader(req: RequestHeader): Option[Auth.Bearer] =
     req.header("Authorization").flatMap { authorization =>
       val prefix = "Bearer "
       if authorization.startsWith(prefix) then
         authorization.stripPrefix(prefix).split(':') match
-          case Array(bearer, signed) if bearerSigner.sha1(bearer).hash_=(signed) => Some(Bearer(bearer))
+          case Array(bearer, signed) if bearerSigners.exists(_.sha1(bearer).hash_=(signed)) =>
+            Some(Bearer(bearer))
           case _ => None
       else None
     }
