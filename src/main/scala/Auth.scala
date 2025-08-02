@@ -1,9 +1,10 @@
 package lila.ws
 
-import scala.jdk.CollectionConverters.given
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
+
+import scala.jdk.CollectionConverters.given
 
 import util.RequestHeader
 
