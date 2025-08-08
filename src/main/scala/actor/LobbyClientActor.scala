@@ -20,7 +20,7 @@ object LobbyClientActor:
       import deps.*
       onStart(deps, ctx)
       req.user.foreach { users.connect(_, ctx.self, silently = true) }
-      services.lobby.connect(req.sri -> req.user)
+      services.lobby.onConnect(req)
       Bus.subscribe(Bus.channel.lobby, ctx.self)
       apply(State(), deps)
 

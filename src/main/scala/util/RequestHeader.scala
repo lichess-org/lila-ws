@@ -35,8 +35,9 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, headers: HttpH
   def queryParameterInt(name: String): Option[Int] =
     queryParameter(name).flatMap(_.toIntOption)
 
-  def userAgent: String = header(HttpHeaderNames.USER_AGENT).getOrElse("")
+  def userAgent: String = header(HttpHeaderNames.USER_AGENT).orZero
 
+  def isLichobile: Boolean = userAgent.contains("Lichobile/")
   def isLichessMobile: Boolean = userAgent.startsWith("Lichess Mobile/")
 
   private def lichessMobileSri: Option[String] = userAgent match

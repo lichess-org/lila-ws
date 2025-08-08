@@ -75,7 +75,11 @@ final class LilaHandler(
     case TellLobbyActive(payload) => publish(_.lobby, ClientIn.LobbyNonIdle(ClientIn.Payload(payload)))
     case TellSris(sris, payload) => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
     case LobbyPairings(pairings) =>
-      pairings.foreach { (sri, fullId) => publish(_.sri(sri), ClientIn.LobbyPairing(fullId)) }
+      pairings.foreach: (sri, fullId) =>
+        services.lobby.OldAppSriMemory
+          .allNewSris(sri)
+          .foreach: sri =>
+            publish(_.sri(sri), ClientIn.LobbyPairing(fullId))
 
     case site: SiteOut => siteHandler(site)
     case msg => logger.warn(s"Unhandled lobby: $msg")

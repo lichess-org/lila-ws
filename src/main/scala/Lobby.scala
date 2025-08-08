@@ -11,9 +11,12 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
 
   private val lilaIn = lila.emit.lobby
 
-  val connect = groupedWithin[(Sri, Option[User.Id])](6, 479.millis) { connects =>
+  private val connect = groupedWithin[(Sri, Option[User.Id])](6, 479.millis): connects =>
     lilaIn(LilaIn.ConnectSris(connects))
-  }
+
+  def onConnect(req: ClientActor.Req): Unit =
+    connect(req.sri -> req.user)
+    OldAppSriMemory.onConnect(req)
 
   val disconnect = groupedWithin[Sri](50, 487.millis) { sris => lilaIn(LilaIn.DisconnectSris(sris)) }
 
@@ -25,6 +28,34 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
 
     def update(members: Int, rounds: Int): Unit =
       value = LobbyPong(members, rounds)
+
+  // the old app has a new SRI for each websocket connection.
+  // if it disconnects while being paired,
+  // then the new game `redirect` message is sent to the previous SRI that created the game,
+  // and not to the new SRI that is currently connected.
+  // The workaround is to remember previous SRIs of each user, so that new game messages
+  // are sent to all their current and previous SRIs.
+  object OldAppSriMemory:
+
+    // old SRI -> new SRI
+    private val newSri: Cache[Sri, Sri] =
+      Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
+    // last known SRI of user
+    private val userSri: Cache[User.Id, Sri] =
+      Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
+
+    def onConnect(req: ClientActor.Req): Unit = for
+      user <- req.user
+      if req.header.isLichobile
+      prevSri = userSri.getIfPresent(user)
+      if prevSri.forall(_ != req.sri)
+    do
+      prevSri.foreach(newSri.put(_, req.sri))
+      userSri.put(user, req.sri)
+
+    // get new SRIs of old SRI, recursively (!)
+    def allNewSris(fromSri: Sri): List[Sri] =
+      fromSri :: newSri.getIfPresent(fromSri).so(allNewSris)
 
   object anonJoin:
 
@@ -53,6 +84,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
 
     private val redirectToGameIdRegex = """t":"redirect",.+"id":"(\w{8})""".r.unanchored
 
+    // prevent flood join by requiring that joined games be played
     private object PendingGamesPerIp:
 
       private val maxPendingGames = 5
