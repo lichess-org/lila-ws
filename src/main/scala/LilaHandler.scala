@@ -76,10 +76,10 @@ final class LilaHandler(
     case TellSris(sris, payload) => sris.foreach { sri => publish(_.sri(sri), ClientIn.Payload(payload)) }
     case LobbyPairings(pairings) =>
       pairings.foreach: (sri, fullId) =>
-        services.lobby.OldAppSriMemory
-          .allNewSris(sri)
-          .foreach: sri =>
-            publish(_.sri(sri), ClientIn.LobbyPairing(fullId))
+        val allSris = services.lobby.OldAppSriMemory.allNewSris(sri)
+        if allSris.sizeIs > 1 then Monitor.mobile.lobbySriChain.srisInTheChain(allSris.size)
+        allSris.foreach: sri =>
+          publish(_.sri(sri), ClientIn.LobbyPairing(fullId))
 
     case site: SiteOut => siteHandler(site)
     case msg => logger.warn(s"Unhandled lobby: $msg")

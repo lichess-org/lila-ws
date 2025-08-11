@@ -43,7 +43,6 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     // last known SRI of user
     private val userSri: Cache[User.Id, Sri] =
       Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
-    private val logger = Logger("OldAppSriMemory")
 
     def onConnect(req: ClientActor.Req): Unit = for
       user <- req.user
@@ -53,7 +52,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     do
       prevSri.foreach: ps =>
         if sriChain.getIfPresent(req.sri).isDefined
-        then logger.info(s"sriChain loop avoided $req")
+        then Monitor.mobile.lobbySriChain.loopAvoided.increment()
         else sriChain.put(ps, req.sri)
       userSri.put(user, req.sri)
 
