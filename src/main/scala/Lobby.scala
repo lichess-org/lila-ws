@@ -38,11 +38,12 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
   object OldAppSriMemory:
 
     // old SRI -> new SRI
-    private val newSri: Cache[Sri, Sri] =
+    private val sriChain: Cache[Sri, Sri] =
       Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
     // last known SRI of user
     private val userSri: Cache[User.Id, Sri] =
       Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
+    private val logger = Logger("OldAppSriMemory")
 
     def onConnect(req: ClientActor.Req): Unit = for
       user <- req.user
@@ -50,12 +51,15 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
       prevSri = userSri.getIfPresent(user)
       if prevSri.forall(_ != req.sri)
     do
-      prevSri.foreach(newSri.put(_, req.sri))
+      prevSri.foreach: ps =>
+        if sriChain.getIfPresent(req.sri).isDefined
+        then logger.info(s"sriChain loop avoided $req")
+        else sriChain.put(ps, req.sri)
       userSri.put(user, req.sri)
 
     // get new SRIs of old SRI, recursively (!)
     def allNewSris(fromSri: Sri): List[Sri] =
-      fromSri :: newSri.getIfPresent(fromSri).so(allNewSris)
+      fromSri :: sriChain.getIfPresent(fromSri).so(allNewSris)
 
   object anonJoin:
 
