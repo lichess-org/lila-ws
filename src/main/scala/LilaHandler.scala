@@ -77,7 +77,7 @@ final class LilaHandler(
     case LobbyPairings(pairings) =>
       pairings.foreach: (sri, fullId) =>
         val allSris = services.lobby.OldAppSriMemory.allNewSris(sri)
-        if allSris.sizeIs > 1 then Monitor.mobile.lobbySriChain.srisInTheChain(allSris.size)
+        if allSris.sizeIs > 1 then Monitor.mobile.lobbySriChain.srisInTheChain.record(allSris.size)
         allSris.foreach: sri =>
           publish(_.sri(sri), ClientIn.LobbyPairing(fullId))
 

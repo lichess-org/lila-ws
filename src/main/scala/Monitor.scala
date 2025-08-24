@@ -165,7 +165,7 @@ object Monitor:
         case _ => ()
     object lobbySriChain:
       val loopAvoided = Kamon.counter("mobile.lobbySriChain.loopAvoided").withoutTags()
-      def srisInTheChain(nb: Int) = Kamon.histogram("mobile.lobbySriChain.srisInTheChain").withTag("nb", nb)
+      val srisInTheChain = Kamon.histogram("mobile.lobbySriChain.srisInTheChain").withoutTags()
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()
