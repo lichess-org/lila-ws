@@ -3,10 +3,10 @@ inThisBuild(
     scalaVersion := "3.7.2",
     versionScheme := Some("early-semver"),
     version := "3.3",
-    semanticdbEnabled := true, // for scalafix
     dockerBaseImage := "openjdk:21",
     dockerUpdateLatest := true,
-    dockerBuildxPlatforms := Seq("linux/amd64", "linux/arm64")
+    semanticdbEnabled := true, // for scalafix
+    dockerBaseImage := "openjdk:21"
   )
 )
 
