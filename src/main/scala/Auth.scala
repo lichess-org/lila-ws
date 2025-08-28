@@ -35,10 +35,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
       .security:
-        _.find(
-          BSONDocument("_id" -> sid, "up" -> true),
-          Some(BSONDocument("_id" -> false, "user" -> true))
-        ).one[BSONDocument]
+        _.find(BSONDocument("_id" -> sid, "up" -> true), authDbProj).one[BSONDocument]
       .map:
         _.flatMap { _.getAsOpt[User.Id]("user") }
       .map:
@@ -47,8 +44,10 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             Impersonations
               .get(user.into(User.ModId))
               .getOrElse:
-                seenAt(user)
+                seenAt.set(user)
                 user
+
+  private val authDbProj = Some(BSONDocument("_id" -> false, "userId" -> true))
 
   private val cookieName = config.getString("cookie.name")
 
@@ -70,11 +69,15 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       .flatMap:
         _.find(
           BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:mobile"),
-          Some(BSONDocument("_id" -> false, "userId" -> true))
+          authDbProj
         ).one[BSONDocument]
-      .map:
-        _.flatMap:
-          _.getAsOpt[User.Id]("userId").map(Success.OAuth(_))
+      .map: res =>
+        for
+          doc <- res
+          id <- doc.getAsOpt[User.Id]("userId")
+        yield
+          seenAt.set(id)
+          Success.OAuth(id)
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req

@@ -16,7 +16,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
     .expireAfterWrite(10.minutes)
     .build[User.Id, Boolean]()
 
-  def apply(user: User.Id): Future[Unit] =
+  def set(user: User.Id): Future[Unit] =
     if done.getIfPresent(user).isDefined then Future.successful {}
     else
       done.put(user, true)
