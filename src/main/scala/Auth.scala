@@ -35,7 +35,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
       .security:
-        _.find(BSONDocument("_id" -> sid, "up" -> true), authDbProj).one[BSONDocument]
+        _.find(BSONDocument("_id" -> sid, "up" -> true), sessionAuthDbProj).one[BSONDocument]
       .map:
         _.flatMap { _.getAsOpt[User.Id]("user") }
       .map:
@@ -47,7 +47,8 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
                 seenAt.set(user)
                 user
 
-  private val authDbProj = Some(BSONDocument("_id" -> false, "userId" -> true))
+  private val sessionAuthDbProj = Some(BSONDocument("_id" -> false, "user" -> true))
+  private val tokenAuthDbProj = Some(BSONDocument("_id" -> false, "userId" -> true))
 
   private val cookieName = config.getString("cookie.name")
 
@@ -69,7 +70,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
       .flatMap:
         _.find(
           BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:mobile"),
-          authDbProj
+          tokenAuthDbProj
         ).one[BSONDocument]
       .map: res =>
         for
