@@ -34,9 +34,10 @@ final class Monitor(
 
     scheduler.scheduleWithFixedDelay(5.seconds, 1949.millis) { () => periodicMetrics() }
 
-    scheduler.scheduleWithFixedDelay(1.minute, 1.minute) { () => jvmThreads() }
-
-    scheduler.scheduleWithFixedDelay(1.minute, 1.minute) { () => LilaRequest.monitorInFlight() }
+    scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
+      jvmThreads()
+      LilaRequest.monitorInFlight()
+      services.lobby.OldAppSriMemory.monitorSizes()
 
   private def periodicMetrics() =
     val members = LilaWsServer.connections.get
@@ -176,6 +177,8 @@ object Monitor:
     object lobbySriChain:
       val loopAvoided = Kamon.counter("mobile.lobbySriChain.loopAvoided").withoutTags()
       val srisInTheChain = Kamon.histogram("mobile.lobbySriChain.srisInTheChain").withoutTags()
+      val sriChainSize = Kamon.gauge("mobile.lobbySriChain.sriChainSize").withoutTags()
+      val userSriSize = Kamon.gauge("mobile.lobbySriChain.userSriSize").withoutTags()
 
   def time[A](metric: Monitor.type => kamon.metric.Timer)(f: => A): A =
     val timer = metric(Monitor).start()

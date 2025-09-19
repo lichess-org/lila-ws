@@ -44,6 +44,10 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     private val userSri: Cache[User.Id, Sri] =
       Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
 
+    def monitorSizes() =
+      Monitor.mobile.lobbySriChain.sriChainSize.update(sriChain.estimatedSize())
+      Monitor.mobile.lobbySriChain.userSriSize.update(userSri.estimatedSize())
+
     def onConnect(req: ClientActor.Req): Unit = for
       user <- req.user
       if req.header.isLichobile
