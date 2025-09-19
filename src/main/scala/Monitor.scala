@@ -36,6 +36,8 @@ final class Monitor(
 
     scheduler.scheduleWithFixedDelay(1.minute, 1.minute) { () => jvmThreads() }
 
+    scheduler.scheduleWithFixedDelay(1.minute, 1.minute) { () => LilaRequest.monitorInFlight() }
+
   private def periodicMetrics() =
     val members = LilaWsServer.connections.get
     val rounds = services.roundCrowd.size()
@@ -126,6 +128,14 @@ object Monitor:
         .counter("redis.out.drop")
         .withTags(TagSet.from(Map("channel" -> chan, "path" -> path)))
         .increment()
+    object request:
+      def send() = Kamon.counter("redis.request.send").withoutTags().increment()
+      def inFlight(nb: Int) = Kamon.gauge("redis.request.inFlight").withoutTags().update(nb)
+      def expired(cause: String) =
+        Kamon
+          .counter("redis.request.expired")
+          .withTag("cause", cause)
+          .increment()
 
   object ping:
 
