@@ -106,10 +106,12 @@ final class Controller(
 
   private def roundFrom(id: Game.AnyId, req: Req): Future[Either[Option[SocketVersion], JsonString]] =
     if req.isLichessMobile then
-      LilaRequest[JsonString](
-        reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
-        JsonString(_)
-      ).map(Right(_))(using parasitic)
+      LilaRequest
+        .send[JsonString](
+          reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
+          JsonString(_)
+        )
+        .map(Right(_))(using parasitic)
     else Future.successful(Left(fromVersion(req.header)))
 
   def roundWatch(id: Game.Id, header: RequestHeader) =

@@ -12,7 +12,7 @@ object LilaRequest:
   private val counter = AtomicInteger(0)
 
   private val inFlight = Scaffeine()
-    .expireAfterWrite(30.seconds)
+    .expireAfterWrite(10.seconds)
     .removalListener: (id, _, cause) =>
       if cause != RemovalCause.EXPLICIT then
         logger.warn(s"$id removed: $cause")
@@ -20,7 +20,7 @@ object LilaRequest:
     .build[Int, Promise[String]]()
   private val asMap = inFlight.asMap()
 
-  def apply[R](sendReq: Int => Unit, readRes: String => R)(using Executor): Future[R] =
+  def send[R](sendReq: Int => Unit, readRes: String => R)(using Executor): Future[R] =
     val id = counter.getAndIncrement()
     sendReq(id)
     val promise = Promise[String]()
