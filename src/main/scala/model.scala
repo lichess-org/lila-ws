@@ -4,23 +4,6 @@ import chess.format.{ Fen, Uci }
 import chess.{ ByColor, Color }
 import scalalib.SecureRandom
 
-object User:
-  opaque type Id = String
-  object Id extends OpaqueString[Id]
-  opaque type Name = String
-  object Name extends OpaqueString[Name]
-  opaque type Title = String
-  object Title extends OpaqueString[Title]
-  opaque type TitleName = String
-  object TitleName extends OpaqueString[TitleName]:
-    def apply(name: Name, title: Option[Title]): TitleName =
-      TitleName(title.fold(name.value)(_.value + " " + name.value))
-  opaque type Patron = Boolean
-  object Patron extends YesNo[Patron]
-
-  opaque type ModId = String
-  object ModId extends OpaqueString[ModId]
-
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
   def ofPlayer(id: Game.FullId): RoomId = id.gameId.value

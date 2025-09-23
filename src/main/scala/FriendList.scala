@@ -78,7 +78,7 @@ final class FriendList(
 
 object FriendList:
 
-  case class UserData(name: User.Name, title: Option[User.Title], patron: User.Patron):
+  case class UserData(name: User.Name, title: Option[User.Title], patron: Option[User.patron.PatronColor]):
     def titleName = User.TitleName(name, title)
 
   case class UserView(id: User.Id, data: UserData, meta: SocialGraph.UserMeta)

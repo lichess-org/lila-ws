@@ -230,7 +230,8 @@ object ClientIn:
             "t" -> "following_onlines",
             "d" -> users.map(_.data.titleName),
             "playing" -> users.collect { case u if u.meta.playing => u.id },
-            "patrons" -> users.collect { case u if u.data.patron.yes => u.id }
+            "patrons" -> users.collect { case u if u.data.patron.isDefined => u.id },
+            "patronColors" -> users.flatMap(_.data.patron)
           )
         )
     case class Enters(user: FriendList.UserView) extends ClientIn:
@@ -241,7 +242,8 @@ object ClientIn:
             "t" -> "following_enters",
             "d" -> user.data.titleName
           )
-          .add("patron" -> user.data.patron.yes)
+          .add("patron" -> user.data.patron.isDefined) // # app BC
+          .add("patronColor" -> user.data.patron)
 
     abstract class Event(key: String) extends ClientIn:
       def user: User.Id

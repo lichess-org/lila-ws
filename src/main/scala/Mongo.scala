@@ -245,10 +245,17 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
   private val userDataProjection =
     BSONDocument("username" -> true, "title" -> true, "plan" -> true, "_id" -> false)
   private def userDataReader(doc: BSONDocument) =
+    val patronColor = for
+      plan <- doc.child("plan")
+      if plan.getAsOpt[Boolean]("active") | false
+      months = plan.getAsOpt[Int]("months") | 0
+      lifetime = plan.getAsOpt[Boolean]("lifetime") | false
+      manualColor = plan.getAsOpt[User.patron.PatronColor]("color")
+    yield manualColor | User.patron.autoColor(months, lifetime)
     for
       name <- doc.getAsOpt[User.Name]("username")
       title = doc.getAsOpt[User.Title]("title")
-      patron = doc.child("plan").flatMap(_.getAsOpt[User.Patron]("active")).getOrElse(User.Patron(false))
+      patron = patronColor
     yield FriendList.UserData(name, title, patron)
 
   def loadFollowed(userId: User.Id): Future[Iterable[User.Id]] =
