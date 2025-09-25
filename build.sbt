@@ -14,7 +14,7 @@ val os = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else "l
 val arch = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch-64" else "x86-64"
 val arch_ = arch.replace("-", "_")
 
-val pekkoVersion = "1.2.0"
+val pekkoVersion = "1.2.1"
 val kamonVersion = "2.7.7"
 val nettyVersion = "4.2.6.Final"
 val chessVersion = "17.10.1"
