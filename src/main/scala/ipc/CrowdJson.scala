@@ -5,8 +5,8 @@ import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import play.api.libs.json.*
 
 final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using
-    Executor,
-    Scheduler
+    ec: Executor,
+    cacheApi: lila.ws.util.CacheApi
 ):
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
@@ -52,11 +52,8 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
 
   private def isBotName(name: User.TitleName) = name.value.startsWith("BOT ")
 
-  private val isStudyCache: AsyncLoadingCache[Study.Id, Boolean] =
-    Scaffeine()
-      .expireAfterWrite(20.minutes)
-      .buildAsyncFuture(mongo.studyExists)
-  Monitor(isStudyCache, "crowdJson.isStudy")
+  private val isStudyCache: AsyncLoadingCache[Study.Id, Boolean] = cacheApi(32, "crowdJson.isStudy"):
+    _.expireAfterWrite(20.minutes).buildAsyncFuture(mongo.studyExists)
 
   private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.Id]] =
     isStudyCache

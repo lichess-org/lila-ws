@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 import lila.ws.ipc.ClientIn
 import lila.ws.ipc.ClientOut.{ EvalGet, EvalGetMulti, EvalPut }
 
-final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
+final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler)(using cacheApi: util.CacheApi):
 
   private val truster = wire[EvalCacheTruster]
   private val upgrade = wire[EvalCacheUpgrade]
@@ -89,11 +89,8 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
         mon.request(ply.value, res.isDefined).increment()
     res
 
-  private val cache: AsyncLoadingCache[Id, Option[EvalCacheEntry]] = Scaffeine()
-    .initialCapacity(65_536)
-    .expireAfterWrite(5.minutes)
-    .buildAsyncFuture(fetchAndSetAccess)
-  Monitor(cache, "evalCache")
+  private val cache: AsyncLoadingCache[Id, Option[EvalCacheEntry]] = cacheApi(32_768, "evalCache"):
+    _.expireAfterWrite(5.minutes).buildAsyncFuture(fetchAndSetAccess)
 
   export cache.get as getEntry
 

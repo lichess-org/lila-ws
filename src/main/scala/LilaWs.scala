@@ -11,6 +11,7 @@ object LilaWs extends App:
   given Scheduler = clientSystem.scheduler
   given Executor = clientSystem.executionContext
 
+  given util.CacheApi = wire[util.CacheApi]
   lazy val mongo = wire[Mongo]
   lazy val settings = wire[util.SettingStore]
   lazy val groupedWithin = wire[util.GroupedWithin]

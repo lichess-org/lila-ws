@@ -1,13 +1,15 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import com.github.blemale.scaffeine.Cache
 import com.typesafe.scalalogging.Logger
 import scalalib.zeros.given
 
 import ipc.ClientIn.LobbyPong
 import ipc.{ LilaIn, ClientIn }
 
-final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using Executor, Scheduler):
+final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using Executor)(using
+    cacheApi: util.CacheApi
+):
 
   private val lilaIn = lila.emit.lobby
 
@@ -38,14 +40,12 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using
   object OldAppSriMemory:
 
     // old SRI -> new SRI
-    private val sriChain: Cache[Sri, Sri] =
-      Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
-    // last known SRI of user
-    private val userSri: Cache[User.Id, Sri] =
-      Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
+    private val sriChain: Cache[Sri, Sri] = cacheApi.notLoadingSync[Sri, Sri](8_192, "lobby.sriChain"):
+      _.maximumSize(65_536).expireAfterWrite(3.minutes).build()
 
-    Monitor(sriChain, "lobby.sriChain")
-    Monitor(userSri, "lobby.userSri")
+    // last known SRI of user
+    private val userSri: Cache[User.Id, Sri] = cacheApi.notLoadingSync[User.Id, Sri](8_192, "lobby.userSri"):
+      _.maximumSize(65_536).expireAfterWrite(3.minutes).build()
 
     def onConnect(req: ClientActor.Req): Unit = for
       user <- req.user
@@ -96,12 +96,9 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using
       private val maxPendingGames = 5
       private val logger = Logger("PendingGamesPerIp")
 
-      private val pendingGames: Cache[IpAddress, Set[Game.Id]] = Scaffeine()
-        .initialCapacity(8_192)
-        .maximumSize(65_536)
-        .expireAfterWrite(1.hour)
-        .build()
-      Monitor(pendingGames, "lobby.pendingGamesPerIp")
+      private val pendingGames: Cache[IpAddress, Set[Game.Id]] =
+        cacheApi.notLoadingSync[IpAddress, Set[Game.Id]](8_192, "lobby.pendingGamesPerIp"):
+          _.maximumSize(65_536).expireAfterWrite(1.hour).build()
 
       def canJoin(ip: IpAddress): Boolean =
         pendingGames.getIfPresent(ip) match

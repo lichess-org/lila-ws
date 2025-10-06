@@ -1,6 +1,6 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import com.github.blemale.scaffeine.Cache
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
@@ -9,14 +9,13 @@ import java.time.LocalDateTime
 
 final class SeenAtUpdate(mongo: Mongo)(using
     context: Executor,
-    scheduler: Scheduler
+    scheduler: Scheduler,
+    cacheApi: util.CacheApi
 ) extends MongoHandlers:
 
-  private val done: Cache[User.Id, Boolean] = Scaffeine()
-    .expireAfterWrite(10.minutes)
-    .build[User.Id, Boolean]()
-
-  Monitor(done, "seenAt.done")
+  private val done: Cache[User.Id, Boolean] =
+    cacheApi.notLoadingSync[User.Id, Boolean](65_536, "seenAt.done"):
+      _.expireAfterWrite(10.minutes).build()
 
   def set(user: User.Id): Future[Unit] =
     if done.getIfPresent(user).isDefined then Future.successful {}

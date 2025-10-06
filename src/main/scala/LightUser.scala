@@ -5,17 +5,13 @@ import reactivemongo.api.bson.*
 
 import Mongo.given
 
-final class LightUserApi(mongo: Mongo)(using Executor, Scheduler):
+final class LightUserApi(mongo: Mongo)(using Executor)(using cacheApi: util.CacheApi):
 
   export cache.get
 
   private val cache: AsyncLoadingCache[User.Id, User.TitleName] =
-    Scaffeine()
-      .initialCapacity(32768)
-      .expireAfterWrite(15.minutes)
-      .buildAsyncFuture(fetch)
-
-  Monitor(cache, "user.light")
+    cacheApi(32_768, "lightUser"):
+      _.expireAfterWrite(15.minutes).buildAsyncFuture(fetch)
 
   private def fetch(id: User.Id): Future[User.TitleName] =
     mongo.user:

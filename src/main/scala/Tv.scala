@@ -1,25 +1,20 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import com.github.blemale.scaffeine.Cache
 
 import ipc.*
 
-final class Tv(using Executor, Scheduler):
+final class Tv(using cacheApi: util.CacheApi):
 
   /* These 2 caches store ids of fast (bullet) and slow games that appeared on TV.
    * Players watching these games are notified whenever the relevant channel
    * switches to a new TV game. */
 
-  private val fast: Cache[String, Boolean] = Scaffeine()
-    .expireAfterWrite(10.minutes)
-    .build[String, Boolean]()
+  private val fast: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](65_536, "tv.fast"):
+    _.expireAfterWrite(10.minutes).build()
 
-  private val slow: Cache[String, Boolean] = Scaffeine()
-    .expireAfterWrite(2.hours)
-    .build[String, Boolean]()
-
-  Monitor(fast, "tv.fast")
-  Monitor(slow, "tv.slow")
+  private val slow: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](65_536, "tv.slow"):
+    _.expireAfterWrite(2.hours).build()
 
   def select(out: LilaOut.TvSelect): Unit =
     val cliMsg = ClientIn.tvSelect(out.json)

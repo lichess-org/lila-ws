@@ -5,22 +5,23 @@ import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
 import java.time.LocalDateTime
 
-final private class EvalCacheTruster(mongo: Mongo)(using Executor, Scheduler) extends MongoHandlers:
+final private class EvalCacheTruster(mongo: Mongo)(using Executor)(using cacheApi: util.CacheApi)
+    extends MongoHandlers:
 
   export cache.get
 
-  private val cache: AsyncLoadingCache[User.Id, Option[Trust]] = Scaffeine()
-    .initialCapacity(256)
-    .expireAfterWrite(5.minutes)
-    .buildAsyncFuture: userId =>
-      mongo.userColl
-        .flatMap:
-          _.find(
-            BSONDocument("_id" -> userId),
-            Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1, "roles" -> 1))
-          ).one[BSONDocument]
-        .map(_.map(computeTrust))
-  Monitor(cache, "evalCache.trust")
+  private val cache: AsyncLoadingCache[User.Id, Option[Trust]] = cacheApi(512, "evalCache.trust"):
+    _.expireAfterWrite(5.minutes)
+      .buildAsyncFuture: userId =>
+        mongo.userColl
+          .flatMap:
+            _.find(
+              BSONDocument("_id" -> userId),
+              Some(
+                BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1, "roles" -> 1)
+              )
+            ).one[BSONDocument]
+          .map(_.map(computeTrust))
 
   private def computeTrust(user: BSONDocument): Trust =
     if user.getAsOpt[List[String]]("marks").exists(_.nonEmpty) then Trust(-9999)

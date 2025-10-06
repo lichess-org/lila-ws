@@ -207,45 +207,5 @@ object Monitor:
   object handler:
     val batch = Kamon.histogram("handler.batch").withoutTags()
 
-  import com.github.benmanes.caffeine
-  import com.github.blemale.scaffeine.{ Cache, AsyncCache }
-  def apply[K, V](cache: Cache[K, V], name: String)(using Executor, Scheduler): Unit =
-    registerCache(cache.underlying, name)
-  def apply[K, V](cache: AsyncCache[K, V], name: String)(using Executor, Scheduler): Unit =
-    registerCache(cache.underlying.synchronous, name)
-  def registerCache(cache: caffeine.cache.Cache[?, ?], name: String)(using
-      ec: Executor,
-      scheduler: Scheduler
-  ): Unit =
-    scheduler.scheduleWithFixedDelay(1.minute, 1.minute): () =>
-      // pasted from lila
-      // https://github.com/lichess-org/lila/blob/master/modules/common/src/main/mon.scala#L62-L80
-      val stats = cache.stats
-      Kamon
-        .gauge("caffeine.request")
-        .withTags(tags("name" -> name, "hit" -> true))
-        .update(stats.hitCount.toDouble)
-      Kamon
-        .gauge("caffeine.request")
-        .withTags(tags("name" -> name, "hit" -> false))
-        .update(stats.missCount.toDouble)
-      Kamon.histogram("caffeine.hit.rate").withTag("name", name).record((stats.hitRate * 100000).toLong)
-      if stats.totalLoadTime > 0 then
-        Kamon
-          .gauge("caffeine.load.count")
-          .withTags(tags("name" -> name, "success" -> "success"))
-          .update(stats.loadSuccessCount.toDouble)
-        Kamon
-          .gauge("caffeine.load.count")
-          .withTags(tags("name" -> name, "success" -> "failure"))
-          .update(stats.loadFailureCount.toDouble)
-        Kamon
-          .gauge("caffeine.loadTime.cumulated")
-          .withTag("name", name)
-          .update(stats.totalLoadTime / 1000000d) // in millis; too much nanos for Kamon to handle)
-        Kamon.timer("caffeine.loadTime.penalty").withTag("name", name).record(stats.averageLoadPenalty.toLong)
-      Kamon.gauge("caffeine.eviction.count").withTag("name", name).update(stats.evictionCount.toDouble)
-      Kamon.gauge("caffeine.entry.count").withTag("name", name).update(cache.estimatedSize.toDouble)
-
-  private def tags(elems: (String, Any)*): Map[String, Any] = Map.from(elems)
-  private given Conversion[Map[String, Any], TagSet] = TagSet.from
+  def tags(elems: (String, Any)*): Map[String, Any] = Map.from(elems)
+  given Conversion[Map[String, Any], TagSet] = TagSet.from

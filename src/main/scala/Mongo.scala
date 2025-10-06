@@ -10,7 +10,7 @@ import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPr
 import java.time.LocalDateTime
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandlers:
+final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
@@ -103,10 +103,8 @@ final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandle
   def swissExists(id: Swiss.Id): Future[Boolean] = swissColl.flatMap(idExists(id))
 
   object tourExists:
-    private val cache: AsyncLoadingCache[Tour.Id, Boolean] = Scaffeine()
-      .expireAfterWrite(2.seconds)
-      .buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
-    Monitor(cache, "tour.exists")
+    private val cache: AsyncLoadingCache[Tour.Id, Boolean] = cacheApi(32, "tour.exists"):
+      _.expireAfterWrite(2.seconds).buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
     def apply(id: Tour.Id): Future[Boolean] = cache.get(id)
 
   def studyExists(id: Study.Id): Future[Boolean] = studyColl.flatMap(idExists(id))
@@ -126,9 +124,8 @@ final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandle
   private val gameCacheProjection =
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
 
-  private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = Scaffeine()
-    .expireAfterWrite(10.minutes)
-    .buildAsyncFuture: id =>
+  private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = cacheApi(65_536, "game.round"):
+    _.expireAfterWrite(10.minutes).buildAsyncFuture: id =>
       gameColl.flatMap:
         _.find(
           selector = BSONDocument("_id" -> id.value),
@@ -151,7 +148,6 @@ final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandle
                   .orElse(doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply))
             yield Game.Round(id, players, ext)
           }(using parasitic)
-  Monitor(gameCache, "game")
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
@@ -293,12 +289,10 @@ final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandle
     def set(userId: User.Id, v: IsTroll): Unit =
       cache.put(userId, Future.successful(v))
 
-    private val cache: AsyncLoadingCache[User.Id, IsTroll] = Scaffeine()
-      .expireAfterAccess(20.minutes)
-      .buildAsyncFuture: id =>
+    private val cache: AsyncLoadingCache[User.Id, IsTroll] = cacheApi(65_536, "user.troll"):
+      _.expireAfterAccess(20.minutes).buildAsyncFuture: id =>
         userColl.flatMap:
           exists(_, BSONDocument("_id" -> id, "marks" -> "troll")).map(IsTroll.apply(_))
-    Monitor(cache, "user.troll")
 
   object idFilter:
     val study: IdFilter = ids => studyColl.flatMap(filterIds(ids))

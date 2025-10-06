@@ -1,19 +1,18 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import com.github.blemale.scaffeine.Cache
 
 import lila.ws.ipc.LilaIn
 import lila.ws.util.Domain
 
-final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using Executor, Scheduler):
+final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheApi: util.CacheApi):
 
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f
 
-  private val trustedStats: Cache[User.Id, TrustedMillis] = Scaffeine()
-    .expireAfterWrite(1.hour)
-    .build[User.Id, TrustedMillis]()
-  Monitor(trustedStats, "lag.trustedStats")
+  private val trustedStats: Cache[User.Id, TrustedMillis] =
+    cacheApi.notLoadingSync[User.Id, TrustedMillis](65_536, "lag.trustedStats"):
+      _.expireAfterWrite(1.hour).build[User.Id, TrustedMillis]()
 
   export trustedStats.getIfPresent as sessionLag
 

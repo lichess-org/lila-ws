@@ -1,13 +1,9 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.Scaffeine
+final class Inquirers(mongo: Mongo)(using ec: Executor, cacheApi: util.CacheApi, scheduler: Scheduler):
 
-final class Inquirers(mongo: Mongo)(using ec: Executor, scheduler: Scheduler):
-
-  private val cache = Scaffeine()
-    .expireAfterWrite(5.minutes)
-    .build[User.Id, Boolean]()
-  Monitor(cache, "inquirers")
+  private val cache = cacheApi.notLoadingSync[User.Id, Boolean](32, "inquirers"):
+    _.expireAfterWrite(5.minutes).build[User.Id, Boolean]()
 
   def contains(user: User.Id): Boolean =
     cache.underlying.getIfPresent(user) == true
