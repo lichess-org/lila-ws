@@ -1,7 +1,6 @@
 package lila.ws
 
 import cats.syntax.all.*
-import org.apache.pekko.actor.typed.Scheduler
 
 /* For ongoing broadcasts, store in the round mongodb document the current number of viewers.
  * Lila will display it and store time stats. */

@@ -1,7 +1,6 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
-import org.apache.pekko.actor.typed.Scheduler
 
 import SocialGraph.UserMeta
 import ipc.ClientIn.following.*

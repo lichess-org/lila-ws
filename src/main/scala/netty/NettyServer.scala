@@ -8,7 +8,6 @@ import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
 import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
-import org.apache.pekko.actor.typed.Scheduler
 
 final class NettyServer(
     clients: ClientSystem,

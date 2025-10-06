@@ -1,7 +1,6 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.Scaffeine
-import org.apache.pekko.actor.typed.Scheduler
 
 /** Throttler that allows X operations per Y unit of time Not thread safe
   */

@@ -9,6 +9,7 @@ export scalalib.time.*
 export scala.concurrent.{ ExecutionContext as Executor, Future, Promise }
 export scala.concurrent.duration.{ DurationInt, FiniteDuration }
 export scala.concurrent.ExecutionContext.parasitic
+export org.apache.pekko.actor.typed.Scheduler
 
 type Emit[A] = Function[A, Unit]
 

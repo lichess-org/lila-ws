@@ -3,7 +3,6 @@ package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import play.api.libs.json.*
-import org.apache.pekko.actor.typed.Scheduler
 
 final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using
     Executor,

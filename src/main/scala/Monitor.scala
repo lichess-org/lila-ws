@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.Logger
 import kamon.Kamon
 import kamon.metric.Counter
 import kamon.tag.TagSet
-import org.apache.pekko.actor.typed.Scheduler
 
 import java.util.concurrent.TimeUnit
 

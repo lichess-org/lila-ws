@@ -7,7 +7,6 @@ import chess.format.Fen
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import com.softwaremill.macwire.*
 import com.typesafe.scalalogging.Logger
-import org.apache.pekko.actor.typed.Scheduler
 import play.api.libs.json.JsString
 import reactivemongo.api.bson.BSONDocument
 

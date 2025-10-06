@@ -7,7 +7,6 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
-import org.apache.pekko.actor.typed.Scheduler
 import java.time.LocalDateTime
 import scala.util.{ Success, Try }
 

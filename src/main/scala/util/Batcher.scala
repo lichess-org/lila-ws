@@ -2,7 +2,6 @@ package lila.ws
 package util
 
 import cats.syntax.option.*
-import org.apache.pekko.actor.typed.Scheduler
 
 /* Batches elements, sends the batch when `timeout` has elapsed since the first element was added. */
 final class Batcher[Key, Elem, Batch](

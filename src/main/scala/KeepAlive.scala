@@ -1,7 +1,5 @@
 package lila.ws
 
-import org.apache.pekko.actor.typed.Scheduler
-
 import java.util.concurrent.atomic.AtomicReference
 
 import ipc.*

@@ -4,7 +4,6 @@ package evalCache
 import cats.syntax.option.*
 import chess.eval.{ Score, WinPercent }
 import chess.format.UciPath
-import org.apache.pekko.actor.typed.Scheduler
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
 

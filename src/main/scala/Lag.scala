@@ -4,7 +4,6 @@ import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 
 import lila.ws.ipc.LilaIn
 import lila.ws.util.Domain
-import org.apache.pekko.actor.typed.Scheduler
 
 final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using Executor, Scheduler):
 

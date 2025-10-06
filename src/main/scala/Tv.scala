@@ -1,7 +1,6 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
-import org.apache.pekko.actor.typed.Scheduler
 
 import ipc.*
 

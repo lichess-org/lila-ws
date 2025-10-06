@@ -4,7 +4,6 @@ package evalCache
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
 import java.time.LocalDateTime
-import org.apache.pekko.actor.typed.Scheduler
 
 final private class EvalCacheTruster(mongo: Mongo)(using Executor, Scheduler) extends MongoHandlers:
 

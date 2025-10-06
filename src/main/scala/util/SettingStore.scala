@@ -1,7 +1,6 @@
 package lila.ws
 package util
 
-import org.apache.pekko.actor.typed.Scheduler
 import reactivemongo.api.bson.*
 
 /* A setting that is read from the database every `ttl`.

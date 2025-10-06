@@ -1,7 +1,6 @@
 package lila.ws
 
 import cats.syntax.option.*
-import org.apache.pekko.actor.typed.Scheduler
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*

@@ -2,7 +2,6 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import com.typesafe.scalalogging.Logger
-import org.apache.pekko.actor.typed.Scheduler
 import scalalib.zeros.given
 
 import ipc.ClientIn.LobbyPong
