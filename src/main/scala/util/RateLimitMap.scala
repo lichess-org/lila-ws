@@ -1,6 +1,7 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.actor.typed.Scheduler
 
 /** Throttler that allows X operations per Y unit of time Not thread safe
   */
@@ -10,7 +11,7 @@ final class RateLimitMap(
     duration: FiniteDuration,
     enforce: Boolean = true,
     log: Boolean = true
-):
+)(using Executor, Scheduler):
   import RateLimit.*
 
   private type ClearAt = Long
@@ -18,6 +19,7 @@ final class RateLimitMap(
   private val storage = Scaffeine()
     .expireAfterWrite(duration)
     .build[String, (Cost, ClearAt)]()
+  Monitor(storage, s"rateLimit.$name")
 
   private inline def makeClearAt = nowMillis + duration.toMillis
 

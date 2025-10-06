@@ -2,10 +2,11 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
+import org.apache.pekko.actor.typed.Scheduler
 
 import Mongo.given
 
-final class LightUserApi(mongo: Mongo)(using Executor):
+final class LightUserApi(mongo: Mongo)(using Executor, Scheduler):
 
   export cache.get
 
@@ -14,6 +15,8 @@ final class LightUserApi(mongo: Mongo)(using Executor):
       .initialCapacity(32768)
       .expireAfterWrite(15.minutes)
       .buildAsyncFuture(fetch)
+
+  Monitor(cache, "user.light")
 
   private def fetch(id: User.Id): Future[User.TitleName] =
     mongo.user:

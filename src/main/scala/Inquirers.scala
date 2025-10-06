@@ -8,6 +8,7 @@ final class Inquirers(mongo: Mongo)(using ec: Executor, scheduler: Scheduler):
   private val cache = Scaffeine()
     .expireAfterWrite(5.minutes)
     .build[User.Id, Boolean]()
+  Monitor(cache, "inquirers")
 
   def contains(user: User.Id): Boolean =
     cache.underlying.getIfPresent(user) == true

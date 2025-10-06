@@ -3,10 +3,10 @@ package evalCache
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
-
 import java.time.LocalDateTime
+import org.apache.pekko.actor.typed.Scheduler
 
-final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends MongoHandlers:
+final private class EvalCacheTruster(mongo: Mongo)(using Executor, Scheduler) extends MongoHandlers:
 
   export cache.get
 
@@ -21,6 +21,7 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor) extends Mongo
             Some(BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1, "roles" -> 1))
           ).one[BSONDocument]
         .map(_.map(computeTrust))
+  Monitor(cache, "evalCache.trust")
 
   private def computeTrust(user: BSONDocument): Trust =
     if user.getAsOpt[List[String]]("marks").exists(_.nonEmpty) then Trust(-9999)

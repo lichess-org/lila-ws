@@ -1,6 +1,7 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import org.apache.pekko.actor.typed.Scheduler
 
 import SocialGraph.UserMeta
 import ipc.ClientIn.following.*
@@ -9,13 +10,14 @@ final class FriendList(
     users: Users,
     graph: SocialGraph,
     mongo: Mongo
-)(using Executor):
+)(using Executor, Scheduler):
 
   import FriendList.*
 
   private val userDatas: AsyncLoadingCache[User.Id, Option[UserData]] = Scaffeine()
     .expireAfterAccess(20.minutes)
     .buildAsyncFuture(mongo.userData)
+  Monitor(userDatas, "friendList.userData")
 
   def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
     graph

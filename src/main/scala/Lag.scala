@@ -4,8 +4,9 @@ import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 
 import lila.ws.ipc.LilaIn
 import lila.ws.util.Domain
+import org.apache.pekko.actor.typed.Scheduler
 
-final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
+final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using Executor, Scheduler):
 
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f
@@ -13,6 +14,7 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin):
   private val trustedStats: Cache[User.Id, TrustedMillis] = Scaffeine()
     .expireAfterWrite(1.hour)
     .build[User.Id, TrustedMillis]()
+  Monitor(trustedStats, "lag.trustedStats")
 
   export trustedStats.getIfPresent as sessionLag
 

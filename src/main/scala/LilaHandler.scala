@@ -154,7 +154,7 @@ final class LilaHandler(
       publish(_.room(fullId.gameId), ClientIn.RoundGoneIn(fullId.playerId, seconds))
     case RoundTourStanding(tourId, data) =>
       publish(_.tourStanding(tourId), ClientIn.roundTourStanding(data))
-    case o: TvSelect => Tv.select(o)
+    case o: TvSelect => services.tv.select(o)
     case o @ RoomStop(roomId) =>
       History.round.stop(Game.Id(roomId.value))
       publish(_.room(roomId), ClientCtrl.Disconnect(o.toString))

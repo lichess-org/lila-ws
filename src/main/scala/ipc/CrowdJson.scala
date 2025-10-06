@@ -3,8 +3,12 @@ package ipc
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import play.api.libs.json.*
+import org.apache.pekko.actor.typed.Scheduler
 
-final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using Executor):
+final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using
+    Executor,
+    Scheduler
+):
 
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if crowd.users.sizeIs > 20 then
@@ -53,6 +57,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
     Scaffeine()
       .expireAfterWrite(20.minutes)
       .buildAsyncFuture(mongo.studyExists)
+  Monitor(isStudyCache, "crowdJson.isStudy")
 
   private def keepOnlyStudyMembers(crowd: RoomCrowd.Output): Future[Iterable[User.Id]] =
     isStudyCache

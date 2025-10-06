@@ -1,10 +1,11 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
+import org.apache.pekko.actor.typed.Scheduler
 
 import ipc.*
 
-object Tv:
+final class Tv(using Executor, Scheduler):
 
   /* These 2 caches store ids of fast (bullet) and slow games that appeared on TV.
    * Players watching these games are notified whenever the relevant channel
@@ -17,6 +18,9 @@ object Tv:
   private val slow: Cache[String, Boolean] = Scaffeine()
     .expireAfterWrite(2.hours)
     .build[String, Boolean]()
+
+  Monitor(fast, "tv.fast")
+  Monitor(slow, "tv.slow")
 
   def select(out: LilaOut.TvSelect): Unit =
     val cliMsg = ClientIn.tvSelect(out.json)

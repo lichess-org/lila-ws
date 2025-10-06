@@ -94,6 +94,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler):
     .initialCapacity(65_536)
     .expireAfterWrite(5.minutes)
     .buildAsyncFuture(fetchAndSetAccess)
+  Monitor(cache, "evalCache")
 
   export cache.get as getEntry
 

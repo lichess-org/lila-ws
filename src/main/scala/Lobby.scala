@@ -2,12 +2,13 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ Cache, Scaffeine }
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.actor.typed.Scheduler
 import scalalib.zeros.given
 
 import ipc.ClientIn.LobbyPong
 import ipc.{ LilaIn, ClientIn }
 
-final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
+final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using Executor, Scheduler):
 
   private val lilaIn = lila.emit.lobby
 
@@ -44,9 +45,8 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
     private val userSri: Cache[User.Id, Sri] =
       Scaffeine().initialCapacity(8_192).maximumSize(65_536).expireAfterWrite(3.minutes).build()
 
-    def monitorSizes() =
-      Monitor.mobile.lobbySriChain.sriChainSize.update(sriChain.estimatedSize())
-      Monitor.mobile.lobbySriChain.userSriSize.update(userSri.estimatedSize())
+    Monitor(sriChain, "lobby.sriChain")
+    Monitor(userSri, "lobby.userSri")
 
     def onConnect(req: ClientActor.Req): Unit = for
       user <- req.user
@@ -102,6 +102,7 @@ final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor):
         .maximumSize(65_536)
         .expireAfterWrite(1.hour)
         .build()
+      Monitor(pendingGames, "lobby.pendingGamesPerIp")
 
       def canJoin(ip: IpAddress): Boolean =
         pendingGames.getIfPresent(ip) match

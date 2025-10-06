@@ -7,11 +7,11 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
-
+import org.apache.pekko.actor.typed.Scheduler
 import java.time.LocalDateTime
 import scala.util.{ Success, Try }
 
-final class Mongo(config: Config)(using Executor) extends MongoHandlers:
+final class Mongo(config: Config)(using Executor, Scheduler) extends MongoHandlers:
 
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
@@ -107,6 +107,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
     private val cache: AsyncLoadingCache[Tour.Id, Boolean] = Scaffeine()
       .expireAfterWrite(2.seconds)
       .buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
+    Monitor(cache, "tour.exists")
     def apply(id: Tour.Id): Future[Boolean] = cache.get(id)
 
   def studyExists(id: Study.Id): Future[Boolean] = studyColl.flatMap(idExists(id))
@@ -151,6 +152,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
                   .orElse(doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply))
             yield Game.Round(id, players, ext)
           }(using parasitic)
+  Monitor(gameCache, "game")
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 
@@ -297,6 +299,7 @@ final class Mongo(config: Config)(using Executor) extends MongoHandlers:
       .buildAsyncFuture: id =>
         userColl.flatMap:
           exists(_, BSONDocument("_id" -> id, "marks" -> "troll")).map(IsTroll.apply(_))
+    Monitor(cache, "user.troll")
 
   object idFilter:
     val study: IdFilter = ids => studyColl.flatMap(filterIds(ids))

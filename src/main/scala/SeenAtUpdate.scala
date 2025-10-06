@@ -16,6 +16,8 @@ final class SeenAtUpdate(mongo: Mongo)(using
     .expireAfterWrite(10.minutes)
     .build[User.Id, Boolean]()
 
+  Monitor(done, "seenAt.done")
+
   def set(user: User.Id): Future[Unit] =
     if done.getIfPresent(user).isDefined then Future.successful {}
     else
