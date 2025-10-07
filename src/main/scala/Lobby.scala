@@ -7,7 +7,7 @@ import scalalib.zeros.given
 import ipc.ClientIn.LobbyPong
 import ipc.{ LilaIn, ClientIn }
 
-final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using Executor)(using
+final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using
     cacheApi: util.CacheApi
 ):
 
