@@ -1,6 +1,5 @@
 package lila.ws
 
-import scala.language.implicitConversions
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import kamon.Kamon
@@ -8,6 +7,7 @@ import kamon.metric.Counter
 import kamon.tag.TagSet
 
 import java.util.concurrent.TimeUnit
+import scala.language.implicitConversions
 
 import lila.ws.util.Domain
 

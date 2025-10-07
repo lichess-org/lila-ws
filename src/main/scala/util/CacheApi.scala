@@ -1,10 +1,11 @@
 package lila.ws
 package util
 
-import scala.language.implicitConversions
 import com.github.benmanes.caffeine
 import com.github.blemale.scaffeine.*
 import kamon.Kamon
+
+import scala.language.implicitConversions
 
 final class CacheApi(using Executor)(using scheduler: Scheduler):
 

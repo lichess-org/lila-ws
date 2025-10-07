@@ -3,6 +3,7 @@ package evalCache
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 import reactivemongo.api.bson.*
+
 import java.time.LocalDateTime
 
 final private class EvalCacheTruster(mongo: Mongo)(using Executor)(using cacheApi: util.CacheApi)
