@@ -47,7 +47,7 @@ lazy val `lila-ws` = project
       "com.github.blemale" %% "scaffeine" % "5.3.0" % "compile",
       "com.github.ben-manes.caffeine" % "caffeine" % "3.2.2" % "compile",
       "ch.qos.logback" % "logback-classic" % "1.5.18",
-      "org.playframework" %% "play-json" % "3.0.5",
+      "org.playframework" %% "play-json" % "3.0.6",
       "io.kamon" %% "kamon-core" % kamonVersion,
       "io.kamon" %% "kamon-influxdb" % kamonVersion,
       "io.kamon" %% "kamon-prometheus" % kamonVersion,
