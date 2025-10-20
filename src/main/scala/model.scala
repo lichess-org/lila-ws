@@ -126,8 +126,6 @@ case class UptimeMillis(millis: Long) extends AnyVal:
 object UptimeMillis:
   def make = UptimeMillis(System.currentTimeMillis() - startedAtMillis)
 
-case class ThroughStudyDoor(user: User.Id, through: Either[RoomId, RoomId])
-
 case class RoundEventFlags(
     watcher: Boolean,
     owner: Boolean,
