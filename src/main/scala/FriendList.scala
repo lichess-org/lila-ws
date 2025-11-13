@@ -4,18 +4,20 @@ import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 
 import SocialGraph.UserMeta
 import ipc.ClientIn.following.*
+import lila.ws.util.withTimeout
 
 final class FriendList(
     users: Users,
     graph: SocialGraph,
     mongo: Mongo
-)(using Executor)(using cacheApi: util.CacheApi):
+)(using Executor, Scheduler)(using cacheApi: util.CacheApi):
 
   import FriendList.*
 
   private val userDatas: AsyncLoadingCache[User.Id, Option[UserData]] =
     cacheApi(8_192, "friendList.userData"):
-      _.expireAfterWrite(10.minutes).buildAsyncFuture(mongo.userData)
+      _.expireAfterWrite(10.minutes).buildAsyncFuture: userId =>
+        mongo.userData(userId).withTimeout(1.second, "FiendList.userData")
 
   def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
     graph
