@@ -2,9 +2,10 @@ package lila.ws
 
 import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
 
+import lila.ws.util.withTimeout
+
 import SocialGraph.UserMeta
 import ipc.ClientIn.following.*
-import lila.ws.util.withTimeout
 
 final class FriendList(
     users: Users,

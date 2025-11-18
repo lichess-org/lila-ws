@@ -1,8 +1,9 @@
 package lila.ws
 package util
 
-import scala.util.control.NonFatal
 import scalalib.future.TimeoutException
+
+import scala.util.control.NonFatal
 
 object LilaFuture:
 
