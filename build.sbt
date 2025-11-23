@@ -3,10 +3,9 @@ inThisBuild(
     scalaVersion := "3.7.4",
     versionScheme := Some("early-semver"),
     version := "3.3",
-    dockerBaseImage := "openjdk:21",
+    dockerBaseImage := "eclipse-temurin:25-jdk-noble",
     dockerUpdateLatest := true,
-    semanticdbEnabled := true, // for scalafix
-    dockerBaseImage := "openjdk:21"
+    semanticdbEnabled := true // for scalafix
   )
 )
 
