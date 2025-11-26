@@ -308,10 +308,11 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       res <- coll
         .find(BSONDocument("_id" -> key))
         .one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
-    yield for
-      doc <- res
-      v <- doc.getAsOpt[A]("v")
-    yield v
+    yield
+      for
+        doc <- res
+        v <- doc.getAsOpt[A]("v")
+      yield v
 
   private def idExists[Id: BSONWriter](id: Id)(coll: BSONCollection): Future[Boolean] =
     exists(coll, BSONDocument("_id" -> id))
