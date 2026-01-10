@@ -24,7 +24,7 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
     val allEvents = histories.getOrDefault(key.toString, Nil)
     versionOpt
       .fold(Option(allEvents.take(5))): since =>
-        if allEvents.headOption.fold(true)(_.version.value <= since.value)
+        if allEvents.headOption.forall(_.version.value <= since.value)
         then Some(Nil)
         else
           val events = allEvents.takeWhile(_.version.value > since.value)
@@ -46,5 +46,5 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
 object History:
 
-  val room = History[RoomId, ipc.ClientIn.Versioned](20, 8192)
-  val round = History[Game.Id, ipc.ClientIn.RoundVersioned](20, 65536)
+  val room = History[RoomId, ipc.ClientIn.Versioned](20, 8_192)
+  val round = History[Game.Id, ipc.ClientIn.RoundVersioned](20, 65_536)
