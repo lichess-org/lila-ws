@@ -19,6 +19,7 @@ object ClientActor:
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     LilaWsServer.connections.incrementAndGet
     busChansOf(deps.req).foreach { Bus.subscribe(_, ctx.self) }
+    AnnounceApi.onConnect(deps)
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*

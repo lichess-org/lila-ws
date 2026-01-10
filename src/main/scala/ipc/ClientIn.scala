@@ -39,6 +39,9 @@ object ClientIn:
       )
     )
 
+  case class Announce(json: JsonString) extends ClientIn:
+    lazy val write = cliMsg("announce", json)
+
   case class Fen(gameId: Game.Id, position: Position) extends ClientIn:
     def write =
       cliMsg(

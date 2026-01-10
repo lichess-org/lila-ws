@@ -103,6 +103,7 @@ object LilaOut:
 
   case class ApiUserOnline(userId: User.Id, online: Boolean) extends AnyRoomOut
   case object LilaBoot extends AnyRoomOut
+  case class AnnounceUpdate(set: Option[JsonString]) extends AnyRoomOut
   case class LilaStop(reqId: Int) extends AnyRoomOut
   case object VersioningReady extends RoundOut // lila is ready to receive versioned round events
 
@@ -331,6 +332,8 @@ object LilaOut:
       case "streamers/online" => Json.parse(args).asOpt[Map[User.Id, JsValue]].map(StreamersOnline.apply)
 
       case "pong" => args.toLongOption.map(UptimeMillis.apply).map(Pong.apply)
+
+      case "announce/update" => Some(AnnounceUpdate(JsonString.from(Some(args).filter(_.nonEmpty))))
 
       case "boot" => Some(LilaBoot)
 

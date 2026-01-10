@@ -57,6 +57,7 @@ final class LilaHandler(
     case Impersonate(mod, _, false) => Impersonations.stop(mod)
     case StreamersOnline(streamers) => Streamer.set(streamers)
     case Pong(pingAt) => Monitor.ping.record("site", pingAt)
+    case AnnounceUpdate(cur) => AnnounceApi.set(cur)
 
     case LilaStop(reqId) =>
       logger.info("******************** LILA STOP ********************")
