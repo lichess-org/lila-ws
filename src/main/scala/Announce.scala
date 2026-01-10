@@ -1,6 +1,7 @@
 package lila.ws
 
 import cats.syntax.option.*
+
 import ipc.ClientIn.Announce as AnnounceMsg
 
 object AnnounceApi:
