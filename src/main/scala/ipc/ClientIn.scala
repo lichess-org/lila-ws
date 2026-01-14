@@ -2,7 +2,7 @@ package lila.ws
 package ipc
 
 import cats.data.NonEmptyList
-import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
+import chess.format.{ FullFen, Uci, UciPath }
 import chess.variant.Crazyhouse
 import chess.{ Color, Ply }
 import play.api.libs.json.*
@@ -128,7 +128,6 @@ object ClientIn:
 
   case class Node(
       path: UciPath,
-      id: UciCharPair,
       ply: Ply,
       move: Uci.WithSan,
       fen: FullFen,
@@ -145,7 +144,6 @@ object ClientIn:
               .obj(
                 "ply" -> ply,
                 "fen" -> fen,
-                "id" -> id,
                 "uci" -> move.uci,
                 "san" -> move.san,
                 "children" -> JsArray()

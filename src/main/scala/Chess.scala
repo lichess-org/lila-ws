@@ -1,7 +1,7 @@
 package lila.ws
 
 import cats.syntax.option.*
-import chess.format.{ Uci, UciCharPair, UciPath }
+import chess.format.{ Uci, UciPath }
 
 import ipc.*
 
@@ -30,7 +30,6 @@ object Chess:
   ): ClientIn.Node =
     ClientIn.Node(
       path = path,
-      id = UciCharPair(move.uci),
       ply = game.ply,
       move = move,
       fen = chess.format.Fen.write(game),
