@@ -92,20 +92,12 @@ object ClientActor:
         req.user.foreach { services.friends.start(_, clientIn) }
         state
 
-      case opening: ClientOut.Opening =>
-        Chess(opening).foreach(clientIn)
-        state
-
       case anaMove: ClientOut.AnaMove =>
         clientIn(Chess(anaMove))
         state
 
       case anaDrop: ClientOut.AnaDrop =>
         clientIn(Chess(anaDrop))
-        state
-
-      case anaDests: ClientOut.AnaDests =>
-        clientIn(Chess(anaDests))
         state
 
       case evalGet: ClientOut.EvalGet =>

@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
 import chess.variant.Crazyhouse
-import chess.{ Bitboard, Check, Color, Ply }
+import chess.{ Color, Ply }
 import play.api.libs.json.*
 
 // messages from lila-ws to the client
@@ -124,14 +124,11 @@ object ClientIn:
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
 
-  case class OpeningMsg(path: UciPath, opening: Opening) extends ClientIn:
+  case class OpeningMsg(fen: FullFen, opening: Opening) extends ClientIn:
     def write =
       cliMsg(
         "opening",
-        Json.obj(
-          "path" -> path,
-          "opening" -> opening
-        )
+        Json.obj("fen" -> fen, "opening" -> opening)
       )
 
   case object StepFailure extends ClientIn:
@@ -143,10 +140,6 @@ object ClientIn:
       ply: Ply,
       move: Uci.WithSan,
       fen: FullFen,
-      check: Check,
-      dests: Map[chess.Square, Bitboard],
-      opening: Option[Opening],
-      drops: Option[List[chess.Square]],
       crazyData: Option[Crazyhouse.Data],
       chapterId: Option[ChapterId]
   ) extends ClientIn:
@@ -163,14 +156,8 @@ object ClientIn:
                 "id" -> id,
                 "uci" -> move.uci,
                 "san" -> move.san,
-                "dests" -> dests,
                 "children" -> JsArray()
               )
-              .add("opening" -> opening)
-              .add("check" -> check.yes)
-              .add("drops" -> drops.map { drops =>
-                JsString(drops.map(_.key).mkString)
-              })
               .add("crazy" -> crazyData)
           )
           .add("ch" -> chapterId)

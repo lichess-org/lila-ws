@@ -30,8 +30,6 @@ object ClientOut:
 
   case object FollowingOnline extends ClientOutSite
 
-  case class Opening(variant: Variant, path: UciPath, fen: Fen.Full) extends ClientOutSite
-
   case class AnaMove(
       orig: Square,
       dest: Square,
@@ -51,13 +49,6 @@ object ClientOut:
       variant: Variant,
       chapterId: Option[ChapterId],
       payload: JsObject
-  ) extends ClientOutSite
-
-  case class AnaDests(
-      fen: Fen.Full,
-      path: UciPath,
-      variant: Variant,
-      chapterId: Option[ChapterId]
   ) extends ClientOutSite
 
   case class EvalGet(
@@ -155,13 +146,6 @@ object ClientOut:
               case "moveLat" => Some(MoveLat)
               case "notified" => Some(Notified)
               case "following_onlines" => Some(FollowingOnline)
-              case "opening" =>
-                for
-                  d <- o.obj("d")
-                  path <- d.get[UciPath]("path")
-                  fen <- d.get[Fen.Full]("fen")
-                  variant = dataVariant(d)
-                yield Opening(variant, path, fen)
               case "anaMove" =>
                 for
                   d <- o.obj("d")
@@ -183,14 +167,6 @@ object ClientOut:
                   variant = dataVariant(d)
                   chapterId = d.get[ChapterId]("ch")
                 yield AnaDrop(role, square, fen, path, variant, chapterId, o)
-              case "anaDests" =>
-                for
-                  d <- o.obj("d")
-                  path <- d.get[UciPath]("path")
-                  fen <- d.get[Fen.Full]("fen")
-                  variant = dataVariant(d)
-                  chapterId = d.get[ChapterId]("ch")
-                yield AnaDests(fen, path, variant, chapterId)
               case "evalGet" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGet)
               case "evalPut" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readPut)
               case "evalGetMulti" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGetMulti)
