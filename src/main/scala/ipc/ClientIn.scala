@@ -3,7 +3,6 @@ package ipc
 
 import cats.data.NonEmptyList
 import chess.format.{ FullFen, Uci, UciCharPair, UciPath }
-import chess.opening.Opening
 import chess.variant.Crazyhouse
 import chess.{ Color, Ply }
 import play.api.libs.json.*
@@ -124,13 +123,6 @@ object ClientIn:
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
 
-  case class OpeningMsg(fen: FullFen, opening: Opening) extends ClientIn:
-    def write =
-      cliMsg(
-        "opening",
-        Json.obj("fen" -> fen, "opening" -> opening)
-      )
-
   case object StepFailure extends ClientIn:
     def write = cliMsg("stepFailure")
 
@@ -160,24 +152,6 @@ object ClientIn:
               )
               .add("crazy" -> crazyData)
           )
-          .add("ch" -> chapterId)
-      )
-
-  case class Dests(
-      path: UciPath,
-      dests: String,
-      opening: Option[Opening],
-      chapterId: Option[ChapterId]
-  ) extends ClientIn:
-    def write =
-      cliMsg(
-        "dests",
-        Json
-          .obj(
-            "dests" -> dests,
-            "path" -> path
-          )
-          .add("opening" -> opening)
           .add("ch" -> chapterId)
       )
 
