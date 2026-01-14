@@ -2,9 +2,7 @@ package lila.ws
 package ipc
 
 import cats.data.NonEmptyList
-import chess.format.{ FullFen, Uci, UciPath }
-import chess.variant.Crazyhouse
-import chess.{ Color, Ply }
+import chess.Color
 import play.api.libs.json.*
 
 // messages from lila-ws to the client
@@ -122,36 +120,6 @@ object ClientIn:
     )
 
   def tvSelect(data: JsonString) = payload("tvSelect", data)
-
-  case object StepFailure extends ClientIn:
-    def write = cliMsg("stepFailure")
-
-  case class Node(
-      path: UciPath,
-      ply: Ply,
-      move: Uci.WithSan,
-      fen: FullFen,
-      crazyData: Option[Crazyhouse.Data],
-      chapterId: Option[ChapterId]
-  ) extends ClientIn:
-    def write =
-      cliMsg(
-        "node",
-        Json
-          .obj(
-            "path" -> path,
-            "node" -> Json
-              .obj(
-                "ply" -> ply,
-                "fen" -> fen,
-                "uci" -> move.uci,
-                "san" -> move.san,
-                "children" -> JsArray()
-              )
-              .add("crazy" -> crazyData)
-          )
-          .add("ch" -> chapterId)
-      )
 
   case class Ack(id: Option[Int]) extends ClientIn:
     def write = id.fold(cliMsg("ack")) { cliMsg("ack", _) }
