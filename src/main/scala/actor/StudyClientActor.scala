@@ -50,10 +50,12 @@ object StudyClientActor:
             Behaviors.same
 
           case anaMove: ClientOut.AnaMove =>
+            clientIn(ClientIn.NodeEmptyForAppBC)
             forward(anaMove.payload)
             Behaviors.same
 
           case anaDrop: ClientOut.AnaDrop =>
+            clientIn(ClientIn.NodeEmptyForAppBC)
             forward(anaDrop.payload)
             Behaviors.same
 

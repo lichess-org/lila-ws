@@ -145,6 +145,9 @@ object ClientIn:
 
   def roundFull(data: JsonString) = payload("full", data)
 
+  case object NodeEmptyForAppBC extends ClientIn:
+    def write = cliMsg("node")
+
   case class VoiceChat(userIds: Iterable[User.Id]) extends ClientIn:
     def write = cliMsg("voiceChat", userIds)
 
