@@ -238,6 +238,7 @@ object ClientOut:
               case "racerJoin" => Some(RacerJoin)
               case "racerStart" => Some(RacerStart)
 
+              case "opening" | "anaDests" => Some(Ignore)
               case "wrongHole" => Some(WrongHole)
               case _ => None
             .getOrElse(Unexpected(o))
