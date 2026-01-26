@@ -3,6 +3,7 @@ package lila.ws
 import chess.format.{ Fen, Uci }
 import chess.{ ByColor, Color }
 import scalalib.SecureRandom
+import play.api.libs.json.JsArray
 
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
@@ -138,7 +139,13 @@ opaque type UserTv = String
 object UserTv extends OpaqueString[UserTv]
 
 case class Clock(white: Int, black: Int)
-case class Position(lastUci: Uci, fen: Fen.Board, clock: Option[Clock], turnColor: Color):
+case class Position(
+    lastUci: Uci,
+    fen: Fen.Board,
+    clock: Option[Clock],
+    turnColor: Color,
+    pockets: Option[JsArray]
+):
   def fenWithColor = fen.andColor(turnColor)
 
 opaque type MultiPv = Int
