@@ -2,8 +2,8 @@ package lila.ws
 
 import chess.format.{ Fen, Uci }
 import chess.{ ByColor, Color }
-import scalalib.SecureRandom
 import play.api.libs.json.JsArray
+import scalalib.SecureRandom
 
 opaque type RoomId = String
 object RoomId extends OpaqueString[RoomId]:
