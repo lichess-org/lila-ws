@@ -39,8 +39,10 @@ final class History[K, V <: ipc.ClientIn.HasVersion](
 
   def allVersions: Array[(String, SocketVersion)] =
     val res = scala.collection.mutable.ArrayBuffer.empty[(String, SocketVersion)]
-    histories.foreach: (key, events) =>
-      events.headOption.foreach { event => res += (key -> event.version) }
+    for
+      (key, events) <- histories
+      event <- events.headOption
+    do res += (key -> event.version)
 
     res.toArray
 

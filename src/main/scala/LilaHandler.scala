@@ -178,6 +178,7 @@ final class LilaHandler(
       logger.info("#################### LILA VERSIONING READY ####################")
       lila.currentStatus.setOnline()
       Impersonations.reset()
+      roundCrowd.emitAllOnline()
     case msg => roomHandler(msg)
 
   private val racerHandler: Emit[LilaOut] =

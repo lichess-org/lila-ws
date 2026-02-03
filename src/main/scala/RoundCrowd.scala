@@ -1,5 +1,6 @@
 package lila.ws
 
+import scala.jdk.CollectionConverters.*
 import cats.syntax.option.*
 import chess.{ ByColor, Color }
 
@@ -13,7 +14,7 @@ final class RoundCrowd(
 
   import RoundCrowd.*
 
-  private val rounds = scalalib.ConcurrentMap[RoomId, RoundState](32768)
+  private val rounds = scalalib.ConcurrentMap[RoomId, RoundState](32_768)
   export rounds.size
 
   def connect(roomId: RoomId, user: Option[User.Id], player: Option[Color]): Unit =
@@ -42,6 +43,13 @@ final class RoundCrowd(
   def isPresent(roomId: RoomId, userId: User.Id): Boolean =
     getUsers(roomId).contains(userId)
 
+  def emitAllOnline(): Unit =
+    val outputs = for
+      (id, round) <- rounds.underlying.asScala
+      if round.players.exists(_ > 0)
+    yield OutputForLila(id, round.players.map(_ > 0))
+    lila.emit.round(LilaIn.RoundOnlines(outputs))
+
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
 
@@ -50,7 +58,7 @@ final class RoundCrowd(
       .foldLeft(Map.empty[RoomId, Output]): (crowds, crowd) =>
         crowds.updated(crowd.room.roomId, crowd)
       .values
-    lila.emit.round(LilaIn.RoundOnlines(aggregated))
+    lila.emit.round(LilaIn.RoundOnlines(aggregated.map(_.forLila)))
     aggregated.foreach: output =>
       json
         .round(output)
@@ -60,7 +68,10 @@ final class RoundCrowd(
 object RoundCrowd:
 
   case class Output(room: RoomCrowd.Output, players: ByColor[Int]):
-    def isEmpty = room.members == 0 && players.forall(_ == 0)
+    def forLila = OutputForLila(room.roomId, players.map(_ > 0))
+
+  case class OutputForLila(roomId: RoomId, players: ByColor[Boolean]):
+    def isEmpty = !players.white && !players.black
 
   def outputOf(roomId: RoomId, round: RoundState) = Output(
     room = RoomCrowd.outputOf(roomId, round.room),

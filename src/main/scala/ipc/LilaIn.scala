@@ -86,7 +86,7 @@ object LilaIn:
 
   case class RoomSetVersions(versions: Iterable[(String, SocketVersion)]) extends AnyRoom:
     def write =
-      s"room/versions ${commas(versions.map { case (r, v) =>
+      s"room/versions ${commas(versions.map { (r, v) =>
           s"$r:$v"
         })}"
 
@@ -127,10 +127,10 @@ object LilaIn:
   case class WatcherChatSay(roomId: RoomId, userId: User.Id, msg: String) extends Round:
     def write = s"chat/say/w $roomId $userId $msg"
 
-  case class RoundOnlines(many: Iterable[RoundCrowd.Output]) extends Round:
-    private def one(r: RoundCrowd.Output): String =
-      if r.isEmpty then r.room.roomId.value
-      else s"${r.room.roomId}${boolean(r.players.white > 0)}${boolean(r.players.black > 0)}"
+  case class RoundOnlines(many: Iterable[RoundCrowd.OutputForLila]) extends Round:
+    private def one(r: RoundCrowd.OutputForLila): String =
+      if r.isEmpty then r.roomId.value
+      else s"${r.roomId}${boolean(r.players.white)}${boolean(r.players.black)}"
     def write = s"r/ons ${commas(many.map(one))}"
 
   case class RoundLatency(millis: Int) extends Round:
