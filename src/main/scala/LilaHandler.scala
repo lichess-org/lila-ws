@@ -18,7 +18,7 @@ final class LilaHandler(
     mongo: Mongo,
     clients: ActorRef[Clients.Control],
     services: Services
-)(using Executor, Scheduler):
+)(using Executor)(using scheduler: Scheduler):
 
   import LilaOut.*
   import Bus.publish
@@ -178,7 +178,8 @@ final class LilaHandler(
       logger.info("#################### LILA VERSIONING READY ####################")
       lila.currentStatus.setOnline()
       Impersonations.reset()
-      roundCrowd.emitAllOnline()
+      // give lila some time to settle, then tell it about the game with active connections
+      scheduler.scheduleOnce(15.seconds, () => roundCrowd.emitAllOnline())
     case msg => roomHandler(msg)
 
   private val racerHandler: Emit[LilaOut] =
