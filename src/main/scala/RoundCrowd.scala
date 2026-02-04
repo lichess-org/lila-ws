@@ -48,7 +48,11 @@ final class RoundCrowd(
       (id, round) <- rounds.underlying.asScala
       if round.players.exists(_ > 0)
     yield OutputForLila(id, round.players.map(_ > 0))
-    lila.emit.round(LilaIn.RoundOnlines(outputs))
+    println("Emitting rounds with online players: " + outputs.size)
+    outputs
+      .grouped(1024)
+      .foreach: batch =>
+        lila.emit.round(LilaIn.RoundOnlines(batch))
 
   private def publish(roomId: RoomId, round: RoundState): Unit =
     outputBatch(outputOf(roomId, round))
