@@ -1,8 +1,9 @@
 package lila.ws
 
-import scala.jdk.CollectionConverters.*
 import cats.syntax.option.*
 import chess.{ ByColor, Color }
+
+import scala.jdk.CollectionConverters.*
 
 import ipc.*
 
