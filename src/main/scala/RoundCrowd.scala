@@ -2,6 +2,7 @@ package lila.ws
 
 import cats.syntax.option.*
 import chess.{ ByColor, Color }
+import com.typesafe.scalalogging.Logger
 
 import scala.jdk.CollectionConverters.*
 
@@ -14,6 +15,8 @@ final class RoundCrowd(
 )(using Executor):
 
   import RoundCrowd.*
+
+  private val logger = Logger(getClass)
 
   private val rounds = scalalib.ConcurrentMap[RoomId, RoundState](32_768)
   export rounds.size
@@ -49,7 +52,7 @@ final class RoundCrowd(
       (id, round) <- rounds.underlying.asScala
       if round.players.exists(_ > 0)
     yield OutputForLila(id, round.players.map(_ > 0))
-    println("Emitting rounds with online players: " + outputs.size)
+    logger.info(s"Emitting rounds with online players: ${outputs.size}")
     outputs
       .grouped(1024)
       .foreach: batch =>
