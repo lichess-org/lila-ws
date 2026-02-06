@@ -29,4 +29,4 @@ Trusts `X-Forwarded-For`. Use only behind a reverse proxy!
 
 ### Code formatting
 
-Please `sbt prepare` before you submit a PR. This will reformats and do some auto refactoring the code.
+Please `sbt prepare` before you submit a PR. This will reformat and do some auto refactoring of the code.
