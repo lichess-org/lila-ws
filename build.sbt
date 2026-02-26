@@ -30,7 +30,7 @@ lazy val `lila-ws` = project
     libraryDependencies ++= Seq(
       ("org.reactivemongo" %% "reactivemongo" % "1.1.0-RC19")
         .exclude("org.scala-lang.modules", "scala-java8-compat_2.13"),
-      "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC19",
+      "org.reactivemongo" % s"reactivemongo-shaded-native-$os-$arch" % "1.1.0-RC20",
       "io.lettuce" % "lettuce-core" % "7.4.0.RELEASE",
       "io.netty" % "netty-handler" % nettyVersion,
       "io.netty" % "netty-codec-http" % nettyVersion,
