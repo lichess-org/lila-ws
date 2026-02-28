@@ -105,7 +105,7 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
 
   object tourExists:
     private val cache: AsyncLoadingCache[Tour.Id, Boolean] = cacheApi(32, "tour.exists"):
-      _.expireAfterWrite(2.seconds).buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
+      _.expireAfterWrite(2.seconds).maximumSize(256).buildAsyncFuture(id => tourColl.flatMap(idExists(id)))
     def apply(id: Tour.Id): Future[Boolean] = cache.get(id)
 
   def studyExists(id: Study.Id): Future[Boolean] = studyColl.flatMap(idExists(id))
@@ -126,29 +126,31 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
     BSONDocument("is" -> true, "us" -> true, "tid" -> true, "sid" -> true, "iid" -> true)
 
   private val gameCache: AsyncLoadingCache[Game.Id, Option[Game.Round]] = cacheApi(65_536, "game.round"):
-    _.expireAfterWrite(10.minutes).buildAsyncFuture: id =>
-      gameColl.flatMap:
-        _.find(
-          selector = BSONDocument("_id" -> id.value),
-          projection = Some(gameCacheProjection)
-        ).one[BSONDocument]
-          .map { docOpt =>
-            for
-              doc <- docOpt
-              playerIds <- doc.getAsOpt[String]("is")
-              users = doc.getAsOpt[List[User.Id]]("us").getOrElse(Nil)
-              players = ByColor(
-                Game.Player(Game.PlayerId(playerIds.take(4)), users.headOption.filter(_.value.nonEmpty)),
-                Game.Player(Game.PlayerId(playerIds.drop(4)), users.lift(1))
-              )
-              ext =
-                doc
-                  .getAsOpt[Tour.Id]("tid")
-                  .map(Game.RoundExt.InTour.apply)
-                  .orElse(doc.getAsOpt[Swiss.Id]("iid").map(Game.RoundExt.InSwiss.apply))
-                  .orElse(doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply))
-            yield Game.Round(id, players, ext)
-          }(using parasitic)
+    _.expireAfterWrite(10.minutes)
+      .maximumSize(250_000)
+      .buildAsyncFuture: id =>
+        gameColl.flatMap:
+          _.find(
+            selector = BSONDocument("_id" -> id.value),
+            projection = Some(gameCacheProjection)
+          ).one[BSONDocument]
+            .map { docOpt =>
+              for
+                doc <- docOpt
+                playerIds <- doc.getAsOpt[String]("is")
+                users = doc.getAsOpt[List[User.Id]]("us").getOrElse(Nil)
+                players = ByColor(
+                  Game.Player(Game.PlayerId(playerIds.take(4)), users.headOption.filter(_.value.nonEmpty)),
+                  Game.Player(Game.PlayerId(playerIds.drop(4)), users.lift(1))
+                )
+                ext =
+                  doc
+                    .getAsOpt[Tour.Id]("tid")
+                    .map(Game.RoundExt.InTour.apply)
+                    .orElse(doc.getAsOpt[Swiss.Id]("iid").map(Game.RoundExt.InSwiss.apply))
+                    .orElse(doc.getAsOpt[Simul.Id]("sid").map(Game.RoundExt.InSimul.apply))
+              yield Game.Round(id, players, ext)
+            }(using parasitic)
 
   private val visibilityNotPrivate = BSONDocument("visibility" -> BSONDocument("$ne" -> "private"))
 

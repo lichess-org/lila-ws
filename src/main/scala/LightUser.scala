@@ -11,7 +11,7 @@ final class LightUserApi(mongo: Mongo)(using Executor)(using cacheApi: util.Cach
 
   private val cache: AsyncLoadingCache[User.Id, User.TitleName] =
     cacheApi(32_768, "lightUser"):
-      _.expireAfterWrite(15.minutes).buildAsyncFuture(fetch)
+      _.expireAfterWrite(15.minutes).maximumSize(100_000).buildAsyncFuture(fetch)
 
   private def fetch(id: User.Id): Future[User.TitleName] =
     mongo.user:
