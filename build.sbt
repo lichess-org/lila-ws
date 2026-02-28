@@ -16,7 +16,7 @@ val arch_ = arch.replace("-", "_")
 val pekkoVersion = "1.4.0"
 val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.10.Final"
-val chessVersion = "17.14.3"
+val chessVersion = "17.15.2"
 
 lazy val `lila-ws` = project
   .in(file("."))
