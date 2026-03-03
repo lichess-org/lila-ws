@@ -15,9 +15,8 @@ object Domain extends OpaqueString[Domain]
 
 final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: RequestHeader.Headers):
 
-  lazy val qsd = QueryStringDecoder(uri.value)
-  lazy val path = qsd.path
-  lazy val parameters = qsd.parameters
+  private val qsd = QueryStringDecoder(uri.value)
+  val path = qsd.path
 
   def cookie(name: String): Option[String] = for
     encoded <- headers.cookie
@@ -27,7 +26,7 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: R
   yield value
 
   def queryParameter(name: String): Option[String] =
-    Option(parameters.get(name)).map(_.get(0)).filter(_.nonEmpty)
+    Option(qsd.parameters.get(name)).map(_.get(0)).filter(_.nonEmpty)
 
   def queryParameterInt(name: String): Option[Int] =
     queryParameter(name).flatMap(_.toIntOption)
@@ -44,8 +43,6 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: R
   def flag: Option[Flag] = queryParameter("flag").flatMap(Flag.make)
 
   def name: String = s"$uri UA: ${headers.userAgent}"
-
-  // def domain = Domain(header(HttpHeaderNames.HOST).getOrElse("?"))
 
   override def toString = s"$name origin: ${headers.origin}"
 

@@ -42,7 +42,7 @@ object RoundClientActor:
       req.user.foreach { users.connect(_, ctx.self) }
       state.busChans.foreach { Bus.subscribe(_, ctx.self) }
       roundCrowd.connect(roomState.room, req.user, player.map(_.color))
-      from match
+      from.match
         case Left(version) =>
           History.round.getFrom(roomState.room.into(Game.Id), version) match
             case None => clientIn(ClientIn.Resync)

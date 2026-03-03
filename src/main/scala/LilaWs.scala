@@ -80,7 +80,7 @@ final class LilaWsServer(
 
 object LilaWsServer:
 
-  val byOrigin = ConcurrentHashMap[util.RequestHeader.Origin, Int]()
+  val byOrigin = ConcurrentHashMap[util.RequestHeader.Origin, Int](16)
 
   def updateConnections(origin: util.RequestHeader.Origin, delta: Int): Unit =
     byOrigin.compute(origin, (_, prev) => Option(prev).getOrElse(0) + delta)

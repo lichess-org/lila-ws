@@ -55,7 +55,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   private val bearerSigners = config.getStringList("oauth.secrets").asScala.toList.map(Algo.hmac)
 
   private def bearerFromHeader(req: RequestHeader): Option[Auth.Bearer] =
-    req.headers.authorization.flatMap { authorization =>
+    req.headers.authorization.flatMap: authorization =>
       val prefix = "Bearer "
       if authorization.startsWith(prefix) then
         authorization.stripPrefix(prefix).split(':') match
@@ -63,7 +63,6 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             Some(Bearer(bearer))
           case _ => None
       else None
-    }
 
   private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
     mongo.oauthColl
