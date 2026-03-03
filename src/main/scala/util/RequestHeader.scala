@@ -51,9 +51,11 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: R
 
 object RequestHeader:
 
+  type Origin = String
+
   private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
 
-  case class Headers(origin: String, userAgent: String, cookie: Option[String], authorization: Option[String])
+  case class Headers(origin: Origin, userAgent: String, cookie: Option[String], authorization: Option[String])
 
   def makeHeaders(from: HttpHeaders): Headers =
     Headers(

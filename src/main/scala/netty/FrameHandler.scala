@@ -34,10 +34,6 @@ final private class FrameHandler(using Executor) extends SimpleChannelInboundHan
                   logger.info(s"Unexpected $msg")
                   shutdown(ctx.channel, 1011, "unexpected message")
 
-                case ClientOut.WrongHole =>
-                  Monitor.clientOutWrongHole.increment()
-                // choice of hole is a personal decision
-
                 case out => withClientOf(ctx.channel)(_.tell(out))
 
       case frame: PongWebSocketFrame =>

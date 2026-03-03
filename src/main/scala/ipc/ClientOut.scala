@@ -77,8 +77,6 @@ object ClientOut:
 
   case class Unexpected(msg: JsValue) extends ClientOutSite
 
-  case object WrongHole extends ClientOutSite
-
   case object Ignore extends ClientOutSite
 
   // lobby
@@ -239,7 +237,7 @@ object ClientOut:
               case "racerStart" => Some(RacerStart)
 
               case "opening" | "anaDests" => Some(Ignore)
-              case "wrongHole" => Some(WrongHole)
+              case "wrongHole" => Some(Ignore)
               case _ => None
             .getOrElse(Unexpected(o))
         case js => Unexpected(js)

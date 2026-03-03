@@ -1,8 +1,10 @@
 package lila.ws
 
+import scala.jdk.CollectionConverters.*
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
+import java.util.concurrent.ConcurrentHashMap
 
 object LilaWs extends App:
 
@@ -78,4 +80,9 @@ final class LilaWsServer(
 
 object LilaWsServer:
 
-  val connections = new java.util.concurrent.atomic.AtomicInteger
+  val byOrigin = ConcurrentHashMap[util.RequestHeader.Origin, Int]()
+
+  def updateConnections(origin: util.RequestHeader.Origin, delta: Int): Unit =
+    byOrigin.compute(origin, (_, prev) => Option(prev).getOrElse(0) + delta)
+
+  def byOriginMap: Map[util.RequestHeader.Origin, Int] = byOrigin.asScala.toMap

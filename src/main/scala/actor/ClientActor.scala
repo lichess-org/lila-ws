@@ -17,13 +17,13 @@ object ClientActor:
   )
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
-    LilaWsServer.connections.incrementAndGet
+    LilaWsServer.updateConnections(deps.req.header.headers.origin, +1)
     busChansOf(deps.req).foreach { Bus.subscribe(_, ctx.self) }
     AnnounceApi.onConnect(deps)
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
-    LilaWsServer.connections.decrementAndGet
+    LilaWsServer.updateConnections(deps.req.header.headers.origin, -1)
     Fens.unwatch(state.watchedGames.value, ctx.self)
     (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)).foreach { Bus.unsubscribe(_, ctx.self) }
     req.user.foreach: user =>

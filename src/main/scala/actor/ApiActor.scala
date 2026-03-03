@@ -10,12 +10,12 @@ object ApiActor:
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup: ctx =>
       deps.services.users.connect(deps.user, ctx.self)
-      LilaWsServer.connections.incrementAndGet
+      LilaWsServer.updateConnections("api", +1)
       apply(deps)
 
   def onStop(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
-    LilaWsServer.connections.decrementAndGet
+    LilaWsServer.updateConnections("api", -1)
     services.users.disconnect(user, ctx.self)
     services.friends.onClientStop(user)
 

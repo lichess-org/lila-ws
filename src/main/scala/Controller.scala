@@ -317,7 +317,7 @@ object Controller:
       interval: FiniteDuration,
       alwaysFlush: Boolean = false
   ): ResponseSync =
-    Monitor.connection.open(name)
+    Monitor.connection.open(name, header.headers.origin)
     Right:
       Endpoint(
         behavior,
