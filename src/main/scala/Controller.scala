@@ -1,5 +1,6 @@
 package lila.ws
 
+import scala.jdk.CollectionConverters.*
 import cats.syntax.all.*
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
@@ -280,16 +281,16 @@ final class Controller(
       "http://localhost", // android
       "http://localhost:8080" // local app dev
     )
-    val apiOrigins = Set("https://www.lichess4545.com")
+    val extraOrigins = config.getStringList("csrf.extraOrigins").asScala.toSet
 
     def check(req: RequestHeader)(f: => Response): Response =
-      req.origin match
-        case None => f // for exotic clients and acid ape chess
-        case Some(origin) if origin == csrfOrigin || appOrigins(origin) => f
-        case _ => block(req)
+      import req.headers.origin
+      if origin.isEmpty then f // for exotic clients and acid ape chess
+      else if origin == csrfOrigin || appOrigins(origin) || extraOrigins(origin) then f
+      else block(req)
 
     private def block(req: RequestHeader): Response =
-      logger.info(s"""CSRF origin: "${req.origin | "?"}" ${req.name}""")
+      logger.info(s"""CSRF origin: "${req.headers.origin}" ${req.name}""")
       Future.successful(Left(HttpResponseStatus.FORBIDDEN))
 
   private def notFound = Left(HttpResponseStatus.NOT_FOUND)

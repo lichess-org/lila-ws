@@ -3,7 +3,6 @@ package lila.ws
 import com.github.blemale.scaffeine.Cache
 
 import lila.ws.ipc.LilaIn
-import lila.ws.util.Domain
 
 final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheApi: util.CacheApi):
 
@@ -21,8 +20,8 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheA
 
   export clientReports.apply as recordClientLag
 
-  def recordTrustedLag(millis: Int, userId: Option[User.Id], domain: Domain) =
-    Monitor.lag.roundFrameLag(millis, domain)
+  def recordTrustedLag(millis: Int, userId: Option[User.Id]) =
+    Monitor.lag.roundFrameLag(millis)
     userId.foreach: uid =>
       trustedStats.put(
         uid,

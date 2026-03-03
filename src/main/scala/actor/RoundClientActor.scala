@@ -71,7 +71,7 @@ object RoundClientActor:
         msg match
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.recordTrustedLag(lagMillis, req.user, req.domain)
+            services.lag.recordTrustedLag(lagMillis, req.user)
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>

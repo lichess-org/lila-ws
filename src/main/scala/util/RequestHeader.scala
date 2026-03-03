@@ -13,17 +13,14 @@ object RequestUri extends OpaqueString[RequestUri]
 opaque type Domain = String
 object Domain extends OpaqueString[Domain]
 
-final class RequestHeader(val uri: RequestUri, val ip: IpAddress, headers: HttpHeaders):
+final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: RequestHeader.Headers):
 
   lazy val qsd = QueryStringDecoder(uri.value)
   lazy val path = qsd.path
   lazy val parameters = qsd.parameters
 
-  def header(name: CharSequence): Option[String] =
-    Option(headers.get(name)).filter(_.nonEmpty)
-
   def cookie(name: String): Option[String] = for
-    encoded <- header(HttpHeaderNames.COOKIE)
+    encoded <- headers.cookie
     cookies = ServerCookieDecoder.LAX.decode(encoded)
     cookie <- cookies.asScala.find(_.name.contains(name))
     value <- Some(cookie.value).filter(_.nonEmpty)
@@ -35,27 +32,33 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, headers: HttpH
   def queryParameterInt(name: String): Option[Int] =
     queryParameter(name).flatMap(_.toIntOption)
 
-  def userAgent: String = header(HttpHeaderNames.USER_AGENT).orZero
+  def isLichobile: Boolean = headers.userAgent.contains("Lichobile/")
+  def isLichessMobile: Boolean = headers.userAgent.startsWith("Lichess Mobile/")
 
-  def isLichobile: Boolean = userAgent.contains("Lichobile/")
-  def isLichessMobile: Boolean = userAgent.startsWith("Lichess Mobile/")
-
-  private def lichessMobileSri: Option[String] = userAgent match
+  private def lichessMobileSri: Option[String] = headers.userAgent match
     case RequestHeader.lichessMobileSriRegex(sri) => Some(sri)
     case _ => None
 
   def uncheckedSri: Option[String] = isLichessMobile.so(lichessMobileSri).orElse(queryParameter("sri"))
 
-  def origin: Option[String] = header(HttpHeaderNames.ORIGIN)
-
   def flag: Option[Flag] = queryParameter("flag").flatMap(Flag.make)
 
-  def name: String = s"$uri UA: $userAgent"
+  def name: String = s"$uri UA: ${headers.userAgent}"
 
-  def domain = Domain(header(HttpHeaderNames.HOST).getOrElse("?"))
+  // def domain = Domain(header(HttpHeaderNames.HOST).getOrElse("?"))
 
-  override def toString = s"$name origin: $origin"
+  override def toString = s"$name origin: ${headers.origin}"
 
 object RequestHeader:
 
   private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
+
+  case class Headers(origin: String, userAgent: String, cookie: Option[String], authorization: Option[String])
+
+  def makeHeaders(from: HttpHeaders): Headers =
+    Headers(
+      origin = Option(from.get(HttpHeaderNames.ORIGIN)).orZero,
+      userAgent = Option(from.get(HttpHeaderNames.USER_AGENT)).orZero,
+      cookie = Option(from.get(HttpHeaderNames.COOKIE)).filter(_.nonEmpty),
+      authorization = Option(from.get(HttpHeaderNames.AUTHORIZATION)).filter(_.nonEmpty)
+    )
