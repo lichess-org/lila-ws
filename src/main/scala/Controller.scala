@@ -1,10 +1,11 @@
 package lila.ws
 
-import scala.jdk.CollectionConverters.*
 import cats.syntax.all.*
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
+
+import scala.jdk.CollectionConverters.*
 
 import util.RequestHeader
 import ClientActor.{ Deps, Req }

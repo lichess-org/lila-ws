@@ -1,10 +1,11 @@
 package lila.ws
 
-import scala.jdk.CollectionConverters.*
 import com.softwaremill.macwire.*
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
+
 import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters.*
 
 object LilaWs extends App:
 
