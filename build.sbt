@@ -16,7 +16,7 @@ val arch_ = arch.replace("-", "_")
 val pekkoVersion = "1.4.0"
 val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.10.Final"
-val chessVersion = "17.14.3"
+val chessVersion = "17.15.3"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -38,7 +38,7 @@ lazy val `lila-ws` = project
         .classifier(s"linux-$arch_"),
       ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
         .classifier(s"osx-$arch_"),
-      "com.github.lichess-org.scalalib" %% "scalalib-lila" % "11.9.8",
+      "com.github.lichess-org.scalalib" %% "scalalib-lila" % "11.10.2",
       "com.github.lichess-org.scalachess" %% "scalachess" % chessVersion,
       "com.github.lichess-org.scalachess" %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
