@@ -1,6 +1,6 @@
 package lila.ws
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.github.blemale.scaffeine.AsyncLoadingCache
 import reactivemongo.api.bson.*
 
 import Mongo.given

@@ -1,7 +1,7 @@
 package lila.ws
 package ipc
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.github.blemale.scaffeine.AsyncLoadingCache
 import play.api.libs.json.*
 
 final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUserApi)(using

@@ -4,7 +4,7 @@ package evalCache
 import cats.syntax.all.*
 import chess.ErrorStr
 import chess.format.Fen
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.github.blemale.scaffeine.AsyncLoadingCache
 import com.softwaremill.macwire.*
 import com.typesafe.scalalogging.Logger
 import play.api.libs.json.JsString

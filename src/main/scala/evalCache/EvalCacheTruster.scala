@@ -1,7 +1,7 @@
 package lila.ws
 package evalCache
 
-import com.github.blemale.scaffeine.{ AsyncLoadingCache, Scaffeine }
+import com.github.blemale.scaffeine.AsyncLoadingCache
 import reactivemongo.api.bson.*
 
 import java.time.LocalDateTime
