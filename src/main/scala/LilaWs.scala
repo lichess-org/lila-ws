@@ -6,6 +6,8 @@ import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.jdk.CollectionConverters.*
+import lila.ws.ClientActor.Req
+import lila.ws.util.RequestHeader
 
 object LilaWs extends App:
 
@@ -81,9 +83,15 @@ final class LilaWsServer(
 
 object LilaWsServer:
 
-  val byOrigin = ConcurrentHashMap[util.RequestHeader.Origin, Int](16)
+  val byOrigin = ConcurrentHashMap[RequestHeader.Origin, Int](16)
+  val byAuth = ConcurrentHashMap[RequestHeader.AuthName, Int](16)
 
-  def updateConnections(origin: util.RequestHeader.Origin, delta: Int): Unit =
+  def updateConnections(req: Req, delta: Int): Unit =
+    updateConnections(req.header.headers.origin, req.authName, delta)
+
+  def updateConnections(origin: RequestHeader.Origin, auth: RequestHeader.AuthName, delta: Int): Unit =
     byOrigin.compute(origin, (_, prev) => Option(prev).getOrElse(0) + delta)
+    byAuth.compute(auth, (_, prev) => Option(prev).getOrElse(0) + delta)
 
-  def byOriginMap: Map[util.RequestHeader.Origin, Int] = byOrigin.asScala.toMap
+  def byOriginMap: Map[RequestHeader.Origin, Int] = byOrigin.asScala.toMap
+  def byAuthMap: Map[RequestHeader.AuthName, Int] = byAuth.asScala.toMap

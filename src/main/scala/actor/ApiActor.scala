@@ -5,17 +5,21 @@ import org.apache.pekko.actor.typed.{ Behavior, PostStop }
 
 import ipc.*
 
+/* Not actually WS connections.
+ * They're lila http stream connections for bots and boards,
+ * which lila-ws needs to know about.
+ */
 object ApiActor:
 
   def start(deps: Deps): Behavior[ClientMsg] =
     Behaviors.setup: ctx =>
       deps.services.users.connect(deps.user, ctx.self)
-      LilaWsServer.updateConnections("api", +1)
+      LilaWsServer.updateConnections(origin = "lila", auth = "http-stream", +1)
       apply(deps)
 
   def onStop(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
-    LilaWsServer.updateConnections("api", -1)
+    LilaWsServer.updateConnections(origin = "lila", auth = "http-stream", -1)
     services.users.disconnect(user, ctx.self)
     services.friends.onClientStop(user)
 

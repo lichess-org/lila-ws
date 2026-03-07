@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
 
-import lila.ws.util.SmallBoundedQueueSet
+import lila.ws.util.{ SmallBoundedQueueSet, RequestHeader }
 
 import ipc.*
 
@@ -17,13 +17,13 @@ object ClientActor:
   )
 
   def onStart(deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
-    LilaWsServer.updateConnections(deps.req.header.headers.origin, +1)
+    LilaWsServer.updateConnections(deps.req, +1)
     busChansOf(deps.req).foreach { Bus.subscribe(_, ctx.self) }
     AnnounceApi.onConnect(deps)
 
   def onStop(state: State, deps: Deps, ctx: ActorContext[ClientMsg]): Unit =
     import deps.*
-    LilaWsServer.updateConnections(deps.req.header.headers.origin, -1)
+    LilaWsServer.updateConnections(deps.req, -1)
     Fens.unwatch(state.watchedGames.value, ctx.self)
     (Bus.channel.mlat :: Bus.channel.tvChannels :: busChansOf(req)).foreach { Bus.unsubscribe(_, ctx.self) }
     req.user.foreach: user =>
@@ -159,6 +159,10 @@ object ClientActor:
     def isOauth = auth.exists:
       case _: Auth.Success.OAuth => true
       case _ => false
+    def authName: RequestHeader.AuthName = auth.match
+      case Some(Auth.Success.OAuth(_, scope)) => scope
+      case Some(_) => "cookie"
+      case None => flag.fold("anon")(_.value)
     override def toString = s"${user.fold("Anon")(_.value)} ${header.name}"
 
   case class Deps(

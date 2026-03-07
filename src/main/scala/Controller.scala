@@ -318,11 +318,7 @@ object Controller:
       interval: FiniteDuration,
       alwaysFlush: Boolean = false
   ): ResponseSync =
-    val auth = req.auth.match
-      case Some(Auth.Success.OAuth(_, scope)) => scope
-      case Some(_) => "cookie"
-      case None => req.flag.fold("anon")(_.value)
-    Monitor.connection.open(name, req.header.headers.origin, auth)
+    Monitor.connection.open(name, req.header.headers.origin, req.authName)
     Right:
       Endpoint(
         behavior,

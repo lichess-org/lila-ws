@@ -35,13 +35,16 @@ final class Monitor(
       LilaRequest.monitorInFlight()
 
   private def periodicMetrics() =
-    val connections = LilaWsServer.byOriginMap
-    val totalMembers = connections.values.sum
+    val connectionsByOrigin = LilaWsServer.byOriginMap
+    val connectionsByAuth = LilaWsServer.byAuthMap
+    val totalMembers = connectionsByOrigin.values.sum
     val rounds = services.roundCrowd.size()
     services.lobby.pong.update(totalMembers, rounds)
     connection.current.update(totalMembers.toDouble)
-    connections.foreach: (origin, count) =>
+    connectionsByOrigin.foreach: (origin, count) =>
       connection.byOrigin.withTag("origin", origin).update(count)
+    connectionsByAuth.foreach: (auth, count) =>
+      connection.byAuth.withTag("auth", auth).update(count)
     historyRoomSize.update(History.room.size().toDouble)
     historyRoundSize.update(History.round.size().toDouble)
     crowdRoomSize.update(services.roomCrowd.size().toDouble)
@@ -67,6 +70,7 @@ object Monitor:
   object connection:
     val current = Kamon.gauge("connection.current").withoutTags()
     val byOrigin = Kamon.gauge("connection.byOrigin")
+    val byAuth = Kamon.gauge("connection.byAuth")
     def open(endpoint: String, origin: String, auth: String) =
       Kamon
         .counter("connection.open")
