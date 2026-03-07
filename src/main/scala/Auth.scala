@@ -48,7 +48,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
                 user
 
   private val sessionAuthDbProj = Some(BSONDocument("_id" -> false, "user" -> true))
-  private val tokenAuthDbProj = Some(BSONDocument("_id" -> false, "userId" -> true))
+  private val tokenAuthDbProj = Some(BSONDocument("_id" -> false, "userId" -> true, "scopes" -> true))
 
   private val cookieName = config.getString("cookie.name")
 
@@ -78,9 +78,11 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         for
           doc <- res
           id <- doc.getAsOpt[User.Id]("userId")
+          scopes <- doc.getAsOpt[List[String]]("scopes")
+          scope <- scopes.headOption
         yield
           seenAt.set(id)
-          Success.OAuth(id)
+          Success.OAuth(id, scope)
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req
@@ -99,7 +101,7 @@ object Auth:
 
   enum Success(val user: User.Id):
     case Cookie(u: User.Id) extends Success(u)
-    case OAuth(u: User.Id) extends Success(u)
+    case OAuth(u: User.Id, scope: String) extends Success(u)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]

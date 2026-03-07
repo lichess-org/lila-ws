@@ -157,7 +157,7 @@ object ClientActor:
     export header.{ ip, isLichessMobile }
     def user: Option[User.Id] = auth.map(_.user)
     def isOauth = auth.exists:
-      case Auth.Success.OAuth(_) => true
+      case _: Auth.Success.OAuth => true
       case _ => false
     override def toString = s"${user.fold("Anon")(_.value)} ${header.name}"
 

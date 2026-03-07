@@ -32,7 +32,7 @@ final class Controller(
         SiteClientActor.start:
           Deps(emit, req, services)
       ,
-      req.header,
+      req,
       credits = 50,
       interval = 20.seconds
     )
@@ -46,7 +46,7 @@ final class Controller(
             LobbyClientActor.start:
               Deps(emit, req, services)
           ,
-          header,
+          req,
           credits = 30,
           interval = 30.seconds
         )
@@ -62,7 +62,7 @@ final class Controller(
               SimulClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
                 Deps(emit, req, services)
             ,
-            header,
+            req,
             credits = 30,
             interval = 20.seconds
           )
@@ -81,7 +81,7 @@ final class Controller(
                 TourClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
                   Deps(emit, req, services)
               ,
-              header,
+              req,
               credits = 30,
               interval = 20.seconds
             )
@@ -100,7 +100,7 @@ final class Controller(
                 StudyClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
                   Deps(emit, req, services)
               ,
-              header,
+              req,
               credits = 60,
               interval = 15.seconds
             )
@@ -137,7 +137,7 @@ final class Controller(
                       .start(RoomActor.State(id.into(RoomId), isTroll), None, userTv, from):
                         Deps(emit, req, services)
                   ,
-                  header,
+                  req,
                   credits = 50,
                   interval = 20.seconds
                 )
@@ -158,7 +158,7 @@ final class Controller(
                   None,
                   from
                 ) { Deps(emit, req, services) },
-              header,
+              req,
               credits = 100,
               interval = 20.seconds,
               alwaysFlush = true
@@ -183,7 +183,7 @@ final class Controller(
                   .start(RoomActor.State(id.into(RoomId), IsTroll(false)), owner, fromVersion(header)):
                     Deps(emit, req, services)
               ,
-              header,
+              req,
               credits = 50,
               interval = 30.seconds
             )
@@ -201,7 +201,7 @@ final class Controller(
                 TeamClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
                   Deps(emit, req, services)
               ,
-              header,
+              req,
               credits = 30,
               interval = 20.seconds
             )
@@ -220,7 +220,7 @@ final class Controller(
                 SwissClientActor.start(RoomActor.State(id.into(RoomId), isTroll), fromVersion(header)):
                   Deps(emit, req, services)
               ,
-              header,
+              req,
               credits = 30,
               interval = 20.seconds
             )
@@ -242,7 +242,7 @@ final class Controller(
                   RacerClientActor.start(RoomActor.State(id.into(RoomId), IsTroll(false)), pid):
                     Deps(emit, req, services)
                 ,
-                header,
+                req,
                 credits = 30,
                 interval = 15.seconds
               )
@@ -256,7 +256,7 @@ final class Controller(
           SiteClientActor.start:
             Deps(emit, req, services)
         ,
-        header,
+        req,
         credits = 50,
         interval = 30.seconds
       )
@@ -313,12 +313,16 @@ object Controller:
   def endpoint(
       name: String,
       behavior: ClientEmit => ClientBehavior,
-      header: RequestHeader,
+      req: Req,
       credits: Int,
       interval: FiniteDuration,
       alwaysFlush: Boolean = false
   ): ResponseSync =
-    Monitor.connection.open(name, header.headers.origin)
+    val auth = req.auth.match
+      case Some(Auth.Success.OAuth(_, scope)) => scope
+      case Some(_) => "cookie"
+      case None => req.flag.fold("anon")(_.value)
+    Monitor.connection.open(name, req.header.headers.origin, auth)
     Right:
       Endpoint(
         behavior,
@@ -327,7 +331,7 @@ object Controller:
           intervalMillis = interval.toMillis.toInt,
           name = name
         ),
-        header,
+        req.header,
         Monitor.clientInCounter(name),
         alwaysFlush
       )
