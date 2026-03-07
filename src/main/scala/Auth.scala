@@ -68,7 +68,10 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     mongo.oauthColl
       .flatMap:
         _.find(
-          BSONDocument("_id" -> AccessTokenId.from(bearer), "scopes" -> "web:mobile"),
+          BSONDocument(
+            "_id" -> AccessTokenId.from(bearer),
+            "scopes" -> BSONDocument("$in" -> List("web:mobile", "web:polygon"))
+          ),
           tokenAuthDbProj
         ).one[BSONDocument]
       .map: res =>
