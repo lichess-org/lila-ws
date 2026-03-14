@@ -72,9 +72,10 @@ object Monitor:
     val byOrigin = Kamon.gauge("connection.byOrigin")
     val byAuth = Kamon.gauge("connection.byAuth")
     def open(endpoint: String, origin: String, auth: String) =
+      val nonEmptyOrigin = if origin.isEmpty then "-" else origin
       Kamon
         .counter("connection.open")
-        .withTags(TagSet.from(Map("endpoint" -> endpoint, "origin" -> origin, "auth" -> auth)))
+        .withTags(TagSet.from(Map("endpoint" -> endpoint, "origin" -> nonEmptyOrigin, "auth" -> auth)))
         .increment()
 
   def clientOutUnexpected = Kamon.counter("client.out.unexpected").withoutTags()
