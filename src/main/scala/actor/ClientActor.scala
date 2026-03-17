@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
 
-import lila.ws.util.{ SmallBoundedQueueSet, RequestHeader }
+import lila.ws.util.{RequestHeader, SmallBoundedQueueSet}
 
 import ipc.*
 
