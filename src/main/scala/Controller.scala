@@ -171,7 +171,7 @@ final class Controller(
         .challenger(id)
         .map:
           _.map:
-            case Challenge.Challenger.Anon(secret) => auth.sidFromReq(header).contains(secret)
+            case Challenge.Challenger.Anon(secret) => auth.anonSecretFromReq(header).contains(secret)
             case Challenge.Challenger.User(userId) => req.user.contains(userId)
             case Challenge.Challenger.Open => false
         .map:

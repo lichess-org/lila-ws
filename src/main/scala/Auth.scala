@@ -32,6 +32,12 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         case sidRegex(id) => Some(id)
         case _ => None
 
+  private def sriFromReq(req: RequestHeader): Option[Sri] =
+    Sri.from(req.uncheckedSri)
+
+  def anonSecretFromReq(req: RequestHeader): Option[String] =
+    sidFromReq(req) orElse sriFromReq(req).map(_.value)
+
   private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
     mongo
       .security:
