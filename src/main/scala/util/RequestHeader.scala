@@ -33,6 +33,7 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: R
 
   def isLichobile: Boolean = headers.userAgent.contains("Lichobile/")
   def isLichessMobile: Boolean = headers.userAgent.startsWith("Lichess Mobile/")
+  def isTakex3App: Boolean = headers.userAgent.startsWith("Take Take Take App")
 
   private def lichessMobileSri: Option[String] = headers.userAgent match
     case RequestHeader.lichessMobileSriRegex(sri) => Some(sri)

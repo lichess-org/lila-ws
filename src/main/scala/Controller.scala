@@ -14,7 +14,8 @@ final class Controller(
     config: Config,
     mongo: Mongo,
     auth: Auth,
-    services: Services
+    services: Services,
+    gameCount: GameCount
 )(using Executor):
 
   import Controller.*
@@ -149,6 +150,7 @@ final class Controller(
         .mapN:
           case (Some(player), isTroll, from) =>
             services.lobby.anonJoin.onRoundPlayConnect(req, id.gameId)
+            gameCount.hit(id.gameId, req.header)
             endpoint(
               name = "round/play",
               behavior = emit =>

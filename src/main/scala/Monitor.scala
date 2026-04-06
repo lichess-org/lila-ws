@@ -212,5 +212,7 @@ object Monitor:
   object handler:
     val batch = Kamon.histogram("handler.batch").withoutTags()
 
+  val takex3GameCount = Kamon.counter("takex3.game.count").withoutTags()
+
   def tags(elems: (String, Any)*): Map[String, Any] = Map.from(elems)
   given Conversion[Map[String, Any], TagSet] = TagSet.from
