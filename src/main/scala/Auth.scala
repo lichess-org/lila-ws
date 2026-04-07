@@ -76,7 +76,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         _.find(
           BSONDocument(
             "_id" -> AccessTokenId.from(bearer),
-            "scopes" -> BSONDocument("$in" -> List("web:mobile", "web:polygon"))
+            "scopes" -> BSONDocument("$in" -> List(mobileScope, takex3Scope))
           ),
           tokenAuthDbProj
         ).one[BSONDocument]
@@ -104,6 +104,9 @@ object Auth:
   private val sidKey = "sid"
   private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
   private val appealPrefix = "appeal:"
+
+  val mobileScope = "web:mobile"
+  val takex3Scope = "web:polygon"
 
   enum Success(val user: User.Id):
     case Cookie(u: User.Id) extends Success(u)

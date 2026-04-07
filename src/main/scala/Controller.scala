@@ -150,7 +150,7 @@ final class Controller(
         .mapN:
           case (Some(player), isTroll, from) =>
             services.lobby.anonJoin.onRoundPlayConnect(req, id.gameId)
-            gameCount.hit(id.gameId, req.header)
+            gameCount.hit(id.gameId, req.authName)
             endpoint(
               name = "round/play",
               behavior = emit =>
