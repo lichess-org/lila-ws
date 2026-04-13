@@ -90,10 +90,9 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
           doc <- res
           id <- doc.getAsOpt[User.Id]("userId")
           scopes <- doc.getAsOpt[List[String]]("scopes")
-          scope <- scopes.headOption
         yield
           seenAt.set(id)
-          Success.OAuth(id, scope)
+          Success.OAuth(id, scopes.mkString(","))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req
@@ -115,7 +114,7 @@ object Auth:
 
   enum Success(val user: User.Id):
     case Cookie(u: User.Id) extends Success(u)
-    case OAuth(u: User.Id, scope: String) extends Success(u)
+    case OAuth(u: User.Id, scopes: String) extends Success(u)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]

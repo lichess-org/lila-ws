@@ -160,7 +160,12 @@ object ClientActor:
       case _: Auth.Success.OAuth => true
       case _ => false
     def authName: RequestHeader.AuthName = auth.match
-      case Some(Auth.Success.OAuth(_, scope)) => scope
+      case Some(Auth.Success.OAuth(_, scopes)) =>
+        if scopes.contains(Auth.mobileScope) then "mobile"
+        else if scopes.contains(Auth.takex3Scope) then
+          if header.isTakex3Web then "takex3-web"
+          else "takex3-app"
+        else scopes
       case Some(_) => "cookie"
       case None => flag.fold("anon")(_.value)
     override def toString = s"${user.fold("Anon")(_.value)} ${header.name}"
