@@ -21,7 +21,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
         case Some(sid) => sessionAuth(sid)
         case None =>
-          bearerFromHeader(req) match
+          bearerFromHeader(req).orElse(bearerFromQuery(req)) match
             case Some(bearer) => bearerAuth(bearer)
             case None => Future.successful(None)
 
@@ -69,6 +69,11 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             Some(Bearer(bearer))
           case _ => None
       else None
+
+  private def bearerFromQuery(req: RequestHeader): Option[Auth.Bearer] = for
+    bearer <- Bearer.from(req.queryParameter("oauth_token"))
+    if req.isTakex3Web
+  yield bearer
 
   private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
     mongo.oauthColl

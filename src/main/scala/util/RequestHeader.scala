@@ -34,6 +34,7 @@ final class RequestHeader(val uri: RequestUri, val ip: IpAddress, val headers: R
   def isLichobile: Boolean = headers.userAgent.contains("Lichobile/")
   def isLichessMobile: Boolean = headers.userAgent.startsWith("Lichess Mobile/")
   def isTakex3App: Boolean = headers.userAgent.startsWith("Take Take Take App")
+  def isTakex3Web: Boolean = RequestHeader.t3WebOrigins.contains(headers.origin)
 
   private def lichessMobileSri: Option[String] = headers.userAgent match
     case RequestHeader.lichessMobileSriRegex(sri) => Some(sri)
@@ -51,6 +52,8 @@ object RequestHeader:
 
   type Origin = String
   type AuthName = String
+
+  private val t3WebOrigins = Set("http://localhost:3003", "https://taketaketake.com")
 
   private val lichessMobileSriRegex = """sri:(\S+)""".r.unanchored
 

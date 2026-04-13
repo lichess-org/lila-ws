@@ -5,8 +5,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.handler.codec.http.HttpResponseStatus
 
-import scala.jdk.CollectionConverters.*
-
 import util.RequestHeader
 import ClientActor.{ Deps, Req }
 
@@ -278,18 +276,17 @@ final class Controller(
   private object CSRF:
 
     val csrfOrigin = config.getString("csrf.origin")
-    val appOrigins = Set(
+    val legacyAppOrigins = Set(
       "ionic://localhost", // ios
       "capacitor://localhost", // capacitor (ios next)
       "http://localhost", // android
       "http://localhost:8080" // local app dev
     )
-    val extraOrigins = config.getStringList("csrf.extraOrigins").asScala.toSet
 
     def check(req: RequestHeader)(f: => Response): Response =
       import req.headers.origin
-      if origin.isEmpty then f // for exotic clients and acid ape chess
-      else if origin == csrfOrigin || appOrigins(origin) || extraOrigins(origin) then f
+      if origin.isEmpty then f // new mobile app
+      else if origin == csrfOrigin || legacyAppOrigins(origin) || req.isTakex3Web then f
       else block(req)
 
     private def block(req: RequestHeader): Response =
