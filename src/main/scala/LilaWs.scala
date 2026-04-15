@@ -85,14 +85,17 @@ final class LilaWsServer(
 
 object LilaWsServer:
 
-  val byOrigin = ConcurrentHashMap[RequestHeader.Origin, Int](16)
-  val byAuth = ConcurrentHashMap[RequestHeader.AuthName, Int](16)
+  private val byOrigin = ConcurrentHashMap[RequestHeader.Origin, Int](16)
+  private val byAuth = ConcurrentHashMap[RequestHeader.AuthName, Int](16)
 
   def updateConnections(req: Req, delta: Int): Unit =
     updateConnections(req.header.headers.origin, req.authName, delta)
 
   def updateConnections(origin: RequestHeader.Origin, auth: RequestHeader.AuthName, delta: Int): Unit =
-    byOrigin.compute(origin, (_, prev) => Option(prev).getOrElse(0) + delta)
+    byOrigin.compute(
+      if origin.isEmpty then "none" else "origin",
+      (_, prev) => Option(prev).getOrElse(0) + delta
+    )
     byAuth.compute(auth, (_, prev) => Option(prev).getOrElse(0) + delta)
 
   def byOriginMap: Map[RequestHeader.Origin, Int] = byOrigin.asScala.toMap
