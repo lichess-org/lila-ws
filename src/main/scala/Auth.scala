@@ -3,7 +3,6 @@ package lila.ws
 import com.roundeights.hasher.Algo
 import com.typesafe.config.Config
 import reactivemongo.api.bson.*
-
 import scala.jdk.CollectionConverters.given
 
 import util.RequestHeader
@@ -50,7 +49,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             Impersonations
               .get(user.into(User.ModId))
               .getOrElse:
-                seenAt.set(user)
+                seenAt.set(user, None)
                 user
 
   private val sessionAuthDbProj = Some(BSONDocument("_id" -> false, "user" -> true))
@@ -76,11 +75,12 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   yield bearer
 
   private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
+    val tokenId = AccessTokenId.from(bearer)
     mongo.oauthColl
       .flatMap:
         _.find(
           BSONDocument(
-            "_id" -> AccessTokenId.from(bearer),
+            "_id" -> tokenId,
             "scopes" -> BSONDocument("$in" -> List(mobileScope, takex3Scope))
           ),
           tokenAuthDbProj
@@ -91,7 +91,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
           id <- doc.getAsOpt[User.Id]("userId")
           scopes <- doc.getAsOpt[List[String]]("scopes")
         yield
-          seenAt.set(id)
+          seenAt.set(id, Some(tokenId))
           Success.OAuth(id, scopes.mkString(","))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
