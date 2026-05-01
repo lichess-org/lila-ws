@@ -1,10 +1,11 @@
 package lila.ws
 
-import java.time.LocalDateTime
 import com.github.blemale.scaffeine.Cache
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.{ ReadConcern, WriteConcern }
+
+import java.time.LocalDateTime
 
 import lila.ws.Auth.AccessTokenId
 
