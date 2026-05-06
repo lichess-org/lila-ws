@@ -3,7 +3,7 @@ package lila.ws
 import com.github.blemale.scaffeine.Cache
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.{ ReadConcern, WriteConcern }
+import reactivemongo.api.WriteConcern
 
 import java.time.LocalDateTime
 
@@ -70,7 +70,6 @@ final class SeenAtUpdate(mongo: Mongo)(using
               "approval.granted" -> true
             )
           ),
-          readConcern = ReadConcern.Local,
           collation = None
         )
       )

@@ -205,7 +205,6 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       _.distinct[User.Id, Set](
         key = "uid",
         selector = Some(BSONDocument("tid" -> tourId, "w" -> BSONDocument("$ne" -> true))),
-        readConcern = ReadConcern.Local,
         collation = None
       )
 
@@ -214,7 +213,6 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       _.distinct[User.Id, Set](
         key = "u",
         selector = Some(BSONDocument("tid" -> tourId, "s" -> BSONDocument("$lt" -> chess.Status.Mate.id))),
-        readConcern = ReadConcern.Local,
         collation = None
       )
 
@@ -238,7 +236,6 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       _.distinct[User.Id, List](
         key = "inquiry.mod",
         selector = Some(BSONDocument("inquiry.mod" -> BSONDocument("$exists" -> true))),
-        readConcern = ReadConcern.Local,
         collation = None
       )
 
@@ -325,8 +322,7 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
         selector = Some(selector),
         limit = Some(1),
         skip = 0,
-        hint = None,
-        readConcern = ReadConcern.Local
+        hint = None
       )
       .map(0 < _)(using parasitic)
 
@@ -334,7 +330,6 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
     coll.distinct[String, Set](
       key = "_id",
       selector = Some(BSONDocument("_id" -> BSONDocument("$in" -> ids))),
-      readConcern = ReadConcern.Local,
       collation = None
     )
 
