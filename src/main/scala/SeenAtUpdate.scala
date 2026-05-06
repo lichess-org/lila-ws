@@ -1,9 +1,9 @@
 package lila.ws
 
 import com.github.blemale.scaffeine.Cache
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
-import reactivemongo.api.WriteConcern
 
 import java.time.LocalDateTime
 
