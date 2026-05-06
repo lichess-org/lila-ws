@@ -131,20 +131,21 @@ final class SocialGraph(mongo: Mongo, config: Config):
     mongo.loadFollowed(id).map { followed =>
       lock.lock()
       try
-        val leftSlot = findSlot(id, -1) match
+        val (leftSlot, leftEntry) = findSlot(id, -1) match
           case NewSlot(leftSlot) =>
-            write(leftSlot, UserEntry(id, UserMeta.freshSubscribed))
-            leftSlot
+            leftSlot -> UserEntry(id, UserMeta.stale)
           case ExistingSlot(leftSlot, entry) =>
-            val newEntry = if subscribe then entry.update(_.withSubscribed(true)) else entry
-            write(leftSlot, newEntry.update(_.withFresh(true)))
-            leftSlot
+            leftSlot -> entry
+        write(
+          leftSlot,
+          leftEntry.update(meta => meta.withFresh(true).withSubscribed(subscribe || meta.subscribed))
+        )
         updateFollowed(leftSlot, followed)
       finally lock.unlock()
     }
 
   // Load users that id follows, either from the cache or from the database,
-  // and subscribes to future updates from tell.
+  // and optionally subscribes to future updates from tell.
   def followed(id: User.Id, subscribe: Boolean)(using Executor): Future[List[UserEntry]] =
     lock.lock()
     val infos =
@@ -234,8 +235,8 @@ object SocialGraph:
     private val SUBSCRIBED = 2
     private val ONLINE = 4
     private val PLAYING = 8
+
     val stale = UserMeta(0)
-    val freshSubscribed = UserMeta(FRESH | SUBSCRIBED)
 
     extension (flags: UserMeta)
       private inline def toggle(flag: Int, inline on: Boolean) = UserMeta(
