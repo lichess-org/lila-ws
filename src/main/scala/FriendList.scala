@@ -20,9 +20,9 @@ final class FriendList(
       _.expireAfterWrite(10.minutes).buildAsyncFuture: userId =>
         mongo.userData(userId).withTimeout(1.second, "FiendList.userData")
 
-  def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
+  def start(userId: User.Id, emit: Emit[ipc.ClientIn], subscribe: Boolean): Future[Unit] =
     for
-      entries <- graph.followed(userId)
+      entries <- graph.followed(userId, subscribe)
       views <- Future.sequence:
         entries.collect:
           case u if u.meta.online =>

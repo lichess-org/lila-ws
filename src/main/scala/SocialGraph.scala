@@ -128,7 +128,7 @@ final class SocialGraph(mongo: Mongo, config: Config):
       info
     }.toList
 
-  private def doLoadFollowed(id: User.Id)(using Executor): Future[List[UserEntry]] =
+  private def doLoadFollowed(id: User.Id, subscribe: Boolean)(using Executor): Future[List[UserEntry]] =
     mongo.loadFollowed(id).map { followed =>
       lock.lock()
       try
@@ -137,7 +137,8 @@ final class SocialGraph(mongo: Mongo, config: Config):
             write(leftSlot, UserEntry(id, UserMeta.freshSubscribed))
             leftSlot
           case ExistingSlot(leftSlot, entry) =>
-            write(leftSlot, entry.update(_.withFresh(true).withSubscribed(true)))
+            val newEntry = if subscribe then entry.update(_.withSubscribed(true)) else entry
+            write(leftSlot, newEntry.update(_.withFresh(true)))
             leftSlot
         updateFollowed(leftSlot, followed)
       finally lock.unlock()
@@ -145,21 +146,20 @@ final class SocialGraph(mongo: Mongo, config: Config):
 
   // Load users that id follows, either from the cache or from the database,
   // and subscribes to future updates from tell.
-  def followed(id: User.Id)(using Executor): Future[List[UserEntry]] =
+  def followed(id: User.Id, subscribe: Boolean)(using Executor): Future[List[UserEntry]] =
     lock.lock()
     val infos =
       try
         findSlot(id, -1) match
-          case NewSlot(_) =>
-            None
+          case NewSlot(_) => None
           case ExistingSlot(slot, entry) =>
             if entry.meta.fresh then
-              write(slot, entry.update(_.withSubscribed(true)))
+              if subscribe then write(slot, entry.update(_.withSubscribed(true)))
               Some(readFollowed(slot))
             else None
       finally
         lock.unlock()
-    infos.fold(doLoadFollowed(id))(Future.successful)
+    infos.fold(doLoadFollowed(id, subscribe))(Future.successful)
 
   def unsubscribe(id: User.Id): Unit =
     lock.lock()
