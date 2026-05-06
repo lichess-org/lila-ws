@@ -28,7 +28,7 @@ object ClientOut:
 
   case object Notified extends ClientOutSite
 
-  case object FollowingOnline extends ClientOutSite
+  case class FollowingOnline(subscribe: Boolean) extends ClientOutSite
 
   case class AnaMove(
       orig: Square,
@@ -143,7 +143,7 @@ object ClientOut:
               case "startWatchingTvChannels" => Some(StartWatchingTvChannels)
               case "moveLat" => Some(MoveLat)
               case "notified" => Some(Notified)
-              case "following_onlines" => Some(FollowingOnline)
+              case "following_onlines" => Some(FollowingOnline(o.boolean("d").getOrElse(true)))
               case "anaMove" =>
                 for
                   d <- o.obj("d")

@@ -88,9 +88,9 @@ object ClientActor:
         req.user.foreach(services.notified.apply)
         state
 
-      case ClientOut.FollowingOnline =>
+      case ClientOut.FollowingOnline(subscribe) =>
         req.user.foreach:
-          services.friends.start(_, clientIn, subscribe = !deps.req.isLichessMobile)
+          services.friends.start(_, clientIn, subscribe = subscribe)
         state
 
       case evalGet: ClientOut.EvalGet =>
