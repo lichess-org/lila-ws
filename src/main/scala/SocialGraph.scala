@@ -100,11 +100,10 @@ final class SocialGraph(mongo: Mongo, config: Config):
     NewSlot(leftSlot)
 
   private def readFollowed(leftSlot: Int): List[UserEntry] =
-    graph.readOutgoing(leftSlot).flatMap { rightSlot =>
-      read(rightSlot).map { entry =>
-        UserEntry(entry.id, entry.meta)
-      }
-    }
+    for
+      rightSlot <- graph.readOutgoing(leftSlot)
+      entry <- read(rightSlot)
+    yield UserEntry(entry.id, entry.meta)
 
   private def readOnlineFollowing(leftSlot: Int): List[User.Id] =
     graph
