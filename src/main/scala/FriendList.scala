@@ -21,20 +21,13 @@ final class FriendList(
         mongo.userData(userId).withTimeout(1.second, "FiendList.userData")
 
   def start(userId: User.Id, emit: Emit[ipc.ClientIn]): Future[Unit] =
-    graph
-      .followed(userId)
-      .flatMap: entries =>
-        Future
-          .sequence:
-            entries.collect:
-              case u if u.meta.online =>
-                userDatas
-                  .get(u.id)
-                  .map {
-                    _.map { UserView(u.id, _, u.meta) }
-                  }(using parasitic)
-          .map: views =>
-            emit(Onlines(views.flatten))
+    for
+      entries <- graph.followed(userId)
+      views <- Future.sequence:
+        entries.collect:
+          case u if u.meta.online =>
+            userDatas.get(u.id).map { _.map(UserView(u.id, _, u.meta)) }(using parasitic)
+    yield emit(Onlines(views.flatten))
 
   export graph.{ follow, unfollow as unFollow }
 
