@@ -163,7 +163,7 @@ object ClientIn:
             "t" -> "following_onlines",
             "d" -> users.map(_.data.titleName),
             "playing" -> users.collect { case u if u.meta.playing => u.id },
-            "patrons" -> users.collect { case u if u.data.patron.isDefined => u.id }, // BC, remove me
+            "patrons" -> Json.arr(), // lichobile BC
             "patronColors" -> users.map(_.data.patron.fold(0)(_.value))
           )
         )
