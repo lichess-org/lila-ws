@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.commands.WriteResult
-import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadConcern, ReadPreference, WriteConcern }
+import reactivemongo.api.{ AsyncDriver, DB, MongoConnection, ReadPreference, WriteConcern }
 
 import java.time.LocalDateTime
 import scala.util.{ Success, Try }
@@ -16,6 +16,8 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
   private val driver = new AsyncDriver(Some(config.getConfig("reactivemongo")))
 
   private type Coll = reactivemongo.api.bson.collection.BSONCollection
+
+  extension (coll: Coll) def secondary = coll.withReadPreference(ReadPreference.secondaryPreferred)
 
   private val mainConnection =
     MongoConnection.fromString(config.getString("mongo.uri").pp("main")).flatMap { parsedUri =>
@@ -257,10 +259,9 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
 
   def loadFollowed(userId: User.Id): Future[Iterable[User.Id]] =
     relationColl.flatMap:
-      _.distinct[User.Id, List](
+      _.secondary.distinct[User.Id, List](
         key = "u2",
         selector = Some(BSONDocument("u1" -> userId, "r" -> true)),
-        readConcern = ReadConcern.Local,
         collation = None
       )
 
@@ -268,18 +269,20 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
     if by.isEmpty then Future.successful(false)
     else
       relationColl
-        .flatMap:
-          exists(_, BSONDocument("_id" -> BSONDocument("$in" -> by.map(b => s"$b/$me")), "r" -> false))
+        .flatMap: coll =>
+          exists(
+            coll.secondary,
+            BSONDocument("_id" -> BSONDocument("$in" -> by.map(b => s"$b/$me")), "r" -> false)
+          )
         .flatMap:
           if _ then isGameOngoing(id) else Future.successful(false)
 
-  def userData(userId: User.Id): Future[Option[FriendList.UserData]] =
-    userColl.flatMap:
-      _.find(
-        BSONDocument("_id" -> userId),
-        Some(userDataProjection)
-      ).one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
-        .map { _.flatMap(userDataReader) }
+  def userData(userId: User.Id): Future[Option[FriendList.UserData]] = for
+    coll <- userColl
+    doc <- coll.secondary
+      .find(BSONDocument("_id" -> userId), Some(userDataProjection))
+      .one[BSONDocument]
+  yield doc.flatMap(userDataReader)
 
   object troll:
 
@@ -290,9 +293,9 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       cache.put(userId, Future.successful(v))
 
     private val cache: AsyncLoadingCache[User.Id, IsTroll] = cacheApi(65_536, "user.troll"):
-      _.expireAfterAccess(20.minutes).buildAsyncFuture: id =>
-        userColl.flatMap:
-          exists(_, BSONDocument("_id" -> id, "marks" -> "troll")).map(IsTroll.apply(_))
+      _.expireAfterAccess(15.minutes).buildAsyncFuture: id =>
+        userColl.flatMap: coll =>
+          exists(coll.secondary, BSONDocument("_id" -> id, "marks" -> "troll")).map(IsTroll.apply(_))
 
   object idFilter:
     val study: IdFilter = ids => studyColl.flatMap(filterIds(ids))
@@ -304,9 +307,7 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
   object cache:
     def get[A: BSONReader](key: String): Future[Option[A]] = for
       coll <- cacheColl
-      res <- coll
-        .find(BSONDocument("_id" -> key))
-        .one[BSONDocument](readPreference = ReadPreference.secondaryPreferred)
+      res <- coll.secondary.find(BSONDocument("_id" -> key)).one[BSONDocument]
     yield
       for
         doc <- res
