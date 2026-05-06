@@ -93,7 +93,7 @@ object LilaWsServer:
 
   def updateConnections(origin: RequestHeader.Origin, auth: RequestHeader.AuthName, delta: Int): Unit =
     byOrigin.compute(
-      if origin.isEmpty then "none" else "origin",
+      if origin.isEmpty then "none" else origin,
       (_, prev) => Option(prev).getOrElse(0) + delta
     )
     byAuth.compute(auth, (_, prev) => Option(prev).getOrElse(0) + delta)
