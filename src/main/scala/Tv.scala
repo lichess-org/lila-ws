@@ -10,10 +10,10 @@ final class Tv(using cacheApi: util.CacheApi):
    * Players watching these games are notified whenever the relevant channel
    * switches to a new TV game. */
 
-  private val fast: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](65_536, "tv.fast"):
+  private val fast: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](128, "tv.fast"):
     _.expireAfterWrite(10.minutes).build()
 
-  private val slow: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](65_536, "tv.slow"):
+  private val slow: Cache[String, Boolean] = cacheApi.notLoadingSync[String, Boolean](512, "tv.slow"):
     _.expireAfterWrite(2.hours).build()
 
   def select(out: LilaOut.TvSelect): Unit =
