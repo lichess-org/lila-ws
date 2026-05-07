@@ -109,7 +109,7 @@ final class Controller(
     if req.isLichessMobile || req.header.queryParameter("load").contains("true") then
       LilaRequest
         .send[JsonString](
-          reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id)),
+          reqId => services.lila.round(ipc.LilaIn.RoundGet(reqId, id, req.user)),
           JsonString(_)
         )
         .map(Right(_))(using parasitic)
