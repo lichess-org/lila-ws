@@ -17,7 +17,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
 
   private val done: Cache[User.Id, Boolean] =
     cacheApi.notLoadingSync[User.Id, Boolean](65_536, "seenAt.done"):
-      _.expireAfterWrite(8.minutes).build()
+      _.expireAfterWrite(5.minutes).build()
 
   def set(user: User.Id, oauthToken: Option[AccessTokenId]): Unit =
     if done.getIfPresent(user).isEmpty then
