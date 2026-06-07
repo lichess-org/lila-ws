@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion := "3.8.3",
+    scalaVersion := "3.8.4",
     versionScheme := Some("early-semver"),
     version := "3.3",
     dockerBaseImage := "eclipse-temurin:25-jdk-noble",
