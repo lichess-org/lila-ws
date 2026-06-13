@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.Logger
 import scalalib.zeros.given
 
 import ipc.ClientIn.LobbyPong
-import ipc.{ LilaIn, ClientIn }
+import ipc.{ ClientIn, LilaIn }
 
 final class Lobby(lila: Lila, groupedWithin: util.GroupedWithin, tor: Tor)(using
     cacheApi: util.CacheApi
