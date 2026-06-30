@@ -47,11 +47,8 @@ jobs:
         run: sbt Docker/publish
 
   deploy:
-    if: github.repository == 'lichess-org/lila-ws' && github.ref_name == github.event.repository.default_branch
     needs: build-and-push-image
-    runs-on: ubuntu-latest
-    steps:
-      - name: deploy to preview site
-        env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_PREVIEW_SERVER_URL }}
-        run: curl -X POST $DEPLOY_WEBHOOK_URL
+    if: github.repository_owner == 'lichess-org' && github.ref_name == github.event.repository.default_branch
+    uses: lichess-org/.github/.github/workflows/deploy.yml@main
+    secrets:
+      deploy_webhook_url: ${{ secrets.DEPLOY_PREVIEW_SERVER_URL }}
