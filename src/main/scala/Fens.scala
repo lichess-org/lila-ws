@@ -4,6 +4,7 @@ import cats.syntax.option.*
 import chess.Color
 import chess.format.{ Fen, Uci }
 import org.apache.pekko.actor.typed.ActorRef
+import play.api.libs.json.*
 
 import lila.ws.ipc.*
 
@@ -21,10 +22,10 @@ object Fens:
       games
         .compute(gameId):
           case None => Watched(None, Set(client)).some
-          case Some(Watched(square, clients)) => Watched(square, clients + client).some
+          case Some(Watched(position, clients)) => Watched(position, clients + client).some
         .flatMap(_.position)
         .foreach: p =>
-          client ! ClientIn.Fen(gameId, p)
+          client ! ClientIn.FenAndPockets(gameId, p)
 
   // when a client disconnects
   def unwatch(gameIds: Iterable[Game.Id], client: Client): Unit =
@@ -43,6 +44,7 @@ object Fens:
   def move(gameId: Game.Id, json: JsonString, moveBy: Option[Color]): Unit =
     games.computeIfPresent(gameId): watched =>
       val turnColor = moveBy.fold(Color.white)(c => !c)
+      val pockets = extractPockets(json.value)
       json.value
         .match
           case MoveClockRegex(uciS, fenS, wcS, bcS) =>
@@ -50,11 +52,12 @@ object Fens:
               uci <- Uci(uciS)
               wc <- wcS.toIntOption
               bc <- bcS.toIntOption
-            yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor)
-          case MoveRegex(uciS, fenS) => Uci(uciS).map { Position(_, Fen.Board(fenS), None, turnColor) }
+            yield Position(uci, Fen.Board(fenS), Some(Clock(wc, bc)), turnColor, pockets)
+          case MoveRegex(uciS, fenS) =>
+            Uci(uciS).map { Position(_, Fen.Board(fenS), None, turnColor, pockets) }
           case _ => None
         .fold(watched): position =>
-          val msg = ClientIn.Fen(gameId, position)
+          val msg = ClientIn.FenAndPockets(gameId, position)
           watched.clients.foreach { _ ! msg }
           watched.copy(position = Some(position))
         .some
@@ -62,3 +65,12 @@ object Fens:
   // ...,"uci":"h2g2","san":"Rg2","fen":"r2qb1k1/p2nbrpn/6Np/3pPp1P/1ppP1P2/2P1B3/PP2B1R1/R2Q1NK1",...,"clock":{"white":121.88,"black":120.94}
   private val MoveRegex = """uci":"([^"]+)".+fen":"([^"]+)""".r.unanchored
   private val MoveClockRegex = """uci":"([^"]+)".+fen":"([^"]+).+white":(\d+).+black":(\d+)""".r.unanchored
+
+  private def extractPockets(raw: String): Option[JsArray] =
+    if !raw.contains("\"crazyhouse\"") then None
+    else
+      scala.util
+        .Try(Json.parse(raw))
+        .toOption
+        .flatMap: js =>
+          (js \ "crazyhouse" \ "pockets").asOpt[JsArray]
