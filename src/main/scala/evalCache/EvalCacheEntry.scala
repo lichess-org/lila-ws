@@ -96,3 +96,12 @@ object EvalCacheEntry:
       .ifTrue(eval.looksValid)
       .map: position =>
         Input(Id(position), fen, position, eval.truncatePvs, sri)
+
+  // val fen = "r1bqkb1r/ppp2ppp/2n2n2/3pp1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 0 5"
+  // println("FEN ID: " + evalCache.EvalCacheEntry.showMongoIdForDebug(fen))
+  // def showMongoIdForDebug(fen: String) =
+  //   import chess.format.*
+  //   val position = Fen.read(chess.variant.Standard, Fen.Full(fen)).get
+  //   val binary = BinaryFen.writeNormalized(position).value
+  //   val base64 = java.util.Base64.getEncoder.encodeToString(binary)
+  //   s"Binary.createFromBase64('$base64')"
