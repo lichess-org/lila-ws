@@ -95,12 +95,11 @@ object EvalCacheEntry:
       case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
 
     def isValidMate(lastPos: Position) =
-      score.mate
-        .forall: mate =>
-          val plies = moves.value.size
-          val mateInPlies = mate.value.abs * 2
-          if plies == mateInPlies || plies == mateInPlies - 1 then lastPos.checkMate
-          else plies < mateInPlies && mateInPlies > MAX_PV_SIZE
+      score.mate.forall: mate =>
+        val plies = moves.value.size
+        val mateInPlies = mate.value.abs * 2
+        if plies == mateInPlies || plies == mateInPlies - 1 then lastPos.checkMate
+        else plies < mateInPlies && mateInPlies > MAX_PV_SIZE
 
     def truncate = copy(moves = Moves.truncate(moves))
 
