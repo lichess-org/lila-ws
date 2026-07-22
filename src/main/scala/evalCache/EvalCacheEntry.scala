@@ -7,6 +7,7 @@ import chess.eval.Score
 import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
 import com.github.blemale.scaffeine.{ LoadingCache, Scaffeine }
+import scalalib.zeros.given
 
 import java.time.LocalDateTime
 
@@ -90,12 +91,12 @@ object EvalCacheEntry:
     def truncate = copy(moves = Moves.truncate(moves))
 
   def makeInput(variant: Variant, fen: Fen.Full, eval: Eval, sri: Sri) =
-    Fen
-      .read(variant, fen)
-      .filter(_.playable(false))
-      .ifTrue(eval.looksValid)
-      .map: position =>
-        Input(Id(position), fen, position, eval.truncatePvs, sri)
+    eval.looksValid.so:
+      Fen
+        .read(variant, fen)
+        .filter(_.playable(false))
+        .map: position =>
+          Input(Id(position), fen, position, eval.truncatePvs, sri)
 
   // val fen = "r1bqkb1r/ppp2ppp/2n2n2/3pp1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 0 5"
   // println("FEN ID: " + evalCache.EvalCacheEntry.showMongoIdForDebug(fen))
