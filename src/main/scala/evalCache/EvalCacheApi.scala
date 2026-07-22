@@ -2,7 +2,6 @@ package lila.ws
 package evalCache
 
 import cats.syntax.all.*
-import chess.ErrorStr
 import chess.format.Fen
 import com.github.blemale.scaffeine.AsyncLoadingCache
 import com.softwaremill.macwire.*
@@ -103,7 +102,7 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler)(using cacheApi
 
   private def putTrusted(user: User.Id, input: Input): Future[Unit] =
     mongo.evalCacheColl.flatMap: c =>
-      validate(input).match
+      input.validate.match
         case Left(error) =>
           Logger("EvalCacheApi.put").info(s"Invalid from ${user} $error ${input.fen}")
           Future.successful(())
@@ -136,6 +135,3 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler)(using cacheApi
     // todo: debounce upgrades in hot rooms
     upgrade.onEval(input)
     multi.onEval(input)
-
-  private def validate(in: EvalCacheEntry.Input): Either[ErrorStr, Unit] =
-    in.eval.pvs.traverse_(pv => in.position.validate(pv.moves.value))

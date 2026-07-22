@@ -2,10 +2,11 @@ package lila.ws
 package evalCache
 
 import cats.data.NonEmptyList
-import chess.Position
+import cats.implicits.toFoldableOps
 import chess.eval.Score
 import chess.format.{ BinaryFen, Fen, Uci }
 import chess.variant.Variant
+import chess.{ ErrorStr, Position }
 import com.github.blemale.scaffeine.{ LoadingCache, Scaffeine }
 import scalalib.zeros.given
 
@@ -58,7 +59,12 @@ case class EvalCacheEntry(
 
 object EvalCacheEntry:
 
-  case class Input(id: Id, fen: Fen.Full, position: Position, eval: Eval, sri: Sri)
+  case class Input(id: Id, fen: Fen.Full, position: Position, eval: Eval, sri: Sri):
+    def validate: Either[ErrorStr, Unit] =
+      eval.pvs.traverse_ : pv =>
+        position
+          .forward(pv.moves.value)
+          .filterOrElse(pv.isValidMate(_), chess.ErrorStr(s"Invalid mate $pv"))
 
   case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
 
@@ -87,6 +93,14 @@ object EvalCacheEntry:
     def looksValid = score.mate match
       case None => moves.value.toList.sizeIs > MIN_PV_SIZE
       case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
+
+    def isValidMate(lastPos: Position) =
+      score.mate
+        .forall: mate =>
+          val plies = moves.value.size
+          val mateInPlies = mate.value.abs * 2
+          if plies == mateInPlies || plies == mateInPlies - 1 then lastPos.checkMate
+          else plies < mateInPlies && mateInPlies > MAX_PV_SIZE
 
     def truncate = copy(moves = Moves.truncate(moves))
 
