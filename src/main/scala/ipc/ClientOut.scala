@@ -4,7 +4,7 @@ package ipc
 import cats.data.NonEmptyList
 import chess.format.{ Fen, Uci, UciPath }
 import chess.variant.Variant
-import chess.{ Centis, Color, Square }
+import chess.{ Centis, Color }
 import play.api.libs.json.*
 
 import scala.util.{ Success, Try }
@@ -29,27 +29,6 @@ object ClientOut:
   case object Notified extends ClientOutSite
 
   case class FollowingOnline(subscribe: Boolean) extends ClientOutSite
-
-  case class AnaMove(
-      orig: Square,
-      dest: Square,
-      fen: Fen.Full,
-      path: UciPath,
-      variant: Variant,
-      chapterId: Option[ChapterId],
-      promotion: Option[chess.PromotableRole],
-      payload: JsObject
-  ) extends ClientOutSite
-
-  case class AnaDrop(
-      role: chess.Role,
-      square: Square,
-      fen: Fen.Full,
-      path: UciPath,
-      variant: Variant,
-      chapterId: Option[ChapterId],
-      payload: JsObject
-  ) extends ClientOutSite
 
   case class EvalGet(
       fen: Fen.Full,
@@ -144,27 +123,6 @@ object ClientOut:
               case "moveLat" => Some(MoveLat)
               case "notified" => Some(Notified)
               case "following_onlines" => Some(FollowingOnline(o.boolean("d").getOrElse(true)))
-              case "anaMove" =>
-                for
-                  d <- o.obj("d")
-                  orig <- d.str("orig").flatMap { Square.fromKey(_) }
-                  dest <- d.str("dest").flatMap { Square.fromKey(_) }
-                  path <- d.get[UciPath]("path")
-                  fen <- d.get[Fen.Full]("fen")
-                  variant = dataVariant(d)
-                  chapterId = d.get[ChapterId]("ch")
-                  promotion = d.str("promotion").flatMap { chess.Role.promotable(_) }
-                yield AnaMove(orig, dest, fen, path, variant, chapterId, promotion, o)
-              case "anaDrop" =>
-                for
-                  d <- o.obj("d")
-                  role <- d.str("role").flatMap(chess.Role.allByName.get)
-                  square <- d.str("pos").flatMap { Square.fromKey(_) }
-                  path <- d.get[UciPath]("path")
-                  fen <- d.get[Fen.Full]("fen")
-                  variant = dataVariant(d)
-                  chapterId = d.get[ChapterId]("ch")
-                yield AnaDrop(role, square, fen, path, variant, chapterId, o)
               case "evalGet" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGet)
               case "evalPut" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readPut)
               case "evalGetMulti" => o.obj("d").flatMap(evalCache.EvalCacheJsonHandlers.readGetMulti)
@@ -176,11 +134,12 @@ object ClientOut:
               case "cancel" | "joinSeek" | "cancelSeek" | "poolIn" | "poolOut" | "hookIn" | "hookOut" =>
                 Some(LobbyForward(o))
               // study
-              case "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" | "setRole" | "kick" |
-                  "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" | "descStudy" |
-                  "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" | "editStudy" |
-                  "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" | "explorerGame" |
-                  "requestAnalysis" | "invite" | "relaySync" | "setTopics" | "clearVariations" =>
+              case "anaMove" | "anaDrop" | "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" |
+                  "setRole" | "kick" | "leave" | "shapes" | "addChapter" | "setChapter" | "editChapter" |
+                  "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" |
+                  "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" |
+                  "explorerGame" | "requestAnalysis" | "invite" | "relaySync" | "setTopics" |
+                  "clearVariations" =>
                 Some(StudyForward(o))
               // round
               case "move" =>
@@ -243,9 +202,6 @@ object ClientOut:
         case js => Unexpected(js)
 
   private val emptyPing: Try[ClientOut] = Success(Ping(None))
-
-  private def dataVariant(d: JsObject): Variant =
-    Variant.orDefault(d.get[Variant.LilaKey]("variant"))
 
   private def parseOldMove(d: JsObject) = for
     orig <- d.str("from")
