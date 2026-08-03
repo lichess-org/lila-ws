@@ -136,10 +136,9 @@ object ClientOut:
               // study
               case "anaMove" | "anaDrop" | "like" | "setPath" | "deleteNode" | "promote" | "forceVariation" |
                   "setRole" | "kick" | "leave" | "shapes" | "addChapter" | "setChapter" | "setViewedChapter" |
-                  "editChapter" |
-                  "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" | "sortChapters" |
-                  "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" | "toggleGlyph" |
-                  "explorerGame" | "requestAnalysis" | "invite" | "relaySync" | "setTopics" |
+                  "editChapter" | "descStudy" | "descChapter" | "deleteChapter" | "clearAnnotations" |
+                  "sortChapters" | "editStudy" | "setTag" | "setComment" | "deleteComment" | "setGamebook" |
+                  "toggleGlyph" | "explorerGame" | "requestAnalysis" | "invite" | "relaySync" | "setTopics" |
                   "clearVariations" =>
                 Some(StudyForward(o))
               // round
