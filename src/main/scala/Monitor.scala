@@ -96,8 +96,6 @@ object Monitor:
   val usersSize = Kamon.gauge("users.size").withoutTags()
   val watchSize = Kamon.gauge("watch.size").withoutTags()
 
-  val voiceChatChannels = Kamon.gauge("voiceChat.channels.size").withoutTags()
-
   val busSize = Kamon.gauge("bus.size").withoutTags()
   val busAllSize = Kamon.gauge("bus.all.size").withoutTags()
 

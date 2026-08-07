@@ -89,10 +89,6 @@ object ClientOut:
 
   case object ChallengePing extends ClientOut
 
-  // voiceChat
-
-  case object VoiceChatPing extends ClientOut
-
   // storm
 
   case class StormKey(key: String, pad: String) extends ClientOutSite
@@ -168,7 +164,6 @@ object ClientOut:
               case "rep" => o.obj("d").flatMap(_.str("n")).map(RoundSelfReport.apply)
               case "flag" => o.str("d").flatMap(Color.fromName).map(RoundFlag.apply)
               case "bye2" => Some(RoundBye)
-              case "voiceChatPing" => Some(VoiceChatPing)
               case "blindfold-yes" | "blindfold-no" | "moretime" | "rematch-yes" | "rematch-no" |
                   "takeback-yes" | "takeback-no" | "draw-yes" | "draw-no" | "draw-claim" | "resign" |
                   "resign-force" | "draw-force" | "abort" | "outoftime" =>

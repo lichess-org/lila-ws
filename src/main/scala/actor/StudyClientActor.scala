@@ -49,10 +49,6 @@ object StudyClientActor:
             forward(payload)
             Behaviors.same
 
-          case ClientOut.VoiceChatPing =>
-            deps.req.user.map { VoiceChat.respondToPing(state.room.room, _) }.foreach(clientIn)
-            Behaviors.same
-
           // default receive (site)
           case msg: ClientOutSite =>
             val siteState = globalReceive(state.site, deps, ctx, msg)
