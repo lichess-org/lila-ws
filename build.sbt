@@ -9,6 +9,7 @@ inThisBuild(
   )
 )
 
+Universal / target := baseDirectory.value / "target" / "universal"
 val os = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else "linux"
 val arch = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch-64" else "x86-64"
 val arch_ = arch.replace("-", "_")
