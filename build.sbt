@@ -10,9 +10,13 @@ inThisBuild(
 )
 
 Universal / target := baseDirectory.value / "target" / "universal"
-val os = if (sys.props.get("os.name").exists(_.startsWith("Mac"))) "osx" else "linux"
-val arch = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch-64" else "x86-64"
-val arch_ = arch.replace("-", "_")
+
+def nettyTransport =
+  val arch = if (sys.props.get("os.arch").exists(_.startsWith("aarch64"))) "aarch_64" else "x86_64"
+  val (os, notifier) =
+  if System.getProperty("os.name").toLowerCase.startsWith("mac") then ("osx", "kqueue")
+  else ("linux", "epoll")
+  ("io.netty" % s"netty-transport-native-$notifier" % nettyVersion).classifier(s"$os-$arch")
 
 val pekkoVersion = "1.6.0"
 val kamonVersion = "2.8.1"
@@ -33,10 +37,7 @@ lazy val `lila-ws` = project
       "io.lettuce" % "lettuce-core" % "7.6.0.RELEASE",
       "io.netty" % "netty-handler" % nettyVersion,
       "io.netty" % "netty-codec-http" % nettyVersion,
-      ("io.netty" % s"netty-transport-native-epoll" % nettyVersion)
-        .classifier(s"linux-$arch_"),
-      ("io.netty" % s"netty-transport-native-kqueue" % nettyVersion)
-        .classifier(s"osx-$arch_"),
+      nettyTransport,
       "com.github.lichess-org.scalalib" %% "scalalib-lila" % "11.10.11",
       "com.github.lichess-org.scalachess" %% "scalachess" % chessVersion,
       "com.github.lichess-org.scalachess" %% "scalachess-play-json" % chessVersion,
