@@ -14,6 +14,11 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+if [ ! -d "$stage" ]; then
+  echo "Expected stage directory $stage does not exist. Deploy canceled"
+  exit 1
+fi
+
 RSYNC_OPTIONS=" \
   --archive \
   --no-o --no-g \
@@ -37,4 +42,3 @@ echo "Restart lila-ws"
 ssh $REMOTE "chown -R lila-ws:lila-ws /home/lila-ws && systemctl restart lila-ws"
 
 echo "Deploy complete"
-
