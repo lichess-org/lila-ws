@@ -1,8 +1,8 @@
 package lila.ws
 package netty
 
-import io.netty.channel.ServerChannel
-import io.netty.channel.EventLoopGroup
+import io.netty.channel.{ EventLoopGroup, ServerChannel }
+
 import scala.util.control.NonFatal
 
 // Adapted from https://github.com/ReactiveMongo/ReactiveMongo/blob/5560470ee409da827feee161c16631042e194263/driver/src/main/scala/core/netty/Pack.scala#L15
@@ -33,7 +33,7 @@ private object Pack:
         )
       }
     catch
-      case NonFatal(cause) =>
+      case NonFatal(_) =>
         None
 
   private def kqueue: Option[Pack] =
@@ -50,5 +50,5 @@ private object Pack:
         )
       }
     catch
-      case NonFatal(cause) =>
+      case NonFatal(_) =>
         None
