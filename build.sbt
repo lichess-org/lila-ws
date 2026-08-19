@@ -1,13 +1,9 @@
-inThisBuild(
-  Seq(
-    scalaVersion := "3.8.4",
-    versionScheme := Some("early-semver"),
-    version := "3.3",
-    dockerBaseImage := "eclipse-temurin:25-jdk-noble",
-    dockerUpdateLatest := true,
-    semanticdbEnabled := true // for scalafix
-  )
-)
+scalaVersion := "3.8.4"
+versionScheme := Some("early-semver")
+version := "3.3"
+dockerBaseImage := "eclipse-temurin:25-jdk-noble"
+dockerUpdateLatest := true
+semanticdbEnabled := true // for scalafix
 
 Universal / target := baseDirectory.value / "target" / "universal"
 
