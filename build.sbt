@@ -21,7 +21,7 @@ def nettyTransport =
 val pekkoVersion = "1.6.0"
 val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.17.Final"
-val chessVersion = "17.16.1"
+val chessVersion = "17.16.2"
 
 lazy val `lila-ws` = project
   .in(file("."))
@@ -38,7 +38,7 @@ lazy val `lila-ws` = project
       "io.netty" % "netty-handler" % nettyVersion,
       "io.netty" % "netty-codec-http" % nettyVersion,
       nettyTransport,
-      "com.github.lichess-org.scalalib" %% "scalalib-lila" % "11.10.11",
+      "com.github.lichess-org.scalalib" %% "scalalib-lila" % "11.10.12",
       "com.github.lichess-org.scalachess" %% "scalachess" % chessVersion,
       "com.github.lichess-org.scalachess" %% "scalachess-play-json" % chessVersion,
       "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
