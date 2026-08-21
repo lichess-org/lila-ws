@@ -4,8 +4,6 @@ package netty
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.epoll.{ EpollEventLoopGroup, EpollServerSocketChannel }
-import io.netty.channel.kqueue.{ KQueueEventLoopGroup, KQueueServerSocketChannel }
 import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
 
@@ -17,10 +15,9 @@ final class NettyServer(
 )(using Executor, Scheduler):
   private val logger = Logger(getClass)
   private val threads = config.getInt("netty.threads")
-  private val (parent, workers, channelClass) =
-    if System.getProperty("os.name").toLowerCase.startsWith("mac") then
-      (new KQueueEventLoopGroup(1), new KQueueEventLoopGroup(threads), classOf[KQueueServerSocketChannel])
-    else (new EpollEventLoopGroup(1), new EpollEventLoopGroup(threads), classOf[EpollServerSocketChannel])
+  private val pack = Pack.instance
+  private val parent = pack.eventLoopGroupFactory(1)
+  private val workers = pack.eventLoopGroupFactory(threads)
   private val connector = ActorChannelConnector(clients, config, settings, workers)
 
   def start(): Unit =
@@ -32,7 +29,7 @@ final class NettyServer(
       val boot = new ServerBootstrap
       boot
         .group(parent, workers)
-        .channel(channelClass)
+        .channel(pack.channelClass)
         .childHandler(
           new ChannelInitializer[Channel]:
             override def initChannel(ch: Channel): Unit =
