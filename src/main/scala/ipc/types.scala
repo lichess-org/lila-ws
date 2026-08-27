@@ -14,6 +14,7 @@ object ClientCtrl:
 
 object ClientNull extends ClientMsg
 case class SetTroll(v: IsTroll) extends ClientMsg
+case class NotifyChatHidden(playerId: Game.PlayerId) extends ClientMsg
 
 case class ClientMoveMetrics(
     clientLag: Option[Centis] = None,

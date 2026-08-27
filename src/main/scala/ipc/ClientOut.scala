@@ -84,6 +84,7 @@ object ClientOut:
 
   case class ChatSay(msg: String) extends ClientOut
   case class ChatTimeout(suspect: User.Id, reason: String, text: String) extends ClientOut
+  case object ChatHidden extends ClientOutRound
 
   // challenge
 
@@ -170,6 +171,7 @@ object ClientOut:
                 Some(RoundPlayerForward(o))
               // chat
               case "talk" => o.str("d").map { ChatSay.apply }
+              case "chatHidden" => Some(ChatHidden)
               case "timeout" =>
                 for
                   data <- o.obj("d")

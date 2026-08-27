@@ -3,6 +3,7 @@ package lila.ws
 import chess.Centis
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ Behavior, PostStop }
+import play.api.libs.json.Json
 
 import ipc.*
 
@@ -84,6 +85,15 @@ object RoundClientActor:
             clientIn(versionFor(state, versioned))
             Behaviors.same
 
+          case NotifyChatHidden(playerId) =>
+            state.player match
+              case Some(player) if player.id != playerId =>
+                clientIn:
+                  ClientIn.payload:
+                    Json.obj("t" -> "message", "d" -> Json.obj("u" -> "lichess", "t" -> "", "hidden" -> true))
+                Behaviors.same
+              case _ => Behaviors.same
+
           case ClientIn.OnlyFor(endpoint, payload) =>
             if endpoint == ClientIn.OnlyFor.Endpoint.Room(state.room.room) then clientIn(payload)
             Behaviors.same
@@ -153,6 +163,13 @@ object RoundClientActor:
                   case Some(InSimul(id)) => extMsg(id).foreach(lilaIn.simul)
             Behaviors.same
 
+          case ClientOut.ChatHidden =>
+            state.player match
+              case Some(player) if player.ext.isEmpty =>
+                Bus.publish(_.room(state.room.room), NotifyChatHidden(player.id))
+              case _ =>
+            Behaviors.same
+
           case ClientOut.ChatTimeout(suspect, reason, text) =>
             deps.req.user.foreach { u =>
               def msg(id: RoomId) = LilaIn.ChatTimeout(id, u, suspect, reason, text)
@@ -194,7 +211,6 @@ object RoundClientActor:
           case _ =>
             Monitor.clientOutUnhandled("round").increment()
             Behaviors.same
-
       }
       .receiveSignal { case (ctx, PostStop) =>
         onStop(state.site, deps, ctx)
