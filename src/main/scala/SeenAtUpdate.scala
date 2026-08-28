@@ -27,7 +27,7 @@ final class SeenAtUpdate(mongo: Mongo)(using
         userColl <- mongo.userColl
         userDoc <- findAndModify(
           coll = userColl,
-          selector = BSONDocument("_id" -> user),
+          selector = BSONDocument("_id" -> user, "mustConfirmEmail" -> BSONDocument("$exists" -> false)),
           modifier = BSONDocument("$set" -> BSONDocument("seenAt" -> now)),
           fields = BSONDocument("roles" -> true, "_id" -> false)
         )
