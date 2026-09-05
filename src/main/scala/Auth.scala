@@ -18,8 +18,10 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     then Future.successful(None)
     else
       sessionIdFromReq(req) match
-        case Some(sid) if sid.startsWith(appealPrefix) => Future.successful(None)
-        case Some(sid) => sessionAuth(sid)
+        case Some(sid) =>
+          if sid.startsWith(appealPrefix) || sid.startsWith(oauthPrefix)
+          then Future.successful(None)
+          else sessionAuth(sid)
         case None =>
           bearerFromHeader(req).orElse(bearerFromQuery(req)) match
             case Some(bearer) => bearerAuth(bearer)
@@ -109,6 +111,7 @@ object Auth:
   private val sidKey = "sid"
   private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
   private val appealPrefix = "appeal:"
+  private val oauthPrefix = "TOK-"
 
   val mobileScope = "web:mobile"
   val takex3Scope = "web:polygon"
