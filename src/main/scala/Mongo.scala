@@ -284,6 +284,11 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
       .one[BSONDocument]
   yield doc.flatMap(userDataReader)
 
+  def isUserEnabled(userId: User.Id): Future[Boolean] = for
+    coll <- userColl
+    found <- exists(coll.secondary, BSONDocument("_id" -> userId, "enabled" -> true))
+  yield found
+
   object troll:
 
     def is(user: Option[User.Id]): Future[IsTroll] =

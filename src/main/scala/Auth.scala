@@ -17,15 +17,19 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     if req.flag.exists(flag => flag == Flag.api || flag == Flag.embed)
     then Future.successful(None)
     else
-      sessionIdFromReq(req) match
-        case Some(sid) =>
-          if sid.startsWith(appealPrefix) || sid.startsWith(oauthPrefix)
-          then Future.successful(None)
-          else sessionAuth(sid)
-        case None =>
-          bearerFromHeader(req).orElse(bearerFromQuery(req)) match
-            case Some(bearer) => bearerAuth(bearer)
-            case None => Future.successful(None)
+      sessionIdFromReq(req)
+        .match
+          case Some(sid) =>
+            if sid.startsWith(appealPrefix) || sid.startsWith(oauthPrefix)
+            then Future.successful(None)
+            else sessionAuth(sid)
+          case None =>
+            bearerFromHeader(req).orElse(bearerFromQuery(req)) match
+              case Some(bearer) => bearerAuth(bearer)
+              case None => Future.successful(None)
+        .flatMap:
+          _.fold(Future.successful(None)): success =>
+            mongo.isUserEnabled(success.user).map(_.option(success))
 
   def sidFromReq(req: RequestHeader): Option[String] =
     req
