@@ -18,7 +18,7 @@ final class FriendList(
   private val userDatas: AsyncLoadingCache[User.Id, Option[UserData]] =
     cacheApi(8_192, "friendList.userData"):
       _.expireAfterWrite(10.minutes).buildAsyncFuture: userId =>
-        mongo.userData(userId).withTimeout(1.second, "FiendList.userData")
+        mongo.friendData(userId).withTimeout(1.second, "FiendList.userData")
 
   def start(userId: User.Id, emit: Emit[ipc.ClientIn], subscribe: Boolean): Future[Unit] =
     for

@@ -100,9 +100,8 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req
       .cookie(cookieName)
-      .flatMap:
-        case sessionIdRegex(id) => Some(id)
-        case _ => None
+      .collect:
+        case sessionIdRegex(id) => id
       .orElse(req.queryParameter(sessionIdKey))
 
 object Auth:

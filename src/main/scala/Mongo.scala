@@ -277,7 +277,7 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
         .flatMap:
           if _ then isGameOngoing(id) else Future.successful(false)
 
-  def userData(userId: User.Id): Future[Option[FriendList.UserData]] = for
+  def friendData(userId: User.Id): Future[Option[FriendList.UserData]] = for
     coll <- userColl
     doc <- coll.secondary
       .find(BSONDocument("_id" -> userId), Some(userDataProjection))
