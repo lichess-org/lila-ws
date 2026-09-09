@@ -8,6 +8,7 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheA
 
   private type TrustedMillis = Int
   private val trustedRefreshFactor = 0.1f
+  private val maxTrustedLagMs = 5_000
 
   private val trustedStats: Cache[User.Id, TrustedMillis] =
     cacheApi.notLoadingSync[User.Id, TrustedMillis](65_536, "lag.trustedStats"):
@@ -22,10 +23,11 @@ final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheA
 
   def recordTrustedLag(millis: Int, userId: Option[User.Id]) =
     Monitor.lag.roundFrameLag(millis)
+    val cappedMillis = millis.atMost(maxTrustedLagMs)
     userId.foreach: uid =>
       trustedStats.put(
         uid,
         sessionLag(uid)
-          .fold(millis): prev =>
-            (prev * (1 - trustedRefreshFactor) + millis * trustedRefreshFactor).toInt
+          .fold(cappedMillis): prev =>
+            (prev * (1 - trustedRefreshFactor) + cappedMillis * trustedRefreshFactor).toInt
       )
