@@ -25,7 +25,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
             else sessionAuth(sid)
           case None =>
             bearerFromHeader(req).orElse(bearerFromQuery(req)) match
-              case Some(bearer) => bearerAuth(bearer)
+              case Some(bearer) => bearerAuth(bearer, req.ip)
               case None => Future.successful(None)
         .flatMap:
           _.fold(Future.successful(None)): success =>
@@ -52,12 +52,15 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         _.flatMap { _.getAsOpt[User.Id]("user") }
       .map:
         _.map: user =>
-          Success.Cookie:
+          Success.Cookie(
             Impersonations
               .get(user.into(User.ModId))
               .getOrElse:
                 seenAt.set(user, None)
                 user
+            ,
+            ApproxSid.fromSid(sid)
+          )
 
   private val sessionAuthDbProj = Some(BSONDocument("_id" -> false, "user" -> true))
   private val tokenAuthDbProj = Some(BSONDocument("_id" -> false, "userId" -> true, "scopes" -> true))
@@ -81,7 +84,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
     if req.isTakex3Web
   yield bearer
 
-  private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
+  private def bearerAuth(bearer: Bearer, ip: IpAddress): Future[Option[Success]] =
     val tokenId = AccessTokenId.from(bearer)
     mongo.oauthColl
       .flatMap:
@@ -99,7 +102,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
           scopes <- doc.getAsOpt[List[String]]("scopes")
         yield
           seenAt.set(id, Some(tokenId))
-          Success.OAuth(id, scopes.mkString(","))
+          Success.OAuth(id, ApproxSid.fromIp(ip), scopes.mkString(","))
 
   private def sessionIdFromReq(req: RequestHeader): Option[String] =
     req
@@ -119,9 +122,14 @@ object Auth:
   val mobileScope = "web:mobile"
   val takex3Scope = "web:polygon"
 
-  enum Success(val user: User.Id):
-    case Cookie(u: User.Id) extends Success(u)
-    case OAuth(u: User.Id, scopes: String) extends Success(u)
+  opaque type ApproxSid = Int
+  object ApproxSid extends OpaqueInt[ApproxSid]:
+    def fromSid(sid: String) = ApproxSid(sid.hashCode)
+    def fromIp(ip: IpAddress) = ApproxSid(ip.hashCode)
+
+  enum Success(val user: User.Id, val approxSid: ApproxSid):
+    case Cookie(u: User.Id, a: ApproxSid) extends Success(u, a)
+    case OAuth(u: User.Id, a: ApproxSid, scopes: String) extends Success(u, a)
 
   opaque type Bearer = String
   object Bearer extends OpaqueString[Bearer]
