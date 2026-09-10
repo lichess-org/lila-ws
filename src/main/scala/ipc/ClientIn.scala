@@ -39,7 +39,7 @@ object ClientIn:
   case class Announce(json: JsonString) extends ClientIn:
     lazy val write = cliMsg("announce", json)
 
-  case class Fen(gameId: Game.Id, position: Position) extends ClientIn:
+  case class FenAndPockets(gameId: Game.Id, position: Position) extends ClientIn:
     def write =
       cliMsg(
         "fen",
@@ -51,6 +51,7 @@ object ClientIn:
           )
           .add("wc" -> position.clock.map(_.white))
           .add("bc" -> position.clock.map(_.black))
+          .add("pockets" -> position.pockets)
       )
 
   case class Finish(gameId: Game.Id, winner: Option[Color]) extends ClientIn:
