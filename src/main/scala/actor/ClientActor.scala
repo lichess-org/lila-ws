@@ -5,6 +5,7 @@ import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.{ ActorContext, Behaviors }
 
 import lila.ws.util.{ RequestHeader, SmallBoundedQueueSet }
+import lila.ws.Lag.LagKey
 
 import ipc.*
 
@@ -157,11 +158,12 @@ object ClientActor:
   ):
     export header.{ ip, isLichessMobile }
     def user: Option[User.Id] = auth.map(_.user)
+    def lagKey: Option[LagKey] = auth.map(a => (a.user, a.approxSid))
     def isOauth = auth.exists:
       case _: Auth.Success.OAuth => true
       case _ => false
     def authName: RequestHeader.AuthName = auth.match
-      case Some(Auth.Success.OAuth(_, scopes)) =>
+      case Some(Auth.Success.OAuth(_, _, scopes)) =>
         if scopes.contains(Auth.mobileScope) then "mobile"
         else if scopes.contains(Auth.takex3Scope) then
           if header.isTakex3Web then "takex3-web"
