@@ -2,8 +2,8 @@ package lila.ws
 
 import com.github.blemale.scaffeine.Cache
 
-import lila.ws.ipc.LilaIn
 import lila.ws.Auth.ApproxSid
+import lila.ws.ipc.LilaIn
 
 final class Lag(lilaRedis: Lila, groupedWithin: util.GroupedWithin)(using cacheApi: util.CacheApi):
   import Lag.*
