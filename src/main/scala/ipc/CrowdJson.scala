@@ -12,7 +12,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
   def room(crowd: RoomCrowd.Output): Future[ClientIn.Crowd] = {
     if crowd.users.sizeIs > 20 then
       keepOnlyStudyMembers(crowd).map: users =>
-        crowd.copy(users = users, anons = 0)
+        crowd.copy(users = users)
     else Future.successful(crowd)
   }.flatMap: withFewUsers =>
     roomSpectatorsOf(withFewUsers, crowd.users).map: json =>
@@ -38,7 +38,7 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
         val base = Json.obj(
           "nb" -> crowd.members,
           "users" -> names.filterNot(isBotName)
-        ) ++ (if crowd.anons > 0 then Json.obj("anons" -> crowd.anons) else Json.obj())
+        )
         val streamers = Streamer.intersect(allUsers)
         if streamers.isEmpty then base else base ++ Json.obj("streams" -> Json.toJson(streamers))
       }

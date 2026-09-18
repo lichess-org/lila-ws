@@ -58,16 +58,14 @@ object RoomCrowd:
   case class Output(
       roomId: RoomId,
       members: Int,
-      users: Iterable[User.Id],
-      anons: Int
+      users: Iterable[User.Id]
   )
 
   def outputOf(roomId: RoomId, room: RoomState) =
     Output(
       roomId = roomId,
       members = room.nbMembers,
-      users = room.users.keys,
-      anons = room.anons
+      users = room.users.keys
     )
 
   case class RoomState(
