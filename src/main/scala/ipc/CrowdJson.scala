@@ -15,16 +15,11 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
         crowd.copy(users = users, anons = 0)
     else Future.successful(crowd)
   }.flatMap: withFewUsers =>
-    spectatorsOf(withFewUsers, crowd.users).map: json =>
+    roomSpectatorsOf(withFewUsers, crowd.users).map: json =>
       ClientIn.Crowd.make(json, withFewUsers.members, withFewUsers.users)
 
   def round(crowd: RoundCrowd.Output): Future[ClientIn.Crowd] =
-    spectatorsOf(
-      crowd.room.copy(
-        users = if crowd.room.users.sizeIs > 20 then Nil else crowd.room.users
-      ),
-      crowd.room.users
-    ).map { spectators =>
+    roundSpectatorsOf(crowd).map: spectators =>
       ClientIn.Crowd.make(
         Json
           .obj(
@@ -32,21 +27,29 @@ final class CrowdJson(inquirers: Inquirers, mongo: Mongo, lightUserApi: LightUse
             "black" -> (crowd.players.black > 0),
             "watchers" -> spectators
           ),
-        crowd.room.members,
+        crowd.size,
         Nil
       )
-    }
 
-  private def spectatorsOf(crowd: RoomCrowd.Output, allUsers: Iterable[User.Id]): Future[JsObject] =
+  private def roomSpectatorsOf(crowd: RoomCrowd.Output, allUsers: Iterable[User.Id]): Future[JsObject] =
     if crowd.users.isEmpty then Future.successful(Json.obj("nb" -> crowd.members))
     else
       Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get).map { names =>
         val base = Json.obj(
           "nb" -> crowd.members,
-          "users" -> names.filterNot(isBotName),
-          "anons" -> crowd.anons
-        )
+          "users" -> names.filterNot(isBotName)
+        ) ++ (if crowd.anons > 0 then Json.obj("anons" -> crowd.anons) else Json.obj())
         val streamers = Streamer.intersect(allUsers)
+        if streamers.isEmpty then base else base ++ Json.obj("streams" -> Json.toJson(streamers))
+      }
+
+  private def roundSpectatorsOf(crowd: RoundCrowd.Output): Future[JsObject] =
+    if crowd.users.isEmpty then Future.successful(JsObject.empty)
+    else if crowd.size > 10 then Future.successful(Json.obj("nb" -> crowd.size))
+    else
+      Future.traverse(crowd.users.filterNot(inquirers.contains))(lightUserApi.get).map { names =>
+        val base = Json.obj("users" -> names.filterNot(isBotName))
+        val streamers = Streamer.intersect(crowd.users)
         if streamers.isEmpty then base else base ++ Json.obj("streams" -> Json.toJson(streamers))
       }
 
