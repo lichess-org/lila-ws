@@ -12,7 +12,12 @@ import lila.ws.util.RequestHeader
 
 object LilaWs extends App:
 
-  lazy val config: Config = ConfigFactory.load
+  // sbt 2 always forks, even when run / fork is false, so command line jvm options are a bit harder to pass.
+  // support `sbt run -Dcsrf.origin=` here to ensure existing configs don't require changes
+  lazy val config: Config =
+    val overrides = args.collect:
+      case s"-D$key=$value" if key.nonEmpty => key -> value
+    ConfigFactory.parseMap(overrides.toMap.asJava).withFallback(ConfigFactory.load)
   lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
   given Scheduler = clientSystem.scheduler
   given Executor = clientSystem.executionContext
@@ -46,9 +51,10 @@ object LilaWs extends App:
   lazy val nettyServer = wire[netty.NettyServer]
   lazy val monitor = wire[Monitor]
 
-  wire[LilaHandler] // must eagerly instanciate!
-  wire[RelayCrowd] // must eagerly instanciate!
-  wire[LilaWsServer].start()
+  delayedInit:
+    wire[LilaHandler] // must eagerly instanciate!
+    wire[RelayCrowd] // must eagerly instanciate!
+    wire[LilaWsServer].start()
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,
