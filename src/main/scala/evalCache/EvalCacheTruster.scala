@@ -19,7 +19,14 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor)(using cacheAp
             _.find(
               BSONDocument("_id" -> userId),
               Some(
-                BSONDocument("marks" -> 1, "createdAt" -> 1, "title" -> 1, "count.game" -> 1, "roles" -> 1)
+                BSONDocument(
+                  "marks" -> 1,
+                  "createdAt" -> 1,
+                  "title" -> 1,
+                  "count.game" -> 1,
+                  "roles" -> 1,
+                  "plan.months" -> 1
+                )
               )
             ).one[BSONDocument]
           .map(_.map(computeTrust))
@@ -60,7 +67,7 @@ final private class EvalCacheTruster(mongo: Mongo)(using Executor)(using cacheAp
   private def nbGamesBonus(user: BSONDocument): Double =
     user
       .getAsOpt[BSONDocument]("count")
-      .flatMap(_.getAsOpt[Int]("games"))
+      .flatMap(_.getAsOpt[Int]("game"))
       .fold(-1d): games =>
         math.sqrt(games / 100) - 1
 
