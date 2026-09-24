@@ -30,7 +30,7 @@ lazy val `lila-ws` = project
     resolvers += "lila-maven".at("https://raw.githubusercontent.com/ornicar/lila-maven/master"),
     libraryDependencies ++= Seq(
       "org.reactivemongo" %% "reactivemongo" % "1.1.0-pekko.noshaded.RC21",
-      "io.lettuce" % "lettuce-core" % "7.6.0.RELEASE",
+      "io.lettuce" % "lettuce-core" % "7.8.0.RELEASE",
       "io.netty" % "netty-handler" % nettyVersion,
       "io.netty" % "netty-codec-http" % nettyVersion,
       nettyTransport,
