@@ -68,7 +68,8 @@ final class EvalCacheApi(mongo: Mongo)(using Executor, Scheduler)(using cacheApi
                 knodes = e.knodes,
                 depth = e.depth,
                 by = user,
-                trust = trust
+                trust = trust,
+                engineId = e.engineId
               ),
               sri
             ).foreach(putTrusted(user, _))

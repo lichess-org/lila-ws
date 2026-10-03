@@ -24,21 +24,24 @@ object EvalCacheJsonHandlers:
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
     knodes <- d.get[Knodes]("knodes")
     depth <- d.get[Depth]("depth")
+    engineId = d.str("engineId").filter(_.nonEmpty)
     pvObjs <- d.objs("pvs")
     pvs <- pvObjs.map(parsePv).sequence.flatMap(_.toNel)
-  yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth)
+  yield ipc.ClientOut.EvalPut(fen, variant, pvs, knodes, depth, engineId)
 
   def readGetMulti(d: JsObject) = for
     fens <- d.get[List[Fen.Full]]("fens")
     variant = Variant.orDefault(d.get[Variant.LilaKey]("variant"))
   yield ipc.ClientOut.EvalGetMulti(fens.take(32), variant)
 
-  def writeEval(e: Eval, fen: Fen.Full) = Json.obj(
-    "fen" -> fen,
-    "knodes" -> e.knodes,
-    "depth" -> e.depth,
-    "pvs" -> JsArray(e.pvs.toList.map(writePv))
-  )
+  def writeEval(e: Eval, fen: Fen.Full) = Json
+    .obj(
+      "fen" -> fen,
+      "knodes" -> e.knodes,
+      "depth" -> e.depth,
+      "pvs" -> JsArray(e.pvs.toList.map(writePv))
+    )
+    .add("engineId" -> e.engineId)
 
   def writeMultiHit(fen: Fen.Full, e: Eval): JsObject = Json
     .obj("fen" -> fen)
