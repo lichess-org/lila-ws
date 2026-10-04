@@ -16,14 +16,16 @@ object EvalCacheBsonHandlers:
   import EvalCacheEntry.*
 
   given BSONHandler[NonEmptyList[Pv]] = new:
-    private def scoreWrite(s: Score): String = s.fold(_.value.toString, m => s"#${m.value}")
+    private def scoreWrite(s: Score): String = s.fold(_.value.toString, m => s"#${m.value}", mateGiven)
     private def scoreRead(str: String): Option[Score] =
-      if str.headOption.contains('#')
+      if str == mateGiven then Some(Score.MateGiven)
+      else if str.headOption.contains('#')
       then str.drop(1).toIntOption.map(Score.mate(_))
       else str.toIntOption.map(Score.cp(_))
     private def movesWrite(moves: Moves): String = Uci.writeListChars(moves.value.toList)
     private def movesRead(str: String): Option[Moves] = Moves.from:
       Uci.readListChars(str).flatMap(_.toNel)
+    private val mateGiven = "#+0"
     private val scoreSeparator = ':'
     private val pvSeparator = '/'
     private val pvSeparatorStr = pvSeparator.toString

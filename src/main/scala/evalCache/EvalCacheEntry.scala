@@ -90,9 +90,8 @@ object EvalCacheEntry:
 
   case class Pv(score: Score, moves: Moves):
 
-    def looksValid = score.mate match
-      case None => moves.value.toList.sizeIs > MIN_PV_SIZE
-      case Some(mate) => mate.value != 0 // sometimes we get #0. Dunno why.
+    def looksValid =
+      !score.isGameOver && (moves.value.toList.sizeIs > MIN_PV_SIZE || score.mateFound)
 
     def isValidMate(lastPos: Position) =
       score.mate.forall: mate =>
