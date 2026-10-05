@@ -17,7 +17,7 @@ def nettyTransport =
 val pekkoVersion = "1.7.1"
 val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.18.Final"
-val chessVersion = "17.17.0"
+val chessVersion = "18.0.0"
 
 lazy val `lila-ws` = project
   .in(file("."))
