@@ -10,6 +10,7 @@ import scalalib.DebouncerFunction
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet
 import lila.ws.util.ExpireCallbackMemo
+import chess.eval.WhiteScore
 
 /* Upgrades the user's eval when a better one becomes available,
  * by remembering the last evalGet of each socket member,
@@ -83,6 +84,6 @@ private object EvalCacheUpgrade:
     def addSri(sri: Sri) = copy(sris = sris + sri)
 
   object EvalState:
-    def initial = EvalState(Set.empty, Depth(0), WinPercent.fromScore(Score.initial))
+    def initial = EvalState(Set.empty, Depth(0), WinPercent.fromScore(WhiteScore.initial.white))
 
   case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)

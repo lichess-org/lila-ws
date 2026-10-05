@@ -79,7 +79,7 @@ object EvalCacheEntry:
     private def uniqueFirstMoves = pvs.map(_.moves.value.head.uci).distinct.size == pvs.size
 
     private def isSufficientlyAnalysed =
-      pvs.forall(_.score.mateFound) || (knodes >= MIN_KNODES || depth >= MIN_DEPTH)
+      pvs.forall(_.score.isMateFound) || (knodes >= MIN_KNODES || depth >= MIN_DEPTH)
 
     def truncatePvs = copy(pvs = pvs.map(_.truncate))
 
@@ -91,7 +91,7 @@ object EvalCacheEntry:
   case class Pv(score: Score, moves: Moves):
 
     def looksValid =
-      !score.isGameOver && (moves.value.toList.sizeIs > MIN_PV_SIZE || score.mateFound)
+      !score.isGameOver && (moves.value.toList.sizeIs > MIN_PV_SIZE || score.isMateFound)
 
     def isValidMate(lastPos: Position) =
       score.mate.forall: mate =>
