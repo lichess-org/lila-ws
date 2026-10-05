@@ -2,7 +2,11 @@ package lila.ws
 package evalCache
 
 import cats.syntax.option.*
-import chess.eval.{ Score, WinPercent }
+import chess.eval.{
+  Score,
+  WhiteScore,
+  WinPercent
+}
 import chess.format.UciPath
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
@@ -10,7 +14,6 @@ import scalalib.DebouncerFunction
 import lila.ws.ipc.ClientIn.EvalHit
 import lila.ws.ipc.ClientOut.EvalGet
 import lila.ws.util.ExpireCallbackMemo
-import chess.eval.WhiteScore
 
 /* Upgrades the user's eval when a better one becomes available,
  * by remembering the last evalGet of each socket member,
