@@ -2,11 +2,7 @@ package lila.ws
 package evalCache
 
 import cats.syntax.option.*
-import chess.eval.{
-  Score,
-  WhiteScore,
-  WinPercent
-}
+import chess.eval.{ Score, WhiteScore, WinPercent }
 import chess.format.UciPath
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
