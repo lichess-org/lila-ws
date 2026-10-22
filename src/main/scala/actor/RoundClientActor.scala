@@ -71,7 +71,7 @@ object RoundClientActor:
         msg match
 
           case ClientOut.RoundPongFrame(lagMillis) =>
-            services.lag.recordTrustedLag(lagMillis, req.user)
+            services.lag.recordTrustedLag(lagMillis, req.lagKey)
             Behaviors.same
 
           case ClientCtrl.Broom(oldSeconds) =>
@@ -117,7 +117,7 @@ object RoundClientActor:
             fullId.foreach: fid =>
               clientIn(ClientIn.RoundPingFrameNoFlush)
               clientIn(ClientIn.Ack(ackId))
-              val frameLagCentis = req.user.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
+              val frameLagCentis = req.lagKey.flatMap(deps.services.lag.sessionLag).map(Centis.ofMillis(_))
               val lag = clientLag.withFrameLag(frameLagCentis)
               lilaIn.round(LilaIn.RoundMove(fid, uci, blur, lag))
             Behaviors.same
