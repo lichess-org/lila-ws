@@ -2,7 +2,7 @@ package lila.ws
 package evalCache
 
 import cats.syntax.option.*
-import chess.eval.{ Score, WhiteScore, WinPercent }
+import chess.eval.{ Score, WinPercent }
 import chess.format.UciPath
 import play.api.libs.json.JsString
 import scalalib.DebouncerFunction
@@ -83,6 +83,6 @@ private object EvalCacheUpgrade:
     def addSri(sri: Sri) = copy(sris = sris + sri)
 
   object EvalState:
-    def initial = EvalState(Set.empty, Depth(0), WinPercent.fromScore(WhiteScore.initial.white))
+    def initial = EvalState(Set.empty, Depth(0), WinPercent.fromScore(Score.cp(15)))
 
   case class WatchingMember(sri: Sri, setupId: SetupId, path: UciPath)
