@@ -93,7 +93,7 @@ object ClientIn:
         "redirect",
         Json.obj(
           "id" -> fullId.value,
-          "url" -> s"/$fullId"
+          "url" -> s"/$fullId" // lichobile requires the old game URL
         )
       )
 
