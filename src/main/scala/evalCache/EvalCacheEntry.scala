@@ -66,7 +66,14 @@ object EvalCacheEntry:
           .forward(pv.moves.value)
           .filterOrElse(pv.isValidMate(_), chess.ErrorStr(s"Invalid mate $pv"))
 
-  case class Eval(pvs: NonEmptyList[Pv], knodes: Knodes, depth: Depth, by: User.Id, trust: Trust):
+  case class Eval(
+      pvs: NonEmptyList[Pv],
+      knodes: Knodes,
+      depth: Depth,
+      by: User.Id,
+      trust: Trust,
+      engineId: Option[String] = None
+  ):
 
     def multiPv = MultiPv(pvs.size)
 
