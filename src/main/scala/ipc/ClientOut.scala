@@ -43,7 +43,8 @@ object ClientOut:
       variant: Variant,
       pvs: NonEmptyList[evalCache.EvalCacheEntry.Pv],
       knodes: evalCache.Knodes,
-      depth: Depth
+      depth: Depth,
+      engineId: Option[String]
   ) extends ClientOutSite
 
   case class EvalGetMulti(fens: List[Fen.Full], variant: Variant) extends ClientOutSite
