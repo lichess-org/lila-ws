@@ -1,4 +1,4 @@
-scalaVersion := "3.10.0"
+scalaVersion := "3.10.1"
 versionScheme := Some("early-semver")
 version := "3.3"
 dockerBaseImage := "eclipse-temurin:25-jdk-noble"
