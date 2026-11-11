@@ -14,7 +14,7 @@ def nettyTransport =
   else ("linux", "epoll")
   ("io.netty" % s"netty-transport-native-$notifier" % nettyVersion).classifier(s"$os-$arch")
 
-val pekkoVersion = "1.7.1"
+val pekkoVersion = "2.0.0"
 val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.20.Final"
 val chessVersion = "18.1.0"
