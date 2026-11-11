@@ -1,11 +1,14 @@
 package lila.ws
 package netty
 
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigException }
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.{ Channel, ChannelInitializer }
 import io.netty.handler.codec.http.*
+import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
+import scala.jdk.CollectionConverters.*
+import io.netty.channel.ChannelFuture
 
 final class NettyServer(
     clients: ClientSystem,
@@ -23,7 +26,11 @@ final class NettyServer(
   def start(): Unit =
 
     logger.info("Start")
-    val port = config.getInt("http.port")
+
+    val ports: List[Int] = try config.getIntList("http.ports").asScala.toList.map(_.toInt)
+    catch case _: ConfigException => List(config.getInt("http.port"))
+    logger.info(s"Ports to bind: ${ports.mkString(", ")}")
+
     val useNginxForwardedIp = config.getBoolean("http.use-nginx-forwarded-ip")
     try
       val boot = new ServerBootstrap
@@ -41,13 +48,20 @@ final class NettyServer(
               pipeline.addLast(FrameHandler())
         )
 
-      val server = boot.bind(port).sync().channel()
+      val channels: List[ChannelFuture] = ports.map { p =>
+        logger.info(s"Will bind port $p")
+        val channel = boot.bind(p).sync().channel()
+        logger.info(s"Bound port $p")
+        channel
+          .closeFuture()
+          .addListener:
+            new GenericFutureListener[NettyFuture[Void]]:
+              def operationComplete(f: NettyFuture[Void]): Unit =
+                logger.info(s"Unbound port $p")
+      }
+      channels.foreach(_.sync())
+      logger.info("All ports unbound")
 
-      logger.info(s"Listening to $port")
-
-      server.closeFuture().sync()
-
-      logger.info(s"Closed $port")
     finally
       parent.shutdownGracefully()
       workers.shutdownGracefully()
