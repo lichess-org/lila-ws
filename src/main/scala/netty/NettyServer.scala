@@ -4,11 +4,11 @@ package netty
 import com.typesafe.config.{ Config, ConfigException }
 import com.typesafe.scalalogging.Logger
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{ Channel, ChannelInitializer }
+import io.netty.channel.{ Channel, ChannelFuture, ChannelInitializer }
 import io.netty.handler.codec.http.*
 import io.netty.util.concurrent.{ Future as NettyFuture, GenericFutureListener }
+
 import scala.jdk.CollectionConverters.*
-import io.netty.channel.ChannelFuture
 
 final class NettyServer(
     clients: ClientSystem,
