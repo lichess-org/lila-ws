@@ -16,7 +16,7 @@ def nettyTransport =
 
 val pekkoVersion = "1.7.1"
 val kamonVersion = "2.8.1"
-val nettyVersion = "4.2.20.Final"
+val nettyVersion = "4.2.21.Final"
 val chessVersion = "18.1.0"
 
 lazy val `lila-ws` = project
