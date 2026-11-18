@@ -10,7 +10,7 @@ import scala.jdk.CollectionConverters.*
 import lila.ws.ClientActor.Req
 import lila.ws.util.RequestHeader
 
-object LilaWs extends App:
+object LilaWs:
 
   lazy val config: Config = ConfigFactory.load
   lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
@@ -48,7 +48,9 @@ object LilaWs extends App:
 
   wire[LilaHandler] // must eagerly instanciate!
   wire[RelayCrowd] // must eagerly instanciate!
-  wire[LilaWsServer].start()
+  val server = wire[LilaWsServer]
+
+  @main def start = server.start()
 
 final class LilaWsServer(
     nettyServer: netty.NettyServer,

@@ -8,13 +8,16 @@
   languages = {
     java = {
       enable = true;
-      jdk.package = lib.mkDefault pkgs.openjdk21;
     };
     scala = {
       enable = true;
       sbt.enable = true;
     };
   };
+
+  packages = [
+    pkgs.graalvmPackages.graalvm-ce
+  ];
 
   processes.lila-ws = {
     exec = ''

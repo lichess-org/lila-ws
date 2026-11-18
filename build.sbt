@@ -19,9 +19,9 @@ val kamonVersion = "2.8.1"
 val nettyVersion = "4.2.21.Final"
 val chessVersion = "18.1.0"
 
-lazy val `lila-ws` = project
+lazy val `lilaws` = project
   .in(file("."))
-  .enablePlugins(JavaAppPackaging, DockerPlugin, BuildInfoPlugin)
+  .enablePlugins(JavaAppPackaging, DockerPlugin, BuildInfoPlugin, GraalVMNativeImagePlugin)
   .settings(
     name := "lila-ws",
     organization := "org.lichess",
@@ -70,10 +70,22 @@ lazy val `lila-ws` = project
     Universal / javaOptions := Seq(
       "-J-Dconfig.override_with_env_vars=true"
     ),
+    // Compile / mainClass := Some("lila.ws.LilaWs"),
     Compile / doc / sources := Seq.empty,
     buildInfoPackage := "lila.ws",
     buildInfoKeys := Seq[BuildInfoKey](
       BuildInfoKey.map(git.gitHeadCommit) { case (k, v) => k -> v.getOrElse("unknown") }
+    ),
+    graalVMNativeImageOptions := Seq(
+      "-H:+StaticExecutableWithDynamicLibC",
+      "--initialize-at-build-time=" + List(
+        "ch.qos.logback",
+        "ch.qos.logback.classic.Logger",
+        "ch.qos.logback.classic.LoggerContext",
+        "ch.qos.logback.classic.Level",
+        "ch.qos.logback.classic.util.LogbackMDCAdapter",
+        "ch.qos.logback.classic.spi.TurboFilterList",
+      ).mkString(",")
     )
   )
 
