@@ -228,14 +228,15 @@ final class Controller(
 
   def racer(id: Racer.Id, header: RequestHeader) =
     WebSocket(header): req =>
-      Future.successful:
-        req.user
-          .match
-            case Some(u) => Option(Racer.PlayerId.User(u))
-            case None => auth.sidFromReq(header).map(Racer.PlayerId.Anon.apply)
-          .match
-            case None => notFound
-            case Some(pid) =>
+      for exists <- mongo.raceExists(id)
+      yield
+        if !exists then notFound
+        else
+          req.user
+            .match
+              case Some(u) => Option(Racer.PlayerId.User(u))
+              case None => auth.sidFromReq(header).map(Racer.PlayerId.Anon.apply)
+            .fold(notFound): pid =>
               endpoint(
                 name = "racer",
                 behavior = emit =>

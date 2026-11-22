@@ -319,6 +319,8 @@ final class Mongo(config: Config)(using Executor)(using cacheApi: util.CacheApi)
         v <- doc.getAsOpt[A]("v")
       yield v
 
+  def raceExists(id: Racer.Id) = cache.get[Boolean](s"racer.race.$id").map(_.isDefined)
+
   private def idExists[Id: BSONWriter](id: Id)(coll: BSONCollection): Future[Boolean] =
     exists(coll, BSONDocument("_id" -> id))
 
