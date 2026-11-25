@@ -39,7 +39,7 @@ final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Execu
         case _ => None
 
   private def sriFromReq(req: RequestHeader): Option[Sri] =
-    Sri.from(req.uncheckedSri)
+    req.uncheckedSri.flatMap(Sri.read)
 
   def anonSecretFromReq(req: RequestHeader): Option[String] =
     sidFromReq(req) orElse sriFromReq(req).map(_.value)

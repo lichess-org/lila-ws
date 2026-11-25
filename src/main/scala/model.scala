@@ -94,7 +94,7 @@ object Racer:
 opaque type Sri = String
 object Sri extends OpaqueString[Sri]:
   def random() = Sri(SecureRandom.nextString(12))
-  def from(str: String): Option[Sri] = Option.unless(str.contains(' '))(str)
+  def read(str: String): Option[Sri] = Option.unless(str.contains(' '))(str)
 
 opaque type Flag = String
 object Flag extends OpaqueString[Flag]:

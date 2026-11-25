@@ -270,7 +270,7 @@ final class Controller(
           f(Req(req, sri, authResult))
 
   private def ValidSri(header: RequestHeader)(f: Sri => Response): Response =
-    Sri.from(header.uncheckedSri) match
+    header.uncheckedSri.flatMap(Sri.read) match
       case Some(validSri) => f(validSri)
       case None => Future.successful(Left(HttpResponseStatus.BAD_REQUEST))
 
